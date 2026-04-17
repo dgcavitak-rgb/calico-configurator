@@ -1,0 +1,2331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CALICO PRO Configurator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    /* Primary palette */
+    --forest: #1B4332;
+    --forest-dark: #0D2818;
+    --forest-deep: #051510;
+    --forest-soft: #2D5A44;
+    --forest-glow: rgba(27, 67, 50, 0.12);
+
+    /* Accent */
+    --cavitak-red: #C8102E;
+    --cavitak-red-dark: #9E0D24;
+    --cavitak-red-glow: rgba(200, 16, 46, 0.15);
+
+    /* Supporting */
+    --gold: #C4A962;
+    --gold-soft: #E8D5A0;
+    --teal: #14B8A6;
+
+    /* Surface & ink */
+    --bg: #F6F4EE;
+    --bg-warm: #FAF8F2;
+    --paper: #FFFFFF;
+    --ink: #0A1A14;
+    --ink-soft: #4A5A52;
+    --ink-subtle: #7A8A82;
+
+    /* Lines & borders */
+    --line: #D9D4C8;
+    --line-soft: #EAE6DC;
+    --line-softer: #F2EFE6;
+
+    /* Status */
+    --warn: #B45309;
+    --warn-soft: #FEF3C7;
+    --ok: #15803D;
+    --ok-soft: #D1FAE5;
+
+    /* Gradients — the good stuff */
+    --grad-forest: linear-gradient(135deg, #1B4332 0%, #0D2818 100%);
+    --grad-forest-rich: linear-gradient(135deg, #2D5A44 0%, #1B4332 45%, #0D2818 100%);
+    --grad-red: linear-gradient(135deg, #C8102E 0%, #9E0D24 100%);
+    --grad-red-rich: linear-gradient(135deg, #E0344D 0%, #C8102E 50%, #7A091C 100%);
+    --grad-premium: linear-gradient(135deg, #1B4332 0%, #2D5A44 50%, #1B4332 100%);
+    --grad-page: radial-gradient(ellipse at 20% 10%, rgba(27,67,50,0.06) 0%, transparent 55%),
+                 radial-gradient(ellipse at 80% 80%, rgba(200,16,46,0.05) 0%, transparent 55%),
+                 linear-gradient(165deg, #F8F6F0 0%, #F0EDE4 100%);
+
+    /* Shadows — layered, realistic */
+    --shadow-xs: 0 1px 2px rgba(10,26,20,.06);
+    --shadow-sm: 0 1px 3px rgba(10,26,20,.05), 0 2px 8px rgba(10,26,20,.04);
+    --shadow: 0 1px 3px rgba(10,26,20,.05), 0 4px 12px rgba(10,26,20,.05), 0 12px 32px rgba(10,26,20,.06);
+    --shadow-lg: 0 2px 4px rgba(10,26,20,.06), 0 8px 20px rgba(10,26,20,.07), 0 24px 56px rgba(10,26,20,.10);
+    --shadow-xl: 0 4px 8px rgba(10,26,20,.08), 0 16px 32px rgba(10,26,20,.10), 0 40px 80px rgba(10,26,20,.14);
+    --shadow-forest: 0 4px 12px rgba(27,67,50,0.18), 0 8px 24px rgba(27,67,50,0.12);
+    --shadow-red: 0 4px 12px rgba(200,16,46,0.22), 0 8px 24px rgba(200,16,46,0.15);
+
+    /* Animation */
+    --ease: cubic-bezier(0.2, 0.8, 0.25, 1);
+    --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.55;
+    font-size: 15px; font-weight: 500;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+    min-height: 100vh;
+  }
+
+  /* ===== PAGE BACKDROP — subtle decorative layer ===== */
+  #appScreen {
+    background: var(--grad-page);
+    min-height: 100vh;
+  }
+
+  /* ===== APP HEADER — richer gradient, glass texture ===== */
+  .app-header {
+    background: var(--grad-forest-rich);
+    color: #fff; padding: 18px 32px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 10px;
+    position: relative; overflow: hidden;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 2px 12px rgba(0,0,0,0.15);
+  }
+  .app-header::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--cavitak-red) 0%, var(--gold) 50%, var(--cavitak-red) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 8s linear infinite;
+  }
+  @keyframes shimmer { 0%{background-position: 0% 0%} 100%{background-position: 200% 0%} }
+  .app-header::after {
+    content: '';
+    position: absolute; bottom: -40px; right: -40px; width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(196,169,98,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .brand { display: flex; align-items: center; gap: 16px; position: relative; z-index: 1; }
+  .brand img { transition: transform 0.3s var(--ease); filter: brightness(0) invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.2)); }
+  .brand img:hover { transform: scale(1.05); }
+  .brand-mark { font-family: 'Fraunces', serif; font-weight: 700; font-size: 20px; letter-spacing: -0.01em; }
+  .brand-sub {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.16em;
+    opacity: 0.88; font-weight: 600;
+    background: linear-gradient(90deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .brand-tagline {
+    font-family: 'Fraunces', serif; font-size: 11.5px; font-weight: 500;
+    font-style: italic; color: #E8D5A0; margin-top: 1px;
+    letter-spacing: 0.02em;
+  }
+  .user-badge { font-size: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .user-badge #userLabel { opacity: 0.9; font-weight: 500; }
+  .user-badge button {
+    background: rgba(255,255,255,0.08); color: #fff;
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 7px 16px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 12px;
+    transition: all 0.2s var(--ease); font-weight: 600; letter-spacing: 0.02em;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .user-badge button:hover {
+    background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.45);
+    transform: translateY(-1px);
+  }
+  .role-pill {
+    background: var(--grad-red); color: #fff; padding: 4px 11px; border-radius: 20px;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+    box-shadow: 0 2px 6px rgba(200,16,46,0.4), 0 0 0 1px rgba(255,255,255,0.1) inset;
+  }
+
+  .page { max-width: 1080px; margin: 0 auto; padding: 40px 24px 80px; position: relative; }
+  .page-title {
+    font-family: 'Fraunces', serif; font-size: 38px; font-weight: 600;
+    letter-spacing: -0.025em; margin-bottom: 12px;
+    background: linear-gradient(135deg, var(--forest-dark) 0%, var(--forest) 70%, var(--forest-soft) 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+  }
+  .page-sub {
+    color: var(--ink); font-size: 15.5px; font-weight: 600;
+    margin-bottom: 32px; line-height: 1.6; max-width: 740px;
+    letter-spacing: -0.005em;
+    padding: 10px 0 10px 16px;
+    border-left: 3px solid var(--cavitak-red);
+    background: linear-gradient(90deg, rgba(200,16,46,0.04) 0%, transparent 50%);
+    border-radius: 0 6px 6px 0;
+  }
+  .page-sub strong, .page-sub b {
+    color: var(--forest-dark); font-weight: 800;
+  }
+
+  /* ===== LOGIN PAGE — PREMIUM HERO TREATMENT ===== */
+  .login-wrap {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    background:
+      radial-gradient(ellipse at 15% 15%, rgba(27,67,50,0.10) 0%, transparent 45%),
+      radial-gradient(ellipse at 85% 85%, rgba(200,16,46,0.08) 0%, transparent 45%),
+      radial-gradient(ellipse at 50% 50%, rgba(196,169,98,0.04) 0%, transparent 60%),
+      linear-gradient(165deg, #F8F6F0 0%, #EDEAE0 100%);
+    position: relative;
+  }
+  .login-wrap::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, var(--forest) 0%, var(--cavitak-red) 50%, var(--gold) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 10s linear infinite;
+  }
+  /* Subtle decorative corner ornaments */
+  .login-wrap::after {
+    content: '';
+    position: absolute; top: 8%; right: 8%; width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(27,67,50,0.06) 0%, transparent 70%);
+    pointer-events: none; filter: blur(20px);
+  }
+  .login-card {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 52px 48px 40px; width: 100%; max-width: 460px;
+    box-shadow: var(--shadow-xl), 0 0 0 1px rgba(27,67,50,0.04);
+    position: relative; overflow: hidden;
+    z-index: 1;
+    animation: loginFadeIn 0.6s var(--ease) both;
+  }
+  @keyframes loginFadeIn {
+    0% { opacity: 0; transform: translateY(16px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .login-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(27,67,50,0.3), transparent);
+  }
+  .login-card::after {
+    content: '';
+    position: absolute; top: -60px; right: -60px; width: 220px; height: 220px;
+    background: radial-gradient(circle, rgba(200,16,46,0.06) 0%, transparent 70%);
+    pointer-events: none; border-radius: 50%;
+  }
+  .login-logo {
+    text-align: center; margin-bottom: 30px;
+    padding-bottom: 28px; border-bottom: 1px solid var(--line-soft);
+    position: relative;
+  }
+  .login-logo img { max-width: 210px; height: auto; }
+  .login-title {
+    font-family: 'Fraunces', serif; font-size: 34px; font-weight: 600;
+    margin-bottom: 6px; letter-spacing: -0.025em;
+    text-align: center; line-height: 1.1;
+    background: linear-gradient(135deg, var(--forest-dark) 0%, var(--forest) 60%, var(--forest-soft) 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    position: relative;
+  }
+  .login-tagline {
+    font-family: 'Fraunces', serif; font-size: 15px; font-weight: 500;
+    font-style: italic; text-align: center;
+    color: var(--cavitak-red); letter-spacing: 0.02em;
+    margin-top: 2px;
+  }
+  .login-accent {
+    display: block; width: 48px; height: 3px;
+    background: var(--grad-red);
+    margin: 14px auto 24px; border-radius: 2px;
+    box-shadow: 0 2px 6px rgba(200,16,46,0.3);
+  }
+  .login-sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 28px; text-align: center; }
+  .login-contact {
+    margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line-soft);
+    text-align: center;
+  }
+  .login-contact-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--ink-subtle); font-weight: 700; margin-bottom: 12px;
+  }
+  .login-contact-name {
+    font-family: 'Fraunces', serif; font-size: 16px; color: var(--forest-dark);
+    font-weight: 600; margin-bottom: 10px; letter-spacing: -0.01em;
+  }
+  .login-contact-links { font-size: 13px; color: var(--ink-soft); }
+  .login-contact-links a {
+    color: var(--cavitak-red); text-decoration: none; font-weight: 600;
+    transition: all 0.2s var(--ease);
+    border-bottom: 1px solid transparent;
+  }
+  .login-contact-links a:hover { color: var(--cavitak-red-dark); border-bottom-color: var(--cavitak-red-dark); }
+  .login-contact-links .sep { margin: 0 12px; opacity: 0.3; }
+
+  /* ===== CARDS — proper depth hierarchy ===== */
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    padding: 28px 30px; margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.3s var(--ease), transform 0.3s var(--ease);
+    position: relative;
+  }
+  .card:hover {
+    box-shadow: var(--shadow);
+    transform: translateY(-1px);
+  }
+  .card-title {
+    font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; color: var(--forest-dark);
+    margin-bottom: 22px; padding-bottom: 14px;
+    border-bottom: 1px solid var(--line-soft);
+    display: flex; align-items: center; gap: 12px; letter-spacing: -0.015em;
+  }
+  .card-title::before { content: ''; width: 4px; height: 16px; background: var(--cavitak-red); display: inline-block; border-radius: 2px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+  .field.full { grid-column: 1 / -1; }
+  label {
+    font-size: 11.5px; font-weight: 700; color: var(--ink-soft);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .req { color: var(--cavitak-red); }
+  input, select, textarea {
+    font-family: inherit; font-size: 14.5px; padding: 12px 14px; font-weight: 500;
+    border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--ink);
+    transition: all 0.2s var(--ease); width: 100%;
+  }
+  input::placeholder, textarea::placeholder { color: var(--ink-subtle); font-weight: 400; }
+  input:hover, select:hover, textarea:hover { border-color: #b8b3a2; background: #fdfcf7; }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--forest);
+    box-shadow: 0 0 0 4px rgba(27,67,50,0.10), var(--shadow-xs);
+    background: #fff;
+  }
+  /* Empty-required validation state */
+  input.field-error, select.field-error, textarea.field-error {
+    border-color: var(--cavitak-red) !important;
+    background: #FEF2F2 !important;
+    box-shadow: 0 0 0 3px rgba(200,16,46,0.12) !important;
+    animation: fieldShake 0.4s var(--ease);
+  }
+  @keyframes fieldShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
+  }
+  input.field-error:focus, select.field-error:focus, textarea.field-error:focus {
+    border-color: var(--cavitak-red) !important;
+    box-shadow: 0 0 0 4px rgba(200,16,46,0.18) !important;
+  }
+  input[type="number"] { font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', 'SF Mono', monospace; font-size: 13.5px; letter-spacing: 0.01em; }
+  select {
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%234A5A52%22%20d%3D%22M6%208.5L1.5%204h9L6%208.5z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+    padding-right: 36px;
+  }
+  textarea { resize: vertical; min-height: 76px; font-family: inherit; font-weight: 400; }
+  .helper { font-size: 12px; color: var(--ink-soft); margin-top: 2px; line-height: 1.5; }
+  .screen-block {
+    background: linear-gradient(180deg, #FDFCF7 0%, #F8F6EE 100%);
+    border: 1px solid var(--line-soft); border-radius: 10px;
+    padding: 18px 20px; margin-bottom: 16px; position: relative;
+    transition: all 0.25s var(--ease);
+  }
+  .screen-block::before {
+    content: ''; position: absolute; top: 0; left: 18px; width: 32px; height: 2px;
+    background: var(--grad-red); border-radius: 0 0 2px 2px;
+  }
+  .screen-block:hover {
+    box-shadow: var(--shadow-sm);
+    border-color: #c3bfae;
+  }
+  .screen-block-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 10px; flex-wrap: wrap; }
+  .screen-label {
+    font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600;
+    color: var(--forest-dark); letter-spacing: -0.015em;
+  }
+  .calc-readout {
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    font-size: 11.5px; color: var(--forest-soft);
+    background: rgba(255,255,255,0.8); padding: 5px 11px;
+    border-radius: 5px; border: 1px solid var(--line-soft); font-variant-numeric: tabular-nums;
+    font-weight: 500; letter-spacing: -0.01em;
+    backdrop-filter: blur(4px);
+  }
+  .screen-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .screen-grid .field { margin-bottom: 0; }
+  .screen-grid input { font-size: 13px; padding: 9px 11px; }
+  .btn-tiny {
+    background: transparent; color: var(--cavitak-red); border: 1px solid var(--line);
+    padding: 4px 10px; font-size: 11px; border-radius: 4px; cursor: pointer; font-family: inherit;
+    font-weight: 500;
+  }
+  .btn-tiny:hover { background: #fff; border-color: var(--cavitak-red); }
+  .totals-strip {
+    background: var(--grad-forest-rich);
+    color: #fff; padding: 22px 26px; border-radius: 12px;
+    margin-top: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 20px; font-size: 13px;
+    box-shadow: var(--shadow-forest), 0 0 0 1px rgba(255,255,255,0.05) inset;
+    position: relative; overflow: hidden;
+  }
+  .totals-strip::before {
+    content: ''; position: absolute; top: 0; right: 0; width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(196,169,98,0.12) 0%, transparent 70%);
+    pointer-events: none; border-radius: 50%;
+  }
+  .totals-strip > div { position: relative; z-index: 1; }
+  .totals-strip .k { font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em; opacity: 0.75; margin-bottom: 6px; font-weight: 800; }
+  .totals-strip .v {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums;
+    letter-spacing: -0.025em;
+  }
+  .btn-row { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  button.primary, button.secondary {
+    font-family: inherit; font-size: 14.5px; font-weight: 700; padding: 13px 28px;
+    border-radius: 8px; border: 1px solid transparent; cursor: pointer;
+    transition: all 0.25s var(--ease); letter-spacing: 0.01em;
+    position: relative; overflow: hidden;
+  }
+  button.primary {
+    background: var(--grad-red);
+    color: #fff;
+    box-shadow: var(--shadow-red), 0 0 0 1px rgba(255,255,255,0.1) inset;
+  }
+  button.primary::before {
+    content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    transition: left 0.6s var(--ease);
+  }
+  button.primary:hover {
+    background: var(--grad-red-rich);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(200,16,46,0.35), 0 12px 32px rgba(200,16,46,0.22), 0 0 0 1px rgba(255,255,255,0.15) inset;
+  }
+  button.primary:hover::before { left: 100%; }
+  button.primary:active { transform: translateY(0); transition-duration: 0.1s; }
+  button.primary:disabled { background: #aaa; cursor: not-allowed; box-shadow: none; transform: none; }
+  button.secondary {
+    background: rgba(255,255,255,0.8); color: var(--forest);
+    border-color: var(--line); backdrop-filter: blur(8px);
+  }
+  button.secondary:hover {
+    border-color: var(--forest); background: #fff;
+    transform: translateY(-2px); box-shadow: var(--shadow-sm);
+  }
+  button.secondary:active { transform: translateY(0); }
+  button.full { width: 100%; }
+  .reco-specs {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px; background: var(--line-soft); border: 1px solid var(--line-soft);
+    border-radius: 8px; overflow: hidden; margin-top: 12px;
+    box-shadow: var(--shadow-xs);
+  }
+  .spec-cell {
+    background: #fff; padding: 14px 16px;
+    transition: background 0.2s var(--ease);
+    position: relative;
+  }
+  .spec-cell:hover { background: linear-gradient(180deg, #fff 0%, #fafaf5 100%); }
+  .spec-cell .k {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--ink-subtle); margin-bottom: 6px; font-weight: 700;
+  }
+  .spec-cell .v {
+    font-size: 17px; font-weight: 800; color: var(--forest-dark);
+    font-variant-numeric: tabular-nums; letter-spacing: -0.015em;
+  }
+  .warn-box {
+    background: #FEF3C7; border-left: 3px solid var(--warn);
+    padding: 12px 16px; font-size: 13px; color: #78350F; border-radius: 5px; margin: 14px 0;
+    line-height: 1.6;
+  }
+  .value-add-box {
+    background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+    border-left: 3px solid var(--ok);
+    padding: 14px 18px; font-size: 13.5px; color: #064E3B;
+    border-radius: 7px; margin: 14px 0;
+    line-height: 1.6; box-shadow: var(--shadow-xs);
+    position: relative;
+  }
+  .value-add-box .va-title {
+    font-weight: 700; font-size: 13.5px; color: var(--ok);
+    margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+    letter-spacing: 0.01em;
+  }
+  .value-add-box .va-title::before {
+    content: '✦'; color: var(--ok); font-size: 16px; font-weight: 400;
+  }
+  .value-add-box .va-body { color: #065F46; font-weight: 500; }
+  .bom-table {
+    width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 12px;
+    border-radius: 10px; overflow: hidden; border: 1px solid var(--line-soft);
+    box-shadow: var(--shadow-sm);
+  }
+  .bom-table th, .bom-table td { padding: 13px 16px; text-align: left; border-bottom: 1px solid var(--line-soft); }
+  .bom-table tbody tr:last-child td { border-bottom: none; }
+  .bom-table tbody tr { transition: background 0.15s var(--ease); }
+  .bom-table tbody tr:hover td { background: #fafaf5; }
+  .bom-table th {
+    background: var(--grad-forest); color: #fff;
+    font-weight: 700; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.1em;
+  }
+  .bom-table td.qty {
+    font-weight: 800; font-variant-numeric: tabular-nums;
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    color: var(--cavitak-red); font-size: 15px;
+  }
+  .bom-table td:first-child { font-weight: 800; color: var(--forest-dark); letter-spacing: 0.01em; }
+  .bom-table td { font-weight: 500; }
+  .log-empty { text-align: center; padding: 56px 24px; color: var(--ink-subtle); font-style: italic; font-size: 14px; }
+
+  /* ================================================================= */
+  /* ADMIN DASHBOARD — PREMIUM ANALYTICS VIEW                           */
+  /* ================================================================= */
+
+  /* Hero welcome header specifically for the dashboard */
+  .dash-hero {
+    background: var(--grad-forest-rich);
+    color: #fff; padding: 28px 32px; border-radius: 14px;
+    margin-bottom: 22px;
+    position: relative; overflow: hidden;
+    box-shadow: var(--shadow-forest);
+  }
+  .dash-hero::before {
+    content: ''; position: absolute; top: -60px; right: -60px; width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(196,169,98,0.16) 0%, transparent 65%);
+    pointer-events: none; border-radius: 50%;
+  }
+  .dash-hero::after {
+    content: ''; position: absolute; bottom: -80px; left: -60px; width: 240px; height: 240px;
+    background: radial-gradient(circle, rgba(200,16,46,0.14) 0%, transparent 65%);
+    pointer-events: none; border-radius: 50%;
+  }
+  .dash-hero-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .dash-hero-eyebrow {
+    font-family: 'Fraunces', serif; font-size: 13px; font-weight: 500;
+    font-style: italic; color: #E8D5A0;
+    letter-spacing: 0.04em; margin-bottom: 4px;
+  }
+  .dash-hero-title {
+    font-family: 'Fraunces', serif; font-size: 30px; font-weight: 600;
+    letter-spacing: -0.02em; margin-bottom: 4px; line-height: 1.1;
+    background: linear-gradient(135deg, #ffffff 0%, #E8D5A0 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .dash-hero-sub {
+    font-size: 14.5px; opacity: 0.92; font-weight: 500;
+    max-width: 680px; line-height: 1.55;
+  }
+  .dash-hero-sub strong, .dash-hero-sub b {
+    color: #E8D5A0; font-weight: 700;
+  }
+  .dash-hero-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; opacity: 0.7; letter-spacing: 0.12em; text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  /* KPI Stat Grid */
+  .dash-stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 16px; margin-bottom: 22px;
+  }
+  .dash-stat {
+    background: var(--paper);
+    border: 1px solid var(--line-soft); border-radius: 14px;
+    padding: 22px 24px; box-shadow: var(--shadow-sm);
+    position: relative; overflow: hidden;
+    transition: all 0.3s var(--ease);
+  }
+  .dash-stat:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow);
+  }
+  .dash-stat::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--grad-red);
+  }
+  .dash-stat.tone-forest::before { background: var(--grad-forest); }
+  .dash-stat.tone-gold::before { background: linear-gradient(135deg, #C4A962 0%, #8B7940 100%); }
+  .dash-stat.tone-teal::before { background: linear-gradient(135deg, #14B8A6 0%, #0D766E 100%); }
+  .dash-stat::after {
+    content: ''; position: absolute; top: -30px; right: -30px; width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(27,67,50,0.04) 0%, transparent 70%);
+    pointer-events: none; border-radius: 50%;
+  }
+  .dash-stat .lbl {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--ink-subtle); font-weight: 800; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .dash-stat .val {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-size: 36px; font-weight: 700; color: var(--forest-dark);
+    letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .dash-stat .sub {
+    font-size: 11.5px; color: var(--ink-soft); margin-top: 8px; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .dash-stat .sub-dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ok);
+  }
+
+  /* Charts area */
+  .dash-charts {
+    display: grid; grid-template-columns: 2fr 1fr;
+    gap: 18px; margin-bottom: 22px;
+  }
+  .chart-card {
+    background: var(--paper);
+    border: 1px solid var(--line-soft); border-radius: 14px;
+    padding: 24px 26px; box-shadow: var(--shadow-sm);
+  }
+  .chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--line-soft); }
+  .chart-title {
+    font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600;
+    color: var(--forest-dark); letter-spacing: -0.015em;
+  }
+  .chart-meta { font-size: 11px; color: var(--ink-subtle); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* Bar chart rows */
+  .bar-row { display: grid; grid-template-columns: 140px 1fr 46px; gap: 14px; align-items: center; padding: 8px 0; }
+  .bar-row-label {
+    font-size: 13px; color: var(--forest-dark); font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .bar-row-track {
+    height: 10px; background: #F0EDE4; border-radius: 6px;
+    position: relative; overflow: hidden;
+  }
+  .bar-row-fill {
+    height: 100%; background: var(--grad-red); border-radius: 6px;
+    position: relative; box-shadow: 0 1px 2px rgba(200,16,46,0.3);
+    transition: width 0.6s var(--ease);
+  }
+  .bar-row-fill.tone-forest { background: var(--grad-forest); box-shadow: 0 1px 2px rgba(27,67,50,0.3); }
+  .bar-row-fill.tone-gold { background: linear-gradient(90deg, #C4A962 0%, #8B7940 100%); }
+  .bar-row-value {
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
+    color: var(--forest-dark); text-align: right; font-variant-numeric: tabular-nums;
+  }
+  .chart-empty { text-align: center; padding: 30px 0; color: var(--ink-subtle); font-size: 13px; font-style: italic; }
+
+  /* Donut / stage breakdown */
+  .stage-list { display: flex; flex-direction: column; gap: 10px; }
+  .stage-row { display: grid; grid-template-columns: 14px 1fr 40px; gap: 10px; align-items: center; padding: 6px 0; }
+  .stage-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .stage-label { font-size: 13px; color: var(--forest-dark); font-weight: 600; }
+  .stage-count { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--forest-dark); text-align: right; }
+
+  /* Filter bar — premium treatment */
+  .filter-bar {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px; margin-bottom: 16px;
+  }
+  .filter-bar .field { margin-bottom: 0; }
+  .filter-bar input, .filter-bar select {
+    font-size: 13.5px; padding: 10px 14px; font-weight: 600;
+  }
+  .filter-actions {
+    display: flex; gap: 10px; margin-bottom: 0; flex-wrap: wrap; align-items: center;
+    padding-top: 14px; border-top: 1px dashed var(--line-soft);
+  }
+  .filter-summary {
+    font-size: 12.5px; color: var(--ink-soft); margin-left: auto; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .filter-summary-count {
+    background: var(--grad-forest); color: #fff;
+    padding: 3px 10px; border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px; font-weight: 700;
+  }
+
+  /* Results table upgrades */
+  .log-table {
+    width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 0;
+    border-radius: 10px; overflow: hidden; border: 1px solid var(--line-soft);
+  }
+  .log-table th {
+    background: var(--grad-forest); color: #fff;
+    padding: 12px 14px; text-align: left;
+    font-weight: 800; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.1em;
+    border-bottom: none; white-space: nowrap;
+  }
+  .log-table td {
+    padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--line-soft);
+    white-space: nowrap; font-weight: 500;
+  }
+  .log-table tbody tr { transition: background 0.15s var(--ease); }
+  .log-table tbody tr:hover td { background: #fafaf5; }
+  .log-table tbody tr:last-child td { border-bottom: none; }
+  .log-table td.col-proj { font-weight: 800; color: var(--forest-dark); letter-spacing: -0.005em; }
+  .log-table td.col-model {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-weight: 800; color: var(--cavitak-red); font-size: 12px;
+  }
+  .log-table td.col-num {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px;
+  }
+  .stage-pill {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .stage-pill.won { background: #D1FAE5; color: #065F46; }
+  .stage-pill.proposal, .stage-pill.design { background: #FEF3C7; color: #78350F; }
+  .stage-pill.qualified, .stage-pill.lead { background: #DBEAFE; color: #1E40AF; }
+  .stage-pill.lost { background: #FEE2E2; color: #991B1B; }
+  .stage-pill.hold { background: #F3F4F6; color: #4B5563; }
+  .error-msg {
+    background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+    color: #991B1B; padding: 12px 16px; border-radius: 7px; font-size: 13px;
+    margin-bottom: 14px; display: none; font-weight: 500;
+    border-left: 3px solid #DC2626; box-shadow: var(--shadow-xs);
+  }
+  .error-msg.show { display: block; animation: shake 0.4s var(--ease); }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+  .info-msg {
+    background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%);
+    color: #166534; padding: 12px 16px; border-radius: 7px; font-size: 13px;
+    margin-bottom: 14px; display: none; font-weight: 500;
+    border-left: 3px solid var(--ok); box-shadow: var(--shadow-xs);
+  }
+  .info-msg.show { display: block; }
+  .hidden { display: none !important; }
+  @media (max-width: 700px) {
+    .grid, .screen-grid { grid-template-columns: 1fr; }
+    .page { padding: 20px 14px 60px; }
+    .page-title { font-size: 26px; }
+    .card { padding: 20px; }
+    .app-header { padding: 14px 18px; }
+    .brand-mark { font-size: 17px; }
+    .login-card { padding: 36px 28px 28px; }
+    .login-title { font-size: 28px; }
+    .dash-charts { grid-template-columns: 1fr; }
+    .dash-hero { padding: 22px 22px; }
+    .dash-hero-title { font-size: 24px; }
+    .dash-stat .val { font-size: 30px; }
+    .bar-row { grid-template-columns: 100px 1fr 40px; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="tvone-logo.png" alt="tvONE" onerror="this.style.display='none'">
+    </div>
+    <div class="login-title">CALICO PRO Configurator</div>
+    <div class="login-tagline">Command every pixel</div>
+    <span class="login-accent"></span>
+    <div id="loginError" class="error-msg">Invalid username or password.</div>
+    <div class="field"><label>Username</label><input type="text" id="loginUser" autocomplete="username" placeholder="e.g. dipen"></div>
+    <div class="field"><label>Password</label><input type="password" id="loginPass" autocomplete="current-password" placeholder="••••••••"></div>
+    <div style="margin-top: 22px;"><button class="primary full" onclick="attemptLogin()">Sign in</button></div>
+    <div class="login-contact">
+      <div class="login-contact-label">For access or technical queries</div>
+      <div class="login-contact-name">Dipenkumar Gajjar</div>
+      <div class="login-contact-links">
+        <a href="mailto:dipen.g@cavitak.com">dipen.g@cavitak.com</a>
+        <span class="sep">·</span>
+        <a href="tel:+918160756906">+91 8160 756 906</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen" class="hidden">
+  <header class="app-header">
+    <div class="brand">
+      <img src="tvone-logo.png" alt="tvONE" onerror="this.style.display='none'" style="height:32px; width:auto; filter: brightness(0) invert(1)">
+      <div style="height:32px; width:1px; background:rgba(255,255,255,0.2)"></div>
+      <div>
+        <div class="brand-sub">CALICO PRO Configurator</div>
+        <div class="brand-tagline">Command every pixel</div>
+      </div>
+    </div>
+    <div class="user-badge">
+      <span id="userLabel"></span>
+      <span id="roleLabel" class="role-pill"></span>
+      <button onclick="startNewConfig()">New Config</button>
+      <button onclick="showView('log')" id="logBtn">Dashboard</button>
+      <button onclick="logout()">Exit</button>
+    </div>
+  </header>
+
+  <!-- FORM -->
+  <div id="formView" class="page">
+    <h1 class="page-title">CALICO PRO Configuration</h1>
+    <p class="page-sub">Engineered to <strong>size the right CALICO PRO chassis</strong> for your project — from single-screen LED walls to mixed multi-display installations. Enter your requirements and get a <strong>validated BOM</strong> instantly.</p>
+
+    <div class="card">
+      <div class="card-title">Project Context</div>
+      <div class="grid">
+        <div class="field"><label>Project name <span class="req">*</span></label><input id="f_project" type="text" placeholder="e.g. HQ Lobby LED Wall"></div>
+        <div class="field"><label>Project stage <span class="req">*</span></label>
+          <select id="f_stage">
+            <option value="">— Select —</option>
+            <option>Lead</option><option>Qualified</option><option>Proposal / Quoted</option>
+            <option>Design / Technical Stage</option><option>Won / Order Booked</option>
+            <option>Lost</option><option>On Hold</option>
+          </select>
+        </div>
+        <div class="field"><label>End-user / Client <span class="req">*</span></label><input id="f_endUser" type="text" placeholder="e.g. Reliance Retail Ltd."></div>
+        <div class="field"><label>Partner / SI / Dealer <span class="req">*</span></label><input id="f_partner" type="text" placeholder="System integrator / dealer"></div>
+        <div class="field"><label>Consultant <span class="req">*</span></label><input id="f_consultant" type="text" placeholder="AV consultant / architect"></div>
+        <div class="field"><label>Venue name</label><input id="f_venueName" type="text" placeholder="e.g. Jio World Centre, BKC"></div>
+        <div class="field"><label>Venue type <span class="req">*</span></label>
+          <select id="f_venueType">
+            <option value="">— Select —</option>
+            <option>Corporate Office / HQ</option><option>Lobby / Reception</option>
+            <option>Boardroom / Meeting Room</option><option>Auditorium</option>
+            <option>Training Room</option><option>Command / Control Room</option>
+            <option>NOC / Operations Center</option><option>Broadcast Studio</option>
+            <option>Retail Store / Showroom</option><option>Shopping Mall</option>
+            <option>Hotel / Resort</option><option>Restaurant / Cafe</option>
+            <option>Convention Center</option><option>Exhibition Hall</option>
+            <option>Museum / Gallery</option><option>Stadium / Arena</option>
+            <option>House of Worship</option><option>Temple</option>
+            <option>Educational Institute</option><option>University / College</option>
+            <option>Airport / Transit Hub</option><option>Hospital / Healthcare</option>
+            <option>Government / Public Sector</option><option>Experience Center</option>
+            <option>Bar / Nightclub</option><option>Digital Billboard / Outdoor</option>
+            <option>Rental / Live Event</option><option>Residential</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field"><label>City <span class="req">*</span></label><input id="f_city" type="text" placeholder="e.g. Mumbai"></div>
+        <div class="field"><label>State <span class="req">*</span></label>
+          <select id="f_state">
+            <option value="">— Select —</option>
+            <option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option>
+            <option>Bihar</option><option>Chhattisgarh</option><option>Goa</option>
+            <option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option>
+            <option>Jharkhand</option><option>Karnataka</option><option>Kerala</option>
+            <option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option>
+            <option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option>
+            <option>Odisha</option><option>Punjab</option><option>Rajasthan</option>
+            <option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option>
+            <option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option>
+            <option>West Bengal</option><option>Delhi</option><option>Chandigarh</option>
+            <option>Jammu & Kashmir</option><option>Ladakh</option><option>Puducherry</option>
+            <option>Andaman & Nicobar</option><option>Dadra & Nagar Haveli and Daman & Diu</option>
+            <option>Lakshadweep</option><option>International</option>
+          </select>
+        </div>
+        <div class="field full"><label>Primary contact (name, phone/email) <span class="req">*</span></label><input id="f_contact" type="text" placeholder="Main point of contact for this project"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Output Configuration</div>
+      <div class="grid">
+        <div class="field"><label>Output type <span class="req">*</span></label>
+          <select id="f_outputType" onchange="onOutputTypeChange()">
+            <option value="LED">LED (direct-view)</option>
+            <option value="Projector">Projector (count only)</option>
+            <option value="Mixed">Mixed (LED + Projector)</option>
+          </select>
+        </div>
+        <div class="field"><label>Need SDI output?</label>
+          <select id="f_outputSignal" onchange="onOutputSignalChange()">
+            <option value="HDMI">No — HDMI only</option>
+            <option value="SDI">Yes — SDI required (broadcast / medical)</option>
+          </select>
+          <div class="helper" id="sdiNote" style="display:none; color:var(--warn); margin-top:4px"><b>SDI path:</b> C7-PRO-2200 + SDI_12G 4-OUT card. Max 4 SDI ports per chassis. Native 4 HDMI outputs remain available.</div>
+        </div>
+        <div class="field" id="sdiCountField" style="display:none"><label>SDI outputs needed <span class="req">*</span></label>
+          <input id="f_sdiCount" type="number" min="1" max="4" placeholder="e.g. 2" oninput="updateTotals()">
+          <div class="helper">Max 4 SDI ports (from SDI_12G 4-OUT card).</div>
+        </div>
+        <div class="field" id="projectorCountField" style="display:none"><label>Number of projectors <span class="req">*</span></label>
+          <input id="f_projectorCount" type="number" min="1" max="20" placeholder="e.g. 3" oninput="updateTotals()">
+          <div class="helper">Each projector uses 1 output port. If more than 1, edge blend is assumed.</div>
+        </div>
+        <div class="field" id="projectorResField" style="display:none"><label>Projector resolution <span class="req">*</span></label>
+          <select id="f_projectorRes" onchange="updateTotals()">
+            <option value="4K">4K (3840×2160)</option>
+            <option value="FHD">FHD (1920×1080)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="ledCard">
+      <div class="card-title">LED Screens · Resolution Calculator</div>
+      <div class="helper" style="margin-bottom:14px">Enter each screen's pixel resolution. Use the mm calculator below if only physical dimensions are known.</div>
+      <div id="screensContainer"></div>
+      <div class="btn-row" style="margin-top:6px">
+        <button class="secondary" onclick="addScreen()">+ Add Screen</button>
+        <button class="btn-tiny" onclick="removeLastScreen()">Remove Last Screen</button>
+      </div>
+      <div class="totals-strip">
+        <div><div class="k">LED Pixels</div><div class="v" id="tot_pixels">—</div></div>
+        <div><div class="k">LED Output Ports</div><div class="v" id="tot_led_ports">—</div></div>
+        <div><div class="k">Projector Ports</div><div class="v" id="tot_proj_ports">—</div></div>
+        <div><div class="k">Total Ports Needed</div><div class="v" id="tot_ports" style="color:#FFE5A0">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Technical Requirements</div>
+      <div class="grid">
+        <div class="field"><label>Total video sources / inputs needed <span class="req">*</span></label>
+          <input id="f_inputs" type="number" min="1" max="32" placeholder="e.g. 6" oninput="onInputsChange()">
+          <div class="helper">Any video source — HDMI, SDI, HDBaseT, IP. 1200 max 6; 2200 max 8 native.</div>
+        </div>
+        <div class="field"><label>Primary signal types <span class="req">*</span></label>
+          <select id="f_signals" onchange="onSignalsChange()">
+            <option value="HDMI">HDMI only</option>
+            <option value="HDMI_SDI">HDMI + SDI</option>
+            <option value="HDMI_HDBT">HDMI + HDBaseT</option>
+            <option value="HDMI_IP">HDMI + IP streaming</option>
+            <option value="MIXED">Multiple types</option>
+          </select>
+        </div>
+        <div class="field" id="hdmi4kField"><label>HDMI Inputs @ 4K</label>
+          <input id="f_inputs4K" type="number" min="0" placeholder="e.g. 2" oninput="onInputsChange()">
+        </div>
+        <div class="field" id="hdmiFhdField"><label>HDMI Inputs @ FHD</label>
+          <input id="f_inputsFHD" type="number" min="0" placeholder="e.g. 4" oninput="onInputsChange()">
+        </div>
+        <div class="field"><label>Budget tier</label>
+          <select id="f_budget">
+            <option value="entry">Entry</option>
+            <option value="mid" selected>Mid</option>
+            <option value="premium">Premium</option>
+            <option value="open">Open / Not a constraint</option>
+          </select>
+        </div>
+        <div class="field"><label>Expected close month</label>
+          <input id="f_close" type="month">
+        </div>
+        <div class="field full"><label>Notes / special requirements</label>
+          <textarea id="f_notes" placeholder="HDR requirements, layout details, reference installs, 8K sources, audio handling, etc."></textarea>
+        </div>
+      </div>
+      <div id="inputsWarn" class="warn-box" style="display:none; margin-top:10px"></div>
+      <div id="formError" class="error-msg" style="margin-top: 14px;"></div>
+      <div id="formInfo" class="info-msg" style="margin-top: 14px;"></div>
+      <div class="btn-row">
+        <button class="primary" onclick="calculateAndLog()" id="calcBtn">Calculate & Log</button>
+        <button class="secondary" onclick="resetForm()">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="resultView" class="page hidden">
+    <h1 class="page-title">Recommendation & BOM</h1>
+    <div id="recoOutput"></div>
+    <div class="btn-row">
+      <button class="primary" onclick="exportToExcel()">⬇ Download Excel (.xlsx)</button>
+      <button class="secondary" onclick="startNewConfig()">New Configuration</button>
+      <button class="secondary" onclick="window.print()">Print</button>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div id="logView" class="page hidden">
+    <!-- HERO HEADER -->
+    <div class="dash-hero">
+      <div class="dash-hero-head">
+        <div>
+          <div class="dash-hero-eyebrow">Command every pixel</div>
+          <div class="dash-hero-title">Admin Dashboard</div>
+          <div class="dash-hero-sub"><strong>Live intelligence</strong> across every CALICO PRO opportunity your team is working on. Track pipeline, spot trends, and drive follow-ups from <strong>one command centre</strong>.</div>
+        </div>
+        <div class="dash-hero-meta" id="dashMeta">Loading…</div>
+      </div>
+    </div>
+
+    <!-- KPI STATS -->
+    <div class="dash-stats">
+      <div class="dash-stat">
+        <div class="lbl">Total Submissions</div>
+        <div class="val" id="stat_total">0</div>
+        <div class="sub"><span class="sub-dot"></span><span id="stat_total_note">filtered view</span></div>
+      </div>
+      <div class="dash-stat tone-forest">
+        <div class="lbl">Unique Projects</div>
+        <div class="val" id="stat_projects">0</div>
+        <div class="sub"><span id="stat_projects_note">in scope</span></div>
+      </div>
+      <div class="dash-stat tone-gold">
+        <div class="lbl">Active Pipeline</div>
+        <div class="val" id="stat_pipeline">0</div>
+        <div class="sub"><span id="stat_pipeline_note">Won · Proposal · Design</span></div>
+      </div>
+      <div class="dash-stat tone-teal">
+        <div class="lbl">Unique Team Members</div>
+        <div class="val" id="stat_users">0</div>
+        <div class="sub"><span id="stat_users_note">submitting</span></div>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="dash-charts">
+      <div class="chart-card">
+        <div class="chart-head">
+          <div class="chart-title">Submissions by Team Member</div>
+          <div class="chart-meta" id="chart_users_meta">Top 8</div>
+        </div>
+        <div id="chart_users"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head">
+          <div class="chart-title">Pipeline Stage</div>
+          <div class="chart-meta">breakdown</div>
+        </div>
+        <div id="chart_stages"></div>
+      </div>
+    </div>
+
+    <div class="dash-charts">
+      <div class="chart-card">
+        <div class="chart-head">
+          <div class="chart-title">Top Partners / System Integrators</div>
+          <div class="chart-meta">Top 6 by volume</div>
+        </div>
+        <div id="chart_partners"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head">
+          <div class="chart-title">Chassis Mix</div>
+          <div class="chart-meta">recommended</div>
+        </div>
+        <div id="chart_models"></div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="card">
+      <div class="card-title">Filters & Search</div>
+      <div class="filter-bar">
+        <div class="field"><label>Project</label>
+          <input type="text" id="fl_project" placeholder="Project name…" oninput="applyFilters()">
+        </div>
+        <div class="field"><label>User</label>
+          <select id="fl_user" onchange="applyFilters()"><option value="">All users</option></select>
+        </div>
+        <div class="field"><label>Partner / SI</label>
+          <input type="text" id="fl_partner" placeholder="Partner name…" oninput="applyFilters()">
+        </div>
+        <div class="field"><label>Consultant</label>
+          <input type="text" id="fl_consultant" placeholder="Consultant name…" oninput="applyFilters()">
+        </div>
+        <div class="field"><label>Location (City / State)</label>
+          <input type="text" id="fl_location" placeholder="e.g. Mumbai, Gujarat…" oninput="applyFilters()">
+        </div>
+        <div class="field"><label>Chassis Model</label>
+          <select id="fl_model" onchange="applyFilters()">
+            <option value="">All models</option>
+            <option value="C7-PRO-1200">C7-PRO-1200</option>
+            <option value="C7-PRO-2200">C7-PRO-2200</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-actions">
+        <button class="secondary" onclick="refreshLog()">↻ Refresh</button>
+        <button class="secondary" onclick="clearFilters()">Clear Filters</button>
+        <button class="primary" onclick="exportLogCSV()">⬇ Export Filtered as CSV</button>
+        <div class="filter-summary" id="filterSummary"></div>
+      </div>
+    </div>
+
+    <!-- RESULTS TABLE -->
+    <div class="card">
+      <div class="card-title">Submissions <span id="logCount" style="font-size:13px;color:var(--ink-soft);font-weight:600;font-family:'Manrope',sans-serif;text-transform:none;letter-spacing:0;margin-left:6px"></span></div>
+      <div id="logContent" style="overflow-x:auto"></div>
+      <div id="logSource" style="font-size:11.5px; color:var(--ink-subtle); margin-top:14px; padding-top:12px; border-top: 1px dashed var(--line-soft); font-weight:600; letter-spacing:0.02em"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // =================================================================
+  // CONFIG — paste your Google Apps Script web app URL after deployment
+  // =================================================================
+  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwayDcgx3hJ0QJz32zsFbRYD_k7K1WsbgdIMcL0PfLjmmRlucqIbc1Hf-07nxow3d5Vvg/exec'; // e.g. 'https://script.google.com/macros/s/XXXX/exec'
+  const OFFLINE_MODE = !WEB_APP_URL;
+
+  // =================================================================
+  // USERS (local fallback; move to Google Sheet in production if desired)
+  // =================================================================
+  const USERS = {
+    'dipen':   { pass: 'cavitak@27052142', name: 'Dipenkumar Gajjar', role: 'superadmin' },
+    'mohit':   { pass: 'cavitak@123',      name: 'Mohit Chaturvedi',   role: 'user' },
+    'vipul':   { pass: 'cavitak@123',      name: 'Vipul Parihar',      role: 'user' },
+    'ranjith': { pass: 'cavitak@123',      name: 'Ranjith SR',         role: 'user' },
+    'sachhi':  { pass: 'cavitak@123',      name: 'Sachhi Kaushik',     role: 'user' },
+    'hritika':  { pass: 'cavitak@123',      name: 'Hritika Sawant',     role: 'user' },
+    'rahul':    { pass: 'cavitak@123',      name: 'Rahul Soyanter',     role: 'user' },
+    'rahuljain':{ pass: 'cavitak@123',      name: 'Rahul Jain',         role: 'user' },
+    'nikul':    { pass: 'cavitak@123',      name: 'Nikul Suthar',       role: 'user' },
+    'jenish':   { pass: 'cavitak@123',      name: 'Jenish Patel',       role: 'user' },
+    'rushang':  { pass: 'cavitak@123',      name: 'Rushang Mahale',     role: 'user' },
+    'hardik':   { pass: 'cavitak@123',      name: 'Hardik Barot',       role: 'user' },
+    'amit':     { pass: 'cavitak@123',      name: 'Amit Singh',         role: 'user' }
+  };
+
+  // =================================================================
+  // PRODUCT CATALOG — CALICO PRO 2200 output & input modules
+  // =================================================================
+  const CHASSIS = {
+    'C7-PRO-1200': {
+      model: 'CALICO PRO C7-PRO-1200', formFactor: '1RU', fixedChassis: true,
+      inputs: 6, outputs: 2, maxPortsNative: 2, redundantPSU: false,
+      tagline: 'Compact 1RU fixed-chassis processor — 6 inputs, 2 outputs.'
+    },
+    'C7-PRO-2200': {
+      model: 'CALICO PRO C7-PRO-2200', formFactor: '2RU', fixedChassis: false,
+      inputs: 8, outputs: 4, maxPortsNative: 4,
+      slots: { output: 1, inputHB: 1, inputLB: 1 }, redundantPSU: true,
+      tagline: '2RU processor — 8 inputs, 4 outputs native. Expandable with output and input cards.'
+    }
+  };
+
+  // Output cards (Slot 10 only)
+  const OUTPUT_CARDS = {
+    'HDMI_4K_4OUT':  { sku: 'C7-PRO-HDMI-4K4OUT', desc: 'HDMI 4K 4-OUT (4 ports @ 3840×2160)', ports: 4, resolution: '4K',  signal: 'HDMI' },
+    'HDMI_2K_8OUT':  { sku: 'C7-PRO-HDMI-2K8OUT', desc: 'HDMI 2K 8-OUT (8 ports @ 1920×1080)', ports: 8, resolution: 'FHD', signal: 'HDMI' },
+    'SDI_12G_4OUT':  { sku: 'C7-PRO-SDI-12G-4OUT', desc: 'SDI 12G 4-OUT (4 ports @ 4K)',       ports: 4, resolution: '4K',  signal: 'SDI'  }
+  };
+
+  // Input cards with slot constraints (HB = Slot 12 high bandwidth, LB = Slot 11 standard bandwidth)
+  const INPUT_CARDS = {
+    'HDMI_4K_4IN':   { sku: 'C7-PRO-HDMI-4K4IN',   desc: 'HDMI 4K 4-IN (4 ports @ 3840×2160)', ports: 4, resolution: '4K',  signal: 'HDMI',    slots: ['HB'] },
+    'HDMI_4K_2IN':   { sku: 'C7-PRO-HDMI-4K2IN',   desc: 'HDMI 4K 2-IN (2 ports @ 3840×2160)', ports: 2, resolution: '4K',  signal: 'HDMI',    slots: ['HB','LB'] },
+    'HDMI_2K_4IN':   { sku: 'C7-PRO-HDMI-2K4IN',   desc: 'HDMI 2K 4-IN (4 ports @ 1920×1080)', ports: 4, resolution: 'FHD', signal: 'HDMI',    slots: ['HB','LB'] },
+    'HDBASET_2IN':   { sku: 'C7-PRO-HDBT-2IN',     desc: 'HDBaseT 4K 2-IN (2 ports)',          ports: 2, resolution: '4K',  signal: 'HDBaseT', slots: ['HB','LB'] },
+    'SDI_12G_4IN':   { sku: 'C7-PRO-SDI-12G-4IN',  desc: 'SDI 12G 4-IN (4 ports @ 4K)',        ports: 4, resolution: '4K',  signal: 'SDI',     slots: ['HB'] },
+    'SDI_3G_4IN':    { sku: 'C7-PRO-SDI-3G-4IN',   desc: 'SDI 3G 4-IN (4 ports @ 1080p)',      ports: 4, resolution: 'FHD', signal: 'SDI',     slots: ['HB','LB'] },
+    'MEDIA_4K_IN':   { sku: 'C7-PRO-MEDIA-4K-IN',  desc: 'Media 4K Player input',              ports: 1, resolution: '4K',  signal: 'Media',   slots: ['HB','LB'] },
+    'AUDIO_2IN_4OUT':{ sku: 'C7-PRO-AUDIO',        desc: 'Audio 2-IN 4-OUT',                   ports: 2, resolution: 'N/A', signal: 'Audio',   slots: ['LB'] }
+  };
+
+  // Cross-slot pairing: given the card key in Slot 12 (HB), which input cards are allowed in Slot 11 (LB)?
+  // Undefined / empty Slot 12 = all LB-capable cards allowed (default behaviour)
+  const SLOT11_ALLOWED_WHEN_SLOT12 = {
+    'empty':         ['HDMI_4K_2IN','HDMI_2K_4IN','HDBASET_2IN','SDI_3G_4IN','MEDIA_4K_IN','AUDIO_2IN_4OUT'],
+    'HDMI_2K_4IN':   ['AUDIO_2IN_4OUT'],
+    'HDMI_4K_2IN':   ['HDMI_4K_2IN','MEDIA_4K_IN','AUDIO_2IN_4OUT'],
+    'HDMI_4K_4IN':   ['HDMI_4K_2IN','HDMI_2K_4IN','HDBASET_2IN','SDI_3G_4IN','MEDIA_4K_IN','AUDIO_2IN_4OUT'],
+    'HDBASET_2IN':   ['HDBASET_2IN','HDMI_4K_2IN','MEDIA_4K_IN','AUDIO_2IN_4OUT'],
+    'SDI_12G_4IN':   ['HDMI_4K_2IN','HDMI_2K_4IN','HDBASET_2IN','SDI_3G_4IN','MEDIA_4K_IN','AUDIO_2IN_4OUT'],
+    'SDI_3G_4IN':    ['AUDIO_2IN_4OUT'],
+    'MEDIA_4K_IN':   ['HDMI_4K_2IN','HDBASET_2IN','SDI_3G_4IN','MEDIA_4K_IN','AUDIO_2IN_4OUT']
+  };
+  const PORT_CAPACITY_4K60 = 3840 * 2160; // 8,294,400
+
+  // =================================================================
+  // STATE
+  // =================================================================
+  let currentUser = null;
+  let sessionLog = [];
+  let centralLog = [];
+  let lastResult = null;
+  let screenCount = 0;
+  const MAX_SCREENS = 10;
+
+  // =================================================================
+  // LOGIN
+  // =================================================================
+  function attemptLogin() {
+    const u = document.getElementById('loginUser').value.trim().toLowerCase();
+    const p = document.getElementById('loginPass').value;
+    const err = document.getElementById('loginError');
+    const rec = USERS[u];
+    if (!rec || rec.pass !== p) { err.classList.add('show'); return; }
+    err.classList.remove('show');
+    currentUser = { username: u, ...rec };
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+    document.getElementById('userLabel').textContent = currentUser.name;
+    document.getElementById('roleLabel').textContent = currentUser.role === 'superadmin' ? 'Super Admin' : 'Pre-sales';
+    if (currentUser.role !== 'superadmin') document.getElementById('logBtn').classList.add('hidden');
+    else document.getElementById('logBtn').classList.remove('hidden');
+    initScreens();
+    showView('form');
+  }
+  function logout() {
+    currentUser = null;
+    document.getElementById('loginUser').value = '';
+    document.getElementById('loginPass').value = '';
+    document.getElementById('appScreen').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); });
+  });
+
+  // =================================================================
+  // VIEWS
+  // =================================================================
+  function showView(v) {
+    ['form','result','log'].forEach(x => document.getElementById(x+'View').classList.add('hidden'));
+    document.getElementById(v+'View').classList.remove('hidden');
+    if (v === 'log') refreshLog();
+    window.scrollTo(0,0);
+  }
+  function startNewConfig() {
+    resetForm();
+    showView('form');
+  }
+
+  function onOutputTypeChange() {
+    const t = document.getElementById('f_outputType').value;
+    const showProj = (t === 'Projector' || t === 'Mixed');
+    document.getElementById('projectorCountField').style.display = showProj ? 'flex' : 'none';
+    document.getElementById('projectorResField').style.display = showProj ? 'flex' : 'none';
+    document.getElementById('ledCard').style.display = (t === 'Projector') ? 'none' : 'block';
+    updateTotals();
+  }
+  function onOutputSignalChange() {
+    const v = document.getElementById('f_outputSignal').value;
+    const isSDI = (v === 'SDI');
+    document.getElementById('sdiNote').style.display = isSDI ? 'block' : 'none';
+    document.getElementById('sdiCountField').style.display = isSDI ? 'flex' : 'none';
+    if (!isSDI) document.getElementById('f_sdiCount').value = '';
+    updateTotals();
+  }
+
+  // =================================================================
+  // LED SCREENS
+  // =================================================================
+  function initScreens() {
+    screenCount = 0;
+    document.getElementById('screensContainer').innerHTML = '';
+    addScreen();
+  }
+  function addScreen() {
+    if (screenCount >= MAX_SCREENS) { alert('Maximum ' + MAX_SCREENS + ' screens.'); return; }
+    screenCount++;
+    const idx = screenCount;
+    const html = `
+      <div class="screen-block" id="screen-${idx}">
+        <div class="screen-block-header">
+          <div class="screen-label">Screen ${idx}</div>
+          <div class="calc-readout" id="readout-${idx}">— px · — pixels · — ports</div>
+        </div>
+        <div class="screen-grid">
+          <div class="field"><label>Resolution Width (px) <span class="req">*</span></label>
+            <input type="number" min="0" id="resW-${idx}" placeholder="e.g. 1920" oninput="updateReadout(${idx}); updateTotals()"></div>
+          <div class="field"><label>Resolution Height (px) <span class="req">*</span></label>
+            <input type="number" min="0" id="resH-${idx}" placeholder="e.g. 1080" oninput="updateReadout(${idx}); updateTotals()"></div>
+          <div class="field"><label>LED pitch (mm)</label>
+            <input type="number" step="0.01" min="0.3" max="20" id="pitch-${idx}" placeholder="e.g. 2.5" oninput="updateReadout(${idx})"></div>
+        </div>
+        <div class="helper" id="mmInfo-${idx}" style="margin-top:10px; display:none; padding:10px 14px; background:#F0F7F3; border-left:3px solid var(--forest); border-radius:4px; color:var(--forest-dark); font-size:13px"></div>
+      </div>`;
+    document.getElementById('screensContainer').insertAdjacentHTML('beforeend', html);
+    updateTotals();
+  }
+  function removeLastScreen() {
+    if (screenCount <= 1) { alert('At least one screen required.'); return; }
+    document.getElementById('screen-' + screenCount).remove();
+    screenCount--;
+    updateTotals();
+  }
+  function updateReadout(idx) {
+    const rW = parseInt(document.getElementById('resW-' + idx).value) || 0;
+    const rH = parseInt(document.getElementById('resH-' + idx).value) || 0;
+    const pitch = parseFloat(document.getElementById('pitch-' + idx).value) || 0;
+    const px = rW * rH;
+    const ports = px > 0 ? Math.ceil(px / PORT_CAPACITY_4K60) : 0;
+    const el = document.getElementById('readout-' + idx);
+    if (rW && rH) el.textContent = rW + ' × ' + rH + ' · ' + (px/1e6).toFixed(2) + ' M px · ' + ports + ' port' + (ports !== 1 ? 's' : '');
+    else el.textContent = '— px · — pixels · — ports';
+
+    // Physical size info: show mm when pitch + resolution available
+    const mmEl = document.getElementById('mmInfo-' + idx);
+    if (rW > 0 && rH > 0 && pitch > 0) {
+      const wMm = Math.round(rW * pitch);
+      const hMm = Math.round(rH * pitch);
+      mmEl.style.display = 'block';
+      mmEl.innerHTML = '<b>Physical size:</b> ' + wMm.toLocaleString() + ' × ' + hMm.toLocaleString() + ' mm (' + (wMm/1000).toFixed(2) + ' × ' + (hMm/1000).toFixed(2) + ' m) — at ' + pitch + ' mm pitch';
+    } else {
+      mmEl.style.display = 'none';
+      mmEl.innerHTML = '';
+    }
+  }
+  function collectScreens() {
+    const screens = [];
+    for (let i = 1; i <= screenCount; i++) {
+      const rW = parseInt(document.getElementById('resW-' + i).value) || 0;
+      const rH = parseInt(document.getElementById('resH-' + i).value) || 0;
+      const pitch = parseFloat(document.getElementById('pitch-' + i).value) || 0;
+      const pixels = rW * rH;
+      const is4K = rW >= 3840 || rH >= 2160 || pixels >= 8000000;
+      // Per-screen port math: each screen gets its own ceiling (ports never shared across screens)
+      const portsForThisScreen = pixels > 0 ? Math.ceil(pixels / PORT_CAPACITY_4K60) : 0;
+      // Physical size derived from pitch
+      const widthMm = pitch > 0 ? Math.round(rW * pitch) : 0;
+      const heightMm = pitch > 0 ? Math.round(rH * pitch) : 0;
+      screens.push({
+        label: 'Screen ' + i, pitch: pitch,
+        resW: rW, resH: rH, pixels: pixels, fhdEligible: !is4K && pixels > 0,
+        ports: portsForThisScreen, widthMm: widthMm, heightMm: heightMm
+      });
+    }
+    return screens;
+  }
+  function onSignalsChange() {
+    const v = document.getElementById('f_signals').value;
+    const hasHDMI = v.indexOf('HDMI') === 0 || v === 'MIXED';
+    document.getElementById('hdmi4kField').style.display = hasHDMI ? 'flex' : 'none';
+    document.getElementById('hdmiFhdField').style.display = hasHDMI ? 'flex' : 'none';
+    onInputsChange();
+  }
+  function onInputsChange() {
+    const tot = parseInt(document.getElementById('f_inputs').value) || 0;
+    const in4K = parseInt(document.getElementById('f_inputs4K').value) || 0;
+    const inFHD = parseInt(document.getElementById('f_inputsFHD').value) || 0;
+    const warn = document.getElementById('inputsWarn');
+    const sum = in4K + inFHD;
+    if (!tot || (!in4K && !inFHD)) { warn.style.display = 'none'; return; }
+    if (sum > tot) {
+      warn.style.display = 'block';
+      warn.innerHTML = '⚠ HDMI 4K (' + in4K + ') + FHD (' + inFHD + ') = ' + sum + ' exceeds total inputs (' + tot + '). Adjust before calculating.';
+    } else if (sum < tot) {
+      warn.style.display = 'block';
+      warn.innerHTML = 'ℹ HDMI 4K + FHD = ' + sum + ' of ' + tot + ' total inputs. Remaining ' + (tot - sum) + ' input(s) are non-HDMI (SDI / HDBaseT / IP / other).';
+    } else {
+      warn.style.display = 'none';
+    }
+  }
+  function getProjectorLoad() {
+    // Projector ports = count (1 port per projector, regardless of 4K/FHD)
+    const t = document.getElementById('f_outputType').value;
+    if (t !== 'Projector' && t !== 'Mixed') return { count: 0, resolution: null, ports: 0 };
+    const count = parseInt(document.getElementById('f_projectorCount').value) || 0;
+    const res = document.getElementById('f_projectorRes').value;
+    return { count: count, resolution: res, ports: count };
+  }
+  function updateTotals() {
+    const screens = collectScreens();
+    const ledTotalPixels = screens.reduce((a, s) => a + s.pixels, 0);
+    // Per-screen port math: ceiling each screen, then sum
+    const ledPorts = screens.reduce((a, s) => a + s.ports, 0);
+    const proj = getProjectorLoad();
+    const hdmiPorts = ledPorts + proj.ports;
+    const sdiRequired = document.getElementById('f_outputSignal').value === 'SDI';
+    const sdiPorts = sdiRequired ? (parseInt(document.getElementById('f_sdiCount').value) || 0) : 0;
+
+    document.getElementById('tot_pixels').textContent = ledTotalPixels ? (ledTotalPixels/1e6).toFixed(2) + ' M' : '—';
+    document.getElementById('tot_led_ports').textContent = ledPorts || '—';
+    document.getElementById('tot_proj_ports').textContent = proj.ports || '—';
+    document.getElementById('tot_ports').textContent = sdiPorts > 0 ? hdmiPorts + ' HDMI + ' + sdiPorts + ' SDI' : hdmiPorts || '—';
+  }
+
+  // =================================================================
+  // RECOMMENDATION ENGINE
+  // =================================================================
+  function pickOutputCards(extraPortsNeeded, input) {
+    // Single output slot. Pick ONE card SKU that best matches needs.
+    // User-selected output signal type drives card choice (HDMI vs SDI).
+    // For HDMI: prefer 4K card; fall back to FHD 8-OUT only for FHD-only projects that fit.
+    if (extraPortsNeeded <= 0) return [];
+    const outputSignal = input.outputSignal || 'HDMI';
+    let chosen;
+    if (outputSignal === 'SDI') {
+      chosen = OUTPUT_CARDS.SDI_12G_4OUT;
+    } else {
+      const allScreensFHD = input.screens.length > 0 && input.screens.every(s => s.pixels <= 1920 * 1080);
+      const hasAny4K = input.screens.some(s => s.resW >= 3840 || s.resH >= 2160) || input.projectorRes === '4K';
+      if (allScreensFHD && !hasAny4K && extraPortsNeeded <= 8) {
+        chosen = OUTPUT_CARDS.HDMI_2K_8OUT;
+      } else {
+        chosen = OUTPUT_CARDS.HDMI_4K_4OUT;
+      }
+    }
+    const cardsNeeded = Math.ceil(extraPortsNeeded / chosen.ports);
+    return [{ card: chosen, qty: cardsNeeded }];
+  }
+
+  function pickInputCards(extraInputsNeeded, input) {
+    // Up to TWO input slots (11 = LB, 12 = HB). Need to pick cards honoring slot constraints.
+    if (extraInputsNeeded <= 0) return [];
+    const picks = [];
+    let remaining4K = Math.max(0, (input.inputs4K || 0) - 0); // any extra 4K inputs not met by native
+    let remainingFHD = Math.max(0, (input.inputsFHD || 0) - 0);
+    let remainingOther = extraInputsNeeded - remaining4K - remainingFHD;
+    if (remainingOther < 0) remainingOther = 0;
+    const signals = input.signals || 'HDMI';
+    const needSDI = signals.indexOf('SDI') >= 0;
+    const needHDBT = signals.indexOf('HDBT') >= 0;
+
+    // Start by trying to allocate 4K HDMI inputs using HDMI_4K_4IN (HB slot) first, then HDMI_4K_2IN
+    let slot12 = null, slot11 = null;
+    let added = 0;
+
+    if (remaining4K > 0) {
+      if (remaining4K >= 4) { slot12 = 'HDMI_4K_4IN'; added += 4; remaining4K -= 4; }
+      else if (remaining4K >= 2) { slot12 = 'HDMI_4K_2IN'; added += 2; remaining4K -= 2; }
+      else { slot12 = 'HDMI_4K_2IN'; added += 2; remaining4K = 0; }
+    } else if (remainingFHD > 0) {
+      slot12 = 'HDMI_2K_4IN'; added += 4; remainingFHD = Math.max(0, remainingFHD - 4);
+    } else if (needSDI && remainingOther > 0) {
+      slot12 = 'SDI_12G_4IN'; added += 4; remainingOther = Math.max(0, remainingOther - 4);
+    } else if (needHDBT && remainingOther > 0) {
+      slot12 = 'HDBASET_2IN'; added += 2; remainingOther = Math.max(0, remainingOther - 2);
+    } else if (remainingOther > 0) {
+      slot12 = 'HDMI_4K_2IN'; added += 2; remainingOther = Math.max(0, remainingOther - 2);
+    }
+
+    // Now pick Slot 11, respecting cross-slot pairing rules
+    const stillNeeded = extraInputsNeeded - added;
+    if (stillNeeded > 0) {
+      const allowed = SLOT11_ALLOWED_WHEN_SLOT12[slot12 || 'empty'] || [];
+      // Prefer matching type
+      const tryOrder = [];
+      if (remaining4K > 0) tryOrder.push('HDMI_4K_2IN');
+      if (remainingFHD > 0) tryOrder.push('HDMI_2K_4IN');
+      if (needSDI && remainingOther > 0) tryOrder.push('SDI_3G_4IN');
+      if (needHDBT && remainingOther > 0) tryOrder.push('HDBASET_2IN');
+      if (remainingOther > 0) tryOrder.push('HDMI_4K_2IN', 'HDMI_2K_4IN');
+      for (const candidate of tryOrder) {
+        if (allowed.indexOf(candidate) >= 0) {
+          slot11 = candidate;
+          break;
+        }
+      }
+    }
+
+    if (slot12) picks.push({ card: INPUT_CARDS[slot12], qty: 1, slot: 'HB (Slot 12)' });
+    if (slot11) picks.push({ card: INPUT_CARDS[slot11], qty: 1, slot: 'LB (Slot 11)' });
+    return picks;
+  }
+
+  function recommend(input) {
+    const ledPixels = input.screens.reduce((a, s) => a + s.pixels, 0);
+    // Per-screen port math: each screen's ports are ceiled, then summed. Ports never shared between screens.
+    const ledPorts = input.screens.reduce((a, s) => a + s.ports, 0);
+    // For display in Port Calculation tab, still carry a rawLedPorts for reference
+    const rawLedPorts = ledPixels / PORT_CAPACITY_4K60;
+    const projPorts = input.projectorCount || 0;
+
+    // Separate HDMI and SDI output accounting
+    const userWantsSDI = (input.outputSignal === 'SDI');
+    const sdiPortsNeeded = userWantsSDI ? (input.sdiCount || 0) : 0;
+    const hdmiPortsNeeded = ledPorts + projPorts;
+    const portsNeeded = hdmiPortsNeeded + sdiPortsNeeded;
+    const inputsNeeded = input.inputs;
+
+    const projPixelsPerUnit = input.projectorRes === '4K' ? PORT_CAPACITY_4K60 : (1920 * 1080);
+    const totalPixelsProcessed = ledPixels + (projPorts * projPixelsPerUnit);
+
+    const reasons = [];
+    const concerns = [];
+    const valueAdds = [];
+    let chassis;
+    let outputCardInfeasible = false;
+
+    // CHASSIS CASCADE
+    if (!userWantsSDI && hdmiPortsNeeded <= 2 && inputsNeeded <= 6) {
+      chassis = 'C7-PRO-1200';
+      reasons.push('HDMI output ports: ' + hdmiPortsNeeded + ' — fits C7-PRO-1200 (2 ports native)');
+      reasons.push('Inputs: ' + inputsNeeded + ' — fits C7-PRO-1200 (6 inputs native)');
+    } else {
+      chassis = 'C7-PRO-2200';
+      if (userWantsSDI) reasons.push('SDI output required — C7-PRO-2200 (1U does not support SDI)');
+      if (!userWantsSDI && hdmiPortsNeeded <= 4 && inputsNeeded <= 8) {
+        reasons.push('HDMI outputs: ' + hdmiPortsNeeded + ', Inputs: ' + inputsNeeded + ' — fit C7-PRO-2200 native');
+      }
+      if (hdmiPortsNeeded > 4) reasons.push('HDMI outputs: ' + hdmiPortsNeeded + ' — exceeds native 4, output card required');
+      if (inputsNeeded > 8) reasons.push('Inputs: ' + inputsNeeded + ' — exceeds native 8, input card required');
+    }
+
+    const model = CHASSIS[chassis];
+    const bom = [{
+      sku: chassis, description: model.model + ' — ' + model.formFactor + ' chassis',
+      qty: 1, notes: model.fixedChassis ? '1U fixed chassis' : '2U expandable chassis'
+    }];
+
+    if (chassis === 'C7-PRO-2200') {
+      const nativeHdmi = model.maxPortsNative; // 4
+
+      // OUTPUT CARD SELECTION — fixed combinations, Slot 10 holds exactly ONE card
+      if (userWantsSDI && hdmiPortsNeeded > nativeHdmi) {
+        outputCardInfeasible = true;
+        concerns.push('⚠ NO SINGLE-CHASSIS RECOMMENDATION — SDI output AND more than ' + nativeHdmi + ' HDMI outputs both requested. Slot 10 holds only ONE card (either SDI or HDMI expansion, not both). Requested: ' + hdmiPortsNeeded + ' HDMI + ' + sdiPortsNeeded + ' SDI. Multi-unit scenario required.');
+      } else if (userWantsSDI && sdiPortsNeeded > 4) {
+        outputCardInfeasible = true;
+        concerns.push('⚠ NO SINGLE-CHASSIS RECOMMENDATION — ' + sdiPortsNeeded + ' SDI outputs requested, but SDI_12G 4-OUT card provides max 4 ports. Multi-unit scenario required.');
+      } else if (!userWantsSDI && hdmiPortsNeeded > 12) {
+        outputCardInfeasible = true;
+        concerns.push('⚠ NO SINGLE-CHASSIS RECOMMENDATION — ' + hdmiPortsNeeded + ' HDMI outputs requested, but single C7-PRO-2200 maxes at 12 (native 4 × 4K + card 8 × FHD). Multi-unit scenario required.');
+      } else if (!userWantsSDI && hdmiPortsNeeded > 8 && hdmiPortsNeeded <= 12) {
+        // 9–12 HDMI → must use FHD 8-OUT card (4 × 4K native + 8 × FHD card)
+        bom.push({
+          sku: OUTPUT_CARDS.HDMI_2K_8OUT.sku,
+          description: OUTPUT_CARDS.HDMI_2K_8OUT.desc,
+          qty: 1,
+          notes: 'Adds 8 × FHD HDMI ports (native 4 × 4K HDMI remain). Used because 4K expansion card maxes at 8 total ports.'
+        });
+        reasons.push(hdmiPortsNeeded + ' HDMI outputs → HDMI_2K 8-OUT card (native 4 × 4K + card 8 × FHD = 12 HDMI ports total)');
+        concerns.push('Port mix: 4 outputs available at 4K (native HDMI) and 8 outputs at FHD (via HDMI_2K 8-OUT card). Map displays to 4K vs FHD paths during BOM review.');
+      } else if (!userWantsSDI && hdmiPortsNeeded > nativeHdmi) {
+        // 5–8 HDMI → HDMI_4K 4-OUT (all 4K)
+        bom.push({
+          sku: OUTPUT_CARDS.HDMI_4K_4OUT.sku,
+          description: OUTPUT_CARDS.HDMI_4K_4OUT.desc,
+          qty: 1,
+          notes: 'Adds 4 × 4K HDMI ports (native 4 + card 4 = 8 × 4K HDMI total)'
+        });
+        reasons.push(hdmiPortsNeeded + ' HDMI outputs → HDMI_4K 4-OUT card (native 4 + card 4 = 8 × 4K HDMI)');
+      } else if (userWantsSDI && sdiPortsNeeded > 0 && sdiPortsNeeded <= 4) {
+        // SDI mode, HDMI ≤ 4 → SDI card, native HDMI remain usable
+        bom.push({
+          sku: OUTPUT_CARDS.SDI_12G_4OUT.sku,
+          description: OUTPUT_CARDS.SDI_12G_4OUT.desc,
+          qty: 1,
+          notes: 'Adds 4 × 4K SDI ports (' + sdiPortsNeeded + ' needed). Native 4 × 4K HDMI outputs remain available.'
+        });
+        reasons.push(sdiPortsNeeded + ' SDI output(s) → SDI_12G 4-OUT card');
+        if (hdmiPortsNeeded > 0) reasons.push(hdmiPortsNeeded + ' HDMI output(s) use native 4 × 4K HDMI ports (no HDMI expansion card needed)');
+      }
+      // HDMI ≤ 4 with no SDI → no output card, already handled (chassis only)
+
+      // INPUT CARD SELECTION
+      const extraIn = Math.max(0, inputsNeeded - model.inputs);
+      if (extraIn > 0) {
+        const inputCards = pickInputCards(extraIn, input);
+        inputCards.forEach(ic => {
+          bom.push({
+            sku: ic.card.sku, description: ic.card.desc, qty: ic.qty,
+            notes: 'Input expansion — adds ' + (ic.qty * ic.card.ports) + ' × ' + ic.card.resolution + ' ' + ic.card.signal + ' port(s)'
+          });
+        });
+        if (inputCards.length > 0) {
+          const totalAdded = inputCards.reduce((a, ic) => a + (ic.qty * ic.card.ports), 0);
+          reasons.push(extraIn + ' extra input(s) → ' + inputCards.map(ic => ic.qty + '× ' + ic.card.sku).join(' + ') + ' (adds ' + totalAdded + ' ports)');
+          if (totalAdded < extraIn) {
+            concerns.push('Input cards add ' + totalAdded + ' port(s) but ' + extraIn + ' needed. Single chassis cannot cover this input count — multi-unit scenario may be required.');
+          }
+        }
+      } else if (inputsNeeded > 0 && inputsNeeded <= model.inputs && (input.inputsFHD || 0) > 0) {
+        // VALUE-ADD: Inputs fit within native 8 (no card needed) AND user asked for FHD inputs.
+        // Since all 8 native inputs are 4K-capable, promote the FHD inputs to 4K at no extra cost.
+        const fhdCount = input.inputsFHD;
+        const k4Count = input.inputs4K || 0;
+        valueAdds.push({
+          title: 'Free upgrade: ' + fhdCount + ' × FHD inputs promoted to 4K',
+          body: 'Your requirement lists ' + k4Count + ' × 4K + ' + fhdCount + ' × FHD inputs. All ' + inputsNeeded + ' inputs fit within the C7-PRO-2200\'s 8 native 4K-capable inputs — so we deliver all ' + inputsNeeded + ' as 4K at no additional cost. No FHD input card required, and the customer gets full 4K capability across every source.'
+        });
+      }
+      if (inputsNeeded > 16) {
+        outputCardInfeasible = true;
+        concerns.push('⚠ NO SINGLE-CHASSIS RECOMMENDATION — ' + inputsNeeded + ' inputs requested exceed single-chassis max of 16. Multi-unit scenario required.');
+      }
+    }
+
+    if (input.projectorCount > 0) {
+      const mode = input.projectorCount > 1 ? 'edge blend' : 'standalone';
+      reasons.push(input.projectorCount + '× ' + input.projectorRes + ' projector' + (input.projectorCount>1?'s':'') + ' (' + mode + ') — 1 port per projector');
+    }
+
+    const hasCards = bom.length > 1;
+    return { chassis, model, reasons, concerns, valueAdds, bom, ledPixels, rawLedPorts, ledPorts, projPorts, hdmiPortsNeeded, sdiPortsNeeded, portsNeeded, totalPixelsProcessed, hasCards, outputCardInfeasible };
+  }
+
+  // =================================================================
+  // CALCULATE + LOG
+  // =================================================================
+  async function calculateAndLog() {
+    const err = document.getElementById('formError');
+    const info = document.getElementById('formInfo');
+    err.classList.remove('show'); info.classList.remove('show');
+
+    const proj = getProjectorLoad();
+    const input = {
+      project: document.getElementById('f_project').value.trim(),
+      stage: document.getElementById('f_stage').value,
+      endUser: document.getElementById('f_endUser').value.trim(),
+      partner: document.getElementById('f_partner').value.trim(),
+      consultant: document.getElementById('f_consultant').value.trim(),
+      venueName: document.getElementById('f_venueName').value.trim(),
+      venueType: document.getElementById('f_venueType').value,
+      city: document.getElementById('f_city').value.trim(),
+      state: document.getElementById('f_state').value,
+      contact: document.getElementById('f_contact').value.trim(),
+      outputType: document.getElementById('f_outputType').value,
+      outputSignal: document.getElementById('f_outputSignal').value,
+      sdiCount: parseInt(document.getElementById('f_sdiCount').value) || 0,
+      projectorCount: proj.count,
+      projectorRes: proj.resolution,
+      projectorPorts: proj.ports,
+      screens: collectScreens().filter(s => s.pixels > 0),
+      inputs: parseInt(document.getElementById('f_inputs').value) || 0,
+      inputs4K: parseInt(document.getElementById('f_inputs4K').value) || 0,
+      inputsFHD: parseInt(document.getElementById('f_inputsFHD').value) || 0,
+      signals: document.getElementById('f_signals').value,
+      budget: document.getElementById('f_budget').value,
+      close: document.getElementById('f_close').value,
+      notes: document.getElementById('f_notes').value.trim()
+    };
+
+    // Build a list of { id, label } pairs for required fields in the order they appear on the page
+    const requiredFields = [];
+    if (!input.project)    requiredFields.push({ id: 'f_project',    label: 'Project name' });
+    if (!input.stage)      requiredFields.push({ id: 'f_stage',      label: 'Project stage' });
+    if (!input.endUser)    requiredFields.push({ id: 'f_endUser',    label: 'End-user / Client' });
+    if (!input.partner)    requiredFields.push({ id: 'f_partner',    label: 'Partner / SI / Dealer' });
+    if (!input.consultant) requiredFields.push({ id: 'f_consultant', label: 'Consultant' });
+    if (!input.venueType)  requiredFields.push({ id: 'f_venueType',  label: 'Venue type' });
+    if (!input.city)       requiredFields.push({ id: 'f_city',       label: 'City' });
+    if (!input.state)      requiredFields.push({ id: 'f_state',      label: 'State' });
+    if (!input.contact)    requiredFields.push({ id: 'f_contact',    label: 'Primary contact' });
+    if ((input.outputType === 'Projector' || input.outputType === 'Mixed') && !input.projectorCount) {
+      requiredFields.push({ id: 'f_projectorCount', label: 'Number of projectors' });
+    }
+    if (input.outputSignal === 'SDI' && (!input.sdiCount || input.sdiCount < 1 || input.sdiCount > 4)) {
+      requiredFields.push({ id: 'f_sdiCount', label: 'SDI output count (1 to 4)' });
+    }
+    if (!input.inputs)     requiredFields.push({ id: 'f_inputs',     label: 'Total inputs needed' });
+
+    // Semantic errors that don't map to a single empty field
+    const semanticErrors = [];
+    if (input.outputType === 'LED' && input.screens.length === 0) {
+      semanticErrors.push('At least one LED screen with valid resolution (scroll to LED Screens section)');
+    }
+    if (input.outputType === 'Mixed' && input.screens.length === 0 && !input.projectorCount) {
+      semanticErrors.push('At least one LED screen or projector count required');
+    }
+    if (input.inputs4K + input.inputsFHD > input.inputs) {
+      semanticErrors.push('HDMI 4K + FHD inputs exceed total inputs — adjust values');
+    }
+
+    // Clear any previous .field-error states
+    document.querySelectorAll('.field-error').forEach(function(n) { n.classList.remove('field-error'); });
+
+    if (requiredFields.length || semanticErrors.length) {
+      // Mark all empty fields with red border
+      requiredFields.forEach(function(f) {
+        const el = document.getElementById(f.id);
+        if (el) {
+          el.classList.add('field-error');
+          // Auto-clear the error when user fills in that field
+          const clear = function() {
+            if (el.value && el.value.toString().trim() !== '') {
+              el.classList.remove('field-error');
+              el.removeEventListener('input', clear);
+              el.removeEventListener('change', clear);
+            }
+          };
+          el.addEventListener('input', clear);
+          el.addEventListener('change', clear);
+        }
+      });
+      // Build error message
+      const parts = [];
+      if (requiredFields.length) parts.push(requiredFields.length + ' required field' + (requiredFields.length === 1 ? '' : 's') + ' missing: ' + requiredFields.map(f => f.label).join(', '));
+      semanticErrors.forEach(function(e) { parts.push(e); });
+      err.innerHTML = '⚠ ' + parts.join(' · ');
+      err.classList.add('show');
+      // Auto-scroll + focus on the FIRST empty field
+      if (requiredFields.length) {
+        const firstEl = document.getElementById(requiredFields[0].id);
+        if (firstEl) {
+          setTimeout(function() {
+            firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(function() { firstEl.focus(); }, 400);
+          }, 80);
+        }
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return;
+    }
+
+    const reco = recommend(input);
+
+    const submission = {
+      timestamp: new Date().toISOString(),
+      timestampLocal: new Date().toLocaleString('en-IN'),
+      username: currentUser.username,
+      userFullName: currentUser.name,
+      userRole: currentUser.role,
+      project: input.project, stage: input.stage, endUser: input.endUser,
+      partner: input.partner, consultant: input.consultant, venueName: input.venueName, venueType: input.venueType,
+      city: input.city, state: input.state, contact: input.contact,
+      outputType: input.outputType, outputSignal: input.outputSignal, sdiCount: input.sdiCount, projectorCount: input.projectorCount, projectorRes: input.projectorRes, projectorPorts: input.projectorPorts,
+      inputs: input.inputs, inputs4K: input.inputs4K, inputsFHD: input.inputsFHD, signals: input.signals,
+      budget: input.budget, close: input.close, notes: input.notes,
+      screens_count: input.screens.length,
+      led_pixels: reco.ledPixels,
+      total_pixels_processed: reco.totalPixelsProcessed,
+      led_ports_raw: reco.rawLedPorts.toFixed(3),
+      led_ports: reco.ledPorts,
+      projector_ports: reco.projPorts,
+      hdmi_ports_needed: reco.hdmiPortsNeeded,
+      sdi_ports_needed: reco.sdiPortsNeeded,
+      total_ports: reco.portsNeeded,
+      recommended_chassis: reco.chassis,
+      bom_summary: reco.bom.map(b => b.qty + '× ' + b.sku).join('; '),
+      value_adds: (reco.valueAdds || []).map(v => v.title).join(' | '),
+      screens_detail: JSON.stringify(input.screens)
+    };
+
+    const calcBtn = document.getElementById('calcBtn');
+    calcBtn.disabled = true;
+    calcBtn.textContent = 'Logging...';
+    try {
+      if (!OFFLINE_MODE) {
+        await logToSheet(submission);
+        info.textContent = '✓ Submission logged to central Google Sheet.';
+      } else {
+        info.textContent = 'ℹ Offline mode — logged to session only. Configure Google Sheet backend for central logging.';
+      }
+      info.classList.add('show');
+    } catch (e) {
+      info.textContent = '⚠ Central logging failed — saved to session only. Check Google Sheet connection.';
+      info.classList.add('show');
+    }
+    sessionLog.unshift(submission);
+    lastResult = { input: input, reco: reco, submission: submission };
+    calcBtn.disabled = false;
+    calcBtn.textContent = 'Calculate & Log';
+
+    renderResult(input, reco);
+    showView('result');
+  }
+
+  async function logToSheet(submission) {
+    if (!WEB_APP_URL) throw new Error('No backend URL configured');
+    return fetch(WEB_APP_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'log', submission: submission })
+    });
+  }
+  async function fetchLog() {
+    if (!WEB_APP_URL) return [];
+    try {
+      const resp = await fetch(WEB_APP_URL + '?action=getlog');
+      const data = await resp.json();
+      return data.log || [];
+    } catch (e) { console.error('Fetch log failed:', e); return []; }
+  }
+
+  // =================================================================
+  // RESULT VIEW
+  // =================================================================
+  function renderResult(input, reco) {
+    const m = reco.model;
+    let html = '';
+
+    // Helper: render a spec grid block
+    function specCell(k, v, redAccent) {
+      const color = redAccent ? ' style="color:var(--cavitak-red)"' : '';
+      return '<div class="spec-cell"><div class="k">' + k + '</div><div class="v"' + color + '>' + v + '</div></div>';
+    }
+
+    // ===============================================================
+    // CASE A — NO RECOMMENDATION
+    // ===============================================================
+    if (reco.outputCardInfeasible) {
+      // Chassis card — shown in warning state, matching the form's visual weight
+      html += '<div class="card">';
+      html += '<div class="card-title" style="color:var(--cavitak-red); border-bottom-color:#F5D1D6">Single-chassis limit exceeded</div>';
+      html += '<div style="font-size:14px;color:var(--ink-soft);margin-bottom:18px;line-height:1.6">The requested output port count cannot be delivered by a single C7-PRO-2200. Slot 10 accepts only one output card.</div>';
+
+      html += '<div style="background:linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);color:#78350F;padding:16px 20px;border-radius:8px;border-left:3px solid var(--warn);box-shadow:var(--shadow-xs)">';
+      html += '<div style="font-weight:700;margin-bottom:8px;font-size:14px">Requested: ' + reco.portsNeeded + ' output ports</div>';
+      html += '<div style="font-size:13px;line-height:1.7">Contact <b>Dipenkumar Gajjar</b> for technical discussion to design a multi-unit configuration:<br>';
+      html += '<a href="mailto:dipen.g@cavitak.com" style="color:var(--cavitak-red);text-decoration:none;font-weight:600">dipen.g@cavitak.com</a> · ';
+      html += '<a href="tel:+918160756906" style="color:var(--cavitak-red);text-decoration:none;font-weight:600">+91 8160 756 906</a></div>';
+      html += '</div>';
+      html += '</div>';
+
+      // Requirements Summary card
+      html += '<div class="card">';
+      html += '<div class="card-title">Requirements Summary</div>';
+      html += '<div class="reco-specs">';
+      html += specCell('HDMI Output Ports', reco.hdmiPortsNeeded, true);
+      if (reco.sdiPortsNeeded > 0) html += specCell('SDI Output Ports', reco.sdiPortsNeeded, true);
+      html += specCell('Total Input Sources', input.inputs);
+      if (input.projectorCount) html += specCell('Projectors', input.projectorCount + ' × ' + input.projectorRes);
+      if (input.screens.length) html += specCell('LED Screens', input.screens.length);
+      html += '</div></div>';
+
+      // Project Summary card
+      html += '<div class="card">';
+      html += '<div class="card-title">Project Summary</div>';
+      html += '<div class="reco-specs">';
+      html += specCell('Project', input.project);
+      html += specCell('End-user', input.endUser);
+      html += specCell('Partner', input.partner || '—');
+      html += specCell('Submitted by', currentUser.name);
+      html += '</div></div>';
+
+      document.getElementById('recoOutput').innerHTML = html;
+      return;
+    }
+
+    // ===============================================================
+    // CASE B — RECOMMENDATION
+    // ===============================================================
+    const verdict = reco.chassis === 'C7-PRO-1200' ? 'Fits in CALICO PRO 1U' : (reco.hasCards ? 'CALICO PRO 2U + expansion cards' : 'Fits in CALICO PRO 2U (native)');
+
+    // ---- Card 1: Recommended Chassis ----
+    html += '<div class="card">';
+    html += '<div class="card-title">Recommended Chassis</div>';
+    html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">';
+    html += '<span style="display:inline-block;font-size:10.5px;text-transform:uppercase;letter-spacing:0.14em;background:var(--grad-forest);color:#fff;padding:4px 12px;border-radius:5px;font-weight:700;box-shadow:var(--shadow-forest)">Recommended</span>';
+    html += '<span style="font-size:20px;font-weight:800;color:var(--forest-dark);letter-spacing:-0.015em">' + m.model + '</span>';
+    html += '</div>';
+    html += '<div style="font-size:14px;color:var(--forest-soft);font-weight:500;margin-bottom:6px">' + verdict + '</div>';
+    html += '<div style="font-family:\'Fraunces\',serif;font-size:13px;font-style:italic;color:var(--cavitak-red);margin-bottom:18px;letter-spacing:0.02em">Command every pixel</div>';
+    html += '<div style="text-align:center;padding:24px;background:linear-gradient(180deg, #fafaf5 0%, #f2efe8 100%);border-radius:8px;border:1px solid var(--line-soft);position:relative;overflow:hidden">';
+    html += '<div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg, transparent, rgba(27,67,50,0.25), transparent)"></div>';
+    html += '<img src="calico-pro.png" alt="CALICO PRO" onerror="this.parentNode.style.display=\'none\'" style="max-width:360px;width:100%;height:auto;filter:drop-shadow(0 6px 20px rgba(10,26,20,0.12))">';
+    html += '</div>';
+    html += '</div>';
+
+    // ---- Card 2: Total Pixels Processed ----
+    html += '<div class="card">';
+    html += '<div class="card-title">Total Pixels Processed</div>';
+    html += '<div style="background:var(--grad-forest-rich);color:#fff;padding:22px 26px;border-radius:8px;text-align:center;position:relative;overflow:hidden;box-shadow:var(--shadow-forest)">';
+    html += '<div style="position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle, rgba(196,169,98,0.18) 0%, transparent 70%);border-radius:50%"></div>';
+    html += '<div style="position:absolute;bottom:-60px;left:-60px;width:180px;height:180px;background:radial-gradient(circle, rgba(200,16,46,0.15) 0%, transparent 70%);border-radius:50%"></div>';
+    html += '<div style="font-family:\'JetBrains Mono\',\'SF Mono\',monospace;font-size:32px;font-weight:700;letter-spacing:-0.025em;line-height:1.2;position:relative;font-variant-numeric:tabular-nums">' + (reco.totalPixelsProcessed/1e6).toFixed(2) + ' <span style="font-size:15px;font-weight:500;opacity:0.85;letter-spacing:0.04em">million</span></div>';
+    html += '<div style="font-size:11px;opacity:0.82;margin-top:8px;position:relative;letter-spacing:0.1em;font-weight:700;text-transform:uppercase">across the full system — LED + projectors</div>';
+    html += '</div>';
+    html += '</div>';
+
+    // ---- Card 3: Requirements Summary ----
+    const signals = input.signals || 'HDMI';
+    const hasSDI = signals.indexOf('SDI') >= 0;
+    const hasHDBT = signals.indexOf('HDBT') >= 0;
+    const hasIP = signals.indexOf('IP') >= 0;
+
+    html += '<div class="card">';
+    html += '<div class="card-title">Requirements Summary</div>';
+    html += '<div class="reco-specs">';
+    html += specCell('HDMI Output Ports', reco.hdmiPortsNeeded, true);
+    if (reco.sdiPortsNeeded > 0) html += specCell('SDI Output Ports', reco.sdiPortsNeeded, true);
+    html += specCell('Total Input Sources', input.inputs);
+    if (input.inputs4K) html += specCell('HDMI Inputs @ 4K', input.inputs4K);
+    if (input.inputsFHD) html += specCell('HDMI Inputs @ FHD', input.inputsFHD);
+    const nonHdmi = Math.max(0, input.inputs - (input.inputs4K||0) - (input.inputsFHD||0));
+    if (nonHdmi > 0 && (hasSDI || hasHDBT || hasIP)) {
+      const label = hasSDI ? 'SDI / Other Inputs' : (hasHDBT ? 'HDBaseT / Other Inputs' : 'IP / Other Inputs');
+      html += specCell(label, nonHdmi);
+    }
+    if (input.projectorCount) html += specCell('Projectors', input.projectorCount + ' × ' + input.projectorRes);
+    if (input.screens.length) html += specCell('LED Screens', input.screens.length);
+    html += '</div></div>';
+
+    // ---- Card 4: Bill of Materials ----
+    html += '<div class="card">';
+    html += '<div class="card-title">Bill of Materials</div>';
+    html += '<table class="bom-table"><thead><tr><th>SKU</th><th>Description</th><th>Qty</th></tr></thead><tbody>';
+    reco.bom.forEach(function(b) {
+      html += '<tr><td>' + b.sku + '</td><td>' + b.description + '</td><td class="qty">' + b.qty + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    if (reco.concerns.length) {
+      reco.concerns.forEach(function(c) { html += '<div class="warn-box" style="margin-top:14px">' + c + '</div>'; });
+    }
+    html += '</div>';
+
+    // ---- Card 5: Value Adds (shown only when there are any) ----
+    if (reco.valueAdds && reco.valueAdds.length) {
+      html += '<div class="card">';
+      html += '<div class="card-title">Value Adds for the Customer</div>';
+      reco.valueAdds.forEach(function(va) {
+        html += '<div class="value-add-box">';
+        html += '<div class="va-title">' + va.title + '</div>';
+        html += '<div class="va-body">' + va.body + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    // ---- Card 5: Project Summary ----
+    html += '<div class="card">';
+    html += '<div class="card-title">Project Summary</div>';
+    html += '<div class="reco-specs">';
+    html += specCell('Project', input.project);
+    html += specCell('Stage', input.stage);
+    html += specCell('End-user', input.endUser);
+    html += specCell('Venue', input.venueName || '—');
+    html += specCell('Partner', input.partner || '—');
+    html += specCell('City/State', [input.city, input.state].filter(Boolean).join(', ') || '—');
+    html += specCell('Submitted by', currentUser.name);
+    html += specCell('Logged at', new Date().toLocaleString('en-IN'));
+    html += '</div></div>';
+
+    // ---- Card 6: For Pricing (always shown) ----
+    html += '<div class="card">';
+    html += '<div class="card-title">For Pricing & Quotation</div>';
+    html += '<div style="background:var(--grad-forest-rich);color:#fff;padding:26px 30px;border-radius:10px;position:relative;overflow:hidden;box-shadow:var(--shadow-forest)">';
+    html += '<div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle, rgba(196,169,98,0.16) 0%, transparent 70%);border-radius:50%"></div>';
+    html += '<div style="position:absolute;bottom:-60px;left:-60px;width:180px;height:180px;background:radial-gradient(circle, rgba(200,16,46,0.14) 0%, transparent 70%);border-radius:50%"></div>';
+    html += '<div style="position:relative;z-index:1">';
+    html += '<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.16em;opacity:0.75;margin-bottom:8px;font-weight:700">Contact for pricing</div>';
+    html += '<div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:600;letter-spacing:-0.015em;margin-bottom:4px">Dipenkumar Gajjar</div>';
+    html += '<div style="font-size:12.5px;opacity:0.75;margin-bottom:18px;font-weight:500">National Product Manager · CALICO PRO Portfolio</div>';
+    html += '<div style="display:flex;gap:24px;flex-wrap:wrap">';
+    html += '<a href="mailto:dipen.g@cavitak.com" style="display:inline-flex;align-items:center;gap:10px;color:#fff;text-decoration:none;background:rgba(255,255,255,0.1);padding:10px 18px;border-radius:8px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.2);font-weight:600;font-size:14px;transition:all 0.2s var(--ease)" onmouseover="this.style.background=\'rgba(255,255,255,0.2)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.1)\'">✉ dipen.g@cavitak.com</a>';
+    html += '<a href="tel:+918160756906" style="display:inline-flex;align-items:center;gap:10px;color:#fff;text-decoration:none;background:rgba(255,255,255,0.1);padding:10px 18px;border-radius:8px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.2);font-weight:600;font-size:14px;transition:all 0.2s var(--ease)" onmouseover="this.style.background=\'rgba(255,255,255,0.2)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.1)\'">☎ +91 8160 756 906</a>';
+    html += '</div>';
+    html += '<div style="font-size:12px;opacity:0.7;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.12);font-weight:500">Download the Excel BOM below and email it along with your enquiry for a swift quote.</div>';
+    html += '</div></div>';
+    html += '</div>';
+
+    document.getElementById('recoOutput').innerHTML = html;
+  }
+
+  // =================================================================
+  // EXCEL EXPORT
+  // =================================================================
+  function exportToExcel() {
+    if (!lastResult) { alert('No calculation to export.'); return; }
+    const input = lastResult.input, reco = lastResult.reco, submission = lastResult.submission;
+    const wb = XLSX.utils.book_new();
+
+    const projectInfo = [
+      ['CALICO PRO Configuration'],
+      ['Command every pixel'],
+      [''],
+      ['Generated', new Date().toLocaleString('en-IN')],
+      ['Submitted By', currentUser.name + ' (' + currentUser.username + ')'],
+      [''], ['── PROJECT CONTEXT ──'],
+      ['Project Name', input.project],
+      ['Project Stage', input.stage],
+      ['End-user / Client', input.endUser],
+      ['Partner / SI', input.partner],
+      ['Consultant', input.consultant],
+      ['Venue Name', input.venueName],
+      ['Venue Type', input.venueType],
+      ['City', input.city],
+      ['State', input.state],
+      ['Primary Contact', input.contact],
+      ['Expected Close', input.close],
+      ['Budget Tier', input.budget],
+      [''], ['── TOTAL PIXELS PROCESSED ──'],
+      ['Total pixels (LED + projector)', reco.totalPixelsProcessed],
+      ['Total pixels (millions)', +(reco.totalPixelsProcessed/1e6).toFixed(3)],
+      [''], ['── TECHNICAL SUMMARY ──'],
+      ['Output Type', input.outputType],
+      ['Output Signal', input.outputSignal || 'HDMI'],
+      ['SDI Output Count', input.outputSignal === 'SDI' ? (input.sdiCount || 0) : '—'],
+      ['HDMI Output Ports Needed', reco.hdmiPortsNeeded],
+      ['SDI Output Ports Needed', reco.sdiPortsNeeded || 0],
+      ['Number of Projectors', input.projectorCount || '—'],
+      ['Projector Resolution', input.projectorCount ? input.projectorRes : '—'],
+      ['Projector Arrangement', input.projectorCount > 1 ? 'Edge blend (multi-projector)' : (input.projectorCount === 1 ? 'Standalone' : '—')],
+      ['Projector Output Ports (1 per unit)', input.projectorCount || '—'],
+      ['Total Sources/Inputs Needed', input.inputs],
+      ['HDMI Inputs @ 4K', input.inputs4K || 0],
+      ['HDMI Inputs @ FHD', input.inputsFHD || 0],
+      ['Other / Non-HDMI Inputs', Math.max(0, input.inputs - (input.inputs4K||0) - (input.inputsFHD||0))],
+      ['Primary Signal Types', input.signals]
+    ];
+    // VALUE ADDS section (only if there are any)
+    if (reco.valueAdds && reco.valueAdds.length) {
+      projectInfo.push([''], ['── VALUE ADDS FOR CUSTOMER ──']);
+      reco.valueAdds.forEach(function(va) {
+        projectInfo.push([va.title, va.body]);
+      });
+    }
+    projectInfo.push([''], ['── NOTES ──']);
+    projectInfo.push(['Special Requirements', input.notes || '—']);
+    projectInfo.push([''], ['── FOR PRICING & QUOTATION ──']);
+    projectInfo.push(['Contact', 'Dipenkumar Gajjar']);
+    projectInfo.push(['Role', 'National Product Manager · CALICO PRO Portfolio']);
+    projectInfo.push(['Email', 'dipen.g@cavitak.com']);
+    projectInfo.push(['Phone', '+91 8160 756 906']);
+    projectInfo.push(['Next Step', 'Email this file with your enquiry for a swift quote.']);
+    const ws1 = XLSX.utils.aoa_to_sheet(projectInfo);
+    ws1['!cols'] = [{ wch: 28 }, { wch: 60 }];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Project Info');
+
+    const screenHeader = ['#', 'Screen Label', 'LED Pitch (mm)', 'Resolution W (px)', 'Resolution H (px)', 'Pixels', 'Pixels (M)', 'Physical Width (mm)', 'Physical Height (mm)', 'Ports (per screen)'];
+    const screenRows = input.screens.map(function(s, i) {
+      return [i + 1, s.label, s.pitch || '',
+        s.resW, s.resH, s.pixels, +(s.pixels/1e6).toFixed(3),
+        s.widthMm || '', s.heightMm || '', s.ports || 0];
+    });
+    screenRows.push(['', 'TOTAL', '', '', '', reco.ledPixels, +(reco.ledPixels/1e6).toFixed(3), '', '', reco.ledPorts]);
+    const ws2 = XLSX.utils.aoa_to_sheet([screenHeader].concat(screenRows));
+    ws2['!cols'] = [{wch:4},{wch:14},{wch:14},{wch:18},{wch:18},{wch:14},{wch:12},{wch:18},{wch:18},{wch:17}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Screen Details');
+
+    const portCalc = [
+      ['CALICO PRO Port Sizing Calculation'], [''],
+      ['Each output port supports up to 4K (3840×2160) = 8,294,400 pixels.'],
+      ['Per-screen port math: each screen is rounded up independently (ports are never shared across screens), then summed.'], [''],
+      ['Per-Screen Port Allocation'],
+      ['Screen', 'Resolution', 'Pixels', 'Pixels ÷ 8,294,400', 'Ports (rounded up)']
+    ];
+    input.screens.forEach(function(s, i) {
+      portCalc.push([
+        'Screen ' + (i + 1),
+        s.resW && s.resH ? (s.resW + ' × ' + s.resH) : '—',
+        s.pixels || 0,
+        s.pixels ? (s.pixels / PORT_CAPACITY_4K60).toFixed(4) : '0',
+        s.ports || 0
+      ]);
+    });
+    portCalc.push(['', '', 'TOTAL LED PORTS', '', reco.ledPorts]);
+    portCalc.push(['']);
+    portCalc.push(['Projector Ports', '', '', '1 per projector', reco.projPorts]);
+    portCalc.push(['']);
+    portCalc.push(['HDMI Ports Needed (LED + Projector)', '', '', '', reco.hdmiPortsNeeded]);
+    portCalc.push(['SDI Ports Needed (user-specified)', '', '', '', reco.sdiPortsNeeded || 0]);
+    portCalc.push(['TOTAL PORTS', '', '', '', reco.portsNeeded]);
+    portCalc.push(['']);
+    portCalc.push(['Input Configuration']);
+    portCalc.push(['Total Inputs Required', '', '', '', input.inputs]);
+    portCalc.push(['HDMI 4K Inputs', '', '', '', input.inputs4K || 0]);
+    portCalc.push(['HDMI FHD Inputs', '', '', '', input.inputsFHD || 0]);
+    portCalc.push(['']);
+    portCalc.push(['Recommended Chassis', '', '', '', reco.outputCardInfeasible ? '⚠ NO SINGLE-CHASSIS RECOMMENDATION' : reco.chassis]);
+    const ws3 = XLSX.utils.aoa_to_sheet(portCalc);
+    ws3['!cols'] = [{ wch: 36 }, { wch: 16 }, { wch: 14 }, { wch: 22 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, ws3, 'Port Calculation');
+
+    const bomHeader = ['#', 'SKU', 'Description', 'Qty', 'Notes', 'Pricing / BOM Notes'];
+    const bomRows = reco.bom.map(function(b, i) { return [i + 1, b.sku, b.description, b.qty, b.notes || '', '']; });
+    // Add pricing contact footer
+    bomRows.push(['', '', '', '', '', '']);
+    bomRows.push(['', 'FOR PRICING', 'Contact: Dipenkumar Gajjar · National Product Manager', '', 'Email: dipen.g@cavitak.com · Phone: +91 8160 756 906', 'Email this BOM for a swift quote.']);
+    const ws4 = XLSX.utils.aoa_to_sheet([bomHeader].concat(bomRows));
+    ws4['!cols'] = [{wch:4},{wch:22},{wch:55},{wch:8},{wch:45},{wch:40}];
+    XLSX.utils.book_append_sheet(wb, ws4, 'BOM Recommendation');
+
+    const rawHeader = ['Field', 'Value'];
+    const rawRows = Object.entries(submission).map(function(e) {
+      return [e[0], typeof e[1] === 'object' ? JSON.stringify(e[1]) : e[1]];
+    });
+    const ws5 = XLSX.utils.aoa_to_sheet([rawHeader].concat(rawRows));
+    ws5['!cols'] = [{ wch: 28 }, { wch: 80 }];
+    XLSX.utils.book_append_sheet(wb, ws5, 'Raw Submission');
+
+    const safeProject = (input.project || 'project').replace(/[^a-z0-9]/gi, '_').slice(0, 30);
+    const safeClient = (input.endUser || 'client').replace(/[^a-z0-9]/gi, '_').slice(0, 20);
+    const today = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, 'CALICO_' + safeClient + '_' + safeProject + '_' + today + '.xlsx');
+  }
+
+  // =================================================================
+  // LOG
+  // =================================================================
+  async function refreshLog() {
+    const el = document.getElementById('logContent');
+    const srcEl = document.getElementById('logSource');
+    const metaEl = document.getElementById('dashMeta');
+    el.innerHTML = '<div class="log-empty">Loading…</div>';
+    if (metaEl) metaEl.textContent = 'Loading…';
+    let rows = [];
+    if (!OFFLINE_MODE) {
+      rows = await fetchLog();
+      if (srcEl) srcEl.textContent = 'Source: Central Google Sheet · ' + rows.length + ' entries · Refreshed ' + new Date().toLocaleTimeString('en-IN');
+    } else {
+      rows = sessionLog;
+      if (srcEl) srcEl.textContent = 'Source: Session only (Google Sheet backend not configured) · ' + rows.length + ' entries';
+    }
+    centralLog = rows;
+    if (metaEl) {
+      const now = new Date();
+      metaEl.textContent = 'Last refreshed · ' + now.toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    }
+    // Populate user dropdown with unique usernames
+    const userSel = document.getElementById('fl_user');
+    const currentUserFilter = userSel.value;
+    const uniqueUsers = Array.from(new Set(rows.map(r => r.username).filter(Boolean))).sort();
+    userSel.innerHTML = '<option value="">All users</option>';
+    uniqueUsers.forEach(function(u) {
+      const opt = document.createElement('option');
+      opt.value = u; opt.textContent = u;
+      if (u === currentUserFilter) opt.selected = true;
+      userSel.appendChild(opt);
+    });
+    applyFilters();
+  }
+
+  function getFilters() {
+    return {
+      project: document.getElementById('fl_project').value.trim().toLowerCase(),
+      user: document.getElementById('fl_user').value,
+      partner: document.getElementById('fl_partner').value.trim().toLowerCase(),
+      consultant: document.getElementById('fl_consultant').value.trim().toLowerCase(),
+      location: document.getElementById('fl_location').value.trim().toLowerCase(),
+      model: document.getElementById('fl_model').value
+    };
+  }
+
+  function applyFilters() {
+    const f = getFilters();
+    const filtered = centralLog.filter(function(r) {
+      if (f.project && !(r.project||'').toLowerCase().includes(f.project)) return false;
+      if (f.user && r.username !== f.user) return false;
+      if (f.partner && !(r.partner||'').toLowerCase().includes(f.partner)) return false;
+      if (f.consultant && !(r.consultant||'').toLowerCase().includes(f.consultant)) return false;
+      if (f.location) {
+        const loc = ((r.city||'') + ' ' + (r.state||'')).toLowerCase();
+        if (!loc.includes(f.location)) return false;
+      }
+      if (f.model && r.recommended_chassis !== f.model) return false;
+      return true;
+    });
+    renderFilteredLog(filtered);
+    updateStats(filtered);
+    updateFilterChips(f, filtered.length, centralLog.length);
+  }
+
+  function renderFilteredLog(rows) {
+    const el = document.getElementById('logContent');
+    document.getElementById('logCount').textContent = '· ' + rows.length + ' of ' + centralLog.length;
+    if (!rows.length) {
+      el.innerHTML = '<div class="log-empty">No submissions match these filters. Try clearing some filters to broaden the search.</div>';
+      return;
+    }
+    function stagePillClass(stage) {
+      if (!stage) return '';
+      const s = stage.toLowerCase();
+      if (s === 'won') return 'won';
+      if (s === 'proposal' || s === 'design') return 'proposal';
+      if (s === 'qualified' || s === 'lead') return 'qualified';
+      if (s === 'lost') return 'lost';
+      if (s === 'on hold' || s === 'hold') return 'hold';
+      return '';
+    }
+    let html = '<table class="log-table"><thead><tr>';
+    html += '<th>Time</th><th>User</th><th>Project</th><th>Stage</th><th>End-user</th><th>Partner</th><th>Consultant</th><th>Location</th><th>Chassis</th><th>HDMI</th><th>SDI</th><th>Inputs</th>';
+    html += '</tr></thead><tbody>';
+    rows.forEach(function(s) {
+      const t = s.timestampLocal || new Date(s.timestamp).toLocaleString('en-IN');
+      const loc = [s.city, s.state].filter(Boolean).join(', ') || '—';
+      const stageCls = stagePillClass(s.stage);
+      html += '<tr>';
+      html += '<td style="font-size:12px;color:var(--ink-soft);font-weight:500">' + t + '</td>';
+      html += '<td>' + (s.userFullName || s.username || '—') + '</td>';
+      html += '<td class="col-proj">' + (s.project||'—') + '</td>';
+      html += '<td>' + (s.stage ? '<span class="stage-pill ' + stageCls + '">' + s.stage + '</span>' : '—') + '</td>';
+      html += '<td>' + (s.endUser||'—') + '</td>';
+      html += '<td>' + (s.partner||'—') + '</td>';
+      html += '<td>' + (s.consultant||'—') + '</td>';
+      html += '<td>' + loc + '</td>';
+      html += '<td class="col-model">' + (s.recommended_chassis||'—') + '</td>';
+      html += '<td class="col-num">' + (s.hdmi_ports_needed || s.total_ports || '—') + '</td>';
+      html += '<td class="col-num">' + (s.sdi_ports_needed || 0) + '</td>';
+      html += '<td class="col-num">' + (s.inputs || '—') + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  }
+
+  function updateStats(rows) {
+    document.getElementById('stat_total').textContent = rows.length;
+    const projects = new Set(rows.map(r => r.project).filter(Boolean));
+    document.getElementById('stat_projects').textContent = projects.size;
+    const users = new Set(rows.map(r => r.username).filter(Boolean));
+    document.getElementById('stat_users').textContent = users.size;
+    const pipelineStages = ['Won', 'Proposal', 'Design'];
+    const pipeline = rows.filter(r => pipelineStages.indexOf(r.stage) >= 0);
+    document.getElementById('stat_pipeline').textContent = pipeline.length;
+    // Render charts
+    renderUserChart(rows);
+    renderStageChart(rows);
+    renderPartnerChart(rows);
+    renderModelChart(rows);
+  }
+
+  function groupCount(rows, keyFn) {
+    const m = new Map();
+    rows.forEach(function(r) {
+      const k = keyFn(r);
+      if (!k) return;
+      m.set(k, (m.get(k) || 0) + 1);
+    });
+    return Array.from(m.entries()).sort((a,b) => b[1] - a[1]);
+  }
+
+  function renderBarChart(elId, data, tone, maxRows) {
+    const el = document.getElementById(elId);
+    if (!data.length) { el.innerHTML = '<div class="chart-empty">No data to display for current filters.</div>'; return; }
+    const max = Math.max.apply(null, data.map(d => d[1]));
+    const topN = maxRows ? data.slice(0, maxRows) : data;
+    let html = '';
+    topN.forEach(function(d) {
+      const pct = Math.round((d[1] / max) * 100);
+      const toneClass = tone ? ' tone-' + tone : '';
+      html += '<div class="bar-row">';
+      html += '<div class="bar-row-label" title="' + d[0] + '">' + d[0] + '</div>';
+      html += '<div class="bar-row-track"><div class="bar-row-fill' + toneClass + '" style="width:' + pct + '%"></div></div>';
+      html += '<div class="bar-row-value">' + d[1] + '</div>';
+      html += '</div>';
+    });
+    el.innerHTML = html;
+  }
+
+  function renderUserChart(rows) {
+    const data = groupCount(rows, r => r.userFullName || r.username);
+    renderBarChart('chart_users', data, 'forest', 8);
+    document.getElementById('chart_users_meta').textContent = data.length <= 8 ? 'All ' + data.length : 'Top 8 of ' + data.length;
+  }
+
+  function renderPartnerChart(rows) {
+    const data = groupCount(rows, r => r.partner);
+    renderBarChart('chart_partners', data, null, 6);
+  }
+
+  function renderStageChart(rows) {
+    const el = document.getElementById('chart_stages');
+    const data = groupCount(rows, r => r.stage);
+    if (!data.length) { el.innerHTML = '<div class="chart-empty">No data for current filters.</div>'; return; }
+    const stageColor = {
+      'Won': '#15803D',
+      'Proposal': '#B45309',
+      'Design': '#D97706',
+      'Qualified': '#2563EB',
+      'Lead': '#3B82F6',
+      'Lost': '#DC2626',
+      'On Hold': '#6B7280'
+    };
+    let html = '<div class="stage-list">';
+    data.forEach(function(d) {
+      const color = stageColor[d[0]] || '#6B7280';
+      html += '<div class="stage-row">';
+      html += '<div class="stage-dot" style="background:' + color + '"></div>';
+      html += '<div class="stage-label">' + d[0] + '</div>';
+      html += '<div class="stage-count">' + d[1] + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  function renderModelChart(rows) {
+    const el = document.getElementById('chart_models');
+    const data = groupCount(rows, r => r.recommended_chassis);
+    if (!data.length) { el.innerHTML = '<div class="chart-empty">No data for current filters.</div>'; return; }
+    const modelColor = { 'C7-PRO-1200': '#2D5A44', 'C7-PRO-2200': '#1B4332' };
+    let html = '<div class="stage-list">';
+    data.forEach(function(d) {
+      const color = modelColor[d[0]] || '#C8102E';
+      html += '<div class="stage-row">';
+      html += '<div class="stage-dot" style="background:' + color + '"></div>';
+      html += '<div class="stage-label" style="font-family:\'JetBrains Mono\',monospace;font-size:12.5px;font-weight:700">' + d[0] + '</div>';
+      html += '<div class="stage-count">' + d[1] + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  function updateFilterChips(f, filteredCount, totalCount) {
+    const el = document.getElementById('filterSummary');
+    const chips = [];
+    if (f.project) chips.push('Project: "' + f.project + '"');
+    if (f.user) chips.push('User: ' + f.user);
+    if (f.partner) chips.push('Partner: "' + f.partner + '"');
+    if (f.consultant) chips.push('Consultant: "' + f.consultant + '"');
+    if (f.location) chips.push('Location: "' + f.location + '"');
+    if (f.model) chips.push('Model: ' + f.model);
+    let html = '';
+    if (!chips.length) {
+      html = '<span>Showing all</span><span class="filter-summary-count">' + totalCount + '</span>';
+    } else {
+      html = '<span>' + chips.join(' · ') + '</span><span class="filter-summary-count">' + filteredCount + ' / ' + totalCount + '</span>';
+    }
+    el.innerHTML = html;
+  }
+
+  function clearFilters() {
+    document.getElementById('fl_project').value = '';
+    document.getElementById('fl_user').value = '';
+    document.getElementById('fl_partner').value = '';
+    document.getElementById('fl_consultant').value = '';
+    document.getElementById('fl_location').value = '';
+    document.getElementById('fl_model').value = '';
+    applyFilters();
+  }
+
+  function exportLogCSV() {
+    // Export only what's currently visible (filtered view)
+    const f = getFilters();
+    const rows = centralLog.filter(function(r) {
+      if (f.project && !(r.project||'').toLowerCase().includes(f.project)) return false;
+      if (f.user && r.username !== f.user) return false;
+      if (f.partner && !(r.partner||'').toLowerCase().includes(f.partner)) return false;
+      if (f.consultant && !(r.consultant||'').toLowerCase().includes(f.consultant)) return false;
+      if (f.location) {
+        const loc = ((r.city||'') + ' ' + (r.state||'')).toLowerCase();
+        if (!loc.includes(f.location)) return false;
+      }
+      if (f.model && r.recommended_chassis !== f.model) return false;
+      return true;
+    });
+    if (!rows.length) { alert('No entries to export.'); return; }
+    const cols = ['timestampLocal','username','userFullName','project','endUser','partner','consultant','recommended_chassis','bom_summary','value_adds','stage','city','state','venueName','venueType','contact','outputType','outputSignal','sdiCount','screens_count','led_pixels','total_pixels_processed','led_ports','projectorCount','projectorRes','projector_ports','hdmi_ports_needed','sdi_ports_needed','total_ports','inputs','inputs4K','inputsFHD','signals','budget','close','notes'];
+    const csv = [cols.join(',')].concat(
+      rows.map(function(r) {
+        return cols.map(function(c) {
+          const v = (r[c] == null ? '' : r[c]).toString().replace(/"/g,'""');
+          return /[,"\n]/.test(v) ? '"' + v + '"' : v;
+        }).join(',');
+      })
+    ).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'calico-submissions-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // =================================================================
+  // RESET
+  // =================================================================
+  function resetForm() {
+    ['f_project','f_endUser','f_partner','f_consultant','f_venueName','f_city','f_contact','f_inputs','f_inputs4K','f_inputsFHD','f_notes','f_close','f_projectorCount','f_sdiCount'].forEach(function(id) {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('f_stage').value = '';
+    document.getElementById('f_venueType').value = '';
+    document.getElementById('f_state').value = '';
+    document.getElementById('f_outputType').value = 'LED';
+    document.getElementById('f_outputSignal').value = 'HDMI';
+    document.getElementById('sdiNote').style.display = 'none';
+    document.getElementById('sdiCountField').style.display = 'none';
+    document.getElementById('f_projectorRes').value = '4K';
+    document.getElementById('f_signals').value = 'HDMI';
+    document.getElementById('f_budget').value = 'mid';
+    onOutputTypeChange();
+    onSignalsChange();
+    initScreens();
+    document.getElementById('formError').classList.remove('show');
+    document.getElementById('formInfo').classList.remove('show');
+    document.getElementById('inputsWarn').style.display = 'none';
+    // Clear any lingering red-border error states
+    document.querySelectorAll('.field-error').forEach(function(n) { n.classList.remove('field-error'); });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
