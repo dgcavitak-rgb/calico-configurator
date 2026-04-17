@@ -110,8 +110,6 @@
     pointer-events: none;
   }
   .brand { display: flex; align-items: center; gap: 16px; position: relative; z-index: 1; }
-  .brand img { transition: transform 0.3s var(--ease); filter: brightness(0) invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.2)); }
-  .brand img:hover { transform: scale(1.05); }
   .brand-mark { font-family: 'Fraunces', serif; font-weight: 700; font-size: 20px; letter-spacing: -0.01em; }
   .brand-sub {
     font-size: 12px; text-transform: uppercase; letter-spacing: 0.16em;
@@ -911,9 +909,32 @@
   /* ================================================================= */
   /* BRAND — subtle logo hover glow                                     */
   /* ================================================================= */
-  .brand { transition: all 0.3s var(--ease); }
-  .brand:hover img {
-    filter: brightness(0) invert(1) drop-shadow(0 0 8px rgba(196,169,98,0.5));
+  .brand { transition: all 0.3s var(--ease); display: flex; align-items: center; gap: 14px; position: relative; z-index: 1; }
+  .brand-logo-wrap {
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.3s var(--ease);
+    min-height: 42px;
+  }
+  .brand-logo-wrap img {
+    height: 34px; width: auto; display: block;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.35));
+    transition: all 0.3s var(--ease);
+  }
+  .brand-logo-wrap.logo-fallback {
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(196,169,98,0.12) 100%);
+    padding: 8px 14px; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .logo-fallback-text {
+    display: none;
+    font-family: 'Fraunces', serif; font-weight: 700; font-size: 18px;
+    color: #fff; letter-spacing: -0.02em;
+  }
+  .brand-logo-wrap.logo-fallback .logo-fallback-text { display: inline; }
+  .brand-logo-wrap.logo-fallback img { display: none; }
+  .brand:hover .brand-logo-wrap img {
+    filter: drop-shadow(0 2px 8px rgba(196,169,98,0.5));
+    transform: translateY(-1px) scale(1.02);
   }
   @media (max-width: 700px) {
     .grid, .screen-grid { grid-template-columns: 1fr; }
@@ -963,8 +984,11 @@
 <div id="appScreen" class="hidden">
   <header class="app-header">
     <div class="brand">
-      <img src="tvone-logo.png" alt="tvONE" onerror="this.style.display='none'" style="height:32px; width:auto; filter: brightness(0) invert(1)">
-      <div style="height:32px; width:1px; background:rgba(255,255,255,0.2)"></div>
+      <div class="brand-logo-wrap">
+        <img src="tvone-logo.png" alt="tvONE" onerror="this.style.display='none';this.parentNode.classList.add('logo-fallback')">
+        <span class="logo-fallback-text">tvONE</span>
+      </div>
+      <div style="height:36px; width:1px; background:rgba(255,255,255,0.2)"></div>
       <div>
         <div class="brand-sub">CALICO PRO Configurator</div>
         <div class="brand-tagline">Command every pixel</div>
