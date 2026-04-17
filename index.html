@@ -174,20 +174,28 @@
       radial-gradient(ellipse at 50% 50%, rgba(196,169,98,0.04) 0%, transparent 60%),
       linear-gradient(165deg, #F8F6F0 0%, #EDEAE0 100%);
     position: relative;
+    overflow: hidden;
   }
   .login-wrap::before {
     content: '';
     position: absolute; top: 0; left: 0; right: 0; height: 4px;
-    background: linear-gradient(90deg, var(--forest) 0%, var(--cavitak-red) 50%, var(--gold) 100%);
+    background: linear-gradient(90deg, var(--forest) 0%, var(--cavitak-red) 25%, var(--gold) 50%, var(--cavitak-red) 75%, var(--forest) 100%);
     background-size: 200% 100%;
-    animation: shimmer 10s linear infinite;
+    animation: shimmer 6s linear infinite;
+    z-index: 2;
   }
-  /* Subtle decorative corner ornaments */
+  /* Floating animated orbs */
   .login-wrap::after {
     content: '';
-    position: absolute; top: 8%; right: 8%; width: 320px; height: 320px;
-    background: radial-gradient(circle, rgba(27,67,50,0.06) 0%, transparent 70%);
-    pointer-events: none; filter: blur(20px);
+    position: absolute; top: 8%; right: 8%; width: 380px; height: 380px;
+    background: radial-gradient(circle, rgba(27,67,50,0.08) 0%, transparent 70%);
+    pointer-events: none; filter: blur(40px);
+    animation: floatOrb 14s ease-in-out infinite;
+  }
+  @keyframes floatOrb {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(-30px, 40px) scale(1.1); }
+    66% { transform: translate(40px, -30px) scale(0.95); }
   }
   .login-card {
     background: rgba(255,255,255,0.85);
@@ -198,6 +206,13 @@
     padding: 52px 48px 40px; width: 100%; max-width: 460px;
     box-shadow: var(--shadow-xl), 0 0 0 1px rgba(27,67,50,0.04);
     position: relative; overflow: hidden;
+    z-index: 2;
+    animation: cardFadeIn 0.8s var(--ease);
+  }
+  @keyframes cardFadeIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
     z-index: 1;
     animation: loginFadeIn 0.6s var(--ease) both;
   }
@@ -708,6 +723,198 @@
   }
   .info-msg.show { display: block; }
   .hidden { display: none !important; }
+
+  /* ================================================================= */
+  /* PREMIUM CHASSIS HERO — replaces the product photo                  */
+  /* ================================================================= */
+  .chassis-hero {
+    position: relative; overflow: hidden;
+    padding: 48px 36px 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0A1A14 0%, #1B4332 45%, #2D5A44 100%);
+    color: #fff;
+    box-shadow: 0 16px 40px -12px rgba(10,26,20,0.45), 0 4px 12px rgba(10,26,20,0.2);
+    transition: all 0.6s var(--ease);
+  }
+  .chassis-hero::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 600px 180px at 50% -40%, rgba(196,169,98,0.22) 0%, transparent 55%),
+      radial-gradient(ellipse 600px 180px at 50% 140%, rgba(200,16,46,0.18) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  .chassis-hero::after {
+    content: ''; position: absolute; top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
+    transform: skewX(-20deg);
+    animation: chassisShimmer 6s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes chassisShimmer {
+    0%, 100% { left: -100%; }
+    50%, 60% { left: 140%; }
+  }
+  .chassis-hero-glow {
+    position: absolute; border-radius: 50%;
+    pointer-events: none; filter: blur(40px);
+    animation: chassisGlow 8s ease-in-out infinite;
+  }
+  .chassis-hero-glow-a {
+    top: -80px; right: -60px; width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(196,169,98,0.4) 0%, transparent 60%);
+    animation-delay: 0s;
+  }
+  .chassis-hero-glow-b {
+    bottom: -90px; left: -50px; width: 240px; height: 240px;
+    background: radial-gradient(circle, rgba(200,16,46,0.35) 0%, transparent 60%);
+    animation-delay: -4s;
+  }
+  @keyframes chassisGlow {
+    0%, 100% { transform: scale(1) translate(0,0); opacity: 0.8; }
+    50% { transform: scale(1.15) translate(10px, -10px); opacity: 1; }
+  }
+  .chassis-hero-content {
+    position: relative; z-index: 2; text-align: center;
+  }
+  .chassis-pill {
+    display: inline-block; font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: 0.18em; font-weight: 800;
+    background: linear-gradient(135deg, #C4A962 0%, #8B7940 100%);
+    color: #0A1A14;
+    padding: 5px 14px; border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(196,169,98,0.3);
+    animation: pillPulse 3s ease-in-out infinite;
+  }
+  @keyframes pillPulse {
+    0%, 100% { box-shadow: 0 4px 12px rgba(196,169,98,0.3); }
+    50% { box-shadow: 0 4px 20px rgba(196,169,98,0.55); }
+  }
+  .chassis-model {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-size: 44px; font-weight: 700;
+    letter-spacing: -0.03em; line-height: 1;
+    background: linear-gradient(135deg, #ffffff 0%, #E8D5A0 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 24px rgba(255,255,255,0.1);
+  }
+  .chassis-verdict {
+    font-size: 15px; font-weight: 600; opacity: 0.92;
+    margin-bottom: 10px; letter-spacing: -0.005em;
+  }
+  .chassis-tagline {
+    font-family: 'Fraunces', serif; font-size: 15px;
+    font-style: italic; color: #E8D5A0;
+    letter-spacing: 0.04em; margin-bottom: 20px;
+  }
+  .chassis-spec {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px; letter-spacing: 0.08em;
+    opacity: 0.75; font-weight: 600;
+    padding: 8px 18px; border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(8px);
+  }
+  @media (max-width: 700px) {
+    .chassis-hero { padding: 36px 20px 32px; }
+    .chassis-model { font-size: 32px; }
+  }
+
+  /* ================================================================= */
+  /* PAGE TRANSITION — fade-up entrance                                 */
+  /* ================================================================= */
+  .page { animation: pageFadeUp 0.5s var(--ease); }
+  @keyframes pageFadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ================================================================= */
+  /* ENHANCED CARD HOVER                                                */
+  /* ================================================================= */
+  .card {
+    transition: all 0.35s var(--ease);
+  }
+  .card:hover {
+    box-shadow: var(--shadow), 0 0 0 1px rgba(27,67,50,0.04);
+    transform: translateY(-2px);
+  }
+
+  /* ================================================================= */
+  /* INPUT FIELD — richer focus effects                                 */
+  /* ================================================================= */
+  input, select, textarea {
+    transition: all 0.25s var(--ease);
+  }
+  input:hover:not(:focus):not(.field-error), select:hover:not(:focus):not(.field-error), textarea:hover:not(:focus):not(.field-error) {
+    border-color: #C4A962;
+    background: #FFFBF4;
+  }
+  .field label {
+    transition: color 0.25s var(--ease);
+  }
+  .field:focus-within label {
+    color: var(--forest-dark);
+    font-weight: 800;
+  }
+
+  /* ================================================================= */
+  /* BUTTON — upgraded interactions                                     */
+  /* ================================================================= */
+  button.primary {
+    position: relative; overflow: hidden;
+  }
+  button.primary::before {
+    content: ''; position: absolute; top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.6s var(--ease);
+  }
+  button.primary:hover::before { left: 100%; }
+  button:active { transform: scale(0.98) !important; }
+
+  /* ================================================================= */
+  /* STAT CARD — animated counting on load                              */
+  /* ================================================================= */
+  .dash-stat { animation: statSlideIn 0.6s var(--ease) backwards; }
+  .dash-stat:nth-child(1) { animation-delay: 0.05s; }
+  .dash-stat:nth-child(2) { animation-delay: 0.15s; }
+  .dash-stat:nth-child(3) { animation-delay: 0.25s; }
+  .dash-stat:nth-child(4) { animation-delay: 0.35s; }
+  @keyframes statSlideIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ================================================================= */
+  /* BAR CHART — smooth load animation                                  */
+  /* ================================================================= */
+  .bar-row { animation: barRowIn 0.4s var(--ease) backwards; }
+  .bar-row:nth-child(1) { animation-delay: 0.05s; }
+  .bar-row:nth-child(2) { animation-delay: 0.1s; }
+  .bar-row:nth-child(3) { animation-delay: 0.15s; }
+  .bar-row:nth-child(4) { animation-delay: 0.2s; }
+  .bar-row:nth-child(5) { animation-delay: 0.25s; }
+  .bar-row:nth-child(6) { animation-delay: 0.3s; }
+  .bar-row:nth-child(7) { animation-delay: 0.35s; }
+  .bar-row:nth-child(8) { animation-delay: 0.4s; }
+  @keyframes barRowIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ================================================================= */
+  /* BRAND — subtle logo hover glow                                     */
+  /* ================================================================= */
+  .brand { transition: all 0.3s var(--ease); }
+  .brand:hover img {
+    filter: brightness(0) invert(1) drop-shadow(0 0 8px rgba(196,169,98,0.5));
+  }
   @media (max-width: 700px) {
     .grid, .screen-grid { grid-template-columns: 1fr; }
     .page { padding: 20px 14px 60px; }
@@ -1788,17 +1995,19 @@
     const verdict = reco.chassis === 'C7-PRO-1200' ? 'Fits in CALICO PRO 1U' : (reco.hasCards ? 'CALICO PRO 2U + expansion cards' : 'Fits in CALICO PRO 2U (native)');
 
     // ---- Card 1: Recommended Chassis ----
-    html += '<div class="card">';
+    const chassisSubtitle = reco.chassis === 'C7-PRO-1200' ? '1U · 6 inputs · 2 outputs · HDMI only' : '2U · 8 inputs · 4 outputs · expandable · HDMI / SDI';
+    html += '<div class="card reco-card">';
     html += '<div class="card-title">Recommended Chassis</div>';
-    html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">';
-    html += '<span style="display:inline-block;font-size:10.5px;text-transform:uppercase;letter-spacing:0.14em;background:var(--grad-forest);color:#fff;padding:4px 12px;border-radius:5px;font-weight:700;box-shadow:var(--shadow-forest)">Recommended</span>';
-    html += '<span style="font-size:20px;font-weight:800;color:var(--forest-dark);letter-spacing:-0.015em">' + m.model + '</span>';
+    html += '<div class="chassis-hero">';
+    html += '<div class="chassis-hero-glow chassis-hero-glow-a"></div>';
+    html += '<div class="chassis-hero-glow chassis-hero-glow-b"></div>';
+    html += '<div class="chassis-hero-content">';
+    html += '<span class="chassis-pill">Recommended</span>';
+    html += '<div class="chassis-model">' + m.model + '</div>';
+    html += '<div class="chassis-verdict">' + verdict + '</div>';
+    html += '<div class="chassis-tagline">Command every pixel</div>';
+    html += '<div class="chassis-spec">' + chassisSubtitle + '</div>';
     html += '</div>';
-    html += '<div style="font-size:14px;color:var(--forest-soft);font-weight:500;margin-bottom:6px">' + verdict + '</div>';
-    html += '<div style="font-family:\'Fraunces\',serif;font-size:13px;font-style:italic;color:var(--cavitak-red);margin-bottom:18px;letter-spacing:0.02em">Command every pixel</div>';
-    html += '<div style="text-align:center;padding:24px;background:linear-gradient(180deg, #fafaf5 0%, #f2efe8 100%);border-radius:8px;border:1px solid var(--line-soft);position:relative;overflow:hidden">';
-    html += '<div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg, transparent, rgba(27,67,50,0.25), transparent)"></div>';
-    html += '<img src="calico-pro.png" alt="CALICO PRO" onerror="this.parentNode.style.display=\'none\'" style="max-width:360px;width:100%;height:auto;filter:drop-shadow(0 6px 20px rgba(10,26,20,0.12))">';
     html += '</div>';
     html += '</div>';
 
