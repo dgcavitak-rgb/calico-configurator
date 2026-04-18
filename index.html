@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 <style>
   :root {
     /* Primary palette */
@@ -723,6 +724,58 @@
   .hidden { display: none !important; }
 
   /* ================================================================= */
+  /* SILENT SYNC TOAST — bottom-right corner sync indicator             */
+  /* ================================================================= */
+  .sync-status {
+    position: fixed; bottom: 24px; right: 24px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-weight: 600;
+    box-shadow: var(--shadow-md), 0 0 0 1px rgba(27,67,50,0.02);
+    display: none;
+    align-items: center; gap: 10px;
+    z-index: 9999;
+    letter-spacing: -0.005em;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.3s var(--ease);
+  }
+  .sync-status.show {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .sync-status.success {
+    color: var(--ok);
+    border-color: rgba(21,128,61,0.25);
+    background: linear-gradient(135deg, #fff 0%, #F0FDF4 100%);
+  }
+  .sync-status.error {
+    color: var(--cavitak-red);
+    border-color: rgba(200,16,46,0.25);
+    background: linear-gradient(135deg, #fff 0%, #FEF2F2 100%);
+  }
+  .sync-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 3px currentColor;
+    box-shadow: 0 0 8px currentColor;
+    animation: syncPulse 1.4s ease-in-out infinite;
+  }
+  .sync-status.success .sync-dot,
+  .sync-status.error .sync-dot {
+    animation: none;
+  }
+  @keyframes syncPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  /* ================================================================= */
   /* PREMIUM CHASSIS HERO — replaces the product photo                  */
   /* ================================================================= */
   .chassis-hero {
@@ -1296,7 +1349,7 @@
   // =================================================================
   // CONFIG — paste your Google Apps Script web app URL after deployment
   // =================================================================
-  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwayDcgx3hJ0QJz32zsFbRYD_k7K1WsbgdIMcL0PfLjmmRlucqIbc1Hf-07nxow3d5Vvg/exec'; // e.g. 'https://script.google.com/macros/s/XXXX/exec'
+  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwayDcgx3hJ0QJz32zsFbRYD_k7K1WsbgdIMcL0PfLjmmRlucqIbc1Hf-07nxow3d5Vvg/exec';
   const OFFLINE_MODE = !WEB_APP_URL;
 
   // =================================================================
@@ -1920,17 +1973,16 @@
     const calcBtn = document.getElementById('calcBtn');
     calcBtn.disabled = true;
     calcBtn.textContent = 'Logging...';
+    showSync('Saving…', 'pending');
     try {
       if (!OFFLINE_MODE) {
         await logToSheet(submission);
-        info.textContent = '✓ Submission logged to central Google Sheet.';
+        showSync('Saved', 'success');
       } else {
-        info.textContent = 'ℹ Offline mode — logged to session only. Configure Google Sheet backend for central logging.';
+        showSync('Saved locally', 'success');
       }
-      info.classList.add('show');
     } catch (e) {
-      info.textContent = '⚠ Central logging failed — saved to session only. Check Google Sheet connection.';
-      info.classList.add('show');
+      showSync('Sync failed', 'error');
     }
     sessionLog.unshift(submission);
     lastResult = { input: input, reco: reco, submission: submission };
@@ -1948,6 +2000,30 @@
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'log', submission: submission })
     });
+  }
+
+  // =================================================================
+  // SILENT SYNC TOAST
+  // =================================================================
+  let syncHideTimer = null;
+  function showSync(msg, state) {
+    const el = document.getElementById('syncStatus');
+    const m = document.getElementById('syncMsg');
+    if (!el || !m) return;
+    // Clear any pending hide
+    if (syncHideTimer) { clearTimeout(syncHideTimer); syncHideTimer = null; }
+    // Reset class state, then apply new
+    el.classList.remove('success', 'error');
+    if (state === 'success') el.classList.add('success');
+    else if (state === 'error') el.classList.add('error');
+    m.textContent = msg;
+    el.classList.add('show');
+    // Auto-hide: success after 2.2s, error after 5s, pending stays until next call
+    if (state === 'success') {
+      syncHideTimer = setTimeout(function() { el.classList.remove('show'); }, 2200);
+    } else if (state === 'error') {
+      syncHideTimer = setTimeout(function() { el.classList.remove('show'); }, 5000);
+    }
   }
   async function fetchLog() {
     if (!WEB_APP_URL) return [];
@@ -2133,134 +2209,801 @@
   // =================================================================
   // EXCEL EXPORT
   // =================================================================
-  function exportToExcel() {
+  // EXCEL QUOTE EXPORT — 3 tabs: Quote · Technical Specification · BOM
+  // Built with ExcelJS for full visual styling.
+  // =================================================================
+
+  // Design tokens (hex values for ExcelJS — no leading #)
+  const XL_FOREST_DARK = 'FF1B4332';
+  const XL_FOREST = 'FF2D5A44';
+  const XL_CAVITAK_RED = 'FFC8102E';
+  const XL_GOLD = 'FFC4A962';
+  const XL_GOLD_LIGHT = 'FFFFF8E1';
+  const XL_CREAM = 'FFF8F6F0';
+  const XL_INK = 'FF1A2922';
+  const XL_INK_SOFT = 'FF4A5C54';
+  const XL_LINE = 'FFE8E6DD';
+  const XL_YELLOW_SOFT = 'FFFFF4D6';  // Soft yellow for "please fill in" cells
+  const XL_WHITE = 'FFFFFFFF';
+
+  function xlThinBorder(color) {
+    color = color || XL_LINE;
+    return { style: 'thin', color: { argb: color } };
+  }
+  function xlBorders(sides, color) {
+    const b = xlThinBorder(color);
+    const out = {};
+    sides.split('').forEach(function(s) {
+      if (s === 'T') out.top = b;
+      if (s === 'B') out.bottom = b;
+      if (s === 'L') out.left = b;
+      if (s === 'R') out.right = b;
+    });
+    return out;
+  }
+  function xlFill(color) {
+    return { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
+  }
+  function xlFont(opts) {
+    return Object.assign({ name: 'Calibri', size: 11, color: { argb: XL_INK } }, opts || {});
+  }
+
+  async function exportToExcel() {
     if (!lastResult) { alert('No calculation to export.'); return; }
     const input = lastResult.input, reco = lastResult.reco, submission = lastResult.submission;
-    const wb = XLSX.utils.book_new();
 
-    const projectInfo = [
-      ['CALICO PRO Configuration'],
-      ['Command every pixel'],
-      [''],
-      ['Generated', new Date().toLocaleString('en-IN')],
-      ['Submitted By', currentUser.name + ' (' + currentUser.username + ')'],
-      [''], ['── PROJECT CONTEXT ──'],
-      ['Project Name', input.project],
-      ['Project Stage', input.stage],
-      ['End-user / Client', input.endUser],
-      ['Partner / SI', input.partner],
-      ['Consultant', input.consultant],
-      ['Venue Name', input.venueName],
-      ['Venue Type', input.venueType],
-      ['City', input.city],
-      ['State', input.state],
-      ['Primary Contact', input.contact],
-      ['Expected Close', input.close],
-      ['Budget Tier', input.budget],
-      [''], ['── TOTAL PIXELS PROCESSED ──'],
-      ['Total pixels (LED + projector)', reco.totalPixelsProcessed],
-      ['Total pixels (millions)', +(reco.totalPixelsProcessed/1e6).toFixed(3)],
-      [''], ['── TECHNICAL SUMMARY ──'],
-      ['Output Type', input.outputType],
-      ['Output Signal', input.outputSignal || 'HDMI'],
-      ['SDI Output Count', input.outputSignal === 'SDI' ? (input.sdiCount || 0) : '—'],
-      ['HDMI Output Ports Needed', reco.hdmiPortsNeeded],
-      ['SDI Output Ports Needed', reco.sdiPortsNeeded || 0],
-      ['Number of Projectors', input.projectorCount || '—'],
-      ['Projector Resolution', input.projectorCount ? input.projectorRes : '—'],
-      ['Projector Arrangement', input.projectorCount > 1 ? 'Edge blend (multi-projector)' : (input.projectorCount === 1 ? 'Standalone' : '—')],
-      ['Projector Output Ports (1 per unit)', input.projectorCount || '—'],
-      ['Total Sources/Inputs Needed', input.inputs],
-      ['HDMI Inputs @ 4K', input.inputs4K || 0],
-      ['HDMI Inputs @ FHD', input.inputsFHD || 0],
-      ['Other / Non-HDMI Inputs', Math.max(0, input.inputs - (input.inputs4K||0) - (input.inputsFHD||0))],
-      ['Primary Signal Types', input.signals]
+    // Quote metadata
+    const now = new Date();
+    const quoteDate = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const validUntil = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
+    const validUntilStr = validUntil.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const yy = String(now.getFullYear()).slice(2);
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const seq = String(now.getHours() * 10000 + now.getMinutes() * 100 + now.getSeconds()).padStart(6, '0').slice(-4);
+    const quoteNo = 'CAL-' + yy + mm + '-' + seq;
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = currentUser.name + ' · Cavitak Marketing Pvt Ltd';
+    workbook.created = now;
+
+    // =================================================================
+    // TAB 1 — QUOTE (customer-facing, printable)
+    // =================================================================
+    const ws1 = workbook.addWorksheet('Quote', {
+      views: [{ showGridLines: false }],
+      pageSetup: {
+        orientation: 'portrait', paperSize: 9,
+        fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+        margins: { left: 0.4, right: 0.4, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 }
+      }
+    });
+    ws1.columns = [
+      { width: 6 },   // A: # column
+      { width: 18 },  // B: SKU
+      { width: 42 },  // C: Description
+      { width: 8 },   // D: Qty
+      { width: 16 },  // E: Unit Price ₹
+      { width: 18 },  // F: Line Total ₹
+      { width: 30 }   // G: Notes
     ];
-    // VALUE ADDS section (only if there are any)
-    if (reco.valueAdds && reco.valueAdds.length) {
-      projectInfo.push([''], ['── VALUE ADDS FOR CUSTOMER ──']);
-      reco.valueAdds.forEach(function(va) {
-        projectInfo.push([va.title, va.body]);
+
+    let r = 1;
+
+    // --- HEADER BAND ---
+    ws1.mergeCells('A' + r + ':G' + r);
+    const titleCell = ws1.getCell('A' + r);
+    titleCell.value = 'CALICO PRO';
+    titleCell.font = xlFont({ name: 'Calibri', size: 26, bold: true, color: { argb: XL_WHITE } });
+    titleCell.fill = xlFill(XL_FOREST_DARK);
+    titleCell.alignment = { horizontal: 'left', vertical: 'middle', indent: 2 };
+    ws1.getRow(r).height = 40;
+    r++;
+
+    ws1.mergeCells('A' + r + ':G' + r);
+    const tagCell = ws1.getCell('A' + r);
+    tagCell.value = 'Command every pixel';
+    tagCell.font = xlFont({ size: 11, italic: true, color: { argb: XL_GOLD } });
+    tagCell.fill = xlFill(XL_FOREST_DARK);
+    tagCell.alignment = { horizontal: 'left', vertical: 'middle', indent: 2 };
+    ws1.getRow(r).height = 20;
+    r++;
+
+    // Spacer row
+    ws1.getRow(r).height = 10;
+    r++;
+
+    // Quote meta row
+    ws1.mergeCells('A' + r + ':D' + r);
+    ws1.getCell('A' + r).value = 'QUOTATION';
+    ws1.getCell('A' + r).font = xlFont({ size: 16, bold: true, color: { argb: XL_FOREST_DARK } });
+    ws1.getCell('A' + r).alignment = { vertical: 'middle' };
+    ws1.mergeCells('E' + r + ':G' + r);
+    ws1.getCell('E' + r).value = 'Quote No.: ' + quoteNo;
+    ws1.getCell('E' + r).font = xlFont({ size: 11, bold: true, color: { argb: XL_CAVITAK_RED } });
+    ws1.getCell('E' + r).alignment = { horizontal: 'right', vertical: 'middle' };
+    ws1.getRow(r).height = 24;
+    r++;
+
+    ws1.mergeCells('E' + r + ':G' + r);
+    ws1.getCell('E' + r).value = 'Date: ' + quoteDate;
+    ws1.getCell('E' + r).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT } });
+    ws1.getCell('E' + r).alignment = { horizontal: 'right' };
+    r++;
+
+    ws1.mergeCells('E' + r + ':G' + r);
+    ws1.getCell('E' + r).value = 'Valid Until: ' + validUntilStr;
+    ws1.getCell('E' + r).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT } });
+    ws1.getCell('E' + r).alignment = { horizontal: 'right' };
+    r++;
+
+    // Spacer
+    ws1.getRow(r).height = 10;
+    r++;
+
+    // --- QUOTED TO / PROJECT DETAILS (side-by-side) ---
+    // Section headers
+    ws1.mergeCells('A' + r + ':C' + r);
+    const quotedToHdr = ws1.getCell('A' + r);
+    quotedToHdr.value = 'QUOTED TO';
+    quotedToHdr.font = xlFont({ size: 9, bold: true, color: { argb: XL_WHITE } });
+    quotedToHdr.fill = xlFill(XL_FOREST);
+    quotedToHdr.alignment = { vertical: 'middle', indent: 1 };
+    ws1.mergeCells('D' + r + ':G' + r);
+    const projHdr = ws1.getCell('D' + r);
+    projHdr.value = 'PROJECT DETAILS';
+    projHdr.font = xlFont({ size: 9, bold: true, color: { argb: XL_WHITE } });
+    projHdr.fill = xlFill(XL_FOREST);
+    projHdr.alignment = { vertical: 'middle', indent: 1 };
+    ws1.getRow(r).height = 20;
+    r++;
+
+    // 4 rows of data
+    const quotedToPairs = [
+      ['Partner / SI', input.partner || '—'],
+      ['End-user / Client', input.endUser || '—'],
+      ['Consultant', input.consultant || '—'],
+      ['Primary Contact', input.contact || '—']
+    ];
+    const projPairs = [
+      ['Project Name', input.project || '—'],
+      ['Venue', input.venueName || input.venueType || '—'],
+      ['Location', [input.city, input.state].filter(Boolean).join(', ') || '—'],
+      ['Project Stage', input.stage || '—']
+    ];
+    for (let i = 0; i < 4; i++) {
+      const rowNum = r + i;
+      ws1.getCell('A' + rowNum).value = quotedToPairs[i][0];
+      ws1.getCell('A' + rowNum).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT } });
+      ws1.getCell('A' + rowNum).alignment = { vertical: 'middle', indent: 1 };
+      ws1.mergeCells('B' + rowNum + ':C' + rowNum);
+      ws1.getCell('B' + rowNum).value = quotedToPairs[i][1];
+      ws1.getCell('B' + rowNum).font = xlFont({ size: 11, bold: true });
+      ws1.getCell('B' + rowNum).alignment = { vertical: 'middle' };
+
+      ws1.getCell('D' + rowNum).value = projPairs[i][0];
+      ws1.getCell('D' + rowNum).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT } });
+      ws1.getCell('D' + rowNum).alignment = { vertical: 'middle', indent: 1 };
+      ws1.mergeCells('E' + rowNum + ':G' + rowNum);
+      ws1.getCell('E' + rowNum).value = projPairs[i][1];
+      ws1.getCell('E' + rowNum).font = xlFont({ size: 11, bold: true });
+      ws1.getCell('E' + rowNum).alignment = { vertical: 'middle' };
+
+      // Light cream background + bottom border for rows
+      ['A', 'B', 'D', 'E'].forEach(function(col) {
+        ws1.getCell(col + rowNum).fill = xlFill(XL_CREAM);
+        ws1.getCell(col + rowNum).border = xlBorders('B', XL_LINE);
+      });
+      ws1.getRow(rowNum).height = 18;
+    }
+    r += 4;
+
+    // Spacer
+    ws1.getRow(r).height = 12;
+    r++;
+
+    // --- RECOMMENDED SOLUTION headline ---
+    ws1.mergeCells('A' + r + ':G' + r);
+    const recoHdr = ws1.getCell('A' + r);
+    recoHdr.value = 'RECOMMENDED SOLUTION';
+    recoHdr.font = xlFont({ size: 9, bold: true, color: { argb: XL_WHITE } });
+    recoHdr.fill = xlFill(XL_FOREST);
+    recoHdr.alignment = { vertical: 'middle', indent: 1 };
+    ws1.getRow(r).height = 20;
+    r++;
+
+    const verdict = reco.chassis === 'C7-PRO-1200' ? 'tvONE CALICO PRO 1U · HDMI only' :
+                    (reco.hasCards ? 'tvONE CALICO PRO 2U · with expansion cards' : 'tvONE CALICO PRO 2U · native configuration');
+    ws1.mergeCells('A' + r + ':B' + r);
+    ws1.getCell('A' + r).value = reco.chassis;
+    ws1.getCell('A' + r).font = xlFont({ name: 'Consolas', size: 16, bold: true, color: { argb: XL_CAVITAK_RED } });
+    ws1.getCell('A' + r).alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+    ws1.mergeCells('C' + r + ':G' + r);
+    ws1.getCell('C' + r).value = verdict;
+    ws1.getCell('C' + r).font = xlFont({ size: 11, color: { argb: XL_INK_SOFT } });
+    ws1.getCell('C' + r).alignment = { vertical: 'middle' };
+    ws1.getRow(r).height = 26;
+    // Gold left accent via cell fill? Use a thin fill indicator on column A
+    ws1.getCell('A' + r).fill = xlFill(XL_GOLD_LIGHT);
+    ws1.getCell('C' + r).fill = xlFill(XL_GOLD_LIGHT);
+    r++;
+
+    // Spacer
+    ws1.getRow(r).height = 14;
+    r++;
+
+    // --- BOM table ---
+    ws1.mergeCells('A' + r + ':G' + r);
+    const bomHdr = ws1.getCell('A' + r);
+    bomHdr.value = 'BILL OF MATERIALS';
+    bomHdr.font = xlFont({ size: 9, bold: true, color: { argb: XL_WHITE } });
+    bomHdr.fill = xlFill(XL_FOREST);
+    bomHdr.alignment = { vertical: 'middle', indent: 1 };
+    ws1.getRow(r).height = 20;
+    r++;
+
+    // BOM column headers
+    const bomCols = [
+      { col: 'A', label: '#' },
+      { col: 'B', label: 'SKU' },
+      { col: 'C', label: 'Description' },
+      { col: 'D', label: 'Qty' },
+      { col: 'E', label: 'Unit Price (₹)' },
+      { col: 'F', label: 'Line Total (₹)' },
+      { col: 'G', label: 'Notes' }
+    ];
+    bomCols.forEach(function(c) {
+      const cell = ws1.getCell(c.col + r);
+      cell.value = c.label;
+      cell.font = xlFont({ size: 10, bold: true, color: { argb: XL_WHITE } });
+      cell.fill = xlFill(XL_FOREST_DARK);
+      cell.alignment = {
+        horizontal: (c.col === 'A' || c.col === 'D' || c.col === 'E' || c.col === 'F') ? 'center' : 'left',
+        vertical: 'middle', indent: 1
+      };
+      cell.border = { bottom: { style: 'medium', color: { argb: XL_CAVITAK_RED } } };
+    });
+    ws1.getRow(r).height = 22;
+    r++;
+
+    // BOM rows
+    const bomStartRow = r;
+    reco.bom.forEach(function(b, i) {
+      const zebra = (i % 2 === 0) ? XL_WHITE : XL_CREAM;
+
+      ws1.getCell('A' + r).value = i + 1;
+      ws1.getCell('A' + r).font = xlFont({ size: 11, color: { argb: XL_INK_SOFT } });
+      ws1.getCell('A' + r).alignment = { horizontal: 'center', vertical: 'middle' };
+
+      ws1.getCell('B' + r).value = b.sku;
+      ws1.getCell('B' + r).font = xlFont({ name: 'Consolas', size: 10, bold: true, color: { argb: XL_FOREST_DARK } });
+      ws1.getCell('B' + r).alignment = { vertical: 'middle', indent: 1 };
+
+      ws1.getCell('C' + r).value = b.description;
+      ws1.getCell('C' + r).font = xlFont({ size: 11 });
+      ws1.getCell('C' + r).alignment = { vertical: 'middle', wrapText: true };
+
+      ws1.getCell('D' + r).value = b.qty;
+      ws1.getCell('D' + r).font = xlFont({ size: 11, bold: true });
+      ws1.getCell('D' + r).alignment = { horizontal: 'center', vertical: 'middle' };
+
+      // Unit Price — EDITABLE, soft yellow highlight
+      ws1.getCell('E' + r).value = null;
+      ws1.getCell('E' + r).font = xlFont({ size: 11, bold: true });
+      ws1.getCell('E' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
+      ws1.getCell('E' + r).fill = xlFill(XL_YELLOW_SOFT);
+      ws1.getCell('E' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
+      ws1.getCell('E' + r).border = Object.assign(xlBorders('TB', XL_LINE), {
+        left: { style: 'medium', color: { argb: XL_GOLD } },
+        right: { style: 'medium', color: { argb: XL_GOLD } }
+      });
+
+      // Line Total — FORMULA
+      ws1.getCell('F' + r).value = { formula: 'D' + r + '*E' + r, result: 0 };
+      ws1.getCell('F' + r).font = xlFont({ size: 11, bold: true, color: { argb: XL_FOREST_DARK } });
+      ws1.getCell('F' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
+      ws1.getCell('F' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
+
+      ws1.getCell('G' + r).value = b.notes || '';
+      ws1.getCell('G' + r).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT }, italic: true });
+      ws1.getCell('G' + r).alignment = { vertical: 'middle', wrapText: true };
+
+      // Apply zebra background to A, B, C, D, G (skip E which is yellow, F stays white)
+      ['A', 'B', 'C', 'D', 'G'].forEach(function(col) {
+        if (ws1.getCell(col + r).fill == null || !ws1.getCell(col + r).fill.fgColor) {
+          ws1.getCell(col + r).fill = xlFill(zebra);
+        }
+      });
+      // All cells get bottom border
+      ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(function(col) {
+        const existing = ws1.getCell(col + r).border || {};
+        existing.bottom = xlThinBorder(XL_LINE);
+        ws1.getCell(col + r).border = existing;
+      });
+      ws1.getRow(r).height = 24;
+      r++;
+    });
+    const bomEndRow = r - 1;
+
+    // Spacer row
+    ws1.getRow(r).height = 6;
+    r++;
+
+    // Subtotal
+    const subtotalRow = r;
+    ws1.mergeCells('A' + r + ':D' + r);
+    ws1.getCell('E' + r).value = 'Subtotal';
+    ws1.getCell('E' + r).font = xlFont({ size: 11, bold: true, color: { argb: XL_INK_SOFT } });
+    ws1.getCell('E' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
+    ws1.getCell('F' + r).value = { formula: 'SUM(F' + bomStartRow + ':F' + bomEndRow + ')', result: 0 };
+    ws1.getCell('F' + r).font = xlFont({ size: 11, bold: true });
+    ws1.getCell('F' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
+    ws1.getCell('F' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
+    ws1.getCell('F' + r).border = xlBorders('T', XL_INK);
+    ws1.getRow(r).height = 22;
+    r++;
+
+    // GST
+    const gstRow = r;
+    ws1.getCell('E' + r).value = 'GST @ 18%';
+    ws1.getCell('E' + r).font = xlFont({ size: 11, color: { argb: XL_INK_SOFT } });
+    ws1.getCell('E' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
+    ws1.getCell('F' + r).value = { formula: 'F' + subtotalRow + '*0.18', result: 0 };
+    ws1.getCell('F' + r).font = xlFont({ size: 11 });
+    ws1.getCell('F' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
+    ws1.getCell('F' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
+    ws1.getRow(r).height = 20;
+    r++;
+
+    // Grand Total
+    const totalRow = r;
+    ws1.getCell('E' + r).value = 'GRAND TOTAL (₹)';
+    ws1.getCell('E' + r).font = xlFont({ size: 12, bold: true, color: { argb: XL_WHITE } });
+    ws1.getCell('E' + r).fill = xlFill(XL_CAVITAK_RED);
+    ws1.getCell('E' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
+    ws1.getCell('F' + r).value = { formula: 'F' + subtotalRow + '+F' + gstRow, result: 0 };
+    ws1.getCell('F' + r).font = xlFont({ size: 13, bold: true, color: { argb: XL_WHITE } });
+    ws1.getCell('F' + r).fill = xlFill(XL_CAVITAK_RED);
+    ws1.getCell('F' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
+    ws1.getCell('F' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
+    ws1.getRow(r).height = 28;
+    r++;
+
+    // Spacer
+    ws1.getRow(r).height = 14;
+    r++;
+
+    // --- TERMS & CONDITIONS ---
+    ws1.mergeCells('A' + r + ':G' + r);
+    const termsHdr = ws1.getCell('A' + r);
+    termsHdr.value = 'TERMS & CONDITIONS';
+    termsHdr.font = xlFont({ size: 9, bold: true, color: { argb: XL_WHITE } });
+    termsHdr.fill = xlFill(XL_FOREST);
+    termsHdr.alignment = { vertical: 'middle', indent: 1 };
+    ws1.getRow(r).height = 20;
+    r++;
+
+    const terms = [
+      ['Payment Terms', '100% advance along with purchase order'],
+      ['Delivery', 'Ex-warehouse, 30 days from receipt of confirmed PO & advance payment'],
+      ['Warranty', 'Standard 3-year OEM warranty (tvONE CALICO PRO series)'],
+      ['Validity', '15 days from quote date (' + quoteDate + ')'],
+      ['Taxes', 'GST @ 18% included above. Additional levies, if any, extra at actuals.'],
+      ['Freight & Insurance', 'Extra at actuals, unless specified otherwise'],
+      ['Installation', 'Commissioning & integration quoted separately on request']
+    ];
+    terms.forEach(function(t, i) {
+      ws1.getCell('A' + r).value = t[0];
+      ws1.getCell('A' + r).font = xlFont({ size: 10, bold: true, color: { argb: XL_FOREST_DARK } });
+      ws1.getCell('A' + r).alignment = { vertical: 'middle', indent: 1 };
+      ws1.mergeCells('B' + r + ':G' + r);
+      ws1.getCell('B' + r).value = t[1];
+      ws1.getCell('B' + r).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT } });
+      ws1.getCell('B' + r).alignment = { vertical: 'middle', wrapText: true };
+      const bg = i % 2 === 0 ? XL_CREAM : XL_WHITE;
+      ['A', 'B'].forEach(function(col) {
+        ws1.getCell(col + r).fill = xlFill(bg);
+      });
+      ws1.getRow(r).height = 18;
+      r++;
+    });
+
+    // Spacer
+    ws1.getRow(r).height = 14;
+    r++;
+
+    // --- CONTACT FOOTER ---
+    ws1.mergeCells('A' + r + ':G' + r);
+    const contactHdr = ws1.getCell('A' + r);
+    contactHdr.value = 'FOR PRICING & QUOTATION QUERIES';
+    contactHdr.font = xlFont({ size: 9, bold: true, color: { argb: XL_WHITE } });
+    contactHdr.fill = xlFill(XL_FOREST_DARK);
+    contactHdr.alignment = { vertical: 'middle', indent: 1 };
+    ws1.getRow(r).height = 20;
+    r++;
+
+    ws1.mergeCells('A' + r + ':G' + r);
+    ws1.getCell('A' + r).value = 'Dipenkumar Gajjar · National Product Manager · CALICO PRO Portfolio';
+    ws1.getCell('A' + r).font = xlFont({ size: 12, bold: true, color: { argb: XL_FOREST_DARK } });
+    ws1.getCell('A' + r).alignment = { vertical: 'middle', indent: 1 };
+    ws1.getCell('A' + r).fill = xlFill(XL_CREAM);
+    ws1.getRow(r).height = 22;
+    r++;
+
+    ws1.mergeCells('A' + r + ':G' + r);
+    ws1.getCell('A' + r).value = 'Email: dipen.g@cavitak.com · Phone: +91 8160 756 906';
+    ws1.getCell('A' + r).font = xlFont({ size: 11, color: { argb: XL_CAVITAK_RED } });
+    ws1.getCell('A' + r).alignment = { vertical: 'middle', indent: 1 };
+    ws1.getCell('A' + r).fill = xlFill(XL_CREAM);
+    ws1.getRow(r).height = 20;
+    r++;
+
+    ws1.mergeCells('A' + r + ':G' + r);
+    ws1.getCell('A' + r).value = 'Issued by: ' + currentUser.name + ' · Cavitak Marketing Pvt Ltd';
+    ws1.getCell('A' + r).font = xlFont({ size: 9, italic: true, color: { argb: XL_INK_SOFT } });
+    ws1.getCell('A' + r).alignment = { horizontal: 'right', vertical: 'middle' };
+    r++;
+
+    // Print area
+    ws1.pageSetup.printArea = 'A1:G' + (r - 1);
+
+    // =================================================================
+    // TAB 2 — TECHNICAL SPECIFICATION
+    // =================================================================
+    const ws2 = workbook.addWorksheet('Technical Specification', {
+      views: [{ showGridLines: false }],
+      pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+                   margins: { left: 0.4, right: 0.4, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 } }
+    });
+    ws2.columns = [
+      { width: 6 }, { width: 18 }, { width: 14 }, { width: 22 }, { width: 14 }, { width: 22 }, { width: 12 }
+    ];
+
+    function ws2Section(title) {
+      const row = ws2.rowCount + 1;
+      ws2.getRow(row).height = 8; // spacer
+      const hdrRow = row + 1;
+      ws2.mergeCells('A' + hdrRow + ':G' + hdrRow);
+      const c = ws2.getCell('A' + hdrRow);
+      c.value = title;
+      c.font = xlFont({ size: 10, bold: true, color: { argb: XL_WHITE } });
+      c.fill = xlFill(XL_FOREST);
+      c.alignment = { vertical: 'middle', indent: 1 };
+      ws2.getRow(hdrRow).height = 22;
+    }
+    function ws2Pair(label, value) {
+      const row = ws2.rowCount + 1;
+      ws2.getCell('A' + row).value = label;
+      ws2.getCell('A' + row).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT } });
+      ws2.getCell('A' + row).alignment = { vertical: 'middle', indent: 1 };
+      ws2.mergeCells('B' + row + ':G' + row);
+      ws2.getCell('B' + row).value = value == null || value === '' ? '—' : value;
+      ws2.getCell('B' + row).font = xlFont({ size: 11, bold: true });
+      ws2.getCell('B' + row).alignment = { vertical: 'middle', wrapText: true };
+      ws2.getRow(row).height = 18;
+    }
+
+    // Title
+    ws2.mergeCells('A1:G1');
+    ws2.getCell('A1').value = 'CALICO PRO — Technical Specification';
+    ws2.getCell('A1').font = xlFont({ size: 20, bold: true, color: { argb: XL_WHITE } });
+    ws2.getCell('A1').fill = xlFill(XL_FOREST_DARK);
+    ws2.getCell('A1').alignment = { vertical: 'middle', indent: 2 };
+    ws2.getRow(1).height = 36;
+    ws2.mergeCells('A2:G2');
+    ws2.getCell('A2').value = 'Command every pixel · ' + (input.project || 'Project') + ' · ' + quoteDate;
+    ws2.getCell('A2').font = xlFont({ size: 10, italic: true, color: { argb: XL_GOLD } });
+    ws2.getCell('A2').fill = xlFill(XL_FOREST_DARK);
+    ws2.getCell('A2').alignment = { vertical: 'middle', indent: 2 };
+    ws2.getRow(2).height = 20;
+
+    ws2Section('PROJECT CONTEXT');
+    ws2Pair('Project', input.project);
+    ws2Pair('End-user', input.endUser);
+    ws2Pair('Partner / SI', input.partner);
+    ws2Pair('Consultant', input.consultant);
+    ws2Pair('Venue', (input.venueName || '') + (input.venueType ? ' (' + input.venueType + ')' : ''));
+    ws2Pair('Location', [input.city, input.state].filter(Boolean).join(', '));
+    ws2Pair('Stage', input.stage);
+    ws2Pair('Expected Close', input.close);
+
+    ws2Section('RECOMMENDED CHASSIS');
+    ws2Pair('Model', reco.chassis);
+    ws2Pair('Form Factor', reco.chassis === 'C7-PRO-1200' ? '1U fixed' : '2U · 3 expansion slots');
+    ws2Pair('Native I/O', reco.chassis === 'C7-PRO-1200' ? '6 inputs · 2 outputs · HDMI only' : '8 inputs (all 4K-capable) · 4 outputs (4K)');
+    ws2Pair('Verdict', verdict);
+
+    ws2Section('TOTAL PIXELS PROCESSED');
+    ws2Pair('Total pixels', reco.totalPixelsProcessed);
+    ws2Pair('Millions', +(reco.totalPixelsProcessed / 1e6).toFixed(3));
+    ws2Pair('Notes', 'LED pixel budget + projector pixel allocation across the full system');
+
+    ws2Section('REQUIREMENTS MET');
+    ws2Pair('HDMI Output Ports', reco.hdmiPortsNeeded);
+    ws2Pair('SDI Output Ports', reco.sdiPortsNeeded || 0);
+    ws2Pair('Total Input Sources', input.inputs);
+    ws2Pair('HDMI Inputs @ 4K', input.inputs4K || 0);
+    ws2Pair('HDMI Inputs @ FHD', input.inputsFHD || 0);
+    const nonHdmi2 = Math.max(0, input.inputs - (input.inputs4K || 0) - (input.inputsFHD || 0));
+    ws2Pair('Other / Non-HDMI Inputs', nonHdmi2);
+    ws2Pair('Primary Signal Types', input.signals || 'HDMI');
+
+    if (input.outputType !== 'Projector' && input.screens && input.screens.length) {
+      ws2Section('LED SCREEN BREAKDOWN');
+      const hdrRow = ws2.rowCount + 1;
+      ['#', 'Label', 'Pitch (mm)', 'Resolution', 'Pixels', 'Physical Size (mm)', 'Ports'].forEach(function(h, i) {
+        const col = String.fromCharCode(65 + i);
+        const cell = ws2.getCell(col + hdrRow);
+        cell.value = h;
+        cell.font = xlFont({ size: 9, bold: true, color: { argb: XL_WHITE } });
+        cell.fill = xlFill(XL_FOREST);
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = xlBorders('TLRB', XL_LINE);
+      });
+      ws2.getRow(hdrRow).height = 20;
+      input.screens.forEach(function(s, i) {
+        const row = ws2.rowCount + 1;
+        const values = [
+          i + 1, s.label || ('Screen ' + (i + 1)), s.pitch || '—',
+          s.resW && s.resH ? (s.resW + ' × ' + s.resH) : '—',
+          s.pixels || 0,
+          (s.widthMm && s.heightMm) ? (s.widthMm + ' × ' + s.heightMm) : '—',
+          s.ports || 0
+        ];
+        values.forEach(function(v, j) {
+          const col = String.fromCharCode(65 + j);
+          const cell = ws2.getCell(col + row);
+          cell.value = v;
+          cell.font = xlFont({ size: 10 });
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          cell.fill = xlFill(i % 2 === 0 ? XL_CREAM : XL_WHITE);
+          cell.border = xlBorders('LRB', XL_LINE);
+        });
+        ws2.getRow(row).height = 18;
+      });
+      // Total row
+      const totalR = ws2.rowCount + 1;
+      ws2.getCell('B' + totalR).value = 'TOTAL';
+      ws2.getCell('B' + totalR).font = xlFont({ size: 10, bold: true, color: { argb: XL_WHITE } });
+      ws2.getCell('E' + totalR).value = reco.ledPixels;
+      ws2.getCell('E' + totalR).font = xlFont({ size: 10, bold: true, color: { argb: XL_WHITE } });
+      ws2.getCell('G' + totalR).value = reco.ledPorts;
+      ws2.getCell('G' + totalR).font = xlFont({ size: 10, bold: true, color: { argb: XL_WHITE } });
+      ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(function(col) {
+        ws2.getCell(col + totalR).fill = xlFill(XL_FOREST_DARK);
+        ws2.getCell(col + totalR).alignment = { horizontal: 'center', vertical: 'middle' };
+      });
+      ws2.getRow(totalR).height = 20;
+    }
+
+    if (input.projectorCount) {
+      ws2Section('PROJECTOR CONFIGURATION');
+      ws2Pair('Projector Count', input.projectorCount);
+      ws2Pair('Resolution', input.projectorRes || '4K');
+      ws2Pair('Arrangement', input.projectorCount > 1 ? 'Edge-blended multi-projector canvas' : 'Standalone');
+      ws2Pair('Port Allocation', '1 output port per projector');
+    }
+
+    ws2Section('PORT SIZING LOGIC');
+    ws2Pair('Port Capacity', '1 output = 4K60 (3840 × 2160) = 8,294,400 pixels');
+    ws2Pair('Per-Screen Math', 'Each screen rounded up independently (ports not shared across screens), then summed');
+    ws2Pair('LED Ports Required', reco.ledPorts);
+    ws2Pair('Projector Ports Required', reco.projPorts);
+    ws2Pair('HDMI Total', reco.hdmiPortsNeeded);
+    ws2Pair('SDI Total', reco.sdiPortsNeeded || 0);
+
+    if (reco.reasons && reco.reasons.length) {
+      ws2Section('REASONING');
+      reco.reasons.forEach(function(rz) {
+        const row = ws2.rowCount + 1;
+        ws2.getCell('A' + row).value = '•';
+        ws2.getCell('A' + row).font = xlFont({ size: 11, color: { argb: XL_FOREST } });
+        ws2.getCell('A' + row).alignment = { horizontal: 'center', vertical: 'middle' };
+        ws2.mergeCells('B' + row + ':G' + row);
+        ws2.getCell('B' + row).value = rz;
+        ws2.getCell('B' + row).font = xlFont({ size: 10 });
+        ws2.getCell('B' + row).alignment = { vertical: 'middle', wrapText: true };
+        ws2.getRow(row).height = 18;
       });
     }
-    projectInfo.push([''], ['── NOTES ──']);
-    projectInfo.push(['Special Requirements', input.notes || '—']);
-    projectInfo.push([''], ['── FOR PRICING & QUOTATION ──']);
-    projectInfo.push(['Contact', 'Dipenkumar Gajjar']);
-    projectInfo.push(['Role', 'National Product Manager · CALICO PRO Portfolio']);
-    projectInfo.push(['Email', 'dipen.g@cavitak.com']);
-    projectInfo.push(['Phone', '+91 8160 756 906']);
-    projectInfo.push(['Next Step', 'Email this file with your enquiry for a swift quote.']);
-    const ws1 = XLSX.utils.aoa_to_sheet(projectInfo);
-    ws1['!cols'] = [{ wch: 28 }, { wch: 60 }];
-    XLSX.utils.book_append_sheet(wb, ws1, 'Project Info');
 
-    const screenHeader = ['#', 'Screen Label', 'LED Pitch (mm)', 'Resolution W (px)', 'Resolution H (px)', 'Pixels', 'Pixels (M)', 'Physical Width (mm)', 'Physical Height (mm)', 'Ports (per screen)'];
-    const screenRows = input.screens.map(function(s, i) {
-      return [i + 1, s.label, s.pitch || '',
-        s.resW, s.resH, s.pixels, +(s.pixels/1e6).toFixed(3),
-        s.widthMm || '', s.heightMm || '', s.ports || 0];
+    if (reco.concerns && reco.concerns.length) {
+      ws2Section('CONCERNS / FLAGS');
+      reco.concerns.forEach(function(c) {
+        const row = ws2.rowCount + 1;
+        ws2.getCell('A' + row).value = '⚠';
+        ws2.getCell('A' + row).font = xlFont({ size: 11, color: { argb: 'FFB45309' } });
+        ws2.getCell('A' + row).alignment = { horizontal: 'center', vertical: 'middle' };
+        ws2.mergeCells('B' + row + ':G' + row);
+        ws2.getCell('B' + row).value = c;
+        ws2.getCell('B' + row).font = xlFont({ size: 10 });
+        ws2.getCell('B' + row).alignment = { vertical: 'middle', wrapText: true };
+        ws2.getCell('B' + row).fill = xlFill('FFFEF3C7');
+        ws2.getRow(row).height = 22;
+      });
+    }
+
+    if (reco.valueAdds && reco.valueAdds.length) {
+      ws2Section('VALUE-ADDS FOR CUSTOMER');
+      reco.valueAdds.forEach(function(va) {
+        const row = ws2.rowCount + 1;
+        ws2.mergeCells('A' + row + ':G' + row);
+        ws2.getCell('A' + row).value = '✦ ' + va.title;
+        ws2.getCell('A' + row).font = xlFont({ size: 11, bold: true, color: { argb: 'FF15803D' } });
+        ws2.getCell('A' + row).fill = xlFill('FFECFDF5');
+        ws2.getCell('A' + row).alignment = { vertical: 'middle', indent: 1 };
+        ws2.getRow(row).height = 20;
+        const row2 = ws2.rowCount + 1;
+        ws2.mergeCells('A' + row2 + ':G' + row2);
+        ws2.getCell('A' + row2).value = va.body;
+        ws2.getCell('A' + row2).font = xlFont({ size: 10, color: { argb: 'FF065F46' } });
+        ws2.getCell('A' + row2).fill = xlFill('FFECFDF5');
+        ws2.getCell('A' + row2).alignment = { vertical: 'middle', wrapText: true, indent: 1 };
+        ws2.getRow(row2).height = 40;
+      });
+    }
+
+    if (input.notes) {
+      ws2Section('SPECIAL REQUIREMENTS / NOTES');
+      const row = ws2.rowCount + 1;
+      ws2.mergeCells('A' + row + ':G' + row);
+      ws2.getCell('A' + row).value = input.notes;
+      ws2.getCell('A' + row).font = xlFont({ size: 10 });
+      ws2.getCell('A' + row).alignment = { vertical: 'middle', wrapText: true, indent: 1 };
+      ws2.getRow(row).height = 40;
+    }
+
+    ws2Section('DOCUMENT TRAIL');
+    ws2Pair('Quote No.', quoteNo);
+    ws2Pair('Issued by', currentUser.name + ' (' + currentUser.username + ')');
+    ws2Pair('Generated at', now.toLocaleString('en-IN'));
+
+    // =================================================================
+    // TAB 3 — BOM DETAIL
+    // =================================================================
+    const ws3 = workbook.addWorksheet('BOM', {
+      views: [{ showGridLines: false }],
+      pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+                   margins: { left: 0.4, right: 0.4, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 } }
     });
-    screenRows.push(['', 'TOTAL', '', '', '', reco.ledPixels, +(reco.ledPixels/1e6).toFixed(3), '', '', reco.ledPorts]);
-    const ws2 = XLSX.utils.aoa_to_sheet([screenHeader].concat(screenRows));
-    ws2['!cols'] = [{wch:4},{wch:14},{wch:14},{wch:18},{wch:18},{wch:14},{wch:12},{wch:18},{wch:18},{wch:17}];
-    XLSX.utils.book_append_sheet(wb, ws2, 'Screen Details');
-
-    const portCalc = [
-      ['CALICO PRO Port Sizing Calculation'], [''],
-      ['Each output port supports up to 4K (3840×2160) = 8,294,400 pixels.'],
-      ['Per-screen port math: each screen is rounded up independently (ports are never shared across screens), then summed.'], [''],
-      ['Per-Screen Port Allocation'],
-      ['Screen', 'Resolution', 'Pixels', 'Pixels ÷ 8,294,400', 'Ports (rounded up)']
+    ws3.columns = [
+      { width: 6 }, { width: 20 }, { width: 42 }, { width: 8 }, { width: 22 }, { width: 38 }
     ];
-    input.screens.forEach(function(s, i) {
-      portCalc.push([
-        'Screen ' + (i + 1),
-        s.resW && s.resH ? (s.resW + ' × ' + s.resH) : '—',
-        s.pixels || 0,
-        s.pixels ? (s.pixels / PORT_CAPACITY_4K60).toFixed(4) : '0',
-        s.ports || 0
-      ]);
+
+    // Title
+    ws3.mergeCells('A1:F1');
+    ws3.getCell('A1').value = 'CALICO PRO — Detailed Bill of Materials';
+    ws3.getCell('A1').font = xlFont({ size: 20, bold: true, color: { argb: XL_WHITE } });
+    ws3.getCell('A1').fill = xlFill(XL_FOREST_DARK);
+    ws3.getCell('A1').alignment = { vertical: 'middle', indent: 2 };
+    ws3.getRow(1).height = 36;
+    ws3.mergeCells('A2:F2');
+    ws3.getCell('A2').value = (input.project || 'Project') + ' · Quote ' + quoteNo;
+    ws3.getCell('A2').font = xlFont({ size: 10, italic: true, color: { argb: XL_GOLD } });
+    ws3.getCell('A2').fill = xlFill(XL_FOREST_DARK);
+    ws3.getCell('A2').alignment = { vertical: 'middle', indent: 2 };
+    ws3.getRow(2).height = 20;
+
+    // Table header
+    const bomTabHdrRow = 4;
+    ['#', 'SKU', 'Description', 'Qty', 'Slot / Placement', 'Technical Notes'].forEach(function(h, i) {
+      const col = String.fromCharCode(65 + i);
+      const cell = ws3.getCell(col + bomTabHdrRow);
+      cell.value = h;
+      cell.font = xlFont({ size: 10, bold: true, color: { argb: XL_WHITE } });
+      cell.fill = xlFill(XL_FOREST_DARK);
+      cell.alignment = {
+        horizontal: (col === 'A' || col === 'D') ? 'center' : 'left',
+        vertical: 'middle', indent: 1
+      };
+      cell.border = { bottom: { style: 'medium', color: { argb: XL_CAVITAK_RED } } };
     });
-    portCalc.push(['', '', 'TOTAL LED PORTS', '', reco.ledPorts]);
-    portCalc.push(['']);
-    portCalc.push(['Projector Ports', '', '', '1 per projector', reco.projPorts]);
-    portCalc.push(['']);
-    portCalc.push(['HDMI Ports Needed (LED + Projector)', '', '', '', reco.hdmiPortsNeeded]);
-    portCalc.push(['SDI Ports Needed (user-specified)', '', '', '', reco.sdiPortsNeeded || 0]);
-    portCalc.push(['TOTAL PORTS', '', '', '', reco.portsNeeded]);
-    portCalc.push(['']);
-    portCalc.push(['Input Configuration']);
-    portCalc.push(['Total Inputs Required', '', '', '', input.inputs]);
-    portCalc.push(['HDMI 4K Inputs', '', '', '', input.inputs4K || 0]);
-    portCalc.push(['HDMI FHD Inputs', '', '', '', input.inputsFHD || 0]);
-    portCalc.push(['']);
-    portCalc.push(['Recommended Chassis', '', '', '', reco.outputCardInfeasible ? '⚠ NO SINGLE-CHASSIS RECOMMENDATION' : reco.chassis]);
-    const ws3 = XLSX.utils.aoa_to_sheet(portCalc);
-    ws3['!cols'] = [{ wch: 36 }, { wch: 16 }, { wch: 14 }, { wch: 22 }, { wch: 14 }];
-    XLSX.utils.book_append_sheet(wb, ws3, 'Port Calculation');
+    ws3.getRow(bomTabHdrRow).height = 22;
 
-    const bomHeader = ['#', 'SKU', 'Description', 'Qty', 'Notes', 'Pricing / BOM Notes'];
-    const bomRows = reco.bom.map(function(b, i) { return [i + 1, b.sku, b.description, b.qty, b.notes || '', '']; });
-    // Add pricing contact footer
-    bomRows.push(['', '', '', '', '', '']);
-    bomRows.push(['', 'FOR PRICING', 'Contact: Dipenkumar Gajjar · National Product Manager', '', 'Email: dipen.g@cavitak.com · Phone: +91 8160 756 906', 'Email this BOM for a swift quote.']);
-    const ws4 = XLSX.utils.aoa_to_sheet([bomHeader].concat(bomRows));
-    ws4['!cols'] = [{wch:4},{wch:22},{wch:55},{wch:8},{wch:45},{wch:40}];
-    XLSX.utils.book_append_sheet(wb, ws4, 'BOM Recommendation');
-
-    const rawHeader = ['Field', 'Value'];
-    const rawRows = Object.entries(submission).map(function(e) {
-      return [e[0], typeof e[1] === 'object' ? JSON.stringify(e[1]) : e[1]];
+    reco.bom.forEach(function(b, i) {
+      const row = bomTabHdrRow + 1 + i;
+      let placement = '—';
+      if (b.sku === 'C7-PRO-1200' || b.sku === 'C7-PRO-2200') placement = 'Main chassis';
+      else if (b.sku && b.sku.indexOf('HDMI-4K-4OUT') >= 0) placement = 'Slot 10 (Output)';
+      else if (b.sku && b.sku.indexOf('HDMI-2K-8OUT') >= 0) placement = 'Slot 10 (Output)';
+      else if (b.sku && b.sku.indexOf('SDI-12G-4OUT') >= 0) placement = 'Slot 10 (Output)';
+      else if (b.sku && b.sku.indexOf('IN') >= 0) placement = 'Slot 11 or 12 (Input)';
+      const values = [i + 1, b.sku, b.description, b.qty, placement, b.notes || ''];
+      const zebra = i % 2 === 0 ? XL_WHITE : XL_CREAM;
+      values.forEach(function(v, j) {
+        const col = String.fromCharCode(65 + j);
+        const cell = ws3.getCell(col + row);
+        cell.value = v;
+        cell.font = xlFont({
+          size: col === 'B' ? 10 : 11,
+          bold: (col === 'B' || col === 'D'),
+          color: { argb: col === 'B' ? XL_FOREST_DARK : XL_INK },
+          name: col === 'B' ? 'Consolas' : 'Calibri'
+        });
+        cell.fill = xlFill(zebra);
+        cell.alignment = {
+          horizontal: (col === 'A' || col === 'D') ? 'center' : 'left',
+          vertical: 'middle', wrapText: (col === 'C' || col === 'F'), indent: 1
+        };
+        cell.border = xlBorders('B', XL_LINE);
+      });
+      ws3.getRow(row).height = 26;
     });
-    const ws5 = XLSX.utils.aoa_to_sheet([rawHeader].concat(rawRows));
-    ws5['!cols'] = [{ wch: 28 }, { wch: 80 }];
-    XLSX.utils.book_append_sheet(wb, ws5, 'Raw Submission');
 
-    const safeProject = (input.project || 'project').replace(/[^a-z0-9]/gi, '_').slice(0, 30);
-    const safeClient = (input.endUser || 'client').replace(/[^a-z0-9]/gi, '_').slice(0, 20);
-    const today = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, 'CALICO_' + safeClient + '_' + safeProject + '_' + today + '.xlsx');
+    // Chassis Specifications section
+    const specStartRow = bomTabHdrRow + reco.bom.length + 2;
+    ws3.getRow(specStartRow - 1).height = 10;
+    ws3.mergeCells('A' + specStartRow + ':F' + specStartRow);
+    ws3.getCell('A' + specStartRow).value = 'CHASSIS SPECIFICATIONS';
+    ws3.getCell('A' + specStartRow).font = xlFont({ size: 10, bold: true, color: { argb: XL_WHITE } });
+    ws3.getCell('A' + specStartRow).fill = xlFill(XL_FOREST);
+    ws3.getCell('A' + specStartRow).alignment = { vertical: 'middle', indent: 1 };
+    ws3.getRow(specStartRow).height = 22;
+
+    const specs = reco.chassis === 'C7-PRO-1200' ? [
+      ['Form Factor', '1U rackmount — fixed configuration, no expansion'],
+      ['Video Inputs', '6 × HDMI (up to 4K)'],
+      ['Video Outputs', '2 × HDMI (up to 4K)'],
+      ['Expansion', 'Not available'],
+      ['Power', 'Internal, single PSU']
+    ] : [
+      ['Form Factor', '2U rackmount — expandable via 3 card slots'],
+      ['Native Inputs', '8 × HDMI (all 4K-capable)'],
+      ['Native Outputs', '4 × HDMI 4K'],
+      ['Expansion Slots', 'Slot 10 (Output) · Slot 11 (LB Input) · Slot 12 (HB Input)'],
+      ['Power', 'Internal, redundant PSU capable']
+    ];
+    specs.concat([
+      ['Warranty', '3-year standard OEM warranty'],
+      ['Control', 'tvONE CORIOgrapher · Web UI · API']
+    ]).forEach(function(s, i) {
+      const row = specStartRow + 1 + i;
+      ws3.getCell('A' + row).value = s[0];
+      ws3.getCell('A' + row).font = xlFont({ size: 10, bold: true, color: { argb: XL_FOREST_DARK } });
+      ws3.getCell('A' + row).alignment = { vertical: 'middle', indent: 1 };
+      ws3.mergeCells('B' + row + ':F' + row);
+      ws3.getCell('B' + row).value = s[1];
+      ws3.getCell('B' + row).font = xlFont({ size: 10 });
+      ws3.getCell('B' + row).alignment = { vertical: 'middle', wrapText: true };
+      const bg = i % 2 === 0 ? XL_CREAM : XL_WHITE;
+      ws3.getCell('A' + row).fill = xlFill(bg);
+      ws3.getCell('B' + row).fill = xlFill(bg);
+      ws3.getRow(row).height = 20;
+    });
+
+    // Contact block
+    const contactR = specStartRow + 1 + specs.length + 2 + 2;
+    ws3.getRow(contactR - 1).height = 12;
+    ws3.mergeCells('A' + contactR + ':F' + contactR);
+    ws3.getCell('A' + contactR).value = 'FOR PRICING & QUOTATION';
+    ws3.getCell('A' + contactR).font = xlFont({ size: 10, bold: true, color: { argb: XL_WHITE } });
+    ws3.getCell('A' + contactR).fill = xlFill(XL_FOREST_DARK);
+    ws3.getCell('A' + contactR).alignment = { vertical: 'middle', indent: 1 };
+    ws3.getRow(contactR).height = 20;
+
+    ws3.mergeCells('A' + (contactR + 1) + ':F' + (contactR + 1));
+    ws3.getCell('A' + (contactR + 1)).value = 'Dipenkumar Gajjar · National Product Manager · dipen.g@cavitak.com · +91 8160 756 906';
+    ws3.getCell('A' + (contactR + 1)).font = xlFont({ size: 11, bold: true, color: { argb: XL_FOREST_DARK } });
+    ws3.getCell('A' + (contactR + 1)).fill = xlFill(XL_CREAM);
+    ws3.getCell('A' + (contactR + 1)).alignment = { vertical: 'middle', indent: 1 };
+    ws3.getRow(contactR + 1).height = 22;
+
+    // =================================================================
+    // WRITE FILE
+    // =================================================================
+    const safeProject = (input.project || 'Project').replace(/[^a-zA-Z0-9]/gi, '_').slice(0, 30);
+    const safeClient = (input.endUser || 'Client').replace(/[^a-zA-Z0-9]/gi, '_').slice(0, 20);
+    const today = now.toISOString().slice(0, 10);
+    const filename = 'CALICO_Quote_' + safeClient + '_' + safeProject + '_' + today + '.xlsx';
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   // =================================================================
@@ -2560,5 +3303,11 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 </script>
+<!-- Silent sync toast indicator -->
+<div class="sync-status" id="syncStatus">
+  <span class="sync-dot"></span>
+  <span id="syncMsg">Saving…</span>
+</div>
+
 </body>
 </html>
