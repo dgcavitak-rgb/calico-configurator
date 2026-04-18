@@ -4119,13 +4119,13 @@
       }
     });
     ws1.columns = [
-      { width: 6 },   // A: # column
-      { width: 18 },  // B: SKU
-      { width: 42 },  // C: Description
-      { width: 8 },   // D: Qty
-      { width: 16 },  // E: Unit Price ₹
-      { width: 18 },  // F: Line Total ₹
-      { width: 30 }   // G: Notes
+      { width: 18 },  // A: label col (QUOTED TO) / # col (BOM - centered)
+      { width: 16 },  // B: SKU (on BOM) / merged value (on QUOTED TO)
+      { width: 36 },  // C: Description / merged value continuation
+      { width: 18 },  // D: label col (PROJECT DETAILS) / Qty col (BOM - centered)
+      { width: 14 },  // E: Unit Price / merged value
+      { width: 16 },  // F: Line Total / merged value continuation
+      { width: 24 }   // G: Notes / merged value continuation
     ];
 
     let r = 1;
@@ -4385,6 +4385,7 @@
 
     // GST
     const gstRow = r;
+    ws1.mergeCells('A' + r + ':D' + r);
     ws1.getCell('E' + r).value = 'GST @ 18%';
     ws1.getCell('E' + r).font = xlFont({ size: 11, color: { argb: XL_INK_SOFT } });
     ws1.getCell('E' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
@@ -4395,18 +4396,20 @@
     ws1.getRow(r).height = 20;
     r++;
 
-    // Grand Total
+    // Grand Total — full-width red band with merged label cell
     const totalRow = r;
-    ws1.getCell('E' + r).value = 'GRAND TOTAL (₹)';
-    ws1.getCell('E' + r).font = xlFont({ size: 12, bold: true, color: { argb: XL_WHITE } });
-    ws1.getCell('E' + r).fill = xlFill(XL_CAVITAK_RED);
-    ws1.getCell('E' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
+    ws1.mergeCells('A' + r + ':E' + r);
+    const totalLabelCell = ws1.getCell('A' + r);
+    totalLabelCell.value = 'GRAND TOTAL (₹)';
+    totalLabelCell.font = xlFont({ size: 13, bold: true, color: { argb: XL_WHITE } });
+    totalLabelCell.fill = xlFill(XL_CAVITAK_RED);
+    totalLabelCell.alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
     ws1.getCell('F' + r).value = { formula: 'F' + subtotalRow + '+F' + gstRow, result: 0 };
     ws1.getCell('F' + r).font = xlFont({ size: 13, bold: true, color: { argb: XL_WHITE } });
     ws1.getCell('F' + r).fill = xlFill(XL_CAVITAK_RED);
     ws1.getCell('F' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
     ws1.getCell('F' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
-    ws1.getRow(r).height = 28;
+    ws1.getRow(r).height = 32;
     r++;
 
     // Spacer
