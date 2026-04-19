@@ -2611,10 +2611,10 @@
        - tvone-logo-light.png (for light theme; dark logo on light bg)
      If either file is missing, it falls back to tvone-logo.png (single file).
      ================================================================= */
-  .logo-dark { display: inline-block; }
-  .logo-light { display: none; }
-  [data-theme="light"] .logo-dark { display: none; }
-  [data-theme="light"] .logo-light { display: inline-block; }
+  .logo-dark { display: inline-block !important; }
+  .logo-light { display: none !important; }
+  [data-theme="light"] .logo-dark { display: none !important; }
+  [data-theme="light"] .logo-light { display: inline-block !important; }
 
   /* =================================================================
      PENDING QUEUE INDICATOR — shown in header when submissions failed
@@ -5399,9 +5399,19 @@
             submission.timestampLocal = _editingOriginalRow.timestampLocal;
           }
           await updateSubmissionOnSheet(submission);
+          // Update the in-memory copy so a follow-up Edit immediately shows the new values
+          if (Array.isArray(centralLog)) {
+            const idx = centralLog.findIndex(function(r) { return String(r.refId) === String(_editingRefId); });
+            if (idx >= 0) centralLog[idx] = submission;
+          }
           showSync('Changes saved', 'success');
         } else {
           await logToSheet(submission);
+          // Push into centralLog immediately so Edit/openDetailModal can find it
+          // without waiting for the next refreshLog() cycle
+          if (Array.isArray(centralLog)) {
+            centralLog.unshift(submission);
+          }
           showSync('Saved', 'success');
         }
       } else {
@@ -5468,43 +5478,60 @@
   }
 
   function startEditingSubmission(refId) {
-    if (!refId) return;
-    // OEM is read-only — block edit attempt defensively (UI already hides the button)
-    if (currentUser && currentUser.role === 'OEM') {
-      alert('OEM role has read-only access. You cannot edit submissions.');
-      return;
+    try {
+      console.log('[Edit] startEditingSubmission called with refId:', refId);
+      if (!refId) { console.warn('[Edit] No refId provided'); return; }
+      // OEM is read-only — block edit attempt defensively (UI already hides the button)
+      if (currentUser && currentUser.role === 'OEM') {
+        alert('OEM role has read-only access. You cannot edit submissions.');
+        return;
+      }
+      // Find the row in centralLog
+      const row = centralLog.find(function(r) { return String(r.refId) === String(refId); });
+      if (!row) {
+        alert('Submission not found. It may have been removed or the data is stale — try Refresh.');
+        console.warn('[Edit] refId not in centralLog. centralLog has', centralLog.length, 'rows');
+        return;
+      }
+      console.log('[Edit] Found row:', row.project, 'by', row.username);
+      // Ownership check (client-side; backend enforces too)
+      const isOwner = String(row.username || '').toLowerCase() === String(currentUser.username || '').toLowerCase();
+      if (!isOwner && !currentUser.isSuper) {
+        alert('You can only edit your own submissions.');
+        return;
+      }
+      // Set edit state
+      _editingRefId = refId;
+      _editingOriginalRow = row;
+      // Populate the form fields from row (wrapped to catch errors without losing state)
+      try {
+        populateFormFromRow_(row);
+      } catch (popErr) {
+        console.error('[Edit] populateFormFromRow_ failed:', popErr);
+        alert('Edit failed — could not load submission data into the form. Check console for details.\n\n' + popErr.message);
+        _editingRefId = null;
+        _editingOriginalRow = null;
+        return;
+      }
+      // Update banner
+      const banner = document.getElementById('editBanner');
+      const sub = document.getElementById('editBannerSub');
+      if (banner) banner.classList.remove('hidden');
+      if (sub) {
+        sub.innerHTML = '<b>' + escapeHtml(row.project || 'Untitled') + '</b> · ref ' +
+          '<code style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--gold-bright)">' +
+          escapeHtml(refId) + '</code>' +
+          ' · originally by ' + escapeHtml(row.userFullName || row.username || '—');
+      }
+      // Switch to form view
+      showView('form');
+      // Scroll to top so user sees the banner
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      console.log('[Edit] Successfully opened edit mode for', refId);
+    } catch (err) {
+      console.error('[Edit] startEditingSubmission crashed:', err);
+      alert('Could not open Edit: ' + (err.message || err));
     }
-    // Find the row in centralLog
-    const row = centralLog.find(function(r) { return String(r.refId) === String(refId); });
-    if (!row) {
-      alert('Submission not found. It may have been removed or the data is stale — try Refresh.');
-      return;
-    }
-    // Ownership check (client-side; backend enforces too)
-    const isOwner = String(row.username || '').toLowerCase() === String(currentUser.username || '').toLowerCase();
-    if (!isOwner && !currentUser.isSuper) {
-      alert('You can only edit your own submissions.');
-      return;
-    }
-    // Set edit state
-    _editingRefId = refId;
-    _editingOriginalRow = row;
-    // Populate the form fields from row
-    populateFormFromRow_(row);
-    // Update banner
-    const banner = document.getElementById('editBanner');
-    const sub = document.getElementById('editBannerSub');
-    if (banner) banner.classList.remove('hidden');
-    if (sub) {
-      sub.innerHTML = '<b>' + escapeHtml(row.project || 'Untitled') + '</b> · ref ' +
-        '<code style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--gold-bright)">' +
-        escapeHtml(refId) + '</code>' +
-        ' · originally by ' + escapeHtml(row.userFullName || row.username || '—');
-    }
-    // Switch to form view
-    showView('form');
-    // Scroll to top so user sees the banner
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function cancelEditMode() {
@@ -5520,9 +5547,14 @@
   function populateFormFromRow_(r) {
     const setVal = function(id, val) {
       const el = document.getElementById(id);
-      if (!el) return;
-      el.value = (val == null ? '' : String(val));
+      if (!el) { console.warn('[Edit] Missing form field:', id); return; }
+      try {
+        el.value = (val == null ? '' : String(val));
+      } catch (e) {
+        console.warn('[Edit] Could not set', id, ':', e.message);
+      }
     };
+    console.log('[Edit] Populating form from row with keys:', Object.keys(r).length);
     setVal('f_project', r.project);
     setVal('f_stage', r.stage);
     setVal('f_endUser', r.endUser);
@@ -5548,8 +5580,9 @@
     setVal('f_notes', r.notes);
 
     // Re-trigger conditional UI (projector field visibility, SDI count, etc.)
-    if (typeof onOutputTypeChange === 'function') onOutputTypeChange();
-    if (typeof onOutputSignalChange === 'function') onOutputSignalChange();
+    try { if (typeof onOutputTypeChange === 'function') onOutputTypeChange(); } catch (e) { console.warn('[Edit] onOutputTypeChange failed:', e.message); }
+    try { if (typeof onOutputSignalChange === 'function') onOutputSignalChange(); } catch (e) { console.warn('[Edit] onOutputSignalChange failed:', e.message); }
+    try { if (typeof onDealValueChange === 'function') onDealValueChange(); } catch (e) { /* optional */ }
 
     // Rebuild LED screens from per-screen W/H columns
     const screens = [];
@@ -5558,26 +5591,31 @@
       const h = r['screen' + i + '_H'];
       if (w && h) screens.push({ resW: w, resH: h });
     }
-    if (screens.length > 0) {
-      // Reset and repopulate the screens UI
-      screenCount = 0;
-      const container = document.getElementById('screensContainer');
-      if (container) container.innerHTML = '';
-      screens.forEach(function(s, idx) {
-        addScreen();
-        const screenNum = idx + 1; // addScreen uses 1-indexed screenCount
-        const wEl = document.getElementById('resW-' + screenNum);
-        const hEl = document.getElementById('resH-' + screenNum);
-        if (wEl) wEl.value = s.resW;
-        if (hEl) hEl.value = s.resH;
-        if (typeof updateReadout === 'function') updateReadout(screenNum);
-      });
-    } else {
-      // No screens — reset to a single empty screen
-      if (typeof initScreens === 'function') initScreens();
+    console.log('[Edit] Found', screens.length, 'screens to restore');
+    try {
+      if (screens.length > 0) {
+        // Reset and repopulate the screens UI
+        screenCount = 0;
+        const container = document.getElementById('screensContainer');
+        if (container) container.innerHTML = '';
+        screens.forEach(function(s, idx) {
+          addScreen();
+          const screenNum = idx + 1; // addScreen uses 1-indexed screenCount
+          const wEl = document.getElementById('resW-' + screenNum);
+          const hEl = document.getElementById('resH-' + screenNum);
+          if (wEl) wEl.value = s.resW;
+          if (hEl) hEl.value = s.resH;
+          if (typeof updateReadout === 'function') updateReadout(screenNum);
+        });
+      } else {
+        // No screens recorded — keep the current form structure (single empty screen already present)
+        if (screenCount === 0 && typeof initScreens === 'function') initScreens();
+      }
+    } catch (e) {
+      console.error('[Edit] Screen rebuild failed:', e);
     }
     // Trigger form-wide totals recalc
-    if (typeof updateTotals === 'function') updateTotals();
+    try { if (typeof updateTotals === 'function') updateTotals(); } catch (e) { console.warn('[Edit] updateTotals failed:', e.message); }
   }
 
   // =================================================================
@@ -5691,8 +5729,9 @@
       html += '<div class="card">';
       html += '<div class="card-title">Requirements Summary</div>';
       html += '<div class="reco-specs">';
-      html += specCell('HDMI Output Ports', reco.hdmiPortsNeeded, true);
-      if (reco.sdiPortsNeeded > 0) html += specCell('SDI Output Ports', reco.sdiPortsNeeded, true);
+      // Red only if the port count actually exceeds what a single C7-PRO-2200 can deliver (native 4 + expansion card = 8 × 4K or 12 × FHD)
+      html += specCell('HDMI Output Ports', reco.hdmiPortsNeeded, reco.hdmiPortsNeeded > 12);
+      if (reco.sdiPortsNeeded > 0) html += specCell('SDI Output Ports', reco.sdiPortsNeeded, reco.sdiPortsNeeded > 4);
       html += specCell('Total Input Sources', input.inputs);
       if (input.projectorCount) html += specCell('Projectors', input.projectorCount + ' × ' + input.projectorRes);
       if (input.screens.length) html += specCell('LED Screens', input.screens.length);
@@ -5754,8 +5793,9 @@
     html += '<div class="card">';
     html += '<div class="card-title">Requirements Summary</div>';
     html += '<div class="reco-specs">';
-    html += specCell('HDMI Output Ports', reco.hdmiPortsNeeded, true);
-    if (reco.sdiPortsNeeded > 0) html += specCell('SDI Output Ports', reco.sdiPortsNeeded, true);
+    // Red only if the port count actually exceeds single-chassis limits (12 HDMI max with output card, 4 SDI max)
+    html += specCell('HDMI Output Ports', reco.hdmiPortsNeeded, reco.hdmiPortsNeeded > 12);
+    if (reco.sdiPortsNeeded > 0) html += specCell('SDI Output Ports', reco.sdiPortsNeeded, reco.sdiPortsNeeded > 4);
     html += specCell('Total Input Sources', input.inputs);
     if (input.inputs4K) html += specCell('HDMI Inputs @ 4K', input.inputs4K);
     if (input.inputsFHD) html += specCell('HDMI Inputs @ FHD', input.inputsFHD);
