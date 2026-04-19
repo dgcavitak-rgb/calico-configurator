@@ -2360,6 +2360,950 @@
     color: #8B7026;
     box-shadow: 0 4px 16px rgba(176, 141, 40, 0.22);
   }
+  /* =================================================================
+     MODAL OVERLAYS (Change Password + Add/Edit User)
+     ================================================================= */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(5, 7, 6, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    animation: modalFadeIn 0.25s var(--ease);
+  }
+  [data-theme="light"] .modal-overlay {
+    background: rgba(10, 22, 20, 0.45);
+  }
+  @keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal-card {
+    background: linear-gradient(135deg, rgba(22, 29, 30, 0.96) 0%, rgba(14, 19, 16, 0.98) 100%);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 18px;
+    padding: 32px;
+    max-width: 520px; width: 100%;
+    max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 24px 72px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(212, 175, 55, 0.2) inset, 0 0 64px rgba(212, 175, 55, 0.08);
+    animation: modalSlideIn 0.3s var(--ease);
+  }
+  [data-theme="light"] .modal-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(253, 252, 248, 0.99) 100%);
+    border-color: rgba(176, 141, 40, 0.3);
+    box-shadow: 0 24px 72px rgba(10, 22, 20, 0.2), 0 0 0 1px rgba(176, 141, 40, 0.15) inset;
+  }
+  @keyframes modalSlideIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .modal-title {
+    font-family: 'Fraunces', 'Manrope', serif;
+    font-size: 24px; font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 8px; letter-spacing: -0.02em;
+    line-height: 1.3;
+  }
+  [data-theme="light"] .modal-title { color: #064E3B; }
+  .modal-sub {
+    font-size: 13.5px; color: var(--ink-soft);
+    margin-bottom: 20px; line-height: 1.55;
+  }
+  .modal-sub code {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    background: rgba(212, 175, 55, 0.12);
+    color: var(--gold-bright);
+    padding: 2px 6px; border-radius: 4px;
+    border: 1px solid rgba(212, 175, 55, 0.25);
+  }
+  [data-theme="light"] .modal-sub code {
+    background: rgba(176, 141, 40, 0.1);
+    color: #8B7026;
+    border-color: rgba(176, 141, 40, 0.25);
+  }
+
+  /* =================================================================
+     WEBHOOK HEALTH INDICATOR
+     ================================================================= */
+  .webhook-health {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 11px;
+    border-radius: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; font-weight: 800;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    background: rgba(107, 122, 115, 0.1);
+    border: 1px solid rgba(107, 122, 115, 0.25);
+    color: var(--ink-subtle);
+    transition: all 0.35s var(--ease);
+  }
+  .webhook-health .wh-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--ink-subtle);
+    transition: all 0.35s var(--ease);
+  }
+  .webhook-health.checking {
+    background: rgba(212, 175, 55, 0.08);
+    border-color: rgba(212, 175, 55, 0.25);
+    color: var(--gold-bright);
+  }
+  .webhook-health.checking .wh-dot {
+    background: var(--gold-bright);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.25);
+    animation: whPulse 1.2s ease-in-out infinite;
+  }
+  .webhook-health.ok {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: var(--emerald-bright);
+  }
+  .webhook-health.ok .wh-dot {
+    background: var(--emerald-bright);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25), 0 0 12px rgba(16, 185, 129, 0.5);
+    animation: whPulse 2s ease-in-out infinite;
+  }
+  .webhook-health.err {
+    background: rgba(225, 29, 72, 0.1);
+    border-color: rgba(225, 29, 72, 0.3);
+    color: #FCA5A5;
+  }
+  [data-theme="light"] .webhook-health.err { color: #B91C1C; }
+  .webhook-health.err .wh-dot {
+    background: var(--cavitak-red);
+    box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.25), 0 0 12px rgba(225, 29, 72, 0.5);
+  }
+  @keyframes whPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.15); }
+  }
+
+  /* =================================================================
+     ROLE PILL VARIANTS
+     ================================================================= */
+  .role-pill.role-super {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.22) 0%, rgba(184, 134, 11, 0.18) 100%);
+    color: var(--gold-bright);
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    text-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+  }
+  .role-pill.role-oem {
+    background: rgba(59, 130, 246, 0.15);
+    color: #93C5FD;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+  }
+  .role-pill.role-presales {
+    background: rgba(16, 185, 129, 0.13);
+    color: var(--emerald-bright);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+  .role-pill.role-sales {
+    background: rgba(244, 114, 182, 0.14);
+    color: #F9A8D4;
+    border: 1px solid rgba(244, 114, 182, 0.3);
+  }
+  .role-pill.role-support {
+    background: rgba(107, 122, 115, 0.15);
+    color: var(--ink-soft);
+    border: 1px solid rgba(107, 122, 115, 0.3);
+  }
+  [data-theme="light"] .role-pill.role-oem { color: #1E40AF; }
+  [data-theme="light"] .role-pill.role-presales { color: #047857; }
+  [data-theme="light"] .role-pill.role-sales { color: #BE185D; }
+  [data-theme="light"] .role-pill.role-support { color: #4B5563; }
+
+  /* Info message (success) for modal */
+  .info-msg {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.06) 100%);
+    color: #6EE7B7;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-left: 3px solid var(--emerald-bright);
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .info-msg.show { display: block; animation: modalFadeIn 0.3s var(--ease); }
+  [data-theme="light"] .info-msg { color: #065F46; }
+
+  /* Date-picker calendar icon: invert for dark mode so it's visible */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.9) sepia(0.3) saturate(2) hue-rotate(20deg) brightness(1.1);
+    cursor: pointer;
+    opacity: 0.8;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+  [data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: sepia(0.5) saturate(2) hue-rotate(10deg) brightness(0.8);
+  }
+
+  /* =================================================================
+     EDIT MODE BANNER — shown at top of form when editing past entry
+     ================================================================= */
+  .edit-banner {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 20px; flex-wrap: wrap;
+    background: linear-gradient(135deg, rgba(18, 24, 26, 0.85) 0%, rgba(212, 175, 55, 0.18) 100%);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    border-left: 4px solid var(--gold-bright);
+    border-radius: 14px;
+    padding: 18px 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 32px rgba(212, 175, 55, 0.15), 0 0 64px rgba(212, 175, 55, 0.08);
+    animation: editBannerSlideIn 0.4s var(--ease-bounce);
+  }
+  @keyframes editBannerSlideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .edit-banner.hidden { display: none; }
+  .edit-banner-body {
+    display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0;
+  }
+  .edit-banner-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: var(--grad-gold);
+    color: var(--obsidian);
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+  }
+  .edit-banner-title {
+    font-family: 'Fraunces', 'Manrope', serif;
+    font-size: 17px; font-weight: 500;
+    color: var(--gold-bright);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+  .edit-banner-sub {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+    line-height: 1.5;
+  }
+  .edit-banner-sub b {
+    color: var(--ink);
+    font-weight: 700;
+  }
+  [data-theme="light"] .edit-banner {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(176, 141, 40, 0.12) 100%);
+    border-color: rgba(176, 141, 40, 0.45);
+    border-left-color: #B08D28;
+    box-shadow: 0 8px 32px rgba(176, 141, 40, 0.15), 0 0 64px rgba(176, 141, 40, 0.08);
+  }
+  [data-theme="light"] .edit-banner-title { color: #8B7026; }
+  [data-theme="light"] .edit-banner-sub b { color: #064E3B; }
+
+  /* =================================================================
+     DUAL LOGO — dark & light theme variants
+     Drop two files in the repo:
+       - tvone-logo-dark.png  (for dark theme; light/white logo on dark bg)
+       - tvone-logo-light.png (for light theme; dark logo on light bg)
+     If either file is missing, it falls back to tvone-logo.png (single file).
+     ================================================================= */
+  .logo-dark { display: inline-block; }
+  .logo-light { display: none; }
+  [data-theme="light"] .logo-dark { display: none; }
+  [data-theme="light"] .logo-light { display: inline-block; }
+
+  /* =================================================================
+     PENDING QUEUE INDICATOR — shown in header when submissions failed
+     ================================================================= */
+  .pending-indicator {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 11px;
+    border-radius: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; font-weight: 800;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    color: #FCD34D;
+    cursor: pointer;
+    transition: all 0.3s var(--ease);
+  }
+  .pending-indicator:hover {
+    background: rgba(245, 158, 11, 0.22);
+    border-color: rgba(245, 158, 11, 0.55);
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.25);
+  }
+  .pending-indicator.hidden { display: none; }
+  .pending-indicator .pi-icon {
+    display: inline-block; font-size: 12px;
+    animation: piSpin 2s linear infinite;
+  }
+  .pending-indicator .pi-count {
+    font-weight: 800;
+  }
+  @keyframes piSpin {
+    to { transform: rotate(360deg); }
+  }
+  [data-theme="light"] .pending-indicator { color: #92400E; background: rgba(245, 158, 11, 0.18); border-color: rgba(245, 158, 11, 0.45); }
+
+  /* =================================================================
+     LOADING OVERLAY — shown briefly after login while workspace boots
+     ================================================================= */
+  .loading-overlay {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(8,11,10,0.92) 0%, rgba(5,7,6,0.98) 100%);
+    backdrop-filter: blur(8px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; z-index: 9998;
+    animation: loadingFadeIn 0.25s var(--ease);
+  }
+  [data-theme="light"] .loading-overlay {
+    background: radial-gradient(ellipse at center, rgba(250,247,242,0.95) 0%, rgba(237,232,219,0.98) 100%);
+  }
+  @keyframes loadingFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .loading-overlay.hidden { display: none; }
+  .loading-spinner {
+    width: 56px; height: 56px;
+    border: 3px solid rgba(212,175,55,0.22);
+    border-top-color: var(--gold-bright);
+    border-right-color: var(--emerald-bright);
+    border-radius: 50%;
+    animation: loadingSpin 0.9s linear infinite;
+    box-shadow: 0 0 40px rgba(212,175,55,0.25), 0 0 20px rgba(16,185,129,0.2);
+  }
+  @keyframes loadingSpin { to { transform: rotate(360deg); } }
+  .loading-message {
+    font-family: 'Fraunces', 'Manrope', serif;
+    font-size: 18px;
+    color: var(--gold-bright);
+    letter-spacing: -0.01em;
+    text-shadow: 0 0 16px rgba(212,175,55,0.3);
+  }
+  [data-theme="light"] .loading-message { color: #8B7026; }
+  .loading-submessage {
+    font-size: 12.5px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--ink-subtle);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* =================================================================
+     PERSONAL STATS STRIP — quick summary for current user
+     ================================================================= */
+  .personal-stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+    animation: modalFadeIn 0.35s var(--ease);
+  }
+  @media (max-width: 900px) {
+    .personal-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+  .personal-stats.hidden { display: none; }
+  .ps-card {
+    background: linear-gradient(135deg, rgba(18,24,26,0.75) 0%, rgba(14,19,16,0.85) 100%);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    border-radius: 12px;
+    padding: 16px 18px;
+    transition: all 0.3s var(--ease);
+    position: relative;
+    overflow: hidden;
+  }
+  .ps-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--grad-gold); opacity: 0.55;
+  }
+  .ps-card:hover {
+    border-color: rgba(212, 175, 55, 0.45);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.24), 0 0 24px rgba(212,175,55,0.15);
+  }
+  .ps-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-subtle);
+    margin-bottom: 6px;
+  }
+  .ps-val {
+    font-family: 'Fraunces', 'Manrope', serif;
+    font-size: 28px; font-weight: 500;
+    color: var(--gold-bright);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  [data-theme="light"] .ps-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(253,252,248,0.95) 100%);
+    border-color: rgba(176, 141, 40, 0.22);
+  }
+  [data-theme="light"] .ps-val { color: #8B7026; }
+  [data-theme="light"] .ps-label { color: #6b7a73; }
+
+  /* =================================================================
+     HISTORY QUICK SEARCH
+     ================================================================= */
+  .history-search-row {
+    margin-bottom: 14px;
+  }
+  .history-search {
+    display: flex; align-items: center; gap: 0;
+    background: rgba(18,24,26,0.75);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    border-radius: 12px;
+    padding: 4px 14px;
+    transition: all 0.25s var(--ease);
+  }
+  .history-search:focus-within {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18), 0 0 24px rgba(212, 175, 55, 0.12);
+  }
+  .history-search .hs-icon {
+    font-size: 18px; color: var(--gold-bright); margin-right: 10px;
+  }
+  .history-search input {
+    flex: 1; border: none !important;
+    background: transparent !important;
+    color: var(--ink); font-size: 14.5px; padding: 12px 0;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+  .history-search input:focus { box-shadow: none !important; }
+  .history-search .hs-clear {
+    background: transparent; border: none; color: var(--ink-subtle);
+    cursor: pointer; font-size: 20px; line-height: 1;
+    padding: 4px 8px; border-radius: 6px;
+    transition: all 0.2s var(--ease);
+  }
+  .history-search .hs-clear:hover { color: var(--gold-bright); background: rgba(212,175,55,0.12); }
+  [data-theme="light"] .history-search {
+    background: rgba(255,255,255,0.9);
+    border-color: rgba(176, 141, 40, 0.25);
+  }
+
+  /* =================================================================
+     BULK ACTIONS BAR — shown when rows are selected in History
+     ================================================================= */
+  .bulk-action-bar {
+    display: flex; align-items: center; gap: 14px;
+    background: linear-gradient(135deg, rgba(18,24,26,0.92) 0%, rgba(212,175,55,0.14) 100%);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin-bottom: 14px;
+    animation: modalFadeIn 0.3s var(--ease);
+  }
+  .bulk-action-bar.hidden { display: none; }
+  .bulk-count {
+    font-family: 'Fraunces', serif;
+    font-size: 18px; font-weight: 500;
+    color: var(--gold-bright);
+  }
+  .bulk-count b {
+    font-variant-numeric: tabular-nums;
+  }
+  .bulk-action-bar select {
+    max-width: 220px;
+  }
+  .row-checkbox {
+    cursor: pointer; width: 16px; height: 16px; accent-color: var(--gold);
+  }
+  [data-theme="light"] .bulk-action-bar {
+    background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(176,141,40,0.14) 100%);
+    border-color: rgba(176, 141, 40, 0.45);
+  }
+  [data-theme="light"] .bulk-count { color: #8B7026; }
+
+  /* =================================================================
+     PIPELINE VALUE STRIP — sum of dealValueINR on Dashboard
+     ================================================================= */
+  .pipeline-value-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 900px) {
+    .pipeline-value-strip { grid-template-columns: repeat(2, 1fr); }
+  }
+  .pv-card {
+    background: linear-gradient(135deg, rgba(18,24,26,0.78) 0%, rgba(14,19,16,0.88) 100%);
+    backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    border-radius: 14px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s var(--ease);
+  }
+  .pv-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    opacity: 0.8;
+  }
+  .pv-active::before { background: linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%); }
+  .pv-won::before    { background: linear-gradient(90deg, #10B981 0%, #34D399 100%); }
+  .pv-lost::before   { background: linear-gradient(90deg, #C8102E 0%, #F87171 100%); }
+  .pv-total::before  { background: var(--grad-gold); }
+  .pv-card:hover {
+    border-color: rgba(212, 175, 55, 0.45);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.32), 0 0 32px rgba(212, 175, 55, 0.18);
+  }
+  .pv-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; font-weight: 800;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-subtle);
+    margin-bottom: 8px;
+  }
+  .pv-val {
+    font-family: 'Fraunces', 'Manrope', serif;
+    font-size: 32px; font-weight: 500;
+    color: var(--gold-bright);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 6px;
+  }
+  .pv-active .pv-val { color: #A5B4FC; }
+  .pv-won .pv-val    { color: #6EE7B7; }
+  .pv-lost .pv-val   { color: #FCA5A5; }
+  .pv-sub {
+    font-size: 11.5px;
+    color: var(--ink-subtle);
+    line-height: 1.4;
+  }
+  [data-theme="light"] .pv-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(253,252,248,0.98) 100%);
+    border-color: rgba(176, 141, 40, 0.22);
+  }
+  [data-theme="light"] .pv-label { color: #6b7a73; }
+  [data-theme="light"] .pv-active .pv-val { color: #4F46E5; }
+  [data-theme="light"] .pv-won .pv-val    { color: #059669; }
+  [data-theme="light"] .pv-lost .pv-val   { color: #B91C1C; }
+  [data-theme="light"] .pv-total .pv-val  { color: #8B7026; }
+
+  /* =================================================================
+     BRANDED LOGIN SPLASH — shown between login success & first render
+     ================================================================= */
+  .login-splash {
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 30%, rgba(212, 175, 55, 0.18) 0%, transparent 45%),
+      radial-gradient(ellipse at 70% 70%, rgba(16, 185, 129, 0.15) 0%, transparent 45%),
+      linear-gradient(135deg, #050707 0%, #0A0D0C 55%, #080B0A 100%);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+    animation: splashFadeIn 0.35s var(--ease);
+  }
+  [data-theme="light"] .login-splash {
+    background:
+      radial-gradient(ellipse at 30% 30%, rgba(176, 141, 40, 0.14) 0%, transparent 45%),
+      radial-gradient(ellipse at 70% 70%, rgba(16, 185, 129, 0.1) 0%, transparent 45%),
+      linear-gradient(135deg, #FAF7F2 0%, #F5EFE4 55%, #F0E6D4 100%);
+  }
+  .login-splash.hidden { display: none; }
+  .login-splash.fading-out {
+    animation: splashFadeOut 0.45s var(--ease) forwards;
+  }
+  @keyframes splashFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes splashFadeOut { to { opacity: 0; transform: scale(1.02); } }
+
+  .splash-glass {
+    text-align: center;
+    padding: 48px 56px 40px;
+    background: rgba(18, 24, 26, 0.72);
+    backdrop-filter: blur(26px) saturate(160%);
+    -webkit-backdrop-filter: blur(26px) saturate(160%);
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    border-radius: 22px;
+    box-shadow:
+      0 16px 48px rgba(0, 0, 0, 0.45),
+      0 0 80px rgba(212, 175, 55, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    max-width: 420px;
+    width: calc(100vw - 40px);
+    position: relative;
+    overflow: hidden;
+  }
+  [data-theme="light"] .splash-glass {
+    background: rgba(255, 255, 255, 0.88);
+    border-color: rgba(176, 141, 40, 0.3);
+  }
+  .splash-glass::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent 0%, var(--gold-bright) 50%, transparent 100%);
+    opacity: 0.9;
+  }
+
+  .splash-logo-mark {
+    margin-bottom: 24px;
+    display: flex; justify-content: center;
+  }
+  .splash-logo-mark img { max-height: 44px; opacity: 0.95; }
+
+  .splash-brand-name {
+    font-family: 'Fraunces', 'Manrope', serif;
+    font-size: 24px; font-weight: 500;
+    color: var(--gold-bright);
+    letter-spacing: -0.02em;
+    margin-bottom: 22px;
+    text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+  }
+  [data-theme="light"] .splash-brand-name { color: #8B7026; }
+
+  .splash-step {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--emerald-bright);
+    margin-bottom: 14px;
+    min-height: 16px;
+    transition: opacity 0.25s ease;
+  }
+  [data-theme="light"] .splash-step { color: #059669; }
+
+  .splash-progress {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  [data-theme="light"] .splash-progress { background: rgba(0, 0, 0, 0.08); }
+  .splash-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-bright) 50%, var(--emerald-bright) 100%);
+    box-shadow: 0 0 14px rgba(212, 175, 55, 0.55);
+    transition: width 0.4s var(--ease);
+  }
+
+  .splash-tagline {
+    font-size: 11px;
+    color: var(--ink-subtle);
+    letter-spacing: 0.04em;
+    font-style: italic;
+  }
+
+  /* Pulsing amber badge for pending reset requests */
+  @keyframes pulseAmber {
+    0%, 100% { box-shadow: 0 2px 6px rgba(220, 38, 38, 0.35), 0 0 0 0 rgba(220, 38, 38, 0.4); }
+    50%      { box-shadow: 0 2px 6px rgba(220, 38, 38, 0.55), 0 0 0 5px rgba(220, 38, 38, 0); }
+  }
+
+  /* btn-row layout helper */
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* =================================================================
+     MOBILE RESPONSIVE LAYER — tablet (≤900px) + phone (≤640px)
+     Mobile-first: overrides desktop defaults for smaller screens.
+     =================================================================  */
+
+  /* ---- TABLET & SMALL LAPTOP (≤900px) ---- */
+  @media (max-width: 900px) {
+    /* Page padding */
+    .page, .dash-view, #loginScreen { padding: 16px !important; }
+    header.app-header { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+
+    /* Hero titles */
+    .page-title, .dash-hero-title { font-size: 28px !important; line-height: 1.25; }
+    .page-sub { font-size: 13px; }
+    .dash-hero { padding: 24px 20px !important; }
+
+    /* Hide cursor trail on touch (already handled by matchMedia) */
+    #cursor-trail { display: none !important; }
+
+    /* KPI cards: 2 per row */
+    .kpi-strip { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+    .kpi-card .val { font-size: 32px !important; }
+
+    /* Filter bar: stack */
+    .filter-bar { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+
+    /* Form grid 3-col -> 2-col */
+    .grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+    .field.full { grid-column: 1 / -1; }
+  }
+
+  /* ---- PHONE (≤640px) ---- */
+  @media (max-width: 640px) {
+    html, body { overflow-x: hidden; }
+
+    /* ========== APP HEADER ========== */
+    header.app-header {
+      padding: 10px 12px;
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(8,11,10,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(212,175,55,0.2);
+    }
+    [data-theme="light"] header.app-header {
+      background: rgba(250,247,242,0.96);
+      border-bottom-color: rgba(176,141,40,0.2);
+    }
+    .brand { gap: 10px; }
+    .brand-sub { font-size: 13px !important; }
+    .brand-tagline { display: none; }    /* save space */
+    .brand-logo-wrap img { max-height: 26px !important; }
+    /* Drop the vertical separator */
+    header.app-header .brand > div[style*="height:36px"] { display: none !important; }
+
+    /* User badge: wrap + smaller */
+    .user-badge {
+      flex-wrap: wrap; gap: 6px;
+      width: 100%; justify-content: flex-start;
+      margin-top: 8px;
+    }
+    .user-badge #userLabel {
+      font-size: 13px; max-width: 140px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .user-badge .role-pill { font-size: 10px; padding: 3px 8px; }
+    .user-badge .theme-toggle { padding: 5px 10px; font-size: 11px; }
+    .user-badge .theme-toggle span:last-child { display: none; }  /* hide "Dark"/"Light" label, keep icon */
+    .user-badge button {
+      padding: 7px 11px !important; font-size: 12px !important;
+      min-height: 36px;   /* touch target */
+      border-radius: 9px;
+    }
+    /* Health + pending indicators: compact */
+    .webhook-health .wh-label { display: none; }
+    .pending-indicator .pi-label { display: none; }
+
+    /* ========== LOGIN SCREEN ========== */
+    .login-card {
+      width: 100% !important; max-width: 100% !important;
+      margin: 16px auto; padding: 28px 22px !important;
+      border-radius: 18px;
+    }
+    .login-logo img { max-height: 42px !important; }
+    .login-title { font-size: 24px !important; line-height: 1.25; }
+    .login-tagline { font-size: 12.5px !important; }
+    .theme-toggle-login {
+      top: 16px !important; right: 16px !important;
+      padding: 6px 10px !important; font-size: 11px;
+    }
+    .login-contact { font-size: 12px; }
+
+    /* ========== PAGES ========== */
+    .page, .dash-view { padding: 14px 12px !important; }
+    .page-title, .dash-hero-title { font-size: 24px !important; }
+    .page-sub { font-size: 12.5px; margin-bottom: 16px; }
+
+    /* Dashboard hero */
+    .dash-hero { padding: 20px 16px !important; border-radius: 14px !important; margin-bottom: 20px; }
+    .dash-hero-meta { font-size: 11.5px; }
+    .dash-section-header { font-size: 12px; margin: 20px 0 10px; }
+
+    /* ========== KPI & PIPELINE STRIPS ========== */
+    .kpi-strip, .pipeline-value-strip, .personal-stats {
+      grid-template-columns: 1fr !important;    /* single column */
+      gap: 10px !important;
+    }
+    .kpi-card, .pv-card, .ps-card { padding: 14px 16px !important; }
+    .kpi-card .val { font-size: 36px !important; }
+    .pv-val { font-size: 26px !important; }
+    .ps-val { font-size: 24px !important; }
+
+    /* ========== FILTER BAR ========== */
+    .filter-bar {
+      grid-template-columns: 1fr 1fr !important;   /* 2-col on phone */
+      gap: 8px !important;
+      padding: 12px !important;
+    }
+    .filter-bar .field label {
+      font-size: 10.5px; letter-spacing: 0.08em;
+    }
+    .filter-bar select, .filter-bar input[type="date"] {
+      padding: 10px 12px !important; font-size: 13px !important;
+      min-height: 40px;
+    }
+
+    /* ========== FIELDS / FORM ========== */
+    .card { padding: 18px 16px !important; border-radius: 14px !important; margin-bottom: 16px; }
+    .card-title { font-size: 12px; }
+    .grid {
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+    }
+    .field label { font-size: 11.5px; }
+    .field input, .field select, .field textarea {
+      padding: 12px 14px !important; font-size: 14px !important;
+      min-height: 44px;  /* touch target */
+      border-radius: 10px;
+    }
+    .field textarea { min-height: 88px; }
+
+    /* Buttons: minimum 44px tall for touch */
+    button.primary, button.secondary, button.confirm {
+      padding: 13px 18px !important;
+      font-size: 14px !important;
+      min-height: 48px;
+      border-radius: 11px;
+    }
+    .btn-row { gap: 8px; }
+    .btn-tiny {
+      padding: 8px 10px !important; min-height: 34px;
+      font-size: 11px !important;
+    }
+
+    /* ========== HISTORY TABLE ========== */
+    /* Wrap the table in a horizontal scroll container on mobile */
+    .log-content {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 12px;
+      margin: 0 -12px;      /* bleed to screen edges for full-width scroll */
+      padding: 0 12px;
+    }
+    .log-table {
+      font-size: 12px;
+      min-width: 780px;     /* force horizontal scroll rather than squish */
+    }
+    .log-table th, .log-table td {
+      padding: 8px 10px !important; white-space: nowrap;
+    }
+    .log-table .col-proj { max-width: 160px; }
+    .log-table .row-checkbox { width: 18px; height: 18px; }
+    .stage-pill { font-size: 10px; padding: 3px 7px; }
+    .bulk-action-bar {
+      flex-wrap: wrap; gap: 10px; padding: 12px 14px;
+    }
+    .bulk-action-bar select { flex: 1; min-width: 160px; }
+
+    /* History search bar */
+    .history-search { padding: 3px 10px; }
+    .history-search input { font-size: 13.5px; padding: 11px 0; }
+    .history-search .hs-icon { font-size: 15px; }
+
+    /* ========== MODALS ========== */
+    /* Full-screen modals on phone — feels native */
+    .modal-overlay {
+      padding: 0 !important; align-items: stretch !important;
+    }
+    .modal-card {
+      max-width: 100% !important; width: 100% !important;
+      max-height: 100vh !important; height: 100vh !important;
+      border-radius: 0 !important;
+      padding: 20px 18px 28px !important;
+      overflow-y: auto;
+      animation: mobileModalSlideUp 0.28s var(--ease);
+    }
+    @keyframes mobileModalSlideUp {
+      from { transform: translateY(100%); opacity: 0.8; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-title { font-size: 20px !important; }
+    .modal-sub { font-size: 12.5px; }
+
+    /* Detail modal: tighter spacing */
+    #detailModalBody table td { padding: 6px 10px 6px 0 !important; font-size: 12.5px !important; }
+    #auditModalBody { max-height: calc(100vh - 220px) !important; }
+
+    /* ========== RESULT VIEW ========== */
+    .reco-specs {
+      grid-template-columns: 1fr 1fr !important;
+      gap: 10px !important;
+    }
+    .spec-cell { padding: 12px 14px !important; }
+    .spec-cell .k { font-size: 10px; }
+    .spec-cell .v { font-size: 15px; }
+    .totals-strip {
+      grid-template-columns: 1fr !important;
+      gap: 10px !important;
+    }
+
+    /* ========== TEAM TAB ========== */
+    .team-table { font-size: 12.5px; }
+    .team-table th, .team-table td {
+      padding: 10px 8px !important; font-size: 12px !important;
+    }
+    .team-actions { flex-wrap: wrap; gap: 4px; }
+    .team-actions button { padding: 6px 10px !important; font-size: 11px !important; }
+
+    /* ========== SCREEN BUILDER (form) ========== */
+    .screen-block {
+      padding: 16px !important;
+    }
+    .screen-grid {
+      grid-template-columns: 1fr !important;
+      gap: 10px !important;
+    }
+    .calc-readout { font-size: 11px; }
+
+    /* ========== CHARTS / ANALYTICS ========== */
+    .chart-card { padding: 16px !important; }
+    .chart-title { font-size: 13px !important; }
+    .bar-row { font-size: 12px; }
+    .bar-row-label { min-width: 90px; font-size: 11.5px; }
+    .bar-row-value { font-size: 11.5px; min-width: 30px; }
+
+    /* ========== TOASTS / BANNERS ========== */
+    .sync-status, .session-warn-banner {
+      max-width: calc(100vw - 20px) !important;
+      font-size: 12px !important; padding: 10px 14px !important;
+    }
+    .edit-banner {
+      padding: 14px 16px !important;
+      flex-direction: column; align-items: flex-start;
+    }
+    .edit-banner-body { gap: 12px; }
+    .edit-banner-icon { width: 34px; height: 34px; font-size: 15px; }
+    .edit-banner-title { font-size: 14.5px; }
+    .edit-banner-sub { font-size: 12px; }
+
+    /* ========== PROFILE / INFO TAB ========== */
+    .reco-specs {
+      grid-template-columns: 1fr !important;
+    }
+
+    /* Loading overlay: smaller spinner */
+    .loading-spinner { width: 44px !important; height: 44px !important; }
+    .loading-message { font-size: 15px !important; }
+
+    /* Analyzing page */
+    .analyzing-step { padding: 12px 14px !important; }
+    .analyzing-step-title { font-size: 13px !important; }
+    .analyzing-step-desc { font-size: 11.5px !important; }
+
+    /* Hide big ambient orbs (perf + visual clutter on small screens) */
+    .aurora-orb, .ambient-orb { opacity: 0.25; }
+  }
+
+  /* ---- NARROW PHONE (≤380px) ---- */
+  @media (max-width: 380px) {
+    .page-title, .dash-hero-title { font-size: 21px !important; }
+    .kpi-card .val { font-size: 30px !important; }
+    .user-badge button { padding: 6px 9px !important; font-size: 11px !important; }
+    .filter-bar { grid-template-columns: 1fr !important; }
+  }
+
+  /* ---- TOUCH OPTIMIZATION — eliminates 300ms iOS click delay ---- */
+  button, .user-badge button, input, select, textarea,
+  .pv-card, .kpi-card, .ps-card, .log-table tr, .stage-pill {
+    touch-action: manipulation;
+  }
+  /* Prevent double-tap zoom on interactive elements */
+  button { -webkit-tap-highlight-color: rgba(212, 175, 55, 0.25); }
+
+  /* ---- LANDSCAPE ORIENTATION HINT ---- */
+  @media (max-width: 900px) and (orientation: landscape) and (max-height: 480px) {
+    header.app-header { padding: 8px 14px; }
+    .dash-hero { padding: 14px 18px !important; }
+    .page-title, .dash-hero-title { font-size: 20px !important; }
+    .modal-card { max-height: 96vh !important; height: auto !important; }
+  }
+
 </style>
 </head>
 <body>
@@ -2372,7 +3316,8 @@
   </button>
   <div class="login-card">
     <div class="login-logo">
-      <img src="tvone-logo.png" alt="tvONE" onerror="this.style.display='none'">
+      <img src="tvone-logo-dark.png" alt="tvONE" class="logo-dark" onerror="this.onerror=null; this.src='tvone-logo.png'; this.onerror=function(){this.style.display='none'}">
+      <img src="tvone-logo-light.png" alt="tvONE" class="logo-light" onerror="this.onerror=null; this.src='tvone-logo.png'; this.onerror=function(){this.style.display='none'}">
     </div>
     <div class="login-title">CALICO PRO Configurator</div>
     <div class="login-tagline">Command every pixel</div>
@@ -2381,6 +3326,9 @@
     <div class="field"><label>Username</label><input type="text" id="loginUser" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. dipen"></div>
     <div class="field"><label>Password</label><input type="password" id="loginPass" autocomplete="off" placeholder="••••••••"></div>
     <div style="margin-top: 22px;"><button class="primary full" onclick="attemptLogin()">Sign in</button></div>
+    <div style="text-align:center; margin-top:14px;">
+      <a href="#" onclick="event.preventDefault(); openForgotPasswordModal();" style="font-size:12.5px; color:var(--gold-bright); text-decoration:none; font-weight:600; letter-spacing:0.02em">Forgot password?</a>
+    </div>
     <div class="login-contact">
       <div class="login-contact-label">For access or technical queries</div>
       <div class="login-contact-name">Dipenkumar Gajjar</div>
@@ -2398,7 +3346,8 @@
   <header class="app-header">
     <div class="brand">
       <div class="brand-logo-wrap">
-        <img src="tvone-logo.png" alt="tvONE" onerror="this.style.display='none';this.parentNode.classList.add('logo-fallback')">
+        <img src="tvone-logo-dark.png" alt="tvONE" class="logo-dark" onerror="this.onerror=null; this.src='tvone-logo.png'; this.onerror=function(){this.style.display='none';this.parentNode.classList.add('logo-fallback')}">
+        <img src="tvone-logo-light.png" alt="tvONE" class="logo-light" onerror="this.onerror=null; this.src='tvone-logo.png'; this.onerror=function(){this.style.display='none';this.parentNode.classList.add('logo-fallback')}">
         <span class="logo-fallback-text">tvONE</span>
       </div>
       <div style="height:36px; width:1px; background:rgba(255,255,255,0.2)"></div>
@@ -2410,18 +3359,34 @@
     <div class="user-badge">
       <span id="userLabel"></span>
       <span id="roleLabel" class="role-pill"></span>
+      <span id="webhookHealth" class="webhook-health" title="Backend status"><span class="wh-dot"></span><span class="wh-label">Backend</span></span>
+      <span id="pendingIndicator" class="pending-indicator hidden" title="Pending submissions waiting to sync" onclick="drainPendingQueue()"><span class="pi-icon">⟳</span><span class="pi-count">0</span><span class="pi-label">pending</span></span>
       <button class="theme-toggle" onclick="toggleTheme()" title="Switch day/night theme" aria-label="Toggle theme">
         <span class="icon" id="themeIcon">🌙</span>
         <span id="themeLabel">Dark</span>
       </button>
-      <button onclick="startNewConfig()">New Config</button>
-      <button onclick="showView('log')" id="logBtn">Dashboard</button>
+      <button onclick="startNewConfig()" id="newCfgBtn">New Selection</button>
+      <button onclick="showView('result')" id="resultBtn" class="hidden">Result</button>
+      <button onclick="showView('history')" id="historyBtn" class="hidden">History</button>
+      <button onclick="showView('dash')" id="logBtn" class="hidden">Dashboard</button>
+      <button onclick="showView('team')" id="teamBtn" class="hidden">Team</button>
+      <button onclick="showView('profile')" id="profileBtn" class="hidden">Info</button>
       <button onclick="logout()">Exit</button>
     </div>
   </header>
 
   <!-- FORM -->
   <div id="formView" class="page">
+    <div id="editBanner" class="edit-banner hidden">
+      <div class="edit-banner-body">
+        <div class="edit-banner-icon">✏</div>
+        <div>
+          <div class="edit-banner-title">Editing existing submission</div>
+          <div class="edit-banner-sub" id="editBannerSub">refId · project</div>
+        </div>
+      </div>
+      <button class="secondary" onclick="cancelEditMode()">Cancel Edit</button>
+    </div>
     <h1 class="page-title">CALICO PRO Configuration</h1>
     <p class="page-sub">Engineered to <strong>size the right CALICO PRO chassis</strong> for your project — from single-screen LED walls to mixed multi-display installations. Enter your requirements and get a <strong>validated BOM</strong> instantly.</p>
 
@@ -2676,6 +3641,10 @@
             <option value="open">Open / Not a constraint</option>
           </select>
         </div>
+        <div class="field"><label>Deal Value (INR)<span style="font-size:10.5px;color:var(--ink-subtle);font-weight:400;margin-left:6px">estimated</span></label>
+          <input id="f_dealValueINR" type="number" min="0" step="1000" placeholder="e.g. 4500000" oninput="onDealValueChange()">
+          <div id="dealValueReadout" style="font-size:11.5px;color:var(--gold-bright);font-family:'JetBrains Mono',monospace;margin-top:4px;height:14px"></div>
+        </div>
         <div class="field"><label>Expected close month</label>
           <input id="f_close" type="month">
         </div>
@@ -2777,8 +3746,8 @@
     </div>
   </div>
 
-  <!-- LOG -->
-  <div id="logView" class="page hidden">
+  <!-- DASHBOARD (analytics landing: hero + KPIs + filters + charts) -->
+  <div id="dashView" class="page hidden">
     <!-- HERO HEADER -->
     <div class="dash-hero">
       <div class="dash-hero-head">
@@ -2788,6 +3757,57 @@
           <div class="dash-hero-sub">End-to-end visibility into CALICO PRO opportunities — from first view through confirmed deal. Filter, drill down, export.</div>
           <div class="dash-hero-meta" id="dashMeta">Loading…</div>
         </div>
+      </div>
+    </div>
+
+    <!-- PERSONAL STATS — quick summary for logged-in user -->
+    <div id="personalStatsStripDash" class="personal-stats hidden">
+      <div class="ps-card">
+        <div class="ps-label">Your Submissions</div>
+        <div class="ps-val" id="ps_submissions_dash">—</div>
+      </div>
+      <div class="ps-card">
+        <div class="ps-label">Won Deals</div>
+        <div class="ps-val" id="ps_won_dash">—</div>
+      </div>
+      <div class="ps-card">
+        <div class="ps-label">In Pipeline</div>
+        <div class="ps-val" id="ps_pipeline_dash">—</div>
+      </div>
+      <div class="ps-card">
+        <div class="ps-label">This Month</div>
+        <div class="ps-val" id="ps_month_dash">—</div>
+      </div>
+      <div class="ps-card">
+        <div class="ps-label">Confirmed</div>
+        <div class="ps-val" id="ps_confirmed_dash">—</div>
+      </div>
+    </div>
+
+    <!-- PIPELINE VALUE STRIP — sum of dealValueINR by stage -->
+    <div class="dash-section-header">
+      <span class="dash-section-icon">₹</span>Pipeline Value (filtered view)
+    </div>
+    <div class="pipeline-value-strip">
+      <div class="pv-card pv-active">
+        <div class="pv-label">Active Pipeline</div>
+        <div class="pv-val" id="pv_active">—</div>
+        <div class="pv-sub" id="pv_active_sub">Lead · Qualified · Proposal · Design</div>
+      </div>
+      <div class="pv-card pv-won">
+        <div class="pv-label">Closed Won</div>
+        <div class="pv-val" id="pv_won">—</div>
+        <div class="pv-sub" id="pv_won_sub">—</div>
+      </div>
+      <div class="pv-card pv-lost">
+        <div class="pv-label">Closed Lost</div>
+        <div class="pv-val" id="pv_lost">—</div>
+        <div class="pv-sub" id="pv_lost_sub">—</div>
+      </div>
+      <div class="pv-card pv-total">
+        <div class="pv-label">Total Value</div>
+        <div class="pv-val" id="pv_total">—</div>
+        <div class="pv-sub" id="pv_total_sub">all logged deals</div>
       </div>
     </div>
 
@@ -2835,29 +3855,35 @@
 
     <!-- FILTERS (moved up, sits under KPIs) - all dropdowns -->
     <div class="filter-bar">
+      <div class="field"><label>From Date</label>
+        <input type="date" id="fl_dateFrom" onchange="applyDashFilters()">
+      </div>
+      <div class="field"><label>To Date</label>
+        <input type="date" id="fl_dateTo" onchange="applyDashFilters()">
+      </div>
       <div class="field"><label>State / Region</label>
-        <select id="fl_state" onchange="applyFilters()"><option value="">All</option></select>
+        <select id="fl_state" onchange="applyDashFilters()"><option value="">All</option></select>
       </div>
       <div class="field"><label>City</label>
-        <select id="fl_city" onchange="applyFilters()"><option value="">All</option></select>
+        <select id="fl_city" onchange="applyDashFilters()"><option value="">All</option></select>
       </div>
       <div class="field"><label>User</label>
-        <select id="fl_user" onchange="applyFilters()"><option value="">All</option></select>
+        <select id="fl_user" onchange="applyDashFilters()"><option value="">All</option></select>
       </div>
       <div class="field"><label>Project</label>
-        <select id="fl_project" onchange="applyFilters()"><option value="">All</option></select>
+        <select id="fl_project" onchange="applyDashFilters()"><option value="">All</option></select>
       </div>
       <div class="field"><label>Partner / SI</label>
-        <select id="fl_partner" onchange="applyFilters()"><option value="">All</option></select>
+        <select id="fl_partner" onchange="applyDashFilters()"><option value="">All</option></select>
       </div>
       <div class="field"><label>Consultant</label>
-        <select id="fl_consultant" onchange="applyFilters()"><option value="">All</option></select>
+        <select id="fl_consultant" onchange="applyDashFilters()"><option value="">All</option></select>
       </div>
       <div class="field"><label>End-user</label>
-        <select id="fl_endUser" onchange="applyFilters()"><option value="">All</option></select>
+        <select id="fl_endUser" onchange="applyDashFilters()"><option value="">All</option></select>
       </div>
       <div class="field"><label>Chassis Model</label>
-        <select id="fl_model" onchange="applyFilters()">
+        <select id="fl_model" onchange="applyDashFilters()">
           <option value="">All</option>
           <option value="C7-PRO-1200">C7-PRO-1200</option>
           <option value="C7-PRO-2200">C7-PRO-2200</option>
@@ -2912,8 +3938,127 @@
     <!-- ACTIONS -->
     <div class="filter-actions" style="margin-top: 16px;">
       <button class="secondary" onclick="refreshLog()">↻ Refresh</button>
-      <button class="secondary" onclick="clearFilters()">Clear Filters</button>
+      <button class="secondary" onclick="clearDashFilters()">Clear Filters</button>
+      <button class="secondary" onclick="showView('history')">→ View Submissions</button>
+    </div>
+  </div>
+
+  <!-- HISTORY (records view: filter bar + full submission table + CSV export) -->
+  <div id="historyView" class="page hidden">
+    <div class="dash-hero">
+      <div class="dash-hero-head">
+        <div>
+          <div class="dash-hero-eyebrow"><span class="dash-hero-pulse"></span>Submission History · Records View</div>
+          <div class="dash-hero-title">All Submissions</div>
+          <div class="dash-hero-sub">Full log of every CALICO PRO configuration logged to the central sheet. Search, filter, and export to CSV.</div>
+          <div class="dash-hero-meta" id="histMeta">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERSONAL STATS — quick summary for logged-in user -->
+    <div id="personalStatsStrip" class="personal-stats hidden">
+      <div class="ps-card">
+        <div class="ps-label">Your Submissions</div>
+        <div class="ps-val" id="ps_submissions">—</div>
+      </div>
+      <div class="ps-card">
+        <div class="ps-label">Won Deals</div>
+        <div class="ps-val" id="ps_won">—</div>
+      </div>
+      <div class="ps-card">
+        <div class="ps-label">In Pipeline</div>
+        <div class="ps-val" id="ps_pipeline">—</div>
+      </div>
+      <div class="ps-card">
+        <div class="ps-label">This Month</div>
+        <div class="ps-val" id="ps_month">—</div>
+      </div>
+      <div class="ps-card">
+        <div class="ps-label">Confirmed</div>
+        <div class="ps-val" id="ps_confirmed">—</div>
+      </div>
+    </div>
+
+    <!-- QUICK SEARCH -->
+    <div class="history-search-row">
+      <div class="history-search">
+        <span class="hs-icon">⌕</span>
+        <input type="text" id="hl_search" placeholder="Search project, end-user, partner, consultant, venue, ref ID…" onkeyup="applyHistFilters()">
+        <button class="hs-clear" onclick="document.getElementById('hl_search').value=''; applyHistFilters();" title="Clear search">×</button>
+      </div>
+    </div>
+
+    <!-- BULK ACTIONS — shown when rows are checked -->
+    <div id="bulkActionBar" class="bulk-action-bar hidden">
+      <span class="bulk-count"><b id="bulkCount">0</b> selected</span>
+      <select id="bulkStageAction">
+        <option value="">Change stage to…</option>
+        <option>Lead</option><option>Qualified</option><option>Proposal</option>
+        <option>Design</option><option>Won</option><option>Lost</option><option>Hold</option>
+      </select>
+      <button class="primary" onclick="applyBulkStage()">Apply</button>
+      <button class="secondary" onclick="clearBulkSelection()">Clear</button>
+    </div>
+
+    <!-- HISTORY FILTER BAR — independent state (hl_ prefix) -->
+    <div class="filter-bar">
+      <div class="field"><label>From Date</label>
+        <input type="date" id="hl_dateFrom" onchange="applyHistFilters()">
+      </div>
+      <div class="field"><label>To Date</label>
+        <input type="date" id="hl_dateTo" onchange="applyHistFilters()">
+      </div>
+      <div class="field"><label>State / Region</label>
+        <select id="hl_state" onchange="applyHistFilters()"><option value="">All</option></select>
+      </div>
+      <div class="field"><label>City</label>
+        <select id="hl_city" onchange="applyHistFilters()"><option value="">All</option></select>
+      </div>
+      <div class="field"><label>User</label>
+        <select id="hl_user" onchange="applyHistFilters()"><option value="">All</option></select>
+      </div>
+      <div class="field"><label>Project</label>
+        <select id="hl_project" onchange="applyHistFilters()"><option value="">All</option></select>
+      </div>
+      <div class="field"><label>Partner / SI</label>
+        <select id="hl_partner" onchange="applyHistFilters()"><option value="">All</option></select>
+      </div>
+      <div class="field"><label>Consultant</label>
+        <select id="hl_consultant" onchange="applyHistFilters()"><option value="">All</option></select>
+      </div>
+      <div class="field"><label>End-user</label>
+        <select id="hl_endUser" onchange="applyHistFilters()"><option value="">All</option></select>
+      </div>
+      <div class="field"><label>Chassis Model</label>
+        <select id="hl_model" onchange="applyHistFilters()">
+          <option value="">All</option>
+          <option value="C7-PRO-1200">C7-PRO-1200</option>
+          <option value="C7-PRO-2200">C7-PRO-2200</option>
+        </select>
+      </div>
+      <div class="field"><label>Stage</label>
+        <select id="hl_stage" onchange="applyHistFilters()">
+          <option value="">All</option>
+          <option value="Lead">Lead</option>
+          <option value="Qualified">Qualified</option>
+          <option value="Proposal">Proposal</option>
+          <option value="Design">Design</option>
+          <option value="Won">Won</option>
+          <option value="Lost">Lost</option>
+          <option value="Hold">Hold</option>
+        </select>
+      </div>
+    </div>
+    <div class="filter-count-row">
+      Showing <span class="filter-count-pill" id="histFilterSummary">0</span> entries
+    </div>
+
+    <div class="filter-actions" style="margin-top: 16px;">
+      <button class="secondary" onclick="refreshLog()">↻ Refresh</button>
+      <button class="secondary" onclick="clearHistFilters()">Clear Filters</button>
       <button class="primary" onclick="exportLogCSV()">⬇ Export Filtered as CSV</button>
+      <button class="secondary" onclick="showView('dash')">← Back to Dashboard</button>
     </div>
 
     <!-- RESULTS TABLE -->
@@ -2921,6 +4066,221 @@
       <div class="card-title">Submissions <span id="logCount" style="font-size:13px;color:var(--ink-soft);font-weight:600;font-family:'Manrope',sans-serif;text-transform:none;letter-spacing:0;margin-left:6px"></span></div>
       <div id="logContent" style="overflow-x:auto"></div>
       <div id="logSource" style="font-size:11.5px; color:var(--ink-subtle); margin-top:14px; padding-top:12px; border-top: 1px dashed var(--line-soft); font-weight:600; letter-spacing:0.02em"></div>
+    </div>
+  </div>
+
+  <!-- TEAM (Super admin only) -->
+  <div id="teamView" class="page hidden">
+    <h1 class="page-title">Team Management</h1>
+    <p class="page-sub">Add or edit Cavitak team members. Role determines what they can see. Resetting a password forces the user to change it on next login.</p>
+
+    <!-- Password reset requests panel -->
+    <div id="resetRequestsCard" class="card hidden" style="border-left:4px solid #DC2626">
+      <div class="card-title">
+        🔑 Password Reset Requests
+        <span id="resetRequestsBadge" style="display:inline-block;margin-left:10px;padding:2px 10px;background:#DC2626;color:#fff;border-radius:10px;font-size:11px;font-weight:800;letter-spacing:0.05em;animation:pulseAmber 1.6s ease-in-out infinite">0 PENDING</span>
+      </div>
+      <div id="resetRequestsContent"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Roster <span id="teamCount" style="font-size:13px;color:var(--ink-soft);font-weight:600;font-family:'Manrope',sans-serif;text-transform:none;letter-spacing:0;margin-left:6px"></span></div>
+      <div id="teamContent" style="overflow-x:auto"></div>
+      <div class="btn-row" style="margin-top:16px">
+        <button class="primary" onclick="openAddUserModal()">+ Add Team Member</button>
+        <button class="secondary" onclick="refreshTeam()">↻ Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE (all users) -->
+  <div id="profileView" class="page hidden">
+    <h1 class="page-title">My Account</h1>
+    <p class="page-sub">View your account, update your contact details, and manage your password.</p>
+
+    <!-- Identity (read-only) -->
+    <div class="card">
+      <div class="card-title">Identity</div>
+      <div class="reco-specs" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr))">
+        <div class="spec-cell"><div class="k">Username</div><div class="v" id="prof_username">—</div></div>
+        <div class="spec-cell"><div class="k">Role</div><div class="v" id="prof_role">—</div></div>
+        <div class="spec-cell"><div class="k">Last Login</div><div class="v" id="prof_lastlogin">—</div></div>
+      </div>
+      <div style="font-size:11.5px; color:var(--ink-subtle); margin-top:12px; letter-spacing:0.02em">
+        Username and role are managed by your super admin. Contact Dipenkumar Gajjar for changes.
+      </div>
+    </div>
+
+    <!-- Editable contact details -->
+    <div class="card">
+      <div class="card-title">Contact Details</div>
+      <div style="font-size:14px; color:var(--ink-soft); margin-bottom:16px; line-height:1.6">
+        Keep your contact info current — teammates may reach out for handoffs, and Super uses these to contact you about account changes.
+      </div>
+      <div id="profileSaveError" class="error-msg">Error</div>
+      <div id="profileSaveOk" class="info-msg">Contact details updated.</div>
+
+      <div class="grid">
+        <div class="field full"><label>Full Name</label>
+          <input type="text" id="prof_edit_name" placeholder="Your name">
+        </div>
+        <div class="field"><label>Email</label>
+          <input type="email" id="prof_edit_email" placeholder="name@cavitak.com">
+        </div>
+        <div class="field"><label>Phone</label>
+          <input type="tel" id="prof_edit_phone" placeholder="+91…">
+        </div>
+      </div>
+      <div class="btn-row" style="margin-top:18px">
+        <button class="primary" onclick="saveProfileDetails()" id="profileSaveBtn">Save Contact Details</button>
+        <button class="secondary" onclick="renderProfile()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Security -->
+    <div class="card">
+      <div class="card-title">Security</div>
+      <div style="font-size:14px; color:var(--ink-soft); margin-bottom:16px; line-height:1.6">Change your password below. Use at least <b>8 characters</b> with a mix of letters and numbers.</div>
+      <div class="btn-row">
+        <button class="primary" onclick="openChangePasswordModal(false)">Change Password</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY — shown briefly after login -->
+<div id="loadingOverlay" class="loading-overlay hidden">
+  <div class="loading-spinner"></div>
+  <div class="loading-message">Loading workspace</div>
+  <div class="loading-submessage" id="loadingSubmessage">Syncing sessions…</div>
+</div>
+
+<!-- BRANDED LOGIN SPLASH — shown between successful login and first app render -->
+<div id="loginSplash" class="login-splash hidden">
+  <div class="splash-glass">
+    <div class="splash-logo-mark">
+      <img src="tvone-logo-dark.png" alt="tvONE" class="logo-dark" onerror="this.style.display='none'">
+      <img src="tvone-logo-light.png" alt="tvONE" class="logo-light" onerror="this.style.display='none'">
+    </div>
+    <div class="splash-brand-name">CALICO PRO Configurator</div>
+    <div class="splash-step" id="splashStep">Signing in…</div>
+    <div class="splash-progress">
+      <div class="splash-progress-bar" id="splashProgressBar"></div>
+    </div>
+    <div class="splash-tagline">Command every pixel · Cavitak Marketing</div>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div id="forgotModal" class="modal-overlay hidden">
+  <div class="modal-card" style="max-width: 460px">
+    <div class="modal-title">Forgot Password?</div>
+    <div class="modal-sub">Send a password reset request to your admin. They'll reset your password to the default on approval.</div>
+    <div id="forgotModalError" class="error-msg">Error</div>
+    <div id="forgotModalOk" class="info-msg">Request submitted.</div>
+    <div class="field">
+      <label>Your username</label>
+      <input type="text" id="forgotUsername" autocomplete="off" spellcheck="false" autocapitalize="none" placeholder="e.g. mohit">
+    </div>
+    <div class="field">
+      <label>Reason (optional)</label>
+      <textarea id="forgotReason" placeholder="Brief reason for the admin (e.g. 'Forgot my password')" rows="3" style="min-height:72px"></textarea>
+    </div>
+    <div class="btn-row" style="margin-top:16px; justify-content:flex-end">
+      <button class="secondary" onclick="closeForgotPasswordModal()">Cancel</button>
+      <button class="primary" id="forgotSubmitBtn" onclick="submitForgotPasswordRequest()">Send Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUBMISSION DETAIL MODAL — shown when clicking a row -->
+<div id="detailModal" class="modal-overlay hidden">
+  <div class="modal-card" style="max-width: 760px;">
+    <div class="modal-title" id="detailModalTitle">Submission Detail</div>
+    <div class="modal-sub" id="detailModalSub">—</div>
+    <div id="detailModalBody"></div>
+    <div class="btn-row" style="margin-top:18px; justify-content: flex-end">
+      <button class="secondary" onclick="closeDetailModal()">Close</button>
+      <button class="secondary" onclick="loadAuditHistory()">🕒 Edit History</button>
+      <button class="primary" id="detailEditBtn" onclick="editFromDetail()">✏ Edit</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUDIT HISTORY MODAL — shown from detail modal -->
+<div id="auditModal" class="modal-overlay hidden">
+  <div class="modal-card" style="max-width: 720px;">
+    <div class="modal-title">Edit History</div>
+    <div class="modal-sub" id="auditModalSub">—</div>
+    <div id="auditModalBody" style="max-height:400px; overflow-y:auto; margin-top:14px"></div>
+    <div class="btn-row" style="margin-top:18px; justify-content: flex-end">
+      <button class="secondary" onclick="document.getElementById('auditModal').classList.add('hidden')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div id="pwdModal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <div class="modal-title" id="pwdModalTitle">Change Password</div>
+    <div class="modal-sub" id="pwdModalSub">Enter your current password and set a new one.</div>
+    <div id="pwdModalError" class="error-msg">Error</div>
+    <div id="pwdModalOkMsg" class="info-msg">Password updated successfully.</div>
+
+    <div id="pwdOldRow" class="field"><label>Current Password</label>
+      <input type="password" id="pwdOld" autocomplete="off" placeholder="Current password">
+    </div>
+    <div class="field"><label>New Password</label>
+      <input type="password" id="pwdNew" autocomplete="off" placeholder="At least 8 characters">
+    </div>
+    <div class="field"><label>Confirm New Password</label>
+      <input type="password" id="pwdConfirm" autocomplete="off" placeholder="Type it again">
+    </div>
+    <div class="btn-row" style="margin-top:18px; justify-content: flex-end">
+      <button class="secondary" onclick="closeChangePasswordModal()" id="pwdCancelBtn">Cancel</button>
+      <button class="primary" onclick="submitChangePassword()" id="pwdSubmitBtn">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT USER MODAL (Super only) -->
+<div id="userModal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <div class="modal-title" id="userModalTitle">Add Team Member</div>
+    <div class="modal-sub">New users receive the default password <code>cavitak@123</code> and must change it on first login.</div>
+    <div id="userModalError" class="error-msg">Error</div>
+
+    <div class="grid">
+      <div class="field"><label>Username <span class="req">*</span></label>
+        <input type="text" id="um_username" autocomplete="off" autocapitalize="none" placeholder="lowercase, no spaces">
+      </div>
+      <div class="field"><label>Full Name <span class="req">*</span></label>
+        <input type="text" id="um_fullName" placeholder="e.g. Priya Shah">
+      </div>
+      <div class="field"><label>Role <span class="req">*</span></label>
+        <select id="um_role">
+          <option value="Presales">Pre-sales</option>
+          <option value="Sales">Sales</option>
+          <option value="Support">Support</option>
+          <option value="OEM">OEM</option>
+        </select>
+      </div>
+      <div class="field"><label>Email</label>
+        <input type="email" id="um_email" placeholder="name@cavitak.com">
+      </div>
+      <div class="field"><label>Phone</label>
+        <input type="tel" id="um_phone" placeholder="+91…">
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="um_active">
+          <option value="TRUE">Active</option>
+          <option value="FALSE">Disabled</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top:18px; justify-content: flex-end">
+      <button class="secondary" onclick="closeUserModal()">Cancel</button>
+      <button class="primary" onclick="submitUserModal()" id="umSubmitBtn">Save</button>
     </div>
   </div>
 </div>
@@ -2935,20 +4295,20 @@
   // =================================================================
   // USERS (local fallback; move to Google Sheet in production if desired)
   // =================================================================
-  const USERS = {
-    'dipen':   { pass: 'cavitak@27052142', name: 'Dipenkumar Gajjar', role: 'superadmin' },
-    'mohit':   { pass: 'cavitak@123',      name: 'Mohit Chaturvedi',   role: 'user' },
-    'vipul':   { pass: 'cavitak@123',      name: 'Vipul Parihar',      role: 'user' },
-    'ranjith': { pass: 'cavitak@123',      name: 'Ranjith SR',         role: 'user' },
-    'sachhi':  { pass: 'cavitak@123',      name: 'Sachhi Kaushik',     role: 'user' },
-    'hritika':  { pass: 'cavitak@123',      name: 'Hritika Sawant',     role: 'user' },
-    'rahul':    { pass: 'cavitak@123',      name: 'Rahul Soyanter',     role: 'user' },
-    'rahuljain':{ pass: 'cavitak@123',      name: 'Rahul Jain',         role: 'user' },
-    'nikul':    { pass: 'cavitak@123',      name: 'Nikul Suthar',       role: 'user' },
-    'jenish':   { pass: 'cavitak@123',      name: 'Jenish Patel',       role: 'user' },
-    'rushang':  { pass: 'cavitak@123',      name: 'Rushang Mahale',     role: 'user' },
-    'hardik':   { pass: 'cavitak@123',      name: 'Hardik Barot',       role: 'user' },
-    'amit':     { pass: 'cavitak@123',      name: 'Amit Singh',         role: 'user' }
+  // =================================================================
+  // AUTH — backend-backed (Sheet Users tab, SHA-256 hashed)
+  // =================================================================
+  // The HTML no longer stores passwords. It hashes client-side with SHA-256
+  // and sends the hash to the Apps Script backend for verification.
+  // The super-admin username and super-admin flags are enforced by the backend.
+  const SUPER_LOGIN_NAMES = ['dipenkumar'];
+  const TEAM_ROSTER_LABELS = {
+    // Role color/label hints used in UI badges
+    'Super':    { label: 'Super Admin', pill: 'role-super' },
+    'OEM':      { label: 'OEM',         pill: 'role-oem' },
+    'Presales': { label: 'Pre-sales',   pill: 'role-presales' },
+    'Sales':    { label: 'Sales',       pill: 'role-sales' },
+    'Support':  { label: 'Support',     pill: 'role-support' }
   };
 
   // =================================================================
@@ -3058,10 +4418,40 @@
       w = document.createElement('div');
       w.id = 'sessionWarnBanner';
       w.className = 'session-warn-banner';
-      w.innerHTML = '<span class="session-warn-dot"></span><span>⚠ Session expires in 1 minute — please save your work or confirm submission now</span>';
+      w.innerHTML =
+        '<span class="session-warn-dot"></span>' +
+        '<span>⚠ Session expires in <b id="sessionWarnCountdown">60</b>s — save your work or extend your session</span>' +
+        '<button class="btn-tiny" style="margin-left:10px" onclick="extendSession()">Stay signed in</button>';
       document.body.appendChild(w);
+    } else {
+      // Reset countdown text if re-shown
+      const cd = w.querySelector('#sessionWarnCountdown'); if (cd) cd.textContent = '60';
     }
     w.classList.add('show');
+    // Start per-second countdown
+    if (_sessionCountdownInterval) clearInterval(_sessionCountdownInterval);
+    let remaining = 60;
+    _sessionCountdownInterval = setInterval(function() {
+      remaining--;
+      const cd = document.getElementById('sessionWarnCountdown');
+      if (cd) cd.textContent = Math.max(0, remaining);
+      if (remaining <= 0) {
+        clearInterval(_sessionCountdownInterval);
+        _sessionCountdownInterval = null;
+      }
+    }, 1000);
+  }
+
+  let _sessionCountdownInterval = null;
+
+  // User clicks "Stay signed in" in the warning banner — extend session by full SESSION_MS
+  function extendSession() {
+    sessionStart = Date.now();
+    sessionWarned = false;
+    const w = document.getElementById('sessionWarnBanner');
+    if (w) w.classList.remove('show');
+    if (_sessionCountdownInterval) { clearInterval(_sessionCountdownInterval); _sessionCountdownInterval = null; }
+    showSync('Session extended', 'success');
   }
 
   function forceLogout(reason) {
@@ -3097,39 +4487,132 @@
   // =================================================================
   // LOGIN
   // =================================================================
-  function attemptLogin() {
+  // SHA-256 helper (browser-native)
+  async function sha256(text) {
+    const buf = new TextEncoder().encode(text);
+    const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  // Store the authed user's hash in memory for use by authenticated backend calls
+  let _authHash = null;
+  // Editing existing submission: non-null refId means form is in edit mode
+  let _editingRefId = null;
+  let _editingOriginalRow = null;
+
+  async function attemptLogin() {
     const u = document.getElementById('loginUser').value.trim().toLowerCase();
     const p = document.getElementById('loginPass').value;
     const err = document.getElementById('loginError');
-    const rec = USERS[u];
-    if (!rec || rec.pass !== p) {
-      err.textContent = 'Invalid username or password. Please try again.';
+    if (!u || !p) {
+      err.textContent = 'Enter username and password.';
       err.classList.add('show');
       return;
     }
     err.classList.remove('show');
-    currentUser = { username: u, ...rec };
-    document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('appScreen').classList.remove('hidden');
-    document.getElementById('userLabel').textContent = currentUser.name;
-    document.getElementById('roleLabel').textContent = currentUser.role === 'superadmin' ? 'Super Admin' : 'Pre-sales';
-    if (currentUser.role !== 'superadmin') document.getElementById('logBtn').classList.add('hidden');
-    else document.getElementById('logBtn').classList.remove('hidden');
-    // Fresh start — empty form, no lingering state
-    lastResult = null;
-    sessionLog = [];
-    initScreens();
-    resetForm();
-    // Kick off 10-min hard session timer
-    startSessionTimer();
-    showView('form');
+    const signInBtn = document.querySelector('#loginScreen button.primary');
+    if (signInBtn) { signInBtn.disabled = true; signInBtn.textContent = 'Signing in…'; }
+    try {
+      const hash = await sha256(p);
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'login', username: u, passwordHash: hash })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        err.textContent = data.error || 'Invalid username or password.';
+        err.classList.add('show');
+        return;
+      }
+      // Store auth for subsequent authenticated requests
+      _authHash = hash;
+      currentUser = {
+        username: data.user.username,
+        name: data.user.fullName,
+        fullName: data.user.fullName,
+        email: data.user.email,
+        phone: data.user.phone,
+        role: data.user.role,
+        lastLogin: data.user.lastLogin,
+        themePreference: data.user.themePreference || '',
+        isSuper: data.user.role === 'Super' || SUPER_LOGIN_NAMES.indexOf(data.user.username.toLowerCase()) >= 0
+      };
+      // Apply server-stored theme preference if set (overrides localStorage)
+      if (currentUser.themePreference === 'dark' || currentUser.themePreference === 'light') {
+        applyTheme(currentUser.themePreference);
+        try { localStorage.setItem('calicoTheme', currentUser.themePreference); } catch (e) {}
+      }
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('appScreen').classList.remove('hidden');
+      // Branded splash with progress bar
+      showLoginSplash();
+      setTimeout(function() { updateLoginSplash(35, 'Loading your workspace…'); }, 400);
+      setTimeout(function() { updateLoginSplash(65, 'Checking backend…'); }, 900);
+      setTimeout(function() { updateLoginSplash(90, 'Syncing submissions…'); }, 1500);
+      setTimeout(function() {
+        updateLoginSplash(100, 'Ready');
+        if (!data.mustChange) hideLoginSplash();
+      }, 2100);
+      document.getElementById('userLabel').textContent = currentUser.name;
+      const rolePill = document.getElementById('roleLabel');
+      const rolInfo = TEAM_ROSTER_LABELS[currentUser.role] || { label: currentUser.role, pill: '' };
+      rolePill.textContent = rolInfo.label;
+      rolePill.className = 'role-pill ' + (rolInfo.pill || '');
+      // Dashboard + History: visible to ALL users. Data is auto-scoped by hasFullDataAccess().
+      //   Super + OEM see the whole team's data
+      //   Presales / Sales / Support see only their own submissions
+      // Team tab: Super only
+      // OEM role is read-only — hide form access entirely
+      const isOEM = currentUser.role === 'OEM';
+      const logBtn = document.getElementById('logBtn');
+      const historyBtn = document.getElementById('historyBtn');
+      const teamBtn = document.getElementById('teamBtn');
+      const profileBtn = document.getElementById('profileBtn');
+      const newCfgBtn = document.getElementById('newCfgBtn');
+      const resultBtn = document.getElementById('resultBtn');
+      if (logBtn) logBtn.classList.remove('hidden');
+      if (historyBtn) historyBtn.classList.remove('hidden');
+      if (teamBtn) teamBtn.classList.toggle('hidden', !currentUser.isSuper);
+      if (profileBtn) profileBtn.classList.remove('hidden');
+      if (newCfgBtn) newCfgBtn.classList.toggle('hidden', isOEM);
+      if (resultBtn) resultBtn.classList.add('hidden'); // no result yet on fresh login
+      // Fresh start
+      lastResult = null; sessionLog = [];
+      initScreens(); resetForm();
+      startSessionTimer();
+      // Force password change if flagged
+      if (data.mustChange) {
+        openChangePasswordModal(true);
+      } else if (isOEM) {
+        showView('dash');  // OEM lands on Dashboard, not Form
+      } else {
+        showView('form');
+      }
+      // Backend health check
+      checkWebhookHealth();
+      // Drain any pending submissions that failed to sync before
+      setTimeout(drainPendingQueue, 1500);
+      // Pre-load centralLog in the background for duplicate-project detection
+      // (silent — doesn't block the UI; only Super+OEM see dashboard, but
+      //  everyone benefits from the duplicate warning)
+      setTimeout(async function() {
+        try { centralLog = await fetchLog(); } catch (e) { /* silent */ }
+      }, 2000);
+    } catch (e) {
+      err.textContent = 'Network error. Check your connection.';
+      err.classList.add('show');
+    } finally {
+      if (signInBtn) { signInBtn.disabled = false; signInBtn.textContent = 'Sign in'; }
+    }
   }
   function logout() {
     stopSessionTimer();
     sessionStorage.clear();
-    lastResult = null;
-    sessionLog = [];
-    currentUser = null;
+    lastResult = null; sessionLog = []; currentUser = null; _authHash = null;
+    _editingRefId = null; _editingOriginalRow = null;
+    const banner = document.getElementById('editBanner');
+    if (banner) banner.classList.add('hidden');
     try { resetForm(); } catch (e) {}
     document.getElementById('loginUser').value = '';
     document.getElementById('loginPass').value = '';
@@ -3146,9 +4629,31 @@
   // VIEWS
   // =================================================================
   function showView(v) {
-    ['form','analyzing','result','log'].forEach(x => document.getElementById(x+'View').classList.add('hidden'));
-    document.getElementById(v+'View').classList.remove('hidden');
-    if (v === 'log') refreshLog();
+    // Legacy alias: 'log' → 'dash' (analytics landing)
+    if (v === 'log') v = 'dash';
+    // OEM is read-only — redirect form/result/analyzing attempts to dashboard
+    if (currentUser && currentUser.role === 'OEM' && (v === 'form' || v === 'result' || v === 'analyzing')) {
+      v = 'dash';
+    }
+    ['form','analyzing','result','dash','history','team','profile'].forEach(x => {
+      const el = document.getElementById(x+'View');
+      if (el) el.classList.add('hidden');
+    });
+    const target = document.getElementById(v+'View');
+    if (target) target.classList.remove('hidden');
+    // Result button appears whenever a result exists; keep it visible on result view
+    const resultBtn = document.getElementById('resultBtn');
+    if (resultBtn) {
+      if (lastResult && lastResult.submission && !(currentUser && currentUser.role === 'OEM')) {
+        resultBtn.classList.remove('hidden');
+      } else {
+        resultBtn.classList.add('hidden');
+      }
+    }
+    if (v === 'dash') refreshLog();       // refresh re-populates both views' filter dropdowns + charts
+    if (v === 'history') refreshLog();    // same data source
+    if (v === 'team') refreshTeam();
+    if (v === 'profile') renderProfile();
     window.scrollTo(0,0);
   }
 
@@ -3181,6 +4686,14 @@
     }, 2000);
   }
   function startNewConfig() {
+    // Clear any edit-mode state — starting fresh
+    _editingRefId = null;
+    _editingOriginalRow = null;
+    const banner = document.getElementById('editBanner');
+    if (banner) banner.classList.add('hidden');
+    // Result button goes away — no result to view yet for this new selection
+    const resultBtn = document.getElementById('resultBtn');
+    if (resultBtn) resultBtn.classList.add('hidden');
     resetForm();
     lastResult = null;
     showView('form');
@@ -3248,12 +4761,21 @@
   // =================================================================
   // CONFIRM SUBMISSION — Mark row as confirmed in backend, clear form, go to input page
   // =================================================================
+  // In-session set of refIds that have already been confirmed, to prevent
+  // double-submit when the button is mashed or the user navigates back.
+  const _confirmedRefIds = new Set();
+
   async function confirmSubmission() {
     if (!lastResult || !lastResult.submission || !lastResult.submission.refId) {
       alert('No submission to confirm. Please calculate a recommendation first.');
       return;
     }
     const refId = lastResult.submission.refId;
+    // Guard: already confirmed in this session, or backend already stamped confirmed
+    if (_confirmedRefIds.has(refId) || (lastResult.submission.status === 'confirmed')) {
+      alert('This submission is already confirmed. Start a new selection to log another.');
+      return;
+    }
     const btn = document.getElementById('confirmBtn');
     btn.disabled = true;
     btn.textContent = 'Confirming…';
@@ -3266,6 +4788,8 @@
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'confirm', refId: refId, username: currentUser.username, userFullName: currentUser.name })
         });
+        _confirmedRefIds.add(refId);
+        lastResult.submission.status = 'confirmed';
         showSync('Submission confirmed', 'success');
       } else {
         showSync('Confirmed locally', 'success');
@@ -3378,6 +4902,18 @@
     }
     return screens;
   }
+  function onDealValueChange() {
+    const raw = parseFloat(document.getElementById('f_dealValueINR').value) || 0;
+    const readout = document.getElementById('dealValueReadout');
+    if (!readout) return;
+    if (raw <= 0) { readout.textContent = ''; return; }
+    let fmt;
+    if (raw >= 1e7) fmt = '₹' + (raw / 1e7).toFixed(2) + ' Cr';
+    else if (raw >= 1e5) fmt = '₹' + (raw / 1e5).toFixed(2) + ' L';
+    else fmt = '₹' + Math.round(raw).toLocaleString('en-IN');
+    readout.textContent = '≈ ' + fmt;
+  }
+
   function onSignalsChange() {
     const v = document.getElementById('f_signals').value;
     const hasHDMI = v.indexOf('HDMI') === 0 || v === 'MIXED';
@@ -3669,6 +5205,7 @@
       inputsFHD: parseInt(document.getElementById('f_inputsFHD').value) || 0,
       signals: document.getElementById('f_signals').value,
       budget: document.getElementById('f_budget').value,
+      dealValueINR: parseFloat(document.getElementById('f_dealValueINR').value) || 0,
       close: document.getElementById('f_close').value,
       notes: document.getElementById('f_notes').value.trim()
     };
@@ -3802,9 +5339,47 @@
     };
 
     const calcBtn = document.getElementById('calcBtn');
+
+    // ===== DUPLICATE PROJECT WARNING (fuzzy) =====
+    // Skip this check in edit mode — the row already exists and we're updating it.
+    // For new submissions, we look for EXACT matches first, then fuzzy-similar projects
+    // (Levenshtein ratio ≥ 0.80 on normalized names + end-user overlap).
+    if (!_editingRefId) {
+      const projectNameLC = normalizeForCompare_(input.project);
+      const endUserLC = normalizeForCompare_(input.endUser);
+      if (projectNameLC && Array.isArray(centralLog) && centralLog.length) {
+        const matches = findSimilarSubmissions_(projectNameLC, endUserLC, centralLog);
+        if (matches.length > 0) {
+          const topMatch = matches[0];
+          // Build a readable warning showing top 3 candidates
+          let warning = 'Possible duplicate(s) found. Review before continuing:\n\n';
+          matches.slice(0, 3).forEach(function(m, idx) {
+            const r = m.row;
+            const similarity = Math.round(m.score * 100);
+            warning += (idx + 1) + '. ' + (m.exact ? 'EXACT match' : 'SIMILAR (' + similarity + '%)') + '\n';
+            warning += '   Project:  ' + (r.project || '—') + '\n';
+            warning += '   End-user: ' + (r.endUser || '—') + '\n';
+            warning += '   Logged:   ' + (r.timestampLocal || '—') + '\n';
+            warning += '   By:       ' + (r.userFullName || r.username || '—') + '\n';
+            warning += '   Status:   ' + (r.status || '—') + '\n\n';
+          });
+          warning += 'Click OK to log this as a NEW entry anyway.\nClick Cancel to review existing entries first.';
+          if (!confirm(warning)) {
+            // Offer to jump to the top match's detail view (so they can edit instead of duplicating)
+            if (topMatch && topMatch.row && topMatch.row.refId) {
+              if (confirm('Open the existing entry "' + (topMatch.row.project || '—') + '" to review or edit it?')) {
+                goEditDuplicate(topMatch.row.refId);
+              }
+            }
+            return;
+          }
+        }
+      }
+    }
+
     calcBtn.disabled = true;
-    calcBtn.textContent = 'Logging...';
-    showSync('Saving…', 'pending');
+    calcBtn.textContent = _editingRefId ? 'Saving changes...' : 'Logging...';
+    showSync(_editingRefId ? 'Updating…' : 'Saving…', 'pending');
 
     // Show the analyzing page immediately and drive the step animation
     showView('analyzing');
@@ -3813,16 +5388,43 @@
 
     try {
       if (!OFFLINE_MODE) {
-        await logToSheet(submission);
-        showSync('Saved', 'success');
+        if (_editingRefId) {
+          // EDIT MODE — reuse the original refId and call updatesubmission
+          submission.refId = _editingRefId;
+          // Preserve original author so the row stays attributed correctly
+          if (_editingOriginalRow) {
+            submission.username = _editingOriginalRow.username;
+            submission.userFullName = _editingOriginalRow.userFullName;
+            submission.timestamp = _editingOriginalRow.timestamp;
+            submission.timestampLocal = _editingOriginalRow.timestampLocal;
+          }
+          await updateSubmissionOnSheet(submission);
+          showSync('Changes saved', 'success');
+        } else {
+          await logToSheet(submission);
+          showSync('Saved', 'success');
+        }
       } else {
         showSync('Saved locally', 'success');
       }
     } catch (e) {
-      showSync('Sync failed', 'error');
+      // Queue for re-sync later (only for new submissions — edits are not queued)
+      if (!_editingRefId) {
+        queuePendingSubmission(submission);
+        showSync('Saved to re-sync queue', 'error');
+      } else {
+        showSync('Update failed. Try again.', 'error');
+      }
     }
     sessionLog.unshift(submission);
     lastResult = { input: input, reco: reco, submission: submission };
+    // Clear edit mode after save so next calc is a fresh entry
+    if (_editingRefId) {
+      _editingRefId = null;
+      _editingOriginalRow = null;
+      const banner = document.getElementById('editBanner');
+      if (banner) banner.classList.add('hidden');
+    }
     calcBtn.disabled = false;
     calcBtn.textContent = 'Calculate & Log';
 
@@ -3841,6 +5443,183 @@
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'log', submission: submission })
     });
+  }
+
+  // =================================================================
+  // EDIT MODE — load an existing submission into the form and update it
+  // =================================================================
+  async function updateSubmissionOnSheet(submission) {
+    if (!WEB_APP_URL) throw new Error('No backend URL configured');
+    // Note: no-cors prevents us from reading a real response, but the request
+    // still reaches the Apps Script which updates the sheet. Downside is we
+    // can't surface server-side errors to the user in detail — matches how
+    // logToSheet already works.
+    return fetch(WEB_APP_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'updatesubmission',
+        authUsername: currentUser ? currentUser.username : '',
+        authPasswordHash: _authHash,
+        refId: submission.refId,
+        submission: submission
+      })
+    });
+  }
+
+  function startEditingSubmission(refId) {
+    if (!refId) return;
+    // OEM is read-only — block edit attempt defensively (UI already hides the button)
+    if (currentUser && currentUser.role === 'OEM') {
+      alert('OEM role has read-only access. You cannot edit submissions.');
+      return;
+    }
+    // Find the row in centralLog
+    const row = centralLog.find(function(r) { return String(r.refId) === String(refId); });
+    if (!row) {
+      alert('Submission not found. It may have been removed or the data is stale — try Refresh.');
+      return;
+    }
+    // Ownership check (client-side; backend enforces too)
+    const isOwner = String(row.username || '').toLowerCase() === String(currentUser.username || '').toLowerCase();
+    if (!isOwner && !currentUser.isSuper) {
+      alert('You can only edit your own submissions.');
+      return;
+    }
+    // Set edit state
+    _editingRefId = refId;
+    _editingOriginalRow = row;
+    // Populate the form fields from row
+    populateFormFromRow_(row);
+    // Update banner
+    const banner = document.getElementById('editBanner');
+    const sub = document.getElementById('editBannerSub');
+    if (banner) banner.classList.remove('hidden');
+    if (sub) {
+      sub.innerHTML = '<b>' + escapeHtml(row.project || 'Untitled') + '</b> · ref ' +
+        '<code style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--gold-bright)">' +
+        escapeHtml(refId) + '</code>' +
+        ' · originally by ' + escapeHtml(row.userFullName || row.username || '—');
+    }
+    // Switch to form view
+    showView('form');
+    // Scroll to top so user sees the banner
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function cancelEditMode() {
+    _editingRefId = null;
+    _editingOriginalRow = null;
+    const banner = document.getElementById('editBanner');
+    if (banner) banner.classList.add('hidden');
+    resetForm();
+  }
+
+  // Populate every form input from a submission row fetched from the sheet.
+  // This mirrors how calculateAndLog reads the form in reverse.
+  function populateFormFromRow_(r) {
+    const setVal = function(id, val) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = (val == null ? '' : String(val));
+    };
+    setVal('f_project', r.project);
+    setVal('f_stage', r.stage);
+    setVal('f_endUser', r.endUser);
+    setVal('f_partner', r.partner);
+    setVal('f_consultant', r.consultant);
+    setVal('f_venueName', r.venueName);
+    setVal('f_venueType', r.venueType);
+    setVal('f_city', r.city);
+    setVal('f_state', r.state);
+    setVal('f_contact', r.contact);
+    setVal('f_outputType', r.outputType);
+    setVal('f_outputSignal', r.outputSignal);
+    setVal('f_sdiCount', r.sdiCount);
+    setVal('f_projectorCount', r.projectorCount);
+    setVal('f_projectorRes', r.projectorRes);
+    setVal('f_inputs', r.inputs);
+    setVal('f_inputs4K', r.inputs4K);
+    setVal('f_inputsFHD', r.inputsFHD);
+    setVal('f_signals', r.signals);
+    setVal('f_budget', r.budget);
+    setVal('f_dealValueINR', r.dealValueINR);
+    setVal('f_close', r.close);
+    setVal('f_notes', r.notes);
+
+    // Re-trigger conditional UI (projector field visibility, SDI count, etc.)
+    if (typeof onOutputTypeChange === 'function') onOutputTypeChange();
+    if (typeof onOutputSignalChange === 'function') onOutputSignalChange();
+
+    // Rebuild LED screens from per-screen W/H columns
+    const screens = [];
+    for (let i = 1; i <= 10; i++) {
+      const w = r['screen' + i + '_W'];
+      const h = r['screen' + i + '_H'];
+      if (w && h) screens.push({ resW: w, resH: h });
+    }
+    if (screens.length > 0) {
+      // Reset and repopulate the screens UI
+      screenCount = 0;
+      const container = document.getElementById('screensContainer');
+      if (container) container.innerHTML = '';
+      screens.forEach(function(s, idx) {
+        addScreen();
+        const screenNum = idx + 1; // addScreen uses 1-indexed screenCount
+        const wEl = document.getElementById('resW-' + screenNum);
+        const hEl = document.getElementById('resH-' + screenNum);
+        if (wEl) wEl.value = s.resW;
+        if (hEl) hEl.value = s.resH;
+        if (typeof updateReadout === 'function') updateReadout(screenNum);
+      });
+    } else {
+      // No screens — reset to a single empty screen
+      if (typeof initScreens === 'function') initScreens();
+    }
+    // Trigger form-wide totals recalc
+    if (typeof updateTotals === 'function') updateTotals();
+  }
+
+  // =================================================================
+  // LOCAL RE-SYNC QUEUE — holds submissions when the webhook fails
+  // =================================================================
+  const PENDING_QUEUE_KEY = 'calicoPendingQueue';
+
+  function queuePendingSubmission(submission) {
+    try {
+      const q = JSON.parse(localStorage.getItem(PENDING_QUEUE_KEY) || '[]');
+      q.push({ queuedAt: new Date().toISOString(), submission: submission });
+      localStorage.setItem(PENDING_QUEUE_KEY, JSON.stringify(q));
+    } catch (e) { /* storage disabled — submission will be lost */ }
+  }
+
+  function getPendingCount() {
+    try {
+      const q = JSON.parse(localStorage.getItem(PENDING_QUEUE_KEY) || '[]');
+      return q.length;
+    } catch (e) { return 0; }
+  }
+
+  async function drainPendingQueue() {
+    let q;
+    try { q = JSON.parse(localStorage.getItem(PENDING_QUEUE_KEY) || '[]'); }
+    catch (e) { return; }
+    if (!q.length) return;
+    showSync('Re-syncing ' + q.length + ' pending…', 'pending');
+    const remaining = [];
+    for (let i = 0; i < q.length; i++) {
+      try {
+        await logToSheet(q[i].submission);
+      } catch (e) {
+        remaining.push(q[i]);
+      }
+    }
+    try { localStorage.setItem(PENDING_QUEUE_KEY, JSON.stringify(remaining)); } catch (e) {}
+    if (remaining.length === 0) {
+      showSync('All pending submissions synced', 'success');
+    } else {
+      showSync(remaining.length + ' still pending — will retry', 'error');
+    }
   }
 
   // =================================================================
@@ -3869,7 +5648,10 @@
   async function fetchLog() {
     if (!WEB_APP_URL) return [];
     try {
-      const resp = await fetch(WEB_APP_URL + '?action=getlog');
+      const authQs = currentUser && _authHash
+        ? '&authUsername=' + encodeURIComponent(currentUser.username) + '&authPasswordHash=' + encodeURIComponent(_authHash)
+        : '';
+      const resp = await fetch(WEB_APP_URL + '?action=getlog' + authQs);
       const data = await resp.json();
       return data.log || [];
     } catch (e) { console.error('Fetch log failed:', e); return []; }
@@ -4853,34 +6635,70 @@
   // =================================================================
   // LOG
   // =================================================================
+  // Returns true if the current user has access to see the full team's data.
+  // Super + OEM see everything; everyone else sees only their own submissions.
+  function hasFullDataAccess() {
+    if (!currentUser) return false;
+    if (currentUser.isSuper) return true;
+    if (currentUser.role === 'OEM') return true;
+    return false;
+  }
+
+  // Scope a row array to the current user's permissions
+  function scopeRowsToUser_(rows) {
+    if (hasFullDataAccess()) return rows;
+    if (!currentUser) return [];
+    const uname = String(currentUser.username || '').toLowerCase();
+    return rows.filter(function(r) {
+      return String(r.username || '').toLowerCase() === uname;
+    });
+  }
+
   async function refreshLog() {
     const el = document.getElementById('logContent');
     const srcEl = document.getElementById('logSource');
     const metaEl = document.getElementById('dashMeta');
-    el.innerHTML = '<div class="log-empty">Loading…</div>';
+    const histMeta = document.getElementById('histMeta');
+    if (el) el.innerHTML = '<div class="log-empty">Loading…</div>';
     if (metaEl) metaEl.textContent = 'Loading…';
-    let rows = [];
+    if (histMeta) histMeta.textContent = 'Loading…';
+    let rawRows = [];
     if (!OFFLINE_MODE) {
-      rows = await fetchLog();
-      if (srcEl) srcEl.textContent = 'Source: Central Google Sheet · ' + rows.length + ' entries · Refreshed ' + new Date().toLocaleTimeString('en-IN');
+      rawRows = await fetchLog();
     } else {
-      rows = sessionLog;
-      if (srcEl) srcEl.textContent = 'Source: Session only (Google Sheet backend not configured) · ' + rows.length + ' entries';
+      rawRows = sessionLog;
     }
+    // ===== ROLE-BASED SCOPING =====
+    // Non-privileged roles (Presales/Sales/Support) only see their own submissions.
+    // Super + OEM see everyone's data.
+    const rows = scopeRowsToUser_(rawRows);
+    const scopeNote = hasFullDataAccess()
+      ? ''
+      : ' · Showing your submissions only';
+    const sourceText = OFFLINE_MODE
+      ? 'Source: Session only (Google Sheet backend not configured) · ' + rows.length + ' entries' + scopeNote
+      : 'Source: Central Google Sheet · ' + rows.length + ' entries' + scopeNote + ' · Refreshed ' + new Date().toLocaleTimeString('en-IN');
+    if (srcEl) srcEl.textContent = sourceText;
     centralLog = rows;
-    if (metaEl) {
-      const now = new Date();
-      metaEl.textContent = 'Last refreshed · ' + now.toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-    }
-    // Populate all dynamic dropdowns with unique values from the data
-    populateFilterDropdown('fl_user', rows.map(r => r.username), 'All users');
-    populateFilterDropdown('fl_state', rows.map(r => r.state), 'All');
-    populateFilterDropdown('fl_city', rows.map(r => r.city), 'All');
-    populateFilterDropdown('fl_project', rows.map(r => r.project), 'All');
-    populateFilterDropdown('fl_partner', rows.map(r => r.partner), 'All');
-    populateFilterDropdown('fl_consultant', rows.map(r => r.consultant), 'All');
-    populateFilterDropdown('fl_endUser', rows.map(r => r.endUser), 'All');
-    applyFilters();
+    const now = new Date();
+    const stampText = 'Last refreshed · ' + now.toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) + scopeNote;
+    if (metaEl) metaEl.textContent = stampText;
+    if (histMeta) histMeta.textContent = stampText + ' · ' + rows.length + ' entries';
+
+    // Populate BOTH filter sets (dash fl_ and history hl_) with the same unique values
+    ['user','state','city','project','partner','consultant','endUser'].forEach(function(field) {
+      const key = field === 'user' ? 'username' : field;
+      const vals = rows.map(function(r) { return r[key]; });
+      populateFilterDropdown('fl_' + field, vals, field === 'user' ? 'All users' : 'All');
+      populateFilterDropdown('hl_' + field, vals, field === 'user' ? 'All users' : 'All');
+    });
+
+    applyDashFilters();
+    applyHistFilters();
+    // Personal stats panel (for non-super / non-OEM users)
+    renderPersonalStats(rows);
+    // Refresh pending queue indicator
+    refreshPendingIndicator();
   }
 
   // Helper: fill a <select> with unique sorted values from an array, preserving current selection
@@ -4901,8 +6719,11 @@
     });
   }
 
-  function getFilters() {
+  // ===== DASHBOARD FILTERS (fl_ prefix) — drive KPIs + charts =====
+  function getDashFilters() {
     return {
+      dateFrom: document.getElementById('fl_dateFrom').value,
+      dateTo: document.getElementById('fl_dateTo').value,
       state: document.getElementById('fl_state').value,
       city: document.getElementById('fl_city').value,
       user: document.getElementById('fl_user').value,
@@ -4914,9 +6735,16 @@
     };
   }
 
-  function applyFilters() {
-    const f = getFilters();
-    const filtered = centralLog.filter(function(r) {
+  function filterRows_(f, rows) {
+    const fromMs = f.dateFrom ? new Date(f.dateFrom + 'T00:00:00').getTime() : null;
+    const toMs = f.dateTo ? new Date(f.dateTo + 'T23:59:59').getTime() : null;
+    return rows.filter(function(r) {
+      if (fromMs || toMs) {
+        const rowTs = r.timestamp ? new Date(r.timestamp).getTime() : (r.timestampLocal ? Date.parse(r.timestampLocal) : NaN);
+        if (isNaN(rowTs)) return false;
+        if (fromMs && rowTs < fromMs) return false;
+        if (toMs && rowTs > toMs) return false;
+      }
       if (f.state && r.state !== f.state) return false;
       if (f.city && r.city !== f.city) return false;
       if (f.user && r.username !== f.user) return false;
@@ -4925,12 +6753,69 @@
       if (f.consultant && r.consultant !== f.consultant) return false;
       if (f.endUser && r.endUser !== f.endUser) return false;
       if (f.model && r.recommended_chassis !== f.model) return false;
+      if (f.stage && r.stage !== f.stage) return false;
       return true;
     });
-    renderFilteredLog(filtered);
+  }
+
+  function applyDashFilters() {
+    const f = getDashFilters();
+    const filtered = filterRows_(f, centralLog);
     updateStats(filtered);
     updateFilterChips(f, filtered.length, centralLog.length);
   }
+
+  function clearDashFilters() {
+    ['fl_dateFrom','fl_dateTo','fl_state','fl_city','fl_user','fl_project','fl_partner','fl_consultant','fl_endUser','fl_model'].forEach(function(id) {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    applyDashFilters();
+  }
+
+  // ===== HISTORY FILTERS (hl_ prefix) — drive the submissions table =====
+  function getHistFilters() {
+    return {
+      dateFrom: document.getElementById('hl_dateFrom').value,
+      dateTo: document.getElementById('hl_dateTo').value,
+      state: document.getElementById('hl_state').value,
+      city: document.getElementById('hl_city').value,
+      user: document.getElementById('hl_user').value,
+      project: document.getElementById('hl_project').value,
+      partner: document.getElementById('hl_partner').value,
+      consultant: document.getElementById('hl_consultant').value,
+      endUser: document.getElementById('hl_endUser').value,
+      model: document.getElementById('hl_model').value,
+      stage: document.getElementById('hl_stage') ? document.getElementById('hl_stage').value : ''
+    };
+  }
+
+  function applyHistFilters() {
+    const f = getHistFilters();
+    let filtered = filterRows_(f, centralLog);
+    // Apply free-text search on top of the structured filters
+    const searchEl = document.getElementById('hl_search');
+    const needle = searchEl ? searchEl.value : '';
+    if (needle) {
+      filtered = filtered.filter(function(r) { return searchMatches_(r, needle); });
+    }
+    renderFilteredLog(filtered);
+    const summary = document.getElementById('histFilterSummary');
+    if (summary) summary.textContent = filtered.length;
+    // Clear any stale bulk selection when filters change
+    if (_bulkSelected && _bulkSelected.size > 0) clearBulkSelection();
+  }
+
+  function clearHistFilters() {
+    ['hl_dateFrom','hl_dateTo','hl_state','hl_city','hl_user','hl_project','hl_partner','hl_consultant','hl_endUser','hl_model','hl_stage','hl_search'].forEach(function(id) {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    applyHistFilters();
+  }
+
+  // Back-compat shim for any older code paths
+  function applyFilters() { applyDashFilters(); applyHistFilters(); }
+  function clearFilters() { clearDashFilters(); clearHistFilters(); }
+  function getFilters() { return getDashFilters(); }
 
   function renderFilteredLog(rows) {
     const el = document.getElementById('logContent');
@@ -4949,14 +6834,32 @@
       if (s === 'on hold' || s === 'hold') return 'hold';
       return '';
     }
+    // OEM role is read-only — don't render checkbox or Actions column
+    const canEdit = currentUser && currentUser.role !== 'OEM';
     let html = '<table class="log-table"><thead><tr>';
-    html += '<th>Time</th><th>User</th><th>Project</th><th>Stage</th><th>End-user</th><th>Partner</th><th>Consultant</th><th>Location</th><th>Chassis</th><th>HDMI</th><th>SDI</th><th>Inputs</th>';
+    if (canEdit) html += '<th style="width:28px"><input type="checkbox" class="row-checkbox" id="bulkSelectAll" onclick="toggleAllCheckboxes(this.checked)" title="Select all"></th>';
+    html += '<th>Time</th><th>User</th><th>Project</th><th>Stage</th><th>End-user</th><th>Partner</th><th>Consultant</th><th>Location</th><th>Chassis</th><th>Screens</th><th>M Pixels</th><th>HDMI</th><th>SDI</th><th>Inputs</th>';
+    if (canEdit) html += '<th style="width:70px">Actions</th>';
     html += '</tr></thead><tbody>';
     rows.forEach(function(s) {
       const t = s.timestampLocal || new Date(s.timestamp).toLocaleString('en-IN');
       const loc = [s.city, s.state].filter(Boolean).join(', ') || '—';
       const stageCls = stagePillClass(s.stage);
-      html += '<tr>';
+      const isOwner = currentUser && String(s.username || '').toLowerCase() === String(currentUser.username || '').toLowerCase();
+      const canEditThisRow = canEdit && (isOwner || (currentUser && currentUser.isSuper));
+      const refEsc = (s.refId || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      const screensCount = s.screens_count || 0;
+      const pxTotal = s.led_pixels ? (s.led_pixels / 1e6).toFixed(1) : (s.total_pixels_processed ? (s.total_pixels_processed / 1e6).toFixed(1) : '—');
+      // Make the row clickable to open the detail modal — but stop propagation on checkbox + action button so those still work independently
+      html += '<tr style="cursor:pointer" onclick="openDetailModal(\'' + refEsc + '\')">';
+      if (canEdit) {
+        const checked = _bulkSelected && _bulkSelected.has(s.refId) ? 'checked' : '';
+        if (canEditThisRow) {
+          html += '<td onclick="event.stopPropagation()"><input type="checkbox" class="row-checkbox" data-refid="' + refEsc + '" ' + checked + ' onclick="toggleRowCheckbox(\'' + refEsc + '\', this.checked)"></td>';
+        } else {
+          html += '<td></td>';
+        }
+      }
       html += '<td style="font-size:12px;color:var(--ink-soft);font-weight:500">' + t + '</td>';
       html += '<td>' + (s.userFullName || s.username || '—') + '</td>';
       html += '<td class="col-proj">' + (s.project||'—') + '</td>';
@@ -4966,13 +6869,274 @@
       html += '<td>' + (s.consultant||'—') + '</td>';
       html += '<td>' + loc + '</td>';
       html += '<td class="col-model">' + (s.recommended_chassis||'—') + '</td>';
+      html += '<td class="col-num">' + screensCount + '</td>';
+      html += '<td class="col-num">' + pxTotal + '</td>';
       html += '<td class="col-num">' + (s.hdmi_ports_needed || s.total_ports || '—') + '</td>';
       html += '<td class="col-num">' + (s.sdi_ports_needed || 0) + '</td>';
       html += '<td class="col-num">' + (s.inputs || '—') + '</td>';
+      if (canEdit) {
+        if (canEditThisRow) {
+          html += '<td onclick="event.stopPropagation()"><button class="btn-tiny" onclick="startEditingSubmission(\'' + refEsc + '\')" title="Edit submission">✏ Edit</button></td>';
+        } else {
+          html += '<td><span style="font-size:11px;color:var(--ink-subtle);font-family:JetBrains Mono,monospace">—</span></td>';
+        }
+      }
       html += '</tr>';
     });
     html += '</tbody></table>';
     el.innerHTML = html;
+  }
+
+  // Select-all helper for the checkbox in the table header
+  function toggleAllCheckboxes(checkedState) {
+    const checkboxes = document.querySelectorAll('#logContent .row-checkbox[data-refid]');
+    checkboxes.forEach(function(cb) {
+      cb.checked = checkedState;
+      const refId = cb.getAttribute('data-refid');
+      if (checkedState) _bulkSelected.add(refId);
+      else _bulkSelected.delete(refId);
+    });
+    refreshBulkBar();
+  }
+
+  // =================================================================
+  // BRIGHTSIGN-PORT FEATURES
+  // =================================================================
+
+  // --- Relative time formatter for Team tab lastLogin ---
+  function formatRelativeTime_(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    const now = new Date();
+    const diffMs = now - d;
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'just now';
+    if (diffMin < 60) return diffMin + 'm ago';
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return diffHr + 'h ago';
+    const diffDay = Math.floor(diffHr / 24);
+    if (diffDay === 1) return 'yesterday';
+    if (diffDay < 7) return diffDay + ' days ago';
+    if (diffDay < 30) return Math.floor(diffDay / 7) + 'w ago';
+    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  // --- Forgot Password modal ---
+  function openForgotPasswordModal() {
+    const m = document.getElementById('forgotModal');
+    if (!m) return;
+    document.getElementById('forgotUsername').value = '';
+    document.getElementById('forgotReason').value = '';
+    document.getElementById('forgotModalError').classList.remove('show');
+    document.getElementById('forgotModalOk').classList.remove('show');
+    m.classList.remove('hidden');
+    // Auto-focus username for quick typing
+    setTimeout(function() { document.getElementById('forgotUsername').focus(); }, 80);
+  }
+  function closeForgotPasswordModal() {
+    const m = document.getElementById('forgotModal');
+    if (m) m.classList.add('hidden');
+  }
+  async function submitForgotPasswordRequest() {
+    const errEl = document.getElementById('forgotModalError');
+    const okEl = document.getElementById('forgotModalOk');
+    const btn = document.getElementById('forgotSubmitBtn');
+    errEl.classList.remove('show'); okEl.classList.remove('show');
+    const username = document.getElementById('forgotUsername').value.trim().toLowerCase();
+    const reason = document.getElementById('forgotReason').value.trim();
+    if (!username) {
+      errEl.textContent = 'Please enter your username.';
+      errEl.classList.add('show');
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'resetrequest_create', username: username, reason: reason })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        okEl.textContent = data.message || 'Request submitted. Admin will review.';
+        okEl.classList.add('show');
+        setTimeout(closeForgotPasswordModal, 2500);
+      } else {
+        errEl.textContent = data.error || 'Request could not be sent.';
+        errEl.classList.add('show');
+      }
+    } catch (e) {
+      errEl.textContent = 'Network error. Try again.';
+      errEl.classList.add('show');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Send Request';
+    }
+  }
+
+  // --- Branded Login Splash ---
+  function showLoginSplash() {
+    const s = document.getElementById('loginSplash');
+    if (!s) return;
+    s.classList.remove('hidden');
+    updateLoginSplash(10, 'Signing in…');
+  }
+  function updateLoginSplash(pct, message) {
+    const bar = document.getElementById('splashProgressBar');
+    const step = document.getElementById('splashStep');
+    if (bar) bar.style.width = Math.min(100, Math.max(0, pct)) + '%';
+    if (step && message) step.textContent = message;
+  }
+  function hideLoginSplash() {
+    const s = document.getElementById('loginSplash');
+    if (!s) return;
+    s.classList.add('fading-out');
+    setTimeout(function() {
+      s.classList.add('hidden');
+      s.classList.remove('fading-out');
+    }, 450);
+  }
+
+  // --- Reset Requests panel (Super only, on Team tab) ---
+  async function loadResetRequests() {
+    const card = document.getElementById('resetRequestsCard');
+    if (!card) return;
+    // Only Super can even see this
+    if (!currentUser || !currentUser.isSuper) {
+      card.classList.add('hidden');
+      return;
+    }
+    const content = document.getElementById('resetRequestsContent');
+    content.innerHTML = '<div style="padding:14px;color:var(--ink-subtle);font-size:12.5px">Loading requests…</div>';
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'resetrequest_list',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) { card.classList.add('hidden'); return; }
+      const requests = data.requests || [];
+      renderResetRequests(requests);
+    } catch (e) {
+      card.classList.add('hidden');
+    }
+  }
+  function renderResetRequests(requests) {
+    const card = document.getElementById('resetRequestsCard');
+    const content = document.getElementById('resetRequestsContent');
+    const badge = document.getElementById('resetRequestsBadge');
+    const pending = requests.filter(function(r) { return r.status === 'pending'; });
+    const resolved = requests.filter(function(r) { return r.status !== 'pending'; });
+
+    if (requests.length === 0) {
+      card.classList.add('hidden');
+      return;
+    }
+    card.classList.remove('hidden');
+    if (badge) badge.textContent = pending.length + (pending.length === 1 ? ' PENDING' : ' PENDING');
+
+    const E = escapeHtml;
+    let html = '';
+    // Pending requests — prominent
+    if (pending.length === 0) {
+      html += '<div style="padding:14px 4px; color:var(--ink-subtle); font-size:13px">No pending requests right now.</div>';
+    } else {
+      pending.forEach(function(r) {
+        const when = r.requestedAt ? new Date(r.requestedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+        html += '<div style="padding:14px 16px; background:rgba(220,38,38,0.07); border-left:3px solid #DC2626; border-radius:8px; margin-bottom:10px; display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap">';
+        html += '<div style="flex:1 1 260px; min-width:200px">';
+        html += '<div style="font-family:JetBrains Mono,monospace; font-size:13px; font-weight:700; color:var(--gold-bright)">@' + E(r.username) + '</div>';
+        html += '<div style="font-size:11.5px; color:var(--ink-subtle); margin-top:3px">' + E(when) + '</div>';
+        if (r.reason) html += '<div style="font-size:12.5px; color:var(--ink-soft); margin-top:8px; font-style:italic; line-height:1.5">"' + E(r.reason) + '"</div>';
+        html += '</div>';
+        html += '<div style="display:flex; gap:8px">';
+        html += '<button class="btn-tiny" style="background:rgba(16,185,129,0.15); color:#34D399; border-color:#10B981" onclick="approveResetRequest(\'' + E(r.requestId) + '\', \'' + E(r.username) + '\')">✓ Approve</button>';
+        html += '<button class="btn-tiny" style="background:rgba(220,38,38,0.15); color:#FCA5A5; border-color:#DC2626" onclick="denyResetRequest(\'' + E(r.requestId) + '\', \'' + E(r.username) + '\')">✗ Deny</button>';
+        html += '</div>';
+        html += '</div>';
+      });
+    }
+    // Resolved requests — collapsible
+    if (resolved.length > 0) {
+      const show = Math.min(5, resolved.length);
+      html += '<details style="margin-top:14px"><summary style="cursor:pointer; font-size:12.5px; color:var(--ink-subtle); font-family:JetBrains Mono,monospace; letter-spacing:0.06em; text-transform:uppercase; padding:6px 0">Resolved · last ' + show + '</summary>';
+      html += '<div style="margin-top:10px">';
+      resolved.slice(0, show).forEach(function(r) {
+        const when = r.resolvedAt ? new Date(r.resolvedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+        const color = r.status === 'approved' ? '#10B981' : '#DC2626';
+        const label = r.status === 'approved' ? 'APPROVED' : 'DENIED';
+        html += '<div style="padding:10px 14px; background:rgba(255,255,255,0.03); border-left:2px solid ' + color + '; border-radius:6px; margin-bottom:6px; font-size:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center">';
+        html += '<span style="font-family:JetBrains Mono,monospace; font-weight:700; color:var(--ink)">@' + E(r.username) + '</span>';
+        html += '<span style="font-size:10.5px; color:' + color + '; font-weight:800; letter-spacing:0.08em">' + label + '</span>';
+        html += '<span style="color:var(--ink-subtle); font-size:11.5px">' + E(when) + ' · by ' + E(r.resolvedBy || '—') + '</span>';
+        html += '</div>';
+      });
+      html += '</div></details>';
+    }
+    content.innerHTML = html;
+  }
+  async function approveResetRequest(requestId, username) {
+    if (!confirm('Approve password reset for @' + username + '?\n\nTheir password will be reset to "cavitak@123" and they will be forced to change it on next login.')) return;
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'resetrequest_approve',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash,
+          requestId: requestId
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showSync('Approved @' + username, 'success');
+        loadResetRequests();
+      } else {
+        alert('Approve failed: ' + (data.error || 'Unknown error'));
+      }
+    } catch (e) {
+      alert('Network error. Try again.');
+    }
+  }
+  async function denyResetRequest(requestId, username) {
+    if (!confirm('Deny password reset request from @' + username + '?')) return;
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'resetrequest_deny',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash,
+          requestId: requestId
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showSync('Denied @' + username, 'success');
+        loadResetRequests();
+      } else {
+        alert('Deny failed: ' + (data.error || 'Unknown error'));
+      }
+    } catch (e) {
+      alert('Network error. Try again.');
+    }
+  }
+
+  // --- "Open existing entry" jump for duplicate warning ---
+  function goEditDuplicate(refId) {
+    if (!refId) return;
+    showView('history');
+    // Wait for history render then open detail modal for that refId
+    setTimeout(function() {
+      openDetailModal(refId);
+    }, 200);
   }
 
   function updateStats(rows) {
@@ -4995,6 +7159,9 @@
 
     const endusers = new Set(rows.map(r => r.endUser).filter(Boolean));
     document.getElementById('stat_endusers').textContent = endusers.size;
+
+    // Pipeline Value strip — sum of dealValueINR by stage bucket
+    updatePipelineValueStrip(rows);
 
     // Render charts
     renderUserChart(rows);
@@ -5029,6 +7196,40 @@
       html += '</div>';
     });
     el.innerHTML = html;
+  }
+
+  // Pipeline value strip — compute INR totals by stage bucket
+  function updatePipelineValueStrip(rows) {
+    const fmtINR = function(v) {
+      if (!v || v <= 0) return '₹0';
+      if (v >= 1e7) return '₹' + (v / 1e7).toFixed(2) + ' Cr';
+      if (v >= 1e5) return '₹' + (v / 1e5).toFixed(2) + ' L';
+      return '₹' + Math.round(v).toLocaleString('en-IN');
+    };
+    let activeSum = 0, wonSum = 0, lostSum = 0, totalSum = 0;
+    let activeCount = 0, wonCount = 0, lostCount = 0;
+    rows.forEach(function(r) {
+      const val = parseFloat(r.dealValueINR);
+      if (isNaN(val) || val <= 0) return;
+      totalSum += val;
+      const stage = String(r.stage || '').toLowerCase();
+      if (['lead','qualified','proposal','design'].indexOf(stage) >= 0) {
+        activeSum += val; activeCount++;
+      } else if (stage === 'won') {
+        wonSum += val; wonCount++;
+      } else if (stage === 'lost') {
+        lostSum += val; lostCount++;
+      }
+    });
+    const set = function(id, text) { const el = document.getElementById(id); if (el) el.textContent = text; };
+    set('pv_active', fmtINR(activeSum));
+    set('pv_active_sub', activeCount + ' deal' + (activeCount === 1 ? '' : 's') + ' in Lead/Qualified/Proposal/Design');
+    set('pv_won', fmtINR(wonSum));
+    set('pv_won_sub', wonCount + ' won deal' + (wonCount === 1 ? '' : 's'));
+    set('pv_lost', fmtINR(lostSum));
+    set('pv_lost_sub', lostCount + ' lost deal' + (lostCount === 1 ? '' : 's'));
+    set('pv_total', fmtINR(totalSum));
+    set('pv_total_sub', 'across ' + rows.filter(function(r) { return parseFloat(r.dealValueINR) > 0; }).length + ' deals with logged value');
   }
 
   function renderUserChart(rows) {
@@ -5092,46 +7293,46 @@
     el.textContent = filteredCount;
   }
 
-  function clearFilters() {
-    document.getElementById('fl_state').value = '';
-    document.getElementById('fl_city').value = '';
-    document.getElementById('fl_user').value = '';
-    document.getElementById('fl_project').value = '';
-    document.getElementById('fl_partner').value = '';
-    document.getElementById('fl_consultant').value = '';
-    document.getElementById('fl_endUser').value = '';
-    document.getElementById('fl_model').value = '';
-    applyFilters();
-  }
-
   function exportLogCSV() {
-    // Export only what's currently visible (filtered view)
-    const f = getFilters();
-    const rows = centralLog.filter(function(r) {
-      if (f.state && r.state !== f.state) return false;
-      if (f.city && r.city !== f.city) return false;
-      if (f.user && r.username !== f.user) return false;
-      if (f.project && r.project !== f.project) return false;
-      if (f.partner && r.partner !== f.partner) return false;
-      if (f.consultant && r.consultant !== f.consultant) return false;
-      if (f.endUser && r.endUser !== f.endUser) return false;
-      if (f.model && r.recommended_chassis !== f.model) return false;
-      return true;
-    });
+    // Export the currently-visible History filtered view with ALL columns (not just display cols)
+    const f = getHistFilters();
+    let rows = filterRows_(f, centralLog);
+    // Apply search box too for parity with the visible table
+    const needleEl = document.getElementById('hl_search');
+    const needle = needleEl ? needleEl.value : '';
+    if (needle) rows = rows.filter(function(r) { return searchMatches_(r, needle); });
     if (!rows.length) { alert('No entries to export.'); return; }
-    const cols = ['timestampLocal','username','userFullName','project','endUser','partner','consultant','recommended_chassis','bom_summary','value_adds','stage','city','state','venueName','venueType','contact','outputType','outputSignal','sdiCount','screens_count','led_pixels','total_pixels_processed','led_ports','projectorCount','projectorRes','projector_ports','hdmi_ports_needed','sdi_ports_needed','total_ports','inputs','inputs4K','inputsFHD','signals','budget','close','notes'];
+
+    // Full 64-column schema matching the Submissions sheet — keeps CSV complete for analysis
+    const cols = [
+      'refId','timestamp','timestampLocal','username','userFullName',
+      'project','stage','endUser','partner','consultant','venueName','venueType','city','state','contact',
+      'outputType','outputSignal','sdiCount','projectorCount','projectorRes',
+      'screens_count',
+      'screen1_W','screen1_H','screen2_W','screen2_H','screen3_W','screen3_H','screen4_W','screen4_H','screen5_W','screen5_H',
+      'screen6_W','screen6_H','screen7_W','screen7_H','screen8_W','screen8_H','screen9_W','screen9_H','screen10_W','screen10_H',
+      'led_pixels','total_pixels_processed','led_ports','projector_ports',
+      'hdmi_ports_needed','sdi_ports_needed','total_ports',
+      'inputs','inputs4K','inputsFHD','signals',
+      'recommended_chassis','bom_summary','value_adds',
+      'budget','dealValueINR','close','notes',
+      'status','confirmedAt','confirmedBy','editedAt','editedBy'
+    ];
     const csv = [cols.join(',')].concat(
       rows.map(function(r) {
         return cols.map(function(c) {
-          const v = (r[c] == null ? '' : r[c]).toString().replace(/"/g,'""');
-          return /[,"\n]/.test(v) ? '"' + v + '"' : v;
+          let v = r[c];
+          if (v == null) v = '';
+          v = String(v).replace(/"/g, '""');
+          return /[,"\n\r]/.test(v) ? '"' + v + '"' : v;
         }).join(',');
       })
     ).join('\n');
-    const blob = new Blob([csv], {type:'text/csv'});
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });  // BOM for Excel compatibility
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'calico-submissions-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.href = url;
+    a.download = 'calico-submissions-' + new Date().toISOString().slice(0,10) + '.csv';
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -5140,7 +7341,7 @@
   // RESET
   // =================================================================
   function resetForm() {
-    ['f_project','f_endUser','f_partner','f_consultant','f_venueName','f_city','f_contact','f_inputs','f_inputs4K','f_inputsFHD','f_notes','f_close','f_projectorCount','f_sdiCount'].forEach(function(id) {
+    ['f_project','f_endUser','f_partner','f_consultant','f_venueName','f_city','f_contact','f_inputs','f_inputs4K','f_inputsFHD','f_notes','f_close','f_projectorCount','f_sdiCount','f_dealValueINR'].forEach(function(id) {
       document.getElementById(id).value = '';
     });
     document.getElementById('f_stage').value = '';
@@ -5178,6 +7379,20 @@
     const next = current === 'dark' ? 'light' : 'dark';
     applyTheme(next);
     try { localStorage.setItem('calicoTheme', next); } catch (e) { /* storage disabled */ }
+    // Persist to server so preference follows user across devices
+    if (currentUser && _authHash && WEB_APP_URL) {
+      currentUser.themePreference = next;
+      fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'updateownprofile',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash,
+          themePreference: next
+        })
+      }).catch(function() { /* non-fatal */ });
+    }
   }
 
   function applyTheme(theme) {
@@ -5193,6 +7408,839 @@
     icons.forEach(function(el) { if (el) el.textContent = isLight ? '☀️' : '🌙'; });
     labels.forEach(function(el) { if (el) el.textContent = isLight ? 'Light' : 'Dark'; });
   }
+
+  // =================================================================
+  // WEBHOOK HEALTH CHECK — visual indicator in header
+  // =================================================================
+  async function checkWebhookHealth() {
+    const el = document.getElementById('webhookHealth');
+    if (!el) return;
+    el.classList.remove('ok', 'err', 'checking');
+    el.classList.add('checking');
+    try {
+      const res = await fetch(WEB_APP_URL + '?action=health', { method: 'GET' });
+      const data = await res.json();
+      if (data && data.ok) {
+        el.classList.remove('checking', 'err');
+        el.classList.add('ok');
+        el.querySelector('.wh-label').textContent = 'Online';
+        el.title = 'Backend: Online · v' + (data.version || '?');
+      } else {
+        throw new Error(data.error || 'unknown');
+      }
+    } catch (e) {
+      el.classList.remove('checking', 'ok');
+      el.classList.add('err');
+      el.querySelector('.wh-label').textContent = 'Offline';
+      el.title = 'Backend: Unreachable. New submissions may not sync.';
+    }
+  }
+
+  // =================================================================
+  // CHANGE PASSWORD MODAL
+  // =================================================================
+  let _pwdForceMode = false;
+
+  function openChangePasswordModal(forced) {
+    _pwdForceMode = !!forced;
+    const modal = document.getElementById('pwdModal');
+    const title = document.getElementById('pwdModalTitle');
+    const sub = document.getElementById('pwdModalSub');
+    const oldRow = document.getElementById('pwdOldRow');
+    const cancelBtn = document.getElementById('pwdCancelBtn');
+    document.getElementById('pwdOld').value = '';
+    document.getElementById('pwdNew').value = '';
+    document.getElementById('pwdConfirm').value = '';
+    document.getElementById('pwdModalError').classList.remove('show');
+    document.getElementById('pwdModalOkMsg').classList.remove('show');
+    if (forced) {
+      title.textContent = 'Set Your Password';
+      sub.textContent = 'This is your first login. Please choose a new password to continue.';
+      if (oldRow) oldRow.style.display = 'none';
+      if (cancelBtn) cancelBtn.style.display = 'none';
+    } else {
+      title.textContent = 'Change Password';
+      sub.textContent = 'Enter your current password and set a new one.';
+      if (oldRow) oldRow.style.display = '';
+      if (cancelBtn) cancelBtn.style.display = '';
+    }
+    modal.classList.remove('hidden');
+  }
+
+  function closeChangePasswordModal() {
+    // Disallow closing if forced
+    if (_pwdForceMode) return;
+    document.getElementById('pwdModal').classList.add('hidden');
+  }
+
+  async function submitChangePassword() {
+    const oldP = document.getElementById('pwdOld').value;
+    const newP = document.getElementById('pwdNew').value;
+    const confirmP = document.getElementById('pwdConfirm').value;
+    const err = document.getElementById('pwdModalError');
+    const ok = document.getElementById('pwdModalOkMsg');
+    err.classList.remove('show'); ok.classList.remove('show');
+    if (!_pwdForceMode && !oldP) { err.textContent = 'Enter your current password.'; err.classList.add('show'); return; }
+    if (!newP || newP.length < 8) { err.textContent = 'New password must be at least 8 characters.'; err.classList.add('show'); return; }
+    if (newP !== confirmP) { err.textContent = 'Passwords do not match.'; err.classList.add('show'); return; }
+    const btn = document.getElementById('pwdSubmitBtn');
+    btn.disabled = true; btn.textContent = 'Updating…';
+    try {
+      const oldHash = _pwdForceMode ? '' : await sha256(oldP);
+      const newHash = await sha256(newP);
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'changepassword',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash,
+          oldPasswordHash: oldHash,
+          newPasswordHash: newHash
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        err.textContent = data.error || 'Failed to update password.';
+        err.classList.add('show');
+        return;
+      }
+      // Update stored auth hash
+      _authHash = newHash;
+      ok.textContent = 'Password updated successfully.';
+      ok.classList.add('show');
+      setTimeout(function() {
+        if (_pwdForceMode) {
+          _pwdForceMode = false;
+          document.getElementById('pwdModal').classList.add('hidden');
+          showView('form');
+        } else {
+          document.getElementById('pwdModal').classList.add('hidden');
+        }
+      }, 1100);
+    } catch (e) {
+      err.textContent = 'Network error. Try again.';
+      err.classList.add('show');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Update Password';
+    }
+  }
+
+  // =================================================================
+  // PROFILE VIEW
+  // =================================================================
+  function renderProfile() {
+    if (!currentUser) return;
+    const rolInfo = TEAM_ROSTER_LABELS[currentUser.role] || { label: currentUser.role };
+    // Identity (read-only)
+    document.getElementById('prof_username').textContent = currentUser.username;
+    document.getElementById('prof_role').textContent = rolInfo.label;
+    const ll = currentUser.lastLogin;
+    document.getElementById('prof_lastlogin').textContent = ll
+      ? new Date(ll).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+      : '—';
+    // Editable contact details — populated into inputs
+    const nEl = document.getElementById('prof_edit_name');
+    const eEl = document.getElementById('prof_edit_email');
+    const pEl = document.getElementById('prof_edit_phone');
+    if (nEl) nEl.value = currentUser.fullName || currentUser.name || '';
+    if (eEl) eEl.value = currentUser.email || '';
+    if (pEl) pEl.value = currentUser.phone || '';
+    // Clear any stale success/error messages
+    const errEl = document.getElementById('profileSaveError');
+    const okEl = document.getElementById('profileSaveOk');
+    if (errEl) errEl.classList.remove('show');
+    if (okEl) okEl.classList.remove('show');
+  }
+
+  async function saveProfileDetails() {
+    const errEl = document.getElementById('profileSaveError');
+    const okEl = document.getElementById('profileSaveOk');
+    const btn = document.getElementById('profileSaveBtn');
+    errEl.classList.remove('show'); okEl.classList.remove('show');
+
+    const name = document.getElementById('prof_edit_name').value.trim();
+    const email = document.getElementById('prof_edit_email').value.trim();
+    const phone = document.getElementById('prof_edit_phone').value.trim();
+
+    if (!name) {
+      errEl.textContent = 'Full name cannot be empty.';
+      errEl.classList.add('show');
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errEl.textContent = 'Enter a valid email address, or leave blank.';
+      errEl.classList.add('show');
+      return;
+    }
+
+    btn.disabled = true;
+    const originalLabel = btn.textContent;
+    btn.textContent = 'Saving…';
+
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'updateownprofile',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash,
+          fullName: name,
+          email: email,
+          phone: phone
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        errEl.textContent = data.error || 'Could not save.';
+        errEl.classList.add('show');
+        return;
+      }
+      // Update local currentUser state so header + renderProfile stay in sync
+      currentUser.fullName = name;
+      currentUser.name = name;
+      currentUser.email = email;
+      currentUser.phone = phone;
+      const userLabelEl = document.getElementById('userLabel');
+      if (userLabelEl) userLabelEl.textContent = name;
+      okEl.textContent = 'Contact details updated.';
+      okEl.classList.add('show');
+      setTimeout(function() { okEl.classList.remove('show'); }, 3500);
+    } catch (e) {
+      errEl.textContent = 'Network error. Try again.';
+      errEl.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+    }
+  }
+
+  // =================================================================
+  // TEAM MANAGEMENT (Super only)
+  // =================================================================
+  let _teamEditUsername = null; // null = adding new
+
+  async function refreshTeam() {
+    const content = document.getElementById('teamContent');
+    const countEl = document.getElementById('teamCount');
+    content.innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink-subtle)">Loading team…</div>';
+    // Fire-and-forget reset requests panel refresh
+    loadResetRequests();
+    try {
+      const res = await fetch(
+        WEB_APP_URL + '?action=listusers' +
+        (currentUser && _authHash ? '&authUsername=' + encodeURIComponent(currentUser.username) + '&authPasswordHash=' + encodeURIComponent(_authHash) : ''),
+        { method: 'GET' }
+      );
+      const data = await res.json();
+      if (!data.ok) { content.innerHTML = '<div class="log-empty">Could not load team: ' + (data.error || 'unknown') + '</div>'; return; }
+      const users = data.users || [];
+      countEl.textContent = '· ' + users.length + ' members';
+      if (!users.length) {
+        content.innerHTML = '<div class="log-empty">No team members yet. Click "+ Add Team Member" to start.</div>';
+        return;
+      }
+      let html = '<table class="log-table"><thead><tr>';
+      html += '<th>Username</th><th>Full Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Last Login</th><th>Status</th><th>Actions</th>';
+      html += '</tr></thead><tbody>';
+      users.forEach(function(u) {
+        const isProtected = SUPER_LOGIN_NAMES.indexOf(String(u.username).toLowerCase()) >= 0;
+        const rolInfo = TEAM_ROSTER_LABELS[u.role] || { label: u.role };
+        const active = String(u.active).toUpperCase() !== 'FALSE';
+        const ll = formatRelativeTime_(u.lastLogin);
+        html += '<tr>';
+        html += '<td style="font-family:JetBrains Mono,monospace;font-weight:700;color:var(--gold-bright)">' + escapeHtml(u.username) + '</td>';
+        html += '<td>' + escapeHtml(u.fullName || '') + '</td>';
+        html += '<td>' + escapeHtml(rolInfo.label) + '</td>';
+        html += '<td style="font-size:12px">' + escapeHtml(u.email || '—') + '</td>';
+        html += '<td style="font-size:12px">' + escapeHtml(u.phone || '—') + '</td>';
+        html += '<td style="font-size:12px">' + ll + '</td>';
+        html += '<td>' + (active ? '<span class="stage-pill won">Active</span>' : '<span class="stage-pill hold">Disabled</span>') + '</td>';
+        html += '<td style="white-space:nowrap">';
+        if (isProtected) {
+          html += '<span style="font-size:11px;color:var(--gold);font-weight:600">— Protected —</span>';
+        } else {
+          html += '<button class="btn-tiny" onclick="openEditUserModal(\'' + u.username + '\')">Edit</button> ';
+          html += '<button class="btn-tiny" onclick="resetUserPassword(\'' + u.username + '\')">Reset Pwd</button> ';
+          html += '<button class="btn-tiny" style="color:var(--cavitak-red)" onclick="removeUser(\'' + u.username + '\')">Remove</button>';
+        }
+        html += '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      content.innerHTML = html;
+    } catch (e) {
+      content.innerHTML = '<div class="log-empty">Network error loading team.</div>';
+    }
+  }
+
+  function openAddUserModal() {
+    _teamEditUsername = null;
+    document.getElementById('userModalTitle').textContent = 'Add Team Member';
+    document.getElementById('um_username').value = '';
+    document.getElementById('um_username').disabled = false;
+    document.getElementById('um_fullName').value = '';
+    document.getElementById('um_role').value = 'Presales';
+    document.getElementById('um_email').value = '';
+    document.getElementById('um_phone').value = '';
+    document.getElementById('um_active').value = 'TRUE';
+    document.getElementById('userModalError').classList.remove('show');
+    document.getElementById('userModal').classList.remove('hidden');
+  }
+
+  async function openEditUserModal(username) {
+    _teamEditUsername = username;
+    try {
+      const res = await fetch(
+        WEB_APP_URL + '?action=listusers' +
+        (currentUser && _authHash ? '&authUsername=' + encodeURIComponent(currentUser.username) + '&authPasswordHash=' + encodeURIComponent(_authHash) : ''),
+        { method: 'GET' }
+      );
+      const data = await res.json();
+      const u = (data.users || []).find(function(x) { return String(x.username).toLowerCase() === String(username).toLowerCase(); });
+      if (!u) return;
+      document.getElementById('userModalTitle').textContent = 'Edit Team Member';
+      document.getElementById('um_username').value = u.username;
+      document.getElementById('um_username').disabled = true; // cannot change username
+      document.getElementById('um_fullName').value = u.fullName || '';
+      document.getElementById('um_role').value = u.role || 'Presales';
+      document.getElementById('um_email').value = u.email || '';
+      document.getElementById('um_phone').value = u.phone || '';
+      document.getElementById('um_active').value = String(u.active).toUpperCase() === 'FALSE' ? 'FALSE' : 'TRUE';
+      document.getElementById('userModalError').classList.remove('show');
+      document.getElementById('userModal').classList.remove('hidden');
+    } catch (e) {
+      alert('Could not load user details.');
+    }
+  }
+
+  function closeUserModal() {
+    document.getElementById('userModal').classList.add('hidden');
+  }
+
+  async function submitUserModal() {
+    const err = document.getElementById('userModalError');
+    err.classList.remove('show');
+    const u = {
+      username: document.getElementById('um_username').value.trim().toLowerCase(),
+      fullName: document.getElementById('um_fullName').value.trim(),
+      role: document.getElementById('um_role').value,
+      email: document.getElementById('um_email').value.trim(),
+      phone: document.getElementById('um_phone').value.trim(),
+      active: document.getElementById('um_active').value
+    };
+    if (!u.username || !u.fullName) { err.textContent = 'Username and Full Name are required.'; err.classList.add('show'); return; }
+    if (!/^[a-z0-9_]+$/.test(u.username)) { err.textContent = 'Username: lowercase letters, digits, underscores only.'; err.classList.add('show'); return; }
+    const btn = document.getElementById('umSubmitBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      let payload;
+      if (_teamEditUsername) {
+        // Edit mode
+        payload = Object.assign({}, u, {
+          action: 'updateuser',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash,
+          username: _teamEditUsername
+        });
+      } else {
+        // Add mode — generate default-password hash
+        const defaultHash = await sha256('cavitak@123');
+        payload = {
+          action: 'adduser',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash,
+          newUser: Object.assign({}, u, { passwordHash: defaultHash })
+        };
+      }
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!data.ok) { err.textContent = data.error || 'Failed.'; err.classList.add('show'); return; }
+      document.getElementById('userModal').classList.add('hidden');
+      refreshTeam();
+    } catch (e) {
+      err.textContent = 'Network error. Try again.';
+      err.classList.add('show');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save';
+    }
+  }
+
+  async function resetUserPassword(username) {
+    if (!confirm('Reset password for ' + username + '?\n\nThe password will be set to "cavitak@123" and they will be forced to change it on next login.')) return;
+    try {
+      const defaultHash = await sha256('cavitak@123');
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'resetuserpassword',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash,
+          username: username,
+          newPasswordHash: defaultHash
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) { alert('Failed: ' + (data.error || 'unknown')); return; }
+      alert('Password reset for ' + username + '. They must change it on next login.');
+      refreshTeam();
+    } catch (e) {
+      alert('Network error.');
+    }
+  }
+
+  async function removeUser(username) {
+    if (!confirm('Remove ' + username + ' from the team?\n\nThis is permanent. Their submission history stays in the log.')) return;
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'removeuser',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash,
+          username: username
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) { alert('Failed: ' + (data.error || 'unknown')); return; }
+      refreshTeam();
+    } catch (e) {
+      alert('Network error.');
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // =================================================================
+  // PHASE A — Personal stats, search, bulk actions, detail modal,
+  //           pending indicator, loading overlay, keyboard shortcuts
+  // =================================================================
+
+  // --- Pending queue header indicator ---
+  function refreshPendingIndicator() {
+    const el = document.getElementById('pendingIndicator');
+    if (!el) return;
+    const count = getPendingCount();
+    if (count > 0) {
+      el.classList.remove('hidden');
+      const cntEl = el.querySelector('.pi-count');
+      if (cntEl) cntEl.textContent = count;
+      el.setAttribute('title', count + ' submission' + (count === 1 ? '' : 's') + ' waiting to sync · click to retry');
+    } else {
+      el.classList.add('hidden');
+    }
+  }
+  // Hook into existing queue lifecycle — poll every few seconds as a safety
+  setInterval(refreshPendingIndicator, 4000);
+
+  // --- Loading overlay ---
+  function showLoadingOverlay(msg) {
+    const ov = document.getElementById('loadingOverlay');
+    const sub = document.getElementById('loadingSubmessage');
+    if (!ov) return;
+    if (msg && sub) sub.textContent = msg;
+    ov.classList.remove('hidden');
+  }
+  function hideLoadingOverlay() {
+    const ov = document.getElementById('loadingOverlay');
+    if (ov) ov.classList.add('hidden');
+  }
+
+  // --- Personal stats computation ---
+  function computePersonalStats(rows) {
+    const uname = currentUser ? String(currentUser.username || '').toLowerCase() : '';
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    let submissions = 0, won = 0, pipeline = 0, month = 0, confirmed = 0;
+    rows.forEach(function(r) {
+      if (String(r.username || '').toLowerCase() !== uname) return;
+      submissions++;
+      const stage = String(r.stage || '').toLowerCase();
+      if (stage === 'won') won++;
+      if (['lead','qualified','proposal','design'].indexOf(stage) >= 0) pipeline++;
+      const ts = r.timestamp ? new Date(r.timestamp).getTime() : (r.timestampLocal ? Date.parse(r.timestampLocal) : 0);
+      if (ts && ts >= thisMonthStart) month++;
+      if (String(r.status || '').toLowerCase() === 'confirmed') confirmed++;
+    });
+    return { submissions: submissions, won: won, pipeline: pipeline, month: month, confirmed: confirmed };
+  }
+  function renderPersonalStats(rows) {
+    // OEM and Super see team-wide data; skip personal-stats for those roles
+    if (!currentUser) return;
+    const strip = document.getElementById('personalStatsStrip');
+    const stripDash = document.getElementById('personalStatsStripDash');
+    // Only show to non-super, non-OEM users
+    const showPersonal = !currentUser.isSuper && currentUser.role !== 'OEM';
+    if (!showPersonal) {
+      if (strip) strip.classList.add('hidden');
+      if (stripDash) stripDash.classList.add('hidden');
+      return;
+    }
+    const s = computePersonalStats(rows);
+    const set = function(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('ps_submissions', s.submissions); set('ps_won', s.won); set('ps_pipeline', s.pipeline); set('ps_month', s.month); set('ps_confirmed', s.confirmed);
+    set('ps_submissions_dash', s.submissions); set('ps_won_dash', s.won); set('ps_pipeline_dash', s.pipeline); set('ps_month_dash', s.month); set('ps_confirmed_dash', s.confirmed);
+    if (strip) strip.classList.remove('hidden');
+    if (stripDash) stripDash.classList.remove('hidden');
+  }
+
+  // --- Search text matcher for History ---
+  function searchMatches_(row, needle) {
+    if (!needle) return true;
+    const n = needle.toLowerCase().trim();
+    if (!n) return true;
+    const haystackFields = [
+      row.project, row.endUser, row.partner, row.consultant,
+      row.venueName, row.venueType, row.city, row.state,
+      row.refId, row.recommended_chassis, row.userFullName, row.username,
+      row.notes, row.bom_summary, row.contact
+    ];
+    return haystackFields.some(function(v) {
+      return v != null && String(v).toLowerCase().indexOf(n) >= 0;
+    });
+  }
+
+  // --- Fuzzy duplicate matching ---
+  // Normalize a string for comparison: lowercase, trim, collapse whitespace,
+  // strip common noise words (the, a, project, for, at)
+  function normalizeForCompare_(s) {
+    return String(s == null ? '' : s)
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')        // punctuation → space
+      .replace(/\s+/g, ' ')             // collapse whitespace
+      .replace(/\b(the|a|an|for|at|of|project|in)\b/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  // Levenshtein distance (iterative, space-efficient)
+  function levenshtein_(a, b) {
+    if (a === b) return 0;
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    let prev = new Array(b.length + 1);
+    for (let j = 0; j <= b.length; j++) prev[j] = j;
+    for (let i = 1; i <= a.length; i++) {
+      const curr = [i];
+      for (let j = 1; j <= b.length; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        curr[j] = Math.min(
+          prev[j] + 1,        // deletion
+          curr[j - 1] + 1,    // insertion
+          prev[j - 1] + cost  // substitution
+        );
+      }
+      prev = curr;
+    }
+    return prev[b.length];
+  }
+
+  // Similarity ratio 0..1
+  function similarity_(a, b) {
+    if (!a || !b) return 0;
+    if (a === b) return 1;
+    const maxLen = Math.max(a.length, b.length);
+    if (maxLen === 0) return 1;
+    const dist = levenshtein_(a, b);
+    return 1 - (dist / maxLen);
+  }
+
+  // Also check if either string contains the other (substring match boosts score)
+  function containsMatch_(a, b) {
+    if (!a || !b) return false;
+    const longer = a.length >= b.length ? a : b;
+    const shorter = a.length >= b.length ? b : a;
+    if (shorter.length < 4) return false;   // too short to be meaningful
+    return longer.indexOf(shorter) >= 0;
+  }
+
+  // Find submissions with similar project name (and matching end-user when provided)
+  function findSimilarSubmissions_(normalizedProject, normalizedEndUser, rows) {
+    const SIMILARITY_THRESHOLD = 0.80;
+    const results = [];
+    rows.forEach(function(row) {
+      const rp = normalizeForCompare_(row.project);
+      const ru = normalizeForCompare_(row.endUser);
+      if (!rp) return;
+      // Exact match (post-normalization)
+      const exact = (rp === normalizedProject);
+      let score = similarity_(rp, normalizedProject);
+      // Boost score if one contains the other (covers "HQ Lobby" vs "HQ Lobby LED Wall")
+      if (containsMatch_(rp, normalizedProject)) {
+        score = Math.max(score, 0.85);
+      }
+      // Only consider rows at or above threshold
+      if (!exact && score < SIMILARITY_THRESHOLD) return;
+      // If user provided end-user, match on that too — otherwise accept any
+      if (normalizedEndUser && ru && ru !== normalizedEndUser) {
+        // End-user differs — only flag if project score is very high (strongly similar project but different client)
+        if (score < 0.92) return;
+      }
+      results.push({ row: row, score: score, exact: exact });
+    });
+    // Sort: exact matches first, then by score desc
+    results.sort(function(a, b) {
+      if (a.exact !== b.exact) return a.exact ? -1 : 1;
+      return b.score - a.score;
+    });
+    return results;
+  }
+
+  // --- Submission detail modal ---
+  let _detailCurrentRefId = null;
+  function openDetailModal(refId) {
+    const row = centralLog.find(function(r) { return String(r.refId) === String(refId); });
+    if (!row) { alert('Submission not found — may need Refresh.'); return; }
+    _detailCurrentRefId = refId;
+    document.getElementById('detailModalTitle').textContent = row.project || 'Untitled';
+    const sub = document.getElementById('detailModalSub');
+    const ll = row.timestampLocal || (row.timestamp ? new Date(row.timestamp).toLocaleString('en-IN') : '—');
+    sub.innerHTML = 'ref <code style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--gold-bright);background:rgba(212,175,55,0.12);padding:2px 6px;border-radius:4px">' + escapeHtml(refId) + '</code> · logged ' + escapeHtml(ll) + ' by ' + escapeHtml(row.userFullName || row.username || '—');
+    const body = document.getElementById('detailModalBody');
+    body.innerHTML = buildDetailHTML_(row);
+    // Show Edit button only if user can edit this row
+    const editBtn = document.getElementById('detailEditBtn');
+    if (editBtn) {
+      const isOEM = currentUser && currentUser.role === 'OEM';
+      const isOwner = currentUser && String(row.username || '').toLowerCase() === String(currentUser.username || '').toLowerCase();
+      const canEdit = !isOEM && (isOwner || (currentUser && currentUser.isSuper));
+      editBtn.style.display = canEdit ? '' : 'none';
+    }
+    document.getElementById('detailModal').classList.remove('hidden');
+  }
+  function closeDetailModal() {
+    document.getElementById('detailModal').classList.add('hidden');
+    _detailCurrentRefId = null;
+  }
+  function editFromDetail() {
+    const refId = _detailCurrentRefId;
+    closeDetailModal();
+    if (refId) startEditingSubmission(refId);
+  }
+
+  async function loadAuditHistory() {
+    const refId = _detailCurrentRefId;
+    if (!refId) return;
+    const sub = document.getElementById('auditModalSub');
+    const body = document.getElementById('auditModalBody');
+    sub.textContent = 'Loading edit history for ref ' + refId + '…';
+    body.innerHTML = '<div style="padding:30px; text-align:center; color:var(--ink-subtle)">Fetching…</div>';
+    document.getElementById('auditModal').classList.remove('hidden');
+    try {
+      const res = await fetch(WEB_APP_URL + '?action=getaudit&refId=' + encodeURIComponent(refId));
+      const data = await res.json();
+      if (!data.ok || !Array.isArray(data.audit) || data.audit.length === 0) {
+        sub.textContent = 'ref ' + refId;
+        body.innerHTML = '<div style="padding:30px; text-align:center; color:var(--ink-subtle);font-size:14px">No edits have been logged for this submission.</div>';
+        return;
+      }
+      sub.innerHTML = '<b>' + data.audit.length + '</b> edit' + (data.audit.length === 1 ? '' : 's') + ' recorded for ref <code style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--gold-bright);background:rgba(212,175,55,0.12);padding:2px 6px;border-radius:4px">' + escapeHtml(refId) + '</code>';
+      const E = escapeHtml;
+      let html = '';
+      data.audit.forEach(function(entry) {
+        const when = entry.timestamp ? new Date(entry.timestamp).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+        html += '<div style="padding:14px 16px; background:rgba(18,24,26,0.55); border:1px solid rgba(212,175,55,0.18); border-radius:10px; margin-bottom:10px">';
+        html += '<div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; flex-wrap:wrap; gap:10px">';
+        html += '<span style="font-family:JetBrains Mono,monospace; font-size:11.5px; font-weight:700; color:var(--gold-bright); text-transform:uppercase; letter-spacing:0.08em">' + E(entry.field) + '</span>';
+        html += '<span style="font-size:11.5px; color:var(--ink-subtle)">' + E(when) + ' · by <b style="color:var(--ink)">' + E(entry.editedByFullName || entry.editedBy) + '</b></span>';
+        html += '</div>';
+        html += '<div style="font-size:13px; line-height:1.65; color:var(--ink-soft)">';
+        html += '<div style="margin-bottom:4px"><span style="color:#F87171; font-weight:700; margin-right:8px">−</span>' + E(entry.oldValue || '(empty)') + '</div>';
+        html += '<div><span style="color:#34D399; font-weight:700; margin-right:8px">+</span>' + E(entry.newValue || '(empty)') + '</div>';
+        html += '</div>';
+        html += '</div>';
+      });
+      body.innerHTML = html;
+    } catch (e) {
+      sub.textContent = 'Error loading audit history';
+      body.innerHTML = '<div style="padding:30px; text-align:center; color:#F87171; font-size:13px">Could not load edit history. Backend may be unreachable.</div>';
+    }
+  }
+  function buildDetailHTML_(r) {
+    const E = escapeHtml;
+    const row = function(k, v) {
+      if (v == null || v === '') return '';
+      return '<tr><td style="padding:8px 14px 8px 0;color:var(--ink-subtle);width:36%;font-size:12.5px;vertical-align:top">' + E(k) + '</td><td style="padding:8px 0;color:var(--ink);font-size:13.5px">' + E(v) + '</td></tr>';
+    };
+    const screensHtml = (function() {
+      const lines = [];
+      for (let i = 1; i <= 10; i++) {
+        const w = r['screen' + i + '_W'], h = r['screen' + i + '_H'];
+        if (w && h) {
+          const px = parseInt(w) * parseInt(h);
+          lines.push('Screen ' + i + ': ' + w + ' × ' + h + ' = ' + (px / 1e6).toFixed(2) + ' M px');
+        }
+      }
+      return lines.length ? lines.join('<br>') : '';
+    })();
+
+    let html = '<div style="margin-top:16px">';
+    html += '<div style="font-family:JetBrains Mono,monospace;font-size:10.5px;font-weight:800;letter-spacing:0.12em;color:var(--gold-bright);text-transform:uppercase;margin-bottom:10px">Project Context</div>';
+    html += '<table style="width:100%;border-collapse:collapse">';
+    html += row('Stage', r.stage);
+    html += row('End-user', r.endUser);
+    html += row('Partner / SI', r.partner);
+    html += row('Consultant', r.consultant);
+    html += row('Venue', [r.venueType, r.venueName].filter(Boolean).join(' · '));
+    html += row('Location', [r.city, r.state].filter(Boolean).join(', '));
+    html += row('Contact', r.contact);
+    html += '</table>';
+
+    html += '<div style="font-family:JetBrains Mono,monospace;font-size:10.5px;font-weight:800;letter-spacing:0.12em;color:var(--gold-bright);text-transform:uppercase;margin:22px 0 10px">Technical Configuration</div>';
+    html += '<table style="width:100%;border-collapse:collapse">';
+    html += row('Output Type', [r.outputType, r.outputSignal].filter(Boolean).join(' · '));
+    if (r.sdiCount) html += row('SDI Count', r.sdiCount);
+    if (r.projectorCount) html += row('Projectors', r.projectorCount + (r.projectorRes ? ' × ' + r.projectorRes : ''));
+    html += row('LED Screens', r.screens_count || 0);
+    if (screensHtml) html += '<tr><td style="padding:8px 14px 8px 0;color:var(--ink-subtle);vertical-align:top;font-size:12.5px">Screen Sizes</td><td style="padding:8px 0;font-family:JetBrains Mono,monospace;font-size:12px;color:var(--emerald-bright);line-height:1.7">' + screensHtml + '</td></tr>';
+    html += row('Total LED Pixels', r.led_pixels ? (r.led_pixels / 1e6).toFixed(2) + ' M' : '—');
+    html += row('Total Pixels Processed', r.total_pixels_processed ? (r.total_pixels_processed / 1e6).toFixed(2) + ' M' : '—');
+    html += row('HDMI Ports', r.hdmi_ports_needed);
+    html += row('SDI Ports', r.sdi_ports_needed);
+    html += row('Total Ports', r.total_ports);
+    html += row('Inputs', (r.inputs || 0) + ' (' + (r.inputs4K || 0) + ' × 4K + ' + (r.inputsFHD || 0) + ' × FHD)');
+    html += row('Signals', r.signals);
+    html += '</table>';
+
+    html += '<div style="font-family:JetBrains Mono,monospace;font-size:10.5px;font-weight:800;letter-spacing:0.12em;color:var(--gold-bright);text-transform:uppercase;margin:22px 0 10px">Recommendation</div>';
+    html += '<div style="background:rgba(212,175,55,0.08);border-left:3px solid var(--gold);padding:14px 18px;border-radius:8px;margin-bottom:12px">';
+    html += '<div style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:var(--gold-bright);letter-spacing:-0.01em">' + E(r.recommended_chassis || '—') + '</div>';
+    html += '<div style="font-size:13px;color:var(--ink);margin-top:8px;line-height:1.6">' + E(r.bom_summary || '—') + '</div>';
+    html += '</div>';
+    if (r.value_adds) html += '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6"><b style="color:var(--ink)">Value-adds:</b> ' + E(r.value_adds) + '</div>';
+
+    if (r.budget || r.close || r.notes || r.dealValueINR) {
+      html += '<div style="font-family:JetBrains Mono,monospace;font-size:10.5px;font-weight:800;letter-spacing:0.12em;color:var(--gold-bright);text-transform:uppercase;margin:22px 0 10px">Commercial</div>';
+      html += '<table style="width:100%;border-collapse:collapse">';
+      html += row('Budget Tier', r.budget);
+      if (r.dealValueINR && parseFloat(r.dealValueINR) > 0) {
+        const v = parseFloat(r.dealValueINR);
+        let dispVal;
+        if (v >= 1e7) dispVal = '₹' + (v / 1e7).toFixed(2) + ' Cr';
+        else if (v >= 1e5) dispVal = '₹' + (v / 1e5).toFixed(2) + ' L';
+        else dispVal = '₹' + Math.round(v).toLocaleString('en-IN');
+        html += row('Deal Value', dispVal);
+      }
+      html += row('Expected Close', r.close);
+      html += row('Notes', r.notes);
+      html += '</table>';
+    }
+
+    if (r.status === 'confirmed' && r.confirmedAt) {
+      html += '<div style="margin-top:18px;padding:12px 16px;background:rgba(16,185,129,0.1);border-left:3px solid var(--emerald-bright);border-radius:8px;font-size:13px;color:var(--emerald-bright)">✓ Confirmed on ' + E(new Date(r.confirmedAt).toLocaleString('en-IN')) + ' by ' + E(r.confirmedBy || '—') + '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  // --- Bulk actions in History table ---
+  const _bulkSelected = new Set();
+  function toggleRowCheckbox(refId, checked) {
+    if (checked) _bulkSelected.add(refId);
+    else _bulkSelected.delete(refId);
+    refreshBulkBar();
+  }
+  function refreshBulkBar() {
+    const bar = document.getElementById('bulkActionBar');
+    const cnt = document.getElementById('bulkCount');
+    if (!bar) return;
+    if (_bulkSelected.size > 0) {
+      bar.classList.remove('hidden');
+      if (cnt) cnt.textContent = _bulkSelected.size;
+    } else {
+      bar.classList.add('hidden');
+    }
+  }
+  function clearBulkSelection() {
+    _bulkSelected.clear();
+    document.querySelectorAll('.row-checkbox').forEach(function(cb) { cb.checked = false; });
+    refreshBulkBar();
+  }
+  async function applyBulkStage() {
+    const newStage = document.getElementById('bulkStageAction').value;
+    if (!newStage) { alert('Pick a stage first.'); return; }
+    if (_bulkSelected.size === 0) return;
+    if (!confirm('Change stage of ' + _bulkSelected.size + ' submission(s) to "' + newStage + '"?')) return;
+    const refIds = Array.from(_bulkSelected);
+    for (let i = 0; i < refIds.length; i++) {
+      const row = centralLog.find(function(r) { return String(r.refId) === String(refIds[i]); });
+      if (!row) continue;
+      // Ownership check client-side (backend re-checks too)
+      const isOwner = String(row.username || '').toLowerCase() === String(currentUser.username || '').toLowerCase();
+      if (!isOwner && !currentUser.isSuper) continue;
+      const updated = Object.assign({}, row, { stage: newStage });
+      try {
+        await fetch(WEB_APP_URL, {
+          method: 'POST', mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'updatesubmission',
+            authUsername: currentUser.username,
+            authPasswordHash: _authHash,
+            refId: refIds[i],
+            submission: updated
+          })
+        });
+      } catch (e) { /* best-effort */ }
+    }
+    clearBulkSelection();
+    showSync('Bulk stage applied — refreshing…', 'success');
+    setTimeout(refreshLog, 900);
+  }
+
+  // --- Keyboard shortcuts ---
+  (function() {
+    document.addEventListener('keydown', function(e) {
+      const target = e.target;
+      const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT');
+
+      // Esc: close any open modal
+      if (e.key === 'Escape') {
+        const modals = ['pwdModal','userModal','detailModal'];
+        modals.forEach(function(id) {
+          const m = document.getElementById(id);
+          if (m && !m.classList.contains('hidden')) {
+            // Don't auto-close forced pwd modal
+            if (id === 'pwdModal' && _pwdForceMode) return;
+            m.classList.add('hidden');
+          }
+        });
+        // Also clear bulk selection
+        if (_bulkSelected.size > 0) clearBulkSelection();
+      }
+      // Global shortcuts only when NOT typing
+      if (typing) return;
+      // / = focus history search (when on history view)
+      if (e.key === '/' && !document.getElementById('historyView').classList.contains('hidden')) {
+        e.preventDefault();
+        const s = document.getElementById('hl_search');
+        if (s) s.focus();
+      }
+      // n = new selection
+      if (e.key === 'n' && currentUser && currentUser.role !== 'OEM') {
+        startNewConfig();
+      }
+      // d = dashboard
+      if (e.key === 'd' && currentUser) {
+        showView('dash');
+      }
+      // h = history
+      if (e.key === 'h' && currentUser) {
+        showView('history');
+      }
+    });
+  })();
 
   // =================================================================
   // CURSOR TRAIL — soft gold+emerald glow following mouse
