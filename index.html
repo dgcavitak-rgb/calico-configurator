@@ -285,7 +285,11 @@
     color: var(--ink); padding: 20px 36px;
     display: flex; justify-content: space-between; align-items: center;
     flex-wrap: wrap; gap: 10px;
-    position: relative; overflow: hidden;
+    position: relative;
+    /* overflow: visible so that dropdown menus (theme pill + notification panel)
+       can extend BELOW the header. The shimmer ::before and headerGlow ::after
+       are positioned at the top/corners where clipping wasn't needed anyway. */
+    overflow: visible;
     border-bottom: 1px solid rgba(212, 175, 55, 0.15);
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset,
                 0 -1px 0 rgba(212, 175, 55, 0.2) inset,
@@ -309,8 +313,8 @@
   @keyframes shimmer { 0%{background-position: 0% 0%} 100%{background-position: 200% 0%} }
   .app-header::after {
     content: '';
-    position: absolute; bottom: -60px; right: -60px; width: 280px; height: 280px;
-    background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+    position: absolute; bottom: 0; right: 0; width: 280px; height: 100%;
+    background: radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
     pointer-events: none;
     filter: blur(20px);
     animation: headerGlow 6s ease-in-out infinite;
@@ -4537,8 +4541,6 @@
     </div>
   </div>
 
-  <!-- CUSTOMERS — master list of end-users. Visible to all roles. -->
-  <div id="customersView" class="page hidden">
   <!-- DIRECTORY — Unified Customers + Partners + Consultants -->
   <div id="customersView" class="page hidden">
     <h1 class="page-title">Directory</h1>
