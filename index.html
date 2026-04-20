@@ -2669,24 +2669,23 @@
 
   /* Notification dropdown panel */
   .notif-panel {
-    position: absolute;
-    top: calc(100% + 10px);
-    right: 0;
+    /* Fixed — positioned by JS, escapes header stacking context */
+    position: fixed;
+    top: 0; left: 0;  /* set dynamically by JS when opened */
     width: 360px;
     max-height: 480px;
-    /* Fully opaque raised surface — NOT the same color as the page bg */
-    background: #17211E;
-    border: 1px solid rgba(212, 175, 55, 0.45);
+    /* Completely opaque — no filters, no transparency */
+    background: #0F1916;
+    border: 1.5px solid rgba(212, 175, 55, 0.55);
     border-radius: 14px;
     box-shadow:
-      0 24px 60px rgba(0, 0, 0, 0.7),
-      0 0 0 1px rgba(0, 0, 0, 0.35),
-      0 0 32px rgba(212, 175, 55, 0.12);
+      0 28px 70px rgba(0, 0, 0, 0.9),
+      0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 0 32px rgba(212, 175, 55, 0.15);
     overflow: hidden;
-    z-index: 9999;  /* Must beat every other element on the page */
+    z-index: 99999;
     display: none;
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    /* No backdrop-filter — prevents bleed-through glitches */
   }
   .notif-panel.open { display: flex; flex-direction: column; animation: notifSlideIn 0.22s var(--ease); }
   @keyframes notifSlideIn {
@@ -2694,11 +2693,12 @@
     to   { opacity: 1; transform: translateY(0); }
   }
   [data-theme="light"] .notif-panel {
-    background: #FFFDF5;  /* Fully opaque cream */
-    border-color: rgba(176, 141, 40, 0.4);
+    background: #FFFDF5;
+    border-color: rgba(176, 141, 40, 0.5);
     box-shadow:
-      0 24px 60px rgba(60, 40, 10, 0.25),
-      0 0 0 1px rgba(60, 40, 10, 0.08);
+      0 28px 70px rgba(60, 40, 10, 0.35),
+      0 0 0 1px rgba(60, 40, 10, 0.12),
+      0 0 24px rgba(176, 141, 40, 0.1);
   }
   .notif-panel-header {
     padding: 14px 18px;
@@ -9524,9 +9524,31 @@
   function toggleNotifPanel(ev) {
     if (ev) ev.stopPropagation();
     const panel = document.getElementById('notifPanel');
-    if (!panel) return;
-    const isOpen = panel.classList.toggle('open');
-    if (isOpen) renderNotifPanel();
+    const bell = document.getElementById('notifBell');
+    if (!panel || !bell) return;
+    const isOpen = panel.classList.contains('open');
+    if (isOpen) {
+      closeNotifPanel();
+      return;
+    }
+    // Move panel to body on first open (escapes header's stacking/filter context)
+    if (panel.parentNode !== document.body) {
+      document.body.appendChild(panel);
+    }
+    // Position under the bell using viewport coordinates
+    const rect = bell.getBoundingClientRect();
+    const panelWidth = 360;
+    panel.style.top = (rect.bottom + 10) + 'px';
+    // Right-align with bell, clamp to viewport
+    let left = rect.right - panelWidth;
+    if (left < 8) left = 8;
+    if (left + panelWidth > window.innerWidth - 8) left = window.innerWidth - panelWidth - 8;
+    panel.style.left = left + 'px';
+    panel.classList.add('open');
+    renderNotifPanel();
+    // Close on scroll / resize — prevents floating away from bell
+    window.addEventListener('scroll', closeNotifPanel, { once: true });
+    window.addEventListener('resize', closeNotifPanel, { once: true });
   }
 
   function closeNotifPanel() {
