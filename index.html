@@ -2369,80 +2369,120 @@
   /* ================================================================= */
   /* THEME TOGGLE BUTTON                                                */
   /* ================================================================= */
-  .theme-toggle {
-    display: inline-flex; align-items: center; gap: 8px;
+  /* =================================================================
+     UNIFIED THEME PILL — single control with Dark / Light / Auto dropdown
+     ================================================================= */
+  .theme-pill {
+    display: inline-flex; align-items: center; gap: 7px;
     background: rgba(212, 175, 55, 0.1);
     border: 1px solid rgba(212, 175, 55, 0.3);
     color: var(--gold-bright);
-    padding: 8px 14px;
+    padding: 8px 12px;
     border-radius: 20px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.1em;
     text-transform: uppercase;
     cursor: pointer;
     transition: all 0.3s var(--ease);
     backdrop-filter: blur(8px);
-    position: relative; overflow: hidden;
+    position: relative;
   }
-  .theme-toggle:hover {
+  .theme-pill:hover {
     background: rgba(212, 175, 55, 0.2);
     border-color: rgba(212, 175, 55, 0.5);
     transform: translateY(-1px);
     box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25), 0 0 24px rgba(212, 175, 55, 0.15);
   }
-  .theme-toggle .icon {
-    font-size: 14px;
-    transition: transform 0.5s var(--ease-bounce);
+  .theme-pill .icon { font-size: 14px; transition: transform 0.4s var(--ease-bounce); }
+  .theme-pill:hover .icon { transform: rotate(20deg) scale(1.15); }
+  .theme-pill .theme-chev {
+    font-size: 9px; opacity: 0.7; margin-left: 1px;
+    transition: transform 0.22s var(--ease);
   }
-  .theme-toggle:hover .icon {
-    transform: rotate(20deg) scale(1.15);
+  .theme-pill.open .theme-chev { transform: rotate(180deg); }
+  /* Auto-mode marker — small emerald dot next to icon */
+  .theme-pill.auto-active .icon::after {
+    content: ''; position: absolute; top: 5px; left: 23px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--emerald-bright);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    animation: themePillPulse 2.2s ease-in-out infinite;
   }
-  [data-theme="light"] .theme-toggle {
+  @keyframes themePillPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  [data-theme="light"] .theme-pill {
     background: rgba(176, 141, 40, 0.1);
     border-color: rgba(176, 141, 40, 0.3);
     color: #8B7026;
   }
-  [data-theme="light"] .theme-toggle:hover {
+  [data-theme="light"] .theme-pill:hover {
     background: rgba(176, 141, 40, 0.18);
     border-color: rgba(176, 141, 40, 0.5);
-    color: #8B7026;
     box-shadow: 0 4px 16px rgba(176, 141, 40, 0.22);
   }
 
-  /* Auto theme pill — sits next to Dark/Light toggle */
-  .auto-theme-pill {
-    display: inline-flex; align-items: center;
-    background: rgba(148, 163, 184, 0.08);
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    color: var(--ink-subtle);
-    padding: 8px 12px;
-    border-radius: 20px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10.5px; font-weight: 800; letter-spacing: 0.12em;
-    text-transform: uppercase;
+  /* Dropdown menu */
+  .theme-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 200px;
+    background: var(--surface-raised, #0D1513);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 0 24px rgba(212, 175, 55, 0.08);
+    padding: 6px;
+    z-index: 500;
+    display: none;
+    overflow: hidden;
+  }
+  .theme-menu.open { display: block; animation: themeMenuSlide 0.2s var(--ease); }
+  @keyframes themeMenuSlide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  [data-theme="light"] .theme-menu {
+    background: #FFFEF7;
+    border-color: rgba(176, 141, 40, 0.28);
+    box-shadow: 0 18px 40px rgba(60, 40, 10, 0.18);
+  }
+  .theme-menu-item {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--ink);
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px; font-weight: 600;
     cursor: pointer;
-    transition: all 0.25s var(--ease);
-    backdrop-filter: blur(8px);
+    text-align: left;
+    transition: background 0.18s;
   }
-  .auto-theme-pill:hover {
+  .theme-menu-item:hover { background: rgba(212, 175, 55, 0.1); }
+  [data-theme="light"] .theme-menu-item:hover { background: rgba(176, 141, 40, 0.1); }
+  .theme-menu-item .tmi-icon { font-size: 16px; flex-shrink: 0; }
+  .theme-menu-item .tmi-label { flex: 1; }
+  .theme-menu-item .tmi-check {
+    font-size: 14px; font-weight: 800;
+    color: var(--gold-bright); opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .theme-menu-item.active { background: rgba(212, 175, 55, 0.08); }
+  .theme-menu-item.active .tmi-check { opacity: 1; }
+  [data-theme="light"] .theme-menu-item.active { background: rgba(176, 141, 40, 0.08); }
+  [data-theme="light"] .theme-menu-item.active .tmi-check { color: #8B7026; }
+  .theme-menu-divider {
+    height: 1px;
     background: rgba(148, 163, 184, 0.14);
-    border-color: rgba(148, 163, 184, 0.4);
-    color: var(--ink-soft);
+    margin: 4px 0;
   }
-  .auto-theme-pill.active {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(212, 175, 55, 0.14) 100%);
-    border-color: var(--emerald-bright);
-    color: var(--emerald-bright);
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
-  }
-  [data-theme="light"] .auto-theme-pill.active {
-    background: linear-gradient(135deg, rgba(5, 150, 105, 0.12) 0%, rgba(176, 141, 40, 0.1) 100%);
-    border-color: #059669; color: #047857;
-  }
+  [data-theme="light"] .theme-menu-divider { background: rgba(60, 40, 10, 0.08); }
 
-  /* Notification bell — header position after auto pill */
+  /* Notification bell — header position after theme pill */
   .notif-bell {
     position: relative;
     display: inline-flex; align-items: center; justify-content: center;
@@ -3280,8 +3320,9 @@
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .user-badge .role-pill { font-size: 10px; padding: 3px 8px; }
-    .user-badge .theme-toggle { padding: 5px 10px; font-size: 11px; }
-    .user-badge .theme-toggle span:last-child { display: none; }  /* hide "Dark"/"Light" label, keep icon */
+    .user-badge .theme-pill { padding: 5px 10px; font-size: 10px; gap: 5px; }
+    .user-badge .theme-pill #themeLabel { display: none; }  /* hide "Dark"/"Light" label on mobile, keep icon + chevron */
+    .user-badge .theme-pill .theme-chev { display: none; } /* hide chevron too on narrow mobile */
     .user-badge button {
       padding: 7px 11px !important; font-size: 12px !important;
       min-height: 36px;   /* touch target */
@@ -3368,25 +3409,36 @@
       font-size: 11px !important;
     }
 
-    /* ========== HISTORY TABLE ========== */
-    /* Wrap the table in a horizontal scroll container on mobile */
+    /* ========== HISTORY TABLE — MOBILE ==========
+       Same 5 columns as desktop: Project · Stage · End-user · Partner · Edit
+       Just tighter sizing for narrow phone screens. */
     .log-content {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       border-radius: 12px;
-      margin: 0 -12px;      /* bleed to screen edges for full-width scroll */
-      padding: 0 12px;
+      margin: 0 -8px;
+      padding: 0 8px;
     }
     .log-table {
       font-size: 12px;
-      min-width: 780px;     /* force horizontal scroll rather than squish */
+      min-width: 0;
+      width: 100%;
+      table-layout: fixed;
     }
     .log-table th, .log-table td {
-      padding: 8px 10px !important; white-space: nowrap;
+      padding: 8px 6px !important;
+      white-space: normal;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      vertical-align: top;
     }
-    .log-table .col-proj { max-width: 160px; }
+    /* Tight widths for mobile columns: Project · Stage · End-user · Partner · Edit */
+    .log-table .col-proj { width: auto; min-width: 0; max-width: none; font-size: 12.5px; font-weight: 700; color: var(--gold-bright); }
+    .log-table .th-enduser, .log-table .td-enduser { font-size: 11px; color: var(--ink-subtle); }
+    .log-table .th-partner, .log-table .td-partner { font-size: 11px; color: var(--ink-subtle); }
     .log-table .row-checkbox { width: 18px; height: 18px; }
-    .stage-pill { font-size: 10px; padding: 3px 7px; }
+    .stage-pill { font-size: 9px; padding: 2px 5px; letter-spacing: 0.04em; }
+    .btn-tiny { padding: 5px 8px; font-size: 10.5px; }
     .bulk-action-bar {
       flex-wrap: wrap; gap: 10px; padding: 12px 14px;
     }
@@ -3572,11 +3624,19 @@
       <span id="roleLabel" class="role-pill"></span>
       <span id="webhookHealth" class="webhook-health" title="Status"><span class="wh-dot"></span><span class="wh-label">Status</span></span>
       <span id="pendingIndicator" class="pending-indicator hidden" title="Some items are still being prepared — click to retry" onclick="drainPendingQueue()"><span class="pi-icon">⟳</span><span class="pi-count">0</span><span class="pi-label">preparing</span></span>
-      <button class="theme-toggle" onclick="toggleTheme()" title="Switch day/night theme" aria-label="Toggle theme">
-        <span class="icon" id="themeIcon">🌙</span>
-        <span id="themeLabel">Dark</span>
-      </button>
-      <button id="autoThemePill" class="auto-theme-pill" onclick="toggleAutoTheme()" title="Click to enable auto day/night mode">🕐 Auto</button>
+      <div class="theme-menu-wrap" style="position:relative">
+        <button class="theme-pill" id="themePill" onclick="toggleThemeMenu(event)" title="Theme settings" aria-label="Theme">
+          <span class="icon" id="themeIcon">🌙</span>
+          <span id="themeLabel">Dark</span>
+          <span class="theme-chev">▾</span>
+        </button>
+        <div id="themeMenu" class="theme-menu">
+          <button class="theme-menu-item" data-mode="dark" onclick="setThemeMode('dark')"><span class="tmi-icon">🌙</span><span class="tmi-label">Dark</span><span class="tmi-check">✓</span></button>
+          <button class="theme-menu-item" data-mode="light" onclick="setThemeMode('light')"><span class="tmi-icon">☀️</span><span class="tmi-label">Light</span><span class="tmi-check">✓</span></button>
+          <div class="theme-menu-divider"></div>
+          <button class="theme-menu-item" data-mode="auto" onclick="setThemeMode('auto')"><span class="tmi-icon">🕐</span><span class="tmi-label">Auto (7AM–7PM)</span><span class="tmi-check">✓</span></button>
+        </div>
+      </div>
       <div style="position: relative">
         <button id="notifBell" class="notif-bell" onclick="toggleNotifPanel(event)" title="Notifications" aria-label="Notifications">
           🔔
@@ -4648,6 +4708,30 @@
 </div>
 
 <script>
+  // =================================================================
+  // GLOBAL ERROR HANDLERS — catch silent crashes so bugs don't hide
+  // These log to console with [GLOBAL] prefix and show a brief user notice
+  // for genuinely fatal errors. Caught errors inside try/catch don't hit these.
+  // =================================================================
+  window.addEventListener('error', function(ev) {
+    try {
+      console.error('[GLOBAL ERROR]', ev.message, 'at', ev.filename + ':' + ev.lineno + ':' + ev.colno, ev.error);
+      // Only show UI alert for genuinely surprising errors, not during normal flow
+      if (ev.message && !/script error|resizeobserver|Load failed/i.test(ev.message)) {
+        const t = document.getElementById('syncStatus');
+        if (t && typeof showSync === 'function') {
+          showSync('Something glitched — check console if persists', 'error');
+        }
+      }
+    } catch (e) { /* can't let the handler itself throw */ }
+  });
+  window.addEventListener('unhandledrejection', function(ev) {
+    try {
+      console.error('[UNHANDLED PROMISE]', ev.reason);
+      // Don't show UI for unhandled promises — they're usually network blips
+    } catch (e) {}
+  });
+
   // =================================================================
   // CONFIG — paste your Google Apps Script web app URL after deployment
   // =================================================================
@@ -5866,11 +5950,11 @@
    */
   async function startEditingSubmission(refId) {
     console.log('[Edit] ▶ CLICKED — refId:', refId);
-    alert_if_fail: try {
+    try {
       // 0. Basic guards
       if (!refId || String(refId).trim() === '') {
         console.warn('[Edit] ✗ Empty refId');
-        alert('Cannot edit: this submission has no reference ID.\n\nThis usually means old test data before refId tracking. Try logging a fresh entry.');
+        alert('This deal has no reference ID — it may be old test data. Try logging a fresh entry.');
         return;
       }
       if (!currentUser) {
@@ -7321,18 +7405,17 @@
     const canEdit = currentUser && currentUser.role !== 'OEM';
     let html = '<table class="log-table"><thead><tr>';
     if (canEdit) html += '<th style="width:28px"><input type="checkbox" class="row-checkbox" id="bulkSelectAll" onclick="toggleAllCheckboxes(this.checked)" title="Select all"></th>';
-    html += '<th>Time</th><th>User</th><th>Project</th><th>Stage</th><th>End-user</th><th>Partner</th><th>Consultant</th><th>Location</th><th>Chassis</th><th>Screens</th><th>M Pixels</th><th>HDMI</th><th>SDI</th><th>Inputs</th>';
-    if (canEdit) html += '<th style="width:70px">Actions</th>';
+    html += '<th>Project</th>'
+      + '<th>Stage</th>'
+      + '<th class="th-enduser">End-user</th>'
+      + '<th class="th-partner">Partner/SI</th>';
+    if (canEdit) html += '<th style="width:90px">Actions</th>';
     html += '</tr></thead><tbody>';
     rows.forEach(function(s) {
-      const t = s.timestampLocal || new Date(s.timestamp).toLocaleString('en-IN');
-      const loc = [s.city, s.state].filter(Boolean).join(', ') || '—';
       const stageCls = stagePillClass(s.stage);
       const isOwner = currentUser && String(s.username || '').toLowerCase() === String(currentUser.username || '').toLowerCase();
       const canEditThisRow = canEdit && (isOwner || (currentUser && currentUser.isSuper));
       const refEsc = (s.refId || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-      const screensCount = s.screens_count || 0;
-      const pxTotal = s.led_pixels ? (s.led_pixels / 1e6).toFixed(1) : (s.total_pixels_processed ? (s.total_pixels_processed / 1e6).toFixed(1) : '—');
       // Make the row clickable to open the detail modal — but stop propagation on checkbox + action button so those still work independently
       html += '<tr style="cursor:pointer" onclick="openDetailModal(\'' + refEsc + '\')">';
       if (canEdit) {
@@ -7343,23 +7426,13 @@
           html += '<td></td>';
         }
       }
-      html += '<td style="font-size:12px;color:var(--ink-soft);font-weight:500">' + t + '</td>';
-      html += '<td>' + (s.userFullName || s.username || '—') + '</td>';
       html += '<td class="col-proj">' + (s.project||'—') + '</td>';
       html += '<td>' + (s.stage ? '<span class="stage-pill ' + stageCls + '">' + s.stage + '</span>' : '—') + '</td>';
-      html += '<td>' + (s.endUser||'—') + '</td>';
-      html += '<td>' + (s.partner||'—') + '</td>';
-      html += '<td>' + (s.consultant||'—') + '</td>';
-      html += '<td>' + loc + '</td>';
-      html += '<td class="col-model">' + (s.recommended_chassis||'—') + '</td>';
-      html += '<td class="col-num">' + screensCount + '</td>';
-      html += '<td class="col-num">' + pxTotal + '</td>';
-      html += '<td class="col-num">' + (s.hdmi_ports_needed || s.total_ports || '—') + '</td>';
-      html += '<td class="col-num">' + (s.sdi_ports_needed || 0) + '</td>';
-      html += '<td class="col-num">' + (s.inputs || '—') + '</td>';
+      html += '<td class="td-enduser">' + (s.endUser||'—') + '</td>';
+      html += '<td class="td-partner">' + (s.partner||'—') + '</td>';
       if (canEdit) {
         if (canEditThisRow) {
-          html += '<td onclick="event.stopPropagation()"><button class="btn-tiny" onclick="startEditingSubmission(\'' + refEsc + '\')" title="Edit submission">✏ Edit</button></td>';
+          html += '<td onclick="event.stopPropagation()"><button class="btn-tiny" onclick="startEditingSubmission(\'' + refEsc + '\')" title="Edit this deal">✏ Edit</button></td>';
         } else {
           html += '<td><span style="font-size:11px;color:var(--ink-subtle);font-family:JetBrains Mono,monospace">—</span></td>';
         }
@@ -7887,51 +7960,60 @@
   }
 
   // =================================================================
-  // THEME TOGGLE — day/night mode with optional auto scheduler
+  // THEME SYSTEM BOOT — applies stored mode on page load
   // =================================================================
   (function initTheme() {
-    // If auto mode is on, use time-of-day to pick theme; else read stored preference
-    const autoMode = localStorage.getItem('calicoThemeAuto') === 'true';
-    if (autoMode) {
+    const mode = getThemeMode_();
+    if (mode === 'auto') {
       applyAutoTheme_();
     } else {
-      const stored = localStorage.getItem('calicoTheme') || 'dark';
-      applyTheme(stored);
+      applyTheme(mode);
     }
-    // Re-check every 5 minutes if auto is on — handles the 7 AM/7 PM transition
+    // Re-check every 5 minutes — only acts if mode is 'auto'
     setInterval(function() {
-      if (localStorage.getItem('calicoThemeAuto') === 'true') applyAutoTheme_();
+      if (getThemeMode_() === 'auto') applyAutoTheme_();
     }, 5 * 60 * 1000);
+    // Initial pill state
+    setTimeout(updateThemePill_, 100);
   })();
 
   /**
-   * Auto theme rule: light from 7:00 AM to 6:59 PM local time, dark otherwise.
-   * Only changes theme if current applied differs from target — no flicker.
+   * UNIFIED THEME SYSTEM — Dark · Light · Auto (7AM–7PM)
+   * Storage:
+   *   calicoThemeMode: 'dark' | 'light' | 'auto'  (source of truth)
+   *   calicoTheme:      'dark' | 'light'           (last-applied, used for non-auto boot)
    */
-  function applyAutoTheme_() {
-    const h = new Date().getHours();
-    const target = (h >= 7 && h < 19) ? 'light' : 'dark';
-    const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-    if (target !== current) applyTheme(target);
-    // Reflect auto-state in toggle UI
-    updateAutoThemePill_();
+
+  function getThemeMode_() {
+    const m = localStorage.getItem('calicoThemeMode');
+    if (m === 'dark' || m === 'light' || m === 'auto') return m;
+    // Legacy fallback: check old calicoThemeAuto flag
+    if (localStorage.getItem('calicoThemeAuto') === 'true') return 'auto';
+    // Fall back to legacy calicoTheme string
+    const legacy = localStorage.getItem('calicoTheme');
+    if (legacy === 'light' || legacy === 'dark') return legacy;
+    return 'dark';
   }
 
-  function toggleTheme() {
-    // Manual toggle disables auto mode
-    const wasAuto = localStorage.getItem('calicoThemeAuto') === 'true';
-    if (wasAuto) {
-      localStorage.setItem('calicoThemeAuto', 'false');
-      showSync('Auto theme off — using manual', 'pending');
+  function setThemeMode(mode) {
+    if (mode !== 'dark' && mode !== 'light' && mode !== 'auto') mode = 'dark';
+    try { localStorage.setItem('calicoThemeMode', mode); } catch (e) {}
+    // Clear legacy keys so we don't double-source
+    try { localStorage.removeItem('calicoThemeAuto'); } catch (e) {}
+
+    if (mode === 'auto') {
+      applyAutoTheme_();
+      showSync('Auto theme on — follows local clock', 'success');
+    } else {
+      applyTheme(mode);
+      try { localStorage.setItem('calicoTheme', mode); } catch (e) {}
+      showSync((mode === 'dark' ? 'Dark' : 'Light') + ' theme', 'success');
     }
-    const current = document.documentElement.getAttribute('data-theme') || 'dark';
-    const next = current === 'dark' ? 'light' : 'dark';
-    applyTheme(next);
-    try { localStorage.setItem('calicoTheme', next); } catch (e) { /* storage disabled */ }
-    updateAutoThemePill_();
-    // Persist to server so preference follows user across devices
-    if (currentUser && _authHash && WEB_APP_URL) {
-      currentUser.themePreference = next;
+    updateThemePill_();
+    closeThemeMenu();
+    // Persist manual picks to server (auto stays local — each device follows its own clock)
+    if (mode !== 'auto' && currentUser && _authHash && WEB_APP_URL) {
+      currentUser.themePreference = mode;
       fetch(WEB_APP_URL, {
         method: 'POST', mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -7939,42 +8021,85 @@
           action: 'updateownprofile',
           authUsername: currentUser.username,
           authPasswordHash: _authHash,
-          themePreference: next
+          themePreference: mode
         })
       }).catch(function() { /* non-fatal */ });
     }
   }
 
-  /**
-   * Toggles automatic day/night mode. When enabled, theme follows local clock
-   * (light 7 AM–7 PM, dark otherwise) and is re-evaluated every 5 minutes.
-   */
-  function toggleAutoTheme() {
-    const isAuto = localStorage.getItem('calicoThemeAuto') === 'true';
-    const next = !isAuto;
-    localStorage.setItem('calicoThemeAuto', String(next));
-    if (next) {
-      applyAutoTheme_();
-      showSync('Auto theme ON — follows local clock', 'success');
-    } else {
-      showSync('Auto theme OFF — manual control', 'pending');
-    }
-    updateAutoThemePill_();
+  /** Auto theme rule: light 7:00 AM–6:59 PM local time, dark otherwise. */
+  function applyAutoTheme_() {
+    const h = new Date().getHours();
+    const target = (h >= 7 && h < 19) ? 'light' : 'dark';
+    const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    if (target !== current) applyTheme(target);
+    updateThemePill_();
   }
 
-  function updateAutoThemePill_() {
-    const pill = document.getElementById('autoThemePill');
+  /** Reflects current mode in the header pill — icon, label, and auto-pulse indicator. */
+  function updateThemePill_() {
+    const pill = document.getElementById('themePill');
     if (!pill) return;
-    const isAuto = localStorage.getItem('calicoThemeAuto') === 'true';
-    if (isAuto) {
-      pill.classList.add('active');
-      pill.innerHTML = '🕐 AUTO';
-      pill.title = 'Auto mode ON — light 7AM-7PM, dark otherwise. Click to disable.';
+    const mode = getThemeMode_();
+    const icon = document.getElementById('themeIcon');
+    const label = document.getElementById('themeLabel');
+    const applied = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+
+    // Update pill visuals based on mode
+    if (mode === 'auto') {
+      pill.classList.add('auto-active');
+      if (icon) icon.textContent = '🕐';
+      if (label) label.textContent = 'Auto';
+      pill.title = 'Auto theme ON — light 7AM-7PM · click to change';
     } else {
-      pill.classList.remove('active');
-      pill.innerHTML = '🕐 Auto';
-      pill.title = 'Click to enable auto day/night mode';
+      pill.classList.remove('auto-active');
+      if (icon) icon.textContent = applied === 'light' ? '☀️' : '🌙';
+      if (label) label.textContent = applied === 'light' ? 'Light' : 'Dark';
+      pill.title = 'Theme: ' + (applied === 'light' ? 'Light' : 'Dark') + ' · click to change';
     }
+
+    // Mark the active item in the dropdown
+    document.querySelectorAll('.theme-menu-item').forEach(function(el) {
+      el.classList.toggle('active', el.getAttribute('data-mode') === mode);
+    });
+  }
+
+  function toggleThemeMenu(evt) {
+    if (evt) { evt.stopPropagation(); evt.preventDefault(); }
+    const menu = document.getElementById('themeMenu');
+    const pill = document.getElementById('themePill');
+    if (!menu || !pill) return;
+    const isOpen = menu.classList.contains('open');
+    if (isOpen) { closeThemeMenu(); } else { openThemeMenu(); }
+  }
+  function openThemeMenu() {
+    const menu = document.getElementById('themeMenu');
+    const pill = document.getElementById('themePill');
+    if (!menu || !pill) return;
+    updateThemePill_();  // refresh active-item highlight
+    menu.classList.add('open');
+    pill.classList.add('open');
+    // Close on outside click
+    setTimeout(function() {
+      document.addEventListener('click', _themeOutsideClick, { once: true });
+    }, 0);
+  }
+  function closeThemeMenu() {
+    const menu = document.getElementById('themeMenu');
+    const pill = document.getElementById('themePill');
+    if (menu) menu.classList.remove('open');
+    if (pill) pill.classList.remove('open');
+  }
+  function _themeOutsideClick(e) {
+    const wrap = document.querySelector('.theme-menu-wrap');
+    if (wrap && !wrap.contains(e.target)) closeThemeMenu();
+    else document.addEventListener('click', _themeOutsideClick, { once: true });
+  }
+
+  // Legacy shim — older code may still call toggleTheme(); route to dark/light flip
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    setThemeMode(current === 'dark' ? 'light' : 'dark');
   }
 
   function applyTheme(theme) {
@@ -7983,12 +8108,14 @@
     } else {
       document.documentElement.removeAttribute('data-theme');
     }
-    // Update both toggles (header and login) if present
-    const icons = [document.getElementById('themeIcon'), document.getElementById('themeIconLogin')];
-    const labels = [document.getElementById('themeLabel'), document.getElementById('themeLabelLogin')];
+    // Keep the login-screen toggle in sync if it exists
+    const iconsLogin = document.getElementById('themeIconLogin');
+    const labelsLogin = document.getElementById('themeLabelLogin');
     const isLight = theme === 'light';
-    icons.forEach(function(el) { if (el) el.textContent = isLight ? '☀️' : '🌙'; });
-    labels.forEach(function(el) { if (el) el.textContent = isLight ? 'Light' : 'Dark'; });
+    if (iconsLogin) iconsLogin.textContent = isLight ? '☀️' : '🌙';
+    if (labelsLogin) labelsLogin.textContent = isLight ? 'Light' : 'Dark';
+    // Refresh the unified pill
+    updateThemePill_();
   }
 
   // =================================================================
@@ -8278,11 +8405,51 @@
       html += '<button class="btn-tiny" onclick="openEditCustomerModal(\'' + E(c.customerId) + '\')">Edit</button>';
       if (isSuper) {
         html += ' <button class="btn-tiny" style="color:#FCA5A5" onclick="openMergeModal(\'' + E(c.customerId) + '\')">Merge</button>';
+        html += ' <button class="btn-tiny" style="color:#F87171;border-color:rgba(248,113,113,0.3)" onclick="deleteCustomer(\'' + E(c.customerId) + '\',\'' + E((c.name||'').replace(/\'/g, '')) + '\')">Delete</button>';
       }
       html += '</td></tr>';
     });
     html += '</tbody></table>';
     content.innerHTML = html;
+  }
+
+  async function deleteCustomer(customerId, customerName) {
+    if (!currentUser || !currentUser.isSuper) { alert('Super admin only.'); return; }
+    if (!customerId) return;
+    const confirmed = confirm(
+      'Delete customer "' + customerName + '"?\n\n' +
+      'This removes them from the master list only. ' +
+      'Existing deals that reference this name will stay intact — they will just lose the enrichment (industry, contact, etc.).\n\n' +
+      'This cannot be undone.'
+    );
+    if (!confirmed) return;
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'customer_delete',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash,
+          customerId: customerId
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showSync('Customer removed', 'success');
+        pushNotification({
+          title: 'Customer removed',
+          sub: customerName + ' deleted from master list',
+          type: 'info'
+        });
+        refreshCustomers();
+      } else {
+        alert('Could not delete: ' + (data.error || 'unknown error'));
+      }
+    } catch (e) {
+      console.error('[customer_delete]', e);
+      alert('Connection issue — please try again.');
+    }
   }
 
   function openAddCustomerModal() {
