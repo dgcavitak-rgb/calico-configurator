@@ -286,6 +286,8 @@
     display: flex; justify-content: space-between; align-items: center;
     flex-wrap: wrap; gap: 10px;
     position: relative;
+    /* z-index: header sits above page content so dropdowns always render on top */
+    z-index: 100;
     /* overflow: visible so that dropdown menus (theme pill + notification panel)
        can extend BELOW the header. The shimmer ::before and headerGlow ::after
        are positioned at the top/corners where clipping wasn't needed anyway. */
@@ -2559,20 +2561,26 @@
     border-color: #8B7026 !important;
   }
 
-  /* Dropdown menu */
+  /* Dropdown menu — forcibly opaque, sits above page content */
   .theme-menu {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    min-width: 200px;
-    background: var(--surface-raised, #0D1513);
-    border: 1px solid rgba(212, 175, 55, 0.3);
+    min-width: 220px;
+    /* Opaque solid background — NO transparency, NO backdrop-filter (prevents bleed-through) */
+    background-color: #0F1916 !important;
+    background-image: linear-gradient(180deg, #17211E 0%, #0F1916 100%);
+    border: 1.5px solid rgba(212, 175, 55, 0.6);
     border-radius: 12px;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 0 24px rgba(212, 175, 55, 0.08);
+    box-shadow:
+      0 24px 60px rgba(0, 0, 0, 0.85),
+      0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 0 30px rgba(212, 175, 55, 0.15);
     padding: 6px;
-    z-index: 500;
+    z-index: 9999;
     display: none;
     overflow: hidden;
+    /* No backdrop-filter — it can cause rendering issues + looks translucent on some GPUs */
   }
   .theme-menu.open { display: block; animation: themeMenuSlide 0.2s var(--ease); }
   @keyframes themeMenuSlide {
@@ -2580,9 +2588,13 @@
     to { opacity: 1; transform: translateY(0); }
   }
   [data-theme="light"] .theme-menu {
-    background: #FFFEF7;
-    border-color: rgba(176, 141, 40, 0.28);
-    box-shadow: 0 18px 40px rgba(60, 40, 10, 0.18);
+    background-color: #FFFDF5 !important;
+    background-image: linear-gradient(180deg, #FFFEF8 0%, #FFF8E7 100%);
+    border-color: rgba(176, 141, 40, 0.5);
+    box-shadow:
+      0 24px 60px rgba(60, 40, 10, 0.35),
+      0 0 0 1px rgba(60, 40, 10, 0.12),
+      0 0 24px rgba(176, 141, 40, 0.1);
   }
   .theme-menu-item {
     display: flex; align-items: center; gap: 10px;
@@ -2665,13 +2677,19 @@
     right: 0;
     width: 360px;
     max-height: 480px;
-    background: var(--surface-raised, #0D1513);
-    border: 1px solid rgba(212, 175, 55, 0.25);
+    /* Fully opaque raised surface — NOT the same color as the page bg */
+    background: #17211E;
+    border: 1px solid rgba(212, 175, 55, 0.45);
     border-radius: 14px;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 32px rgba(212, 175, 55, 0.08);
+    box-shadow:
+      0 24px 60px rgba(0, 0, 0, 0.7),
+      0 0 0 1px rgba(0, 0, 0, 0.35),
+      0 0 32px rgba(212, 175, 55, 0.12);
     overflow: hidden;
-    z-index: 500;
+    z-index: 9999;  /* Must beat every other element on the page */
     display: none;
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
   }
   .notif-panel.open { display: flex; flex-direction: column; animation: notifSlideIn 0.22s var(--ease); }
   @keyframes notifSlideIn {
@@ -2679,9 +2697,11 @@
     to   { opacity: 1; transform: translateY(0); }
   }
   [data-theme="light"] .notif-panel {
-    background: #FFFEF7;
-    border-color: rgba(176, 141, 40, 0.25);
-    box-shadow: 0 24px 60px rgba(60, 40, 10, 0.15);
+    background: #FFFDF5;  /* Fully opaque cream */
+    border-color: rgba(176, 141, 40, 0.4);
+    box-shadow:
+      0 24px 60px rgba(60, 40, 10, 0.25),
+      0 0 0 1px rgba(60, 40, 10, 0.08);
   }
   .notif-panel-header {
     padding: 14px 18px;
