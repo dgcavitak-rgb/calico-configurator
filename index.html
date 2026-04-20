@@ -1769,6 +1769,108 @@
   }
 
   /* ================================================================= */
+  /* SEGMENT SWITCHER — used in Directory + Review tabs                  */
+  /* ================================================================= */
+  .dir-seg-wrap {
+    display: flex;
+    gap: 6px;
+    padding: 6px;
+    background: var(--surface-1);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    margin: 0 0 24px 0;
+    max-width: 620px;
+  }
+  .dir-seg {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 9px;
+    color: var(--ink-subtle);
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s var(--ease);
+    position: relative;
+  }
+  .dir-seg:hover { color: var(--ink); background: rgba(212, 175, 55, 0.06); }
+  .dir-seg.active {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.18) 0%, rgba(27, 67, 50, 0.14) 100%);
+    color: var(--gold-bright);
+    box-shadow: 0 2px 10px rgba(212, 175, 55, 0.18);
+  }
+  [data-theme="light"] .dir-seg.active {
+    background: linear-gradient(135deg, rgba(176, 141, 40, 0.18) 0%, rgba(16, 122, 87, 0.12) 100%);
+    color: #8B7026;
+  }
+  .dir-seg-icon { font-size: 15px; }
+  .dir-seg-label { white-space: nowrap; }
+  .dir-seg-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 22px; height: 20px; padding: 0 7px;
+    border-radius: 10px;
+    background: rgba(148, 163, 184, 0.14);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; font-weight: 800;
+  }
+  .dir-seg.active .dir-seg-count {
+    background: rgba(212, 175, 55, 0.25);
+    color: var(--gold-bright);
+  }
+  @media (max-width: 640px) {
+    .dir-seg-wrap { max-width: 100%; flex-wrap: nowrap; overflow-x: auto; }
+    .dir-seg { padding: 10px 12px; font-size: 11.5px; min-width: 110px; }
+    .dir-seg-icon { font-size: 14px; }
+    .dir-seg-count { min-width: 20px; height: 18px; font-size: 10px; }
+  }
+
+  /* Review panels */
+  .review-panel { animation: pageFadeUp 0.3s var(--ease); }
+  .review-panel.hidden { display: none; }
+
+  /* Review summary card metrics */
+  .rev-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .rev-metric {
+    padding: 16px 18px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+  }
+  .rev-metric-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-subtle);
+    margin-bottom: 6px;
+  }
+  .rev-metric-value {
+    font-family: 'Fraunces', serif;
+    font-size: 26px; font-weight: 700;
+    color: var(--gold-bright);
+    line-height: 1.1;
+  }
+  .rev-metric-sub {
+    font-size: 11.5px; color: var(--ink-soft); margin-top: 4px;
+  }
+  .rev-metric-growth {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; font-weight: 800;
+  }
+  .rev-metric-growth.up { background: rgba(16, 185, 129, 0.15); color: var(--emerald-bright); }
+  .rev-metric-growth.down { background: rgba(239, 68, 68, 0.15); color: #F87171; }
+  .rev-metric-growth.flat { background: rgba(148, 163, 184, 0.15); color: var(--ink-subtle); }
+  /* ================================================================= */
   /* ENHANCED CARD HOVER                                                */
   /* ================================================================= */
   .card {
@@ -2421,6 +2523,36 @@
     background: rgba(176, 141, 40, 0.18);
     border-color: rgba(176, 141, 40, 0.5);
     box-shadow: 0 4px 16px rgba(176, 141, 40, 0.22);
+  }
+
+  /* Login-screen floating theme pill — needs fixed positioning + strong contrast */
+  .theme-pill-login {
+    position: fixed !important;
+    top: 24px;
+    right: 24px;
+    z-index: 100;
+    /* Stronger borders for visibility against varied login-screen gradient */
+    background: rgba(10, 15, 14, 0.75) !important;
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    border: 1.5px solid rgba(212, 175, 55, 0.55) !important;
+    color: var(--gold-bright);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  }
+  .theme-pill-login:hover {
+    background: rgba(10, 15, 14, 0.85) !important;
+    border-color: var(--gold-bright) !important;
+    box-shadow: 0 6px 22px rgba(212, 175, 55, 0.3);
+  }
+  [data-theme="light"] .theme-pill-login {
+    background: rgba(255, 253, 245, 0.92) !important;
+    border: 1.5px solid rgba(176, 141, 40, 0.55) !important;
+    color: #8B7026;
+    box-shadow: 0 4px 18px rgba(60, 40, 10, 0.15);
+  }
+  [data-theme="light"] .theme-pill-login:hover {
+    background: rgba(255, 253, 245, 1) !important;
+    border-color: #8B7026 !important;
   }
 
   /* Dropdown menu */
@@ -3341,9 +3473,9 @@
     .login-logo img { max-height: 42px !important; }
     .login-title { font-size: 24px !important; line-height: 1.25; }
     .login-tagline { font-size: 12.5px !important; }
-    .theme-toggle-login {
+    .theme-pill-login {
       top: 16px !important; right: 16px !important;
-      padding: 6px 10px !important; font-size: 11px;
+      padding: 7px 12px !important; font-size: 11px;
     }
     .login-contact { font-size: 12px; }
 
@@ -3573,7 +3705,7 @@
 
 <!-- LOGIN -->
 <div id="loginScreen" class="login-wrap">
-  <button class="theme-toggle" onclick="toggleTheme()" title="Switch day/night theme" aria-label="Toggle theme" style="position: fixed; top: 24px; right: 24px; z-index: 100;">
+  <button class="theme-pill theme-pill-login" onclick="toggleTheme()" title="Switch day/night theme" aria-label="Toggle theme">
     <span class="icon" id="themeIconLogin">🌙</span>
     <span id="themeLabelLogin">Dark</span>
   </button>
@@ -3620,7 +3752,7 @@
       </div>
     </div>
     <div class="user-badge">
-      <span id="userLabel"></span>
+      <span id="userLabel" onclick="showView('profile')" style="cursor:pointer" title="Click to view/edit your profile + change password"></span>
       <span id="roleLabel" class="role-pill"></span>
       <span id="webhookHealth" class="webhook-health" title="Status"><span class="wh-dot"></span><span class="wh-label">Status</span></span>
       <span id="pendingIndicator" class="pending-indicator hidden" title="Some items are still being prepared — click to retry" onclick="drainPendingQueue()"><span class="pi-icon">⟳</span><span class="pi-count">0</span><span class="pi-label">preparing</span></span>
@@ -3654,16 +3786,15 @@
       <button onclick="showView('result')" id="resultBtn" class="hidden">Result</button>
       <button onclick="showView('history')" id="historyBtn" class="hidden">History</button>
       <button onclick="showView('dash')" id="logBtn" class="hidden">Dashboard</button>
-      <button onclick="showView('customers')" id="customersBtn" class="hidden">Customers</button>
-      <button onclick="showView('briefing')" id="briefingBtn" class="hidden">1:1 Briefing</button>
+      <button onclick="showView('customers')" id="customersBtn" class="hidden">Directory</button>
+      <button onclick="showView('briefing')" id="briefingBtn" class="hidden">Review</button>
       <button onclick="showView('team')" id="teamBtn" class="hidden">Team</button>
-      <button onclick="showView('profile')" id="profileBtn" class="hidden">Info</button>
       <button onclick="logout()">Exit</button>
     </div>
   </header>
 
   <!-- FORM -->
-  <div id="formView" class="page">
+  <div id="formView" class="page hidden">
     <div id="editBanner" class="edit-banner hidden">
       <div class="edit-banner-body">
         <div class="edit-banner-icon">✏</div>
@@ -3933,7 +4064,10 @@
           <div id="dealValueReadout" style="font-size:11.5px;color:var(--gold-bright);font-family:'JetBrains Mono',monospace;margin-top:4px;height:14px"></div>
         </div>
         <div class="field"><label>Expected close month</label>
-          <input id="f_close" type="month">
+          <select id="f_close">
+            <option value="">— Select month —</option>
+            <!-- Populated dynamically by populateCloseMonths_() on load -->
+          </select>
         </div>
         <div class="field full"><label>Notes / special requirements</label>
           <textarea id="f_notes" placeholder="HDR requirements, layout details, reference installs, 8K sources, audio handling, etc."></textarea>
@@ -4039,16 +4173,16 @@
     <div class="dash-hero">
       <div class="dash-hero-head">
         <div>
-          <div class="dash-hero-eyebrow"><span class="dash-hero-pulse"></span>Live Analytics · Real-Time Sync</div>
-          <div class="dash-hero-title">Sales Intelligence Dashboard</div>
-          <div class="dash-hero-sub">End-to-end visibility into CALICO PRO opportunities — from first view through confirmed deal. Filter, drill down, export.</div>
+          <div class="dash-hero-eyebrow"><span class="dash-hero-pulse"></span>Your Pipeline · Real-Time</div>
+          <div class="dash-hero-title">Your Dashboard</div>
+          <div class="dash-hero-sub">Your own deals — from first view through confirmed close. Team-wide analytics live on the Review tab.</div>
           <div class="dash-hero-meta" id="dashMeta">Loading…</div>
         </div>
       </div>
     </div>
 
-    <!-- SUPER-ONLY: On-demand review email buttons -->
-    <div id="superReviewActions" class="super-review-actions hidden">
+    <!-- SUPER-ONLY: On-demand review email buttons (hidden — moved into Review tab) -->
+    <div id="superReviewActions" class="super-review-actions hidden" style="display:none">
       <div class="super-review-intro">
         <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-subtle);font-weight:700">Super Admin · Email Reports</span>
       </div>
@@ -4405,11 +4539,32 @@
 
   <!-- CUSTOMERS — master list of end-users. Visible to all roles. -->
   <div id="customersView" class="page hidden">
-    <h1 class="page-title">Customers</h1>
-    <p class="page-sub">Master list of end-clients. Keep names consistent so pipeline analytics stay clean. Super admin can merge duplicates.</p>
+  <!-- DIRECTORY — Unified Customers + Partners + Consultants -->
+  <div id="customersView" class="page hidden">
+    <h1 class="page-title">Directory</h1>
+    <p class="page-sub">Master list of people you work with. Keep entries consistent so pipeline analytics stay clean. Super admin can merge duplicates.</p>
+
+    <!-- 3-segment switcher -->
+    <div class="dir-seg-wrap">
+      <button class="dir-seg active" data-dirtype="customer" onclick="setDirectoryType('customer')">
+        <span class="dir-seg-icon">🏢</span>
+        <span class="dir-seg-label">Customers</span>
+        <span class="dir-seg-count" id="dirCountCustomer">0</span>
+      </button>
+      <button class="dir-seg" data-dirtype="partner" onclick="setDirectoryType('partner')">
+        <span class="dir-seg-icon">🤝</span>
+        <span class="dir-seg-label">Partners / SI</span>
+        <span class="dir-seg-count" id="dirCountPartner">0</span>
+      </button>
+      <button class="dir-seg" data-dirtype="consultant" onclick="setDirectoryType('consultant')">
+        <span class="dir-seg-icon">💼</span>
+        <span class="dir-seg-label">Consultants</span>
+        <span class="dir-seg-count" id="dirCountConsultant">0</span>
+      </button>
+    </div>
 
     <div class="card">
-      <div class="card-title">Search &amp; Filter</div>
+      <div class="card-title" id="dirCardTitle">Search &amp; Filter</div>
       <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:14px">
         <input type="text" id="customerSearch" placeholder="Search by name, city, industry…" oninput="renderCustomersTable()" style="flex:1; min-width:220px; padding:12px 14px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:14px">
         <select id="customerIndustryFilter" onchange="renderCustomersTable()" style="padding:12px 14px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:13px; min-width:180px">
@@ -4424,7 +4579,7 @@
           <option>Transport</option>
           <option>Other</option>
         </select>
-        <button class="primary" onclick="openAddCustomerModal()">+ Add Customer</button>
+        <button class="primary" onclick="openAddCustomerModal()" id="dirAddBtn">+ Add Customer</button>
         <button class="secondary" onclick="refreshCustomers()">↻ Refresh</button>
       </div>
       <div id="customerCountLabel" style="font-size:12px; color:var(--ink-subtle); font-family:'JetBrains Mono',monospace; letter-spacing:0.08em; margin-bottom:10px"></div>
@@ -4432,28 +4587,78 @@
     </div>
   </div>
 
-  <!-- 1:1 BRIEFING — Super-only team review tool -->
+  <!-- REVIEW — Quarterly + Annual + 1:1 Briefing unified -->
   <div id="briefingView" class="page hidden">
-    <h1 class="page-title">1:1 Briefing</h1>
-    <p class="page-sub">Auto-generated summary for one-on-one reviews with team members. Covers activity in the last 7 days.</p>
+    <h1 class="page-title">Review</h1>
+    <p class="page-sub">Performance reviews, exports, and 1:1 briefing tools.</p>
 
-    <div class="card">
-      <div class="card-title">Select Team Member</div>
-      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center">
-        <select id="briefingUserSelect" onchange="renderBriefing()" style="flex:1; min-width:240px; padding:12px 14px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:14px">
-          <option value="">— Choose team member —</option>
-        </select>
-        <select id="briefingRangeSelect" onchange="renderBriefing()" style="padding:12px 14px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:13px">
-          <option value="7">Last 7 days</option>
-          <option value="14">Last 14 days</option>
-          <option value="30">Last 30 days</option>
-          <option value="90">Last quarter</option>
-        </select>
-        <button class="secondary" onclick="printBriefing()">🖨 Print</button>
+    <!-- Review type switcher -->
+    <div class="dir-seg-wrap">
+      <button class="dir-seg active" data-revtype="quarterly" onclick="setReviewType('quarterly')">
+        <span class="dir-seg-icon">📊</span>
+        <span class="dir-seg-label">Quarterly Review</span>
+      </button>
+      <button class="dir-seg" data-revtype="annual" onclick="setReviewType('annual')">
+        <span class="dir-seg-icon">🏆</span>
+        <span class="dir-seg-label">Annual Review</span>
+      </button>
+      <button class="dir-seg" data-revtype="briefing" onclick="setReviewType('briefing')" id="revSegBriefing">
+        <span class="dir-seg-icon">💬</span>
+        <span class="dir-seg-label">1:1 Briefing</span>
+      </button>
+    </div>
+
+    <!-- Quarterly Review panel -->
+    <div id="reviewQuarterlyPanel" class="review-panel">
+      <div class="card">
+        <div class="card-title">Quarterly Performance Review</div>
+        <p style="color:var(--ink-subtle); font-size:13px; margin-bottom:16px">Executive summary with OEM vs Cavitak split, ecosystem breadth, and YoY / QoQ comparisons.</p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:14px">
+          <select id="quarterlyQuarterSelect" style="padding:11px 14px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; color:var(--ink); font-size:13px">
+            <!-- Populated by JS -->
+          </select>
+          <button class="primary" onclick="sendQuarterlyReviewNow()">📧 Email Report</button>
+          <button class="secondary" onclick="exportQuarterlyCSV()">⬇ Export CSV</button>
+        </div>
+        <div id="quarterlySummary" style="margin-top:12px"></div>
       </div>
     </div>
 
-    <div id="briefingContent"></div>
+    <!-- Annual Review panel -->
+    <div id="reviewAnnualPanel" class="review-panel hidden">
+      <div class="card">
+        <div class="card-title">Annual Performance Review</div>
+        <p style="color:var(--ink-subtle); font-size:13px; margin-bottom:16px">Full-year view with quarter-wise breakdown, OEM vs Cavitak split, ecosystem growth YoY.</p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:14px">
+          <select id="annualYearSelect" style="padding:11px 14px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; color:var(--ink); font-size:13px">
+            <!-- Populated by JS -->
+          </select>
+          <button class="primary" onclick="sendYearlyReviewNow()">📧 Email Report</button>
+          <button class="secondary" onclick="exportAnnualCSV()">⬇ Export CSV</button>
+        </div>
+        <div id="annualSummary" style="margin-top:12px"></div>
+      </div>
+    </div>
+
+    <!-- 1:1 Briefing panel -->
+    <div id="reviewBriefingPanel" class="review-panel hidden">
+      <div class="card">
+        <div class="card-title">Select Team Member</div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center">
+          <select id="briefingUserSelect" onchange="renderBriefing()" style="flex:1; min-width:240px; padding:12px 14px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:14px">
+            <option value="">— Choose team member —</option>
+          </select>
+          <select id="briefingRangeSelect" onchange="renderBriefing()" style="padding:12px 14px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:13px">
+            <option value="7">Last 7 days</option>
+            <option value="14">Last 14 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last quarter</option>
+          </select>
+          <button class="secondary" onclick="printBriefing()">🖨 Print</button>
+        </div>
+      </div>
+      <div id="briefingContent"></div>
+    </div>
   </div>
 
   <!-- PROFILE (all users) -->
@@ -4490,8 +4695,8 @@
         <div class="field"><label>Email</label>
           <input type="email" id="prof_edit_email" placeholder="name@cavitak.com">
         </div>
-        <div class="field"><label>Phone</label>
-          <input type="tel" id="prof_edit_phone" placeholder="+91…">
+        <div class="field"><label>Phone (10 digits)</label>
+          <input type="tel" id="prof_edit_phone" placeholder="10-digit mobile" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
         </div>
       </div>
       <div class="btn-row" style="margin-top:18px">
@@ -4581,7 +4786,7 @@
     </div>
     <div class="field"><label>Primary Contact Name</label><input type="text" id="customerFormContact" autocomplete="off"></div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
-      <div class="field"><label>Phone</label><input type="text" id="customerFormPhone" autocomplete="off"></div>
+      <div class="field"><label>Phone (10 digits)</label><input type="tel" id="customerFormPhone" autocomplete="off" placeholder="10-digit mobile" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"></div>
       <div class="field"><label>Email</label><input type="email" id="customerFormEmail" autocomplete="off"></div>
     </div>
     <div class="field"><label>Website (optional)</label><input type="text" id="customerFormWebsite" placeholder="https://..." autocomplete="off"></div>
@@ -4690,8 +4895,8 @@
       <div class="field"><label>Email</label>
         <input type="email" id="um_email" placeholder="name@cavitak.com">
       </div>
-      <div class="field"><label>Phone</label>
-        <input type="tel" id="um_phone" placeholder="+91…">
+      <div class="field"><label>Phone (10 digits)</label>
+        <input type="tel" id="um_phone" placeholder="10-digit mobile" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
       </div>
       <div class="field"><label>Status</label>
         <select id="um_active">
@@ -4813,6 +5018,7 @@
   let currentUser = null;
   let sessionLog = [];
   let centralLog = [];
+  let _rawCentralLog = [];  // unscoped full log (for Super/OEM to access team data in Review + Directory)
   let lastResult = null;
   let screenCount = 0;
   const MAX_SCREENS = 10;
@@ -5026,9 +5232,12 @@
       // Customers: visible to all authenticated users
       const customersBtn = document.getElementById('customersBtn');
       if (customersBtn) customersBtn.classList.remove('hidden');
-      // 1:1 Briefing: Super only
+      // Review (Quarterly + Annual + Briefing): visible to all
       const briefingBtn = document.getElementById('briefingBtn');
-      if (briefingBtn) briefingBtn.classList.toggle('hidden', !currentUser.isSuper);
+      if (briefingBtn) briefingBtn.classList.remove('hidden');
+      // Hide the 1:1 Briefing sub-tab inside Review for non-Super users
+      const revSegBriefing = document.getElementById('revSegBriefing');
+      if (revSegBriefing) revSegBriefing.classList.toggle('hidden', !currentUser.isSuper);
       // Super-only review actions strip on Dashboard
       const superReview = document.getElementById('superReviewActions');
       if (superReview) superReview.classList.toggle('hidden', !currentUser.isSuper);
@@ -5051,7 +5260,7 @@
       setTimeout(drainPendingQueue, 1500);
       // Pre-load the full dataset in the background for duplicate detection
       setTimeout(async function() {
-        try { centralLog = await fetchLog(); } catch (e) { /* silent */ }
+        try { const _r = await fetchLog(); _rawCentralLog = _r; centralLog = scopeRowsToUser_(_r); } catch (e) { /* silent */ }
       }, 2000);
     } catch (e) {
       err.textContent = 'Connection issue — please try again.';
@@ -5108,7 +5317,13 @@
     if (v === 'team') refreshTeam();
     if (v === 'profile') renderProfile();
     if (v === 'customers') refreshCustomers();
-    if (v === 'briefing') renderBriefing();
+    if (v === 'briefing') {
+      // Review tab default: Quarterly (unless Super already on Briefing)
+      if (!_currentReviewType || _currentReviewType === 'briefing' && !(currentUser && currentUser.isSuper)) {
+        _currentReviewType = 'quarterly';
+      }
+      setReviewType(_currentReviewType);
+    }
     window.scrollTo(0,0);
   }
 
@@ -5284,6 +5499,25 @@
     screenCount = 0;
     document.getElementById('screensContainer').innerHTML = '';
     addScreen();
+    // Also populate the Expected Close Month dropdown (empty in HTML — filled here)
+    populateCloseMonths_();
+  }
+
+  /** Populate the Expected Close Month dropdown with the next 18 months starting from current month. */
+  function populateCloseMonths_() {
+    const sel = document.getElementById('f_close');
+    if (!sel) return;
+    const currentValue = sel.value;  // preserve if already selected (e.g. during edit mode)
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const now = new Date();
+    const options = ['<option value="">— Select month —</option>'];
+    for (let i = 0; i < 18; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const label = months[d.getMonth()] + ' ' + d.getFullYear();
+      options.push('<option value="' + label + '">' + label + '</option>');
+    }
+    sel.innerHTML = options.join('');
+    if (currentValue) sel.value = currentValue;  // restore selection if applicable
   }
   function addScreen() {
     if (screenCount >= MAX_SCREENS) { alert('Maximum ' + MAX_SCREENS + ' screens.'); return; }
@@ -5858,6 +6092,11 @@
             const idx = centralLog.findIndex(function(r) { return String(r.refId) === String(_editingRefId); });
             if (idx >= 0) centralLog[idx] = submission;
           }
+          // Also update the raw (unscoped) log so Dashboard + Review + Directory reflect changes immediately
+          if (Array.isArray(_rawCentralLog)) {
+            const ridx = _rawCentralLog.findIndex(function(r) { return String(r.refId) === String(_editingRefId); });
+            if (ridx >= 0) _rawCentralLog[ridx] = submission;
+          }
           showSync('Changes saved', 'success');
           pushNotification({
             title: 'Deal updated',
@@ -5868,6 +6107,9 @@
           await logToSheet(submission);
           if (Array.isArray(centralLog)) {
             centralLog.unshift(submission);
+          }
+          if (Array.isArray(_rawCentralLog)) {
+            _rawCentralLog.unshift(submission);
           }
           showSync('Deal registered', 'success');
           pushNotification({
@@ -7227,35 +7469,37 @@
     const metaEl = document.getElementById('dashMeta');
     const histMeta = document.getElementById('histMeta');
     if (el) el.innerHTML = '<div class="log-empty">Loading…</div>';
-    if (metaEl) metaEl.textContent = 'Loading…';
-    if (histMeta) histMeta.textContent = 'Loading…';
-    let rawRows = [];
+    let rawRows;
     if (!OFFLINE_MODE) {
       rawRows = await fetchLog();
     } else {
       rawRows = sessionLog;
     }
     // ===== ROLE-BASED SCOPING =====
-    // Non-privileged roles (Presales/Sales/Support) only see their own submissions.
-    // Super + OEM see everyone's data.
-    const rows = scopeRowsToUser_(rawRows);
+    // History tab scope: Super + OEM see everything; others see own only.
+    // Dashboard scope: ALWAYS own-only, for every user (per user request).
+    // Review tab uses rawRows directly and applies its own scope.
+    const historyRows = scopeRowsToUser_(rawRows);
+    // Keep the raw (unscoped) log accessible for Review + Directory
+    _rawCentralLog = rawRows;
     const scopeNote = hasFullDataAccess()
       ? ''
       : ' · Showing your deals only';
     const sourceText = OFFLINE_MODE
-      ? rows.length + ' deal' + (rows.length === 1 ? '' : 's') + ' · session only' + scopeNote
-      : rows.length + ' deal' + (rows.length === 1 ? '' : 's') + scopeNote + ' · Refreshed ' + new Date().toLocaleTimeString('en-IN');
+      ? historyRows.length + ' deal' + (historyRows.length === 1 ? '' : 's') + ' · session only' + scopeNote
+      : historyRows.length + ' deal' + (historyRows.length === 1 ? '' : 's') + scopeNote + ' · Refreshed ' + new Date().toLocaleTimeString('en-IN');
     if (srcEl) srcEl.textContent = sourceText;
-    centralLog = rows;
+    // centralLog now holds the HISTORY-scoped view (for History tab, filters, duplicate detection)
+    centralLog = historyRows;
     const now = new Date();
     const stampText = 'Last refreshed · ' + now.toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) + scopeNote;
     if (metaEl) metaEl.textContent = stampText;
-    if (histMeta) histMeta.textContent = stampText + ' · ' + rows.length + ' entries';
+    if (histMeta) histMeta.textContent = stampText + ' · ' + historyRows.length + ' entries';
 
     // Populate BOTH filter sets (dash fl_ and history hl_) with the same unique values
     ['user','state','city','project','partner','consultant','endUser'].forEach(function(field) {
       const key = field === 'user' ? 'username' : field;
-      const vals = rows.map(function(r) { return r[key]; });
+      const vals = historyRows.map(function(r) { return r[key]; });
       populateFilterDropdown('fl_' + field, vals, field === 'user' ? 'All users' : 'All');
       populateFilterDropdown('hl_' + field, vals, field === 'user' ? 'All users' : 'All');
     });
@@ -7263,7 +7507,7 @@
     applyDashFilters();
     applyHistFilters();
     // Personal stats panel (for non-super / non-OEM users)
-    renderPersonalStats(rows);
+    renderPersonalStats(historyRows);
     // Refresh pending queue indicator
     refreshPendingIndicator();
   }
@@ -7327,9 +7571,17 @@
 
   function applyDashFilters() {
     const f = getDashFilters();
-    const filtered = filterRows_(f, centralLog);
+    // Dashboard always shows only the current user's OWN deals — regardless of role
+    let sourceRows = centralLog;
+    if (currentUser) {
+      const uname = String(currentUser.username || '').toLowerCase();
+      sourceRows = (centralLog || []).filter(function(r) {
+        return String(r.username || '').toLowerCase() === uname;
+      });
+    }
+    const filtered = filterRows_(f, sourceRows);
     updateStats(filtered);
-    updateFilterChips(f, filtered.length, centralLog.length);
+    updateFilterChips(f, filtered.length, sourceRows.length);
   }
 
   function clearDashFilters() {
@@ -8282,6 +8534,11 @@
       errEl.classList.add('show');
       return;
     }
+    if (phone && !/^[0-9]{10}$/.test(phone)) {
+      errEl.textContent = 'Phone must be exactly 10 digits, or leave blank.';
+      errEl.classList.add('show');
+      return;
+    }
 
     btn.disabled = true;
     const originalLabel = btn.textContent;
@@ -8334,12 +8591,33 @@
   // CUSTOMER MASTER LIST (#5) — normalized end-user data
   // =================================================================
   let _customersCache = [];
+  let _currentDirectoryType = 'customer';  // 'customer' | 'partner' | 'consultant'
+
+  /** Switch between Customers / Partners / Consultants views */
+  function setDirectoryType(type) {
+    if (!['customer', 'partner', 'consultant'].includes(type)) type = 'customer';
+    _currentDirectoryType = type;
+    // Visual state
+    document.querySelectorAll('.dir-seg[data-dirtype]').forEach(function(btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-dirtype') === type);
+    });
+    const addBtn = document.getElementById('dirAddBtn');
+    if (addBtn) {
+      if (type === 'customer') { addBtn.textContent = '+ Add Customer'; addBtn.classList.remove('hidden'); }
+      else { addBtn.classList.add('hidden'); }  // Partners + Consultants are derived from deals — no manual add for now
+    }
+    // Also toggle industry filter visibility (only meaningful for customers)
+    const indFilter = document.getElementById('customerIndustryFilter');
+    if (indFilter) indFilter.classList.toggle('hidden', type !== 'customer');
+    // Re-render with the new type
+    renderCustomersTable();
+  }
 
   async function refreshCustomers() {
     const content = document.getElementById('customersContent');
     const count = document.getElementById('customerCountLabel');
     if (!content) return;
-    content.innerHTML = '<div style="padding:30px;text-align:center;color:var(--ink-subtle);font-size:13px">Loading customers…</div>';
+    content.innerHTML = '<div style="padding:30px;text-align:center;color:var(--ink-subtle);font-size:13px">Loading…</div>';
     try {
       const res = await fetch(WEB_APP_URL, {
         method: 'POST', mode: 'cors',
@@ -8352,15 +8630,87 @@
       });
       const data = await res.json();
       if (!data.ok) {
-        content.innerHTML = '<div class="log-empty">Could not load customers: ' + (data.error || 'unknown') + '</div>';
+        content.innerHTML = '<div class="log-empty">Could not load directory: ' + (data.error || 'unknown') + '</div>';
         return;
       }
       _customersCache = data.customers || [];
-      if (count) count.textContent = _customersCache.length + ' customer' + (_customersCache.length === 1 ? '' : 's') + ' in master list';
+      // Also ensure centralLog is loaded — Partners + Consultants are derived from it
+      if (!Array.isArray(centralLog) || centralLog.length === 0) {
+        try { const _r = await fetchLog(); _rawCentralLog = _r; centralLog = scopeRowsToUser_(_r); } catch (e) { /* non-fatal */ }
+      }
+      updateDirectoryCounts_();
       renderCustomersTable();
     } catch (e) {
-      content.innerHTML = '<div class="log-empty">Couldn\'t load customers — please try again.</div>';
+      content.innerHTML = '<div class="log-empty">Couldn\'t load directory — please try again.</div>';
     }
+  }
+
+  /** Count customers + derive partner + consultant counts from deals */
+  function updateDirectoryCounts_() {
+    const custCount = _customersCache.length;
+    const partners = new Set();
+    const consultants = new Set();
+    (_rawCentralLog && _rawCentralLog.length ? _rawCentralLog : (centralLog || [])).forEach(function(r) {
+      if (r.partner && String(r.partner).trim()) partners.add(String(r.partner).trim());
+      if (r.consultant && String(r.consultant).trim()) consultants.add(String(r.consultant).trim());
+    });
+    const elC = document.getElementById('dirCountCustomer');
+    const elP = document.getElementById('dirCountPartner');
+    const elCo = document.getElementById('dirCountConsultant');
+    if (elC) elC.textContent = custCount;
+    if (elP) elP.textContent = partners.size;
+    if (elCo) elCo.textContent = consultants.size;
+  }
+
+  /** Build a derived directory of partners or consultants from the deal log */
+  function buildDerivedDirectory_(type) {
+    // type: 'partner' | 'consultant'
+    const field = type;  // 'partner' or 'consultant'
+    const byName = new Map();
+    (_rawCentralLog && _rawCentralLog.length ? _rawCentralLog : (centralLog || [])).forEach(function(r) {
+      const name = r[field];
+      if (!name || !String(name).trim()) return;
+      const key = String(name).trim();
+      if (!byName.has(key)) {
+        byName.set(key, {
+          name: key,
+          dealsCount: 0,
+          totalValueINR: 0,
+          cities: new Set(),
+          endUsers: new Set(),
+          lastDealAt: null,
+          lastProject: '',
+        });
+      }
+      const entry = byName.get(key);
+      entry.dealsCount++;
+      entry.totalValueINR += (parseFloat(r.dealValueINR) || 0);
+      if (r.city) entry.cities.add(r.city);
+      if (r.endUser) entry.endUsers.add(r.endUser);
+      const when = r.timestamp ? new Date(r.timestamp).getTime() : 0;
+      if (when && (!entry.lastDealAt || when > entry.lastDealAt)) {
+        entry.lastDealAt = when;
+        entry.lastProject = r.project || '';
+      }
+    });
+    const arr = [];
+    byName.forEach(function(v) {
+      arr.push({
+        name: v.name,
+        dealsCount: v.dealsCount,
+        totalValueINR: v.totalValueINR,
+        cities: [...v.cities].join(', '),
+        endUsersCount: v.endUsers.size,
+        lastDealAt: v.lastDealAt,
+        lastProject: v.lastProject,
+      });
+    });
+    // Sort by deal count desc, then value desc
+    arr.sort(function(a, b) {
+      if (b.dealsCount !== a.dealsCount) return b.dealsCount - a.dealsCount;
+      return b.totalValueINR - a.totalValueINR;
+    });
+    return arr;
   }
 
   function renderCustomersTable() {
@@ -8368,18 +8718,7 @@
     if (!content) return;
     const q = (document.getElementById('customerSearch')?.value || '').toLowerCase().trim();
     const industry = document.getElementById('customerIndustryFilter')?.value || '';
-    let rows = _customersCache.slice();
-    if (industry) rows = rows.filter(c => c.industry === industry);
-    if (q) {
-      rows = rows.filter(function(c) {
-        return [c.name, c.city, c.state, c.industry, c.primaryContact, c.primaryEmail, c.primaryPhone, c.notes]
-          .some(function(v) { return String(v || '').toLowerCase().includes(q); });
-      });
-    }
-    if (rows.length === 0) {
-      content.innerHTML = '<div class="log-empty" style="padding:36px;text-align:center">No customers match. <a href="#" onclick="event.preventDefault();openAddCustomerModal()" style="color:var(--gold-bright)">+ Add one</a></div>';
-      return;
-    }
+    const type = _currentDirectoryType || 'customer';
     const E = escapeHtml;
     const fmtINR = function(n) {
       const v = parseFloat(n) || 0;
@@ -8388,29 +8727,87 @@
       if (v > 0) return '₹' + Math.round(v).toLocaleString('en-IN');
       return '—';
     };
-    const isSuper = currentUser && currentUser.isSuper;
+
+    // === CUSTOMERS (from master list) ===
+    if (type === 'customer') {
+      let rows = _customersCache.slice();
+      if (industry) rows = rows.filter(c => c.industry === industry);
+      if (q) {
+        rows = rows.filter(function(c) {
+          return [c.name, c.city, c.state, c.industry, c.primaryContact, c.primaryEmail, c.primaryPhone, c.notes]
+            .some(function(v) { return String(v || '').toLowerCase().includes(q); });
+        });
+      }
+      if (rows.length === 0) {
+        content.innerHTML = '<div class="log-empty" style="padding:36px;text-align:center">No customers match. <a href="#" onclick="event.preventDefault();openAddCustomerModal()" style="color:var(--gold-bright)">+ Add one</a></div>';
+        return;
+      }
+      const isSuper = currentUser && currentUser.isSuper;
+      let html = '<table class="log-table"><thead><tr>';
+      html += '<th>Name</th><th>Industry</th><th>City</th><th>Contact</th><th style="text-align:right">Deals</th><th style="text-align:right">Value</th><th>Actions</th>';
+      html += '</tr></thead><tbody>';
+      rows.forEach(function(c) {
+        const contact = [c.primaryContact, c.primaryPhone, c.primaryEmail].filter(Boolean).join(' · ');
+        html += '<tr>';
+        html += '<td><b>' + E(c.name) + '</b>' + (c.website ? '<br><span style="font-size:11px;color:var(--ink-subtle)">' + E(c.website) + '</span>' : '') + '</td>';
+        html += '<td>' + E(c.industry || '—') + '</td>';
+        html += '<td>' + E([c.city, c.state].filter(Boolean).join(', ') || '—') + '</td>';
+        html += '<td style="font-size:12px">' + (E(contact) || '—') + '</td>';
+        html += '<td class="col-num">' + (c.dealsCount || 0) + '</td>';
+        html += '<td class="col-num">' + fmtINR(c.totalValueINR) + '</td>';
+        html += '<td style="white-space:nowrap">';
+        html += '<button class="btn-tiny" onclick="openEditCustomerModal(\'' + E(c.customerId) + '\')">Edit</button>';
+        if (isSuper) {
+          html += ' <button class="btn-tiny" style="color:#FCA5A5" onclick="openMergeModal(\'' + E(c.customerId) + '\')">Merge</button>';
+          html += ' <button class="btn-tiny" style="color:#F87171;border-color:rgba(248,113,113,0.3)" onclick="deleteCustomer(\'' + E(c.customerId) + '\',\'' + E((c.name||'').replace(/\'/g, '')) + '\')">Delete</button>';
+        }
+        html += '</td></tr>';
+      });
+      html += '</tbody></table>';
+      content.innerHTML = html;
+      const count = document.getElementById('customerCountLabel');
+      if (count) count.textContent = rows.length + ' customer' + (rows.length === 1 ? '' : 's') + ' in master list';
+      return;
+    }
+
+    // === PARTNERS / CONSULTANTS (derived from deals) ===
+    let rows = buildDerivedDirectory_(type);
+    if (q) {
+      rows = rows.filter(function(c) {
+        return [c.name, c.cities, c.lastProject].some(function(v) { return String(v || '').toLowerCase().includes(q); });
+      });
+    }
+    const typeLabel = type === 'partner' ? 'Partner / SI' : 'Consultant';
+    const typeLabelPlural = type === 'partner' ? 'partners' : 'consultants';
+    if (rows.length === 0) {
+      content.innerHTML = '<div class="log-empty" style="padding:36px;text-align:center">No ' + typeLabelPlural + ' found yet. They\'ll appear here once deals are registered.</div>';
+      const count = document.getElementById('customerCountLabel');
+      if (count) count.textContent = '0 ' + typeLabelPlural;
+      return;
+    }
     let html = '<table class="log-table"><thead><tr>';
-    html += '<th>Name</th><th>Industry</th><th>City</th><th>Contact</th><th style="text-align:right">Deals</th><th style="text-align:right">Value</th><th>Actions</th>';
+    html += '<th>' + typeLabel + ' Name</th>';
+    html += '<th>Cities</th>';
+    html += '<th style="text-align:right">Deals</th>';
+    html += '<th style="text-align:right">Unique End-clients</th>';
+    html += '<th style="text-align:right">Total Value</th>';
+    html += '<th>Last Deal</th>';
     html += '</tr></thead><tbody>';
     rows.forEach(function(c) {
-      const contact = [c.primaryContact, c.primaryPhone, c.primaryEmail].filter(Boolean).join(' · ');
+      const lastDate = c.lastDealAt ? new Date(c.lastDealAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
       html += '<tr>';
-      html += '<td><b>' + E(c.name) + '</b>' + (c.website ? '<br><span style="font-size:11px;color:var(--ink-subtle)">' + E(c.website) + '</span>' : '') + '</td>';
-      html += '<td>' + E(c.industry || '—') + '</td>';
-      html += '<td>' + E([c.city, c.state].filter(Boolean).join(', ') || '—') + '</td>';
-      html += '<td style="font-size:12px">' + (E(contact) || '—') + '</td>';
-      html += '<td class="col-num">' + (c.dealsCount || 0) + '</td>';
+      html += '<td><b>' + E(c.name) + '</b></td>';
+      html += '<td style="font-size:12px;color:var(--ink-subtle)">' + E(c.cities || '—') + '</td>';
+      html += '<td class="col-num">' + c.dealsCount + '</td>';
+      html += '<td class="col-num">' + c.endUsersCount + '</td>';
       html += '<td class="col-num">' + fmtINR(c.totalValueINR) + '</td>';
-      html += '<td style="white-space:nowrap">';
-      html += '<button class="btn-tiny" onclick="openEditCustomerModal(\'' + E(c.customerId) + '\')">Edit</button>';
-      if (isSuper) {
-        html += ' <button class="btn-tiny" style="color:#FCA5A5" onclick="openMergeModal(\'' + E(c.customerId) + '\')">Merge</button>';
-        html += ' <button class="btn-tiny" style="color:#F87171;border-color:rgba(248,113,113,0.3)" onclick="deleteCustomer(\'' + E(c.customerId) + '\',\'' + E((c.name||'').replace(/\'/g, '')) + '\')">Delete</button>';
-      }
-      html += '</td></tr>';
+      html += '<td style="font-size:12px">' + lastDate + (c.lastProject ? '<br><span style="color:var(--ink-subtle);font-size:11px">' + E(c.lastProject) + '</span>' : '') + '</td>';
+      html += '</tr>';
     });
     html += '</tbody></table>';
     content.innerHTML = html;
+    const count = document.getElementById('customerCountLabel');
+    if (count) count.textContent = rows.length + ' ' + typeLabelPlural + ' · derived from your deal history';
   }
 
   async function deleteCustomer(customerId, customerName) {
@@ -8494,6 +8891,16 @@
     err.classList.remove('show');
     const name = document.getElementById('customerFormName').value.trim();
     if (!name) { err.textContent = 'Customer name is required.'; err.classList.add('show'); return; }
+    const phoneVal = document.getElementById('customerFormPhone').value.trim();
+    if (phoneVal && !/^[0-9]{10}$/.test(phoneVal)) {
+      err.textContent = 'Phone must be exactly 10 digits, or leave blank.';
+      err.classList.add('show'); return;
+    }
+    const emailVal = document.getElementById('customerFormEmail').value.trim();
+    if (emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+      err.textContent = 'Enter a valid email address, or leave blank.';
+      err.classList.add('show'); return;
+    }
     const payload = {
       customerId: document.getElementById('customerFormId').value || '',
       name: name,
@@ -8649,7 +9056,7 @@
     }
 
     const cutoff = new Date(Date.now() - days * 86400000);
-    const userRows = (centralLog || []).filter(function(r) {
+    const userRows = (_rawCentralLog && _rawCentralLog.length ? _rawCentralLog : (centralLog || [])).filter(function(r) {
       return String(r.username || '').toLowerCase() === String(username).toLowerCase();
     });
     const recent = userRows.filter(function(r) {
@@ -8883,6 +9290,14 @@
     };
     if (!u.username || !u.fullName) { err.textContent = 'Username and Full Name are required.'; err.classList.add('show'); return; }
     if (!/^[a-z0-9_]+$/.test(u.username)) { err.textContent = 'Username: lowercase letters, digits, underscores only.'; err.classList.add('show'); return; }
+    if (u.phone && !/^[0-9]{10}$/.test(u.phone)) {
+      err.textContent = 'Phone must be exactly 10 digits, or leave blank.';
+      err.classList.add('show'); return;
+    }
+    if (u.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(u.email)) {
+      err.textContent = 'Enter a valid email address, or leave blank.';
+      err.classList.add('show'); return;
+    }
     const btn = document.getElementById('umSubmitBtn');
     btn.disabled = true; btn.textContent = 'Saving…';
     try {
@@ -9137,6 +9552,333 @@
   function hideLoadingOverlay() {
     const ov = document.getElementById('loadingOverlay');
     if (ov) ov.classList.add('hidden');
+  }
+
+  // =================================================================
+  // REVIEW TAB — Quarterly + Annual + 1:1 Briefing unified
+  // =================================================================
+  let _currentReviewType = 'quarterly';  // 'quarterly' | 'annual' | 'briefing'
+
+  function setReviewType(type) {
+    if (!['quarterly', 'annual', 'briefing'].includes(type)) type = 'quarterly';
+    // Block non-super from briefing
+    if (type === 'briefing' && (!currentUser || !currentUser.isSuper)) {
+      alert('1:1 Briefing is available to Super admin only.');
+      return;
+    }
+    _currentReviewType = type;
+    document.querySelectorAll('.dir-seg[data-revtype]').forEach(function(btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-revtype') === type);
+    });
+    document.getElementById('reviewQuarterlyPanel').classList.toggle('hidden', type !== 'quarterly');
+    document.getElementById('reviewAnnualPanel').classList.toggle('hidden', type !== 'annual');
+    document.getElementById('reviewBriefingPanel').classList.toggle('hidden', type !== 'briefing');
+    if (type === 'quarterly') renderQuarterlyReview();
+    if (type === 'annual') renderAnnualReview();
+    if (type === 'briefing') renderBriefing();
+  }
+
+  /** Populate quarter dropdown: current + last 7 quarters */
+  function populateQuarterDropdown_() {
+    const sel = document.getElementById('quarterlyQuarterSelect');
+    if (!sel) return;
+    // Indian FY: Apr-Mar. Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar
+    const now = new Date();
+    const options = [];
+    for (let i = 0; i < 8; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i * 3, 1);
+      const m = d.getMonth();  // 0-11
+      let q, fy;
+      if (m >= 3 && m <= 5) { q = 1; fy = d.getFullYear(); }
+      else if (m >= 6 && m <= 8) { q = 2; fy = d.getFullYear(); }
+      else if (m >= 9 && m <= 11) { q = 3; fy = d.getFullYear(); }
+      else { q = 4; fy = d.getFullYear() - 1; }
+      const label = 'Q' + q + ' FY' + fy + '-' + String((fy + 1)).slice(-2);
+      const value = fy + '-Q' + q;
+      options.push({ label: label, value: value });
+    }
+    const currentValue = sel.value;
+    sel.innerHTML = options.map(function(o) { return '<option value="' + o.value + '">' + o.label + '</option>'; }).join('');
+    if (currentValue && options.some(function(o) { return o.value === currentValue; })) sel.value = currentValue;
+    sel.onchange = renderQuarterlyReview;
+  }
+
+  /** Populate year dropdown: current + last 4 years */
+  function populateYearDropdown_() {
+    const sel = document.getElementById('annualYearSelect');
+    if (!sel) return;
+    const now = new Date();
+    const currentFY = (now.getMonth() >= 3) ? now.getFullYear() : now.getFullYear() - 1;
+    const options = [];
+    for (let i = 0; i < 5; i++) {
+      const fy = currentFY - i;
+      options.push({ label: 'FY' + fy + '-' + String(fy + 1).slice(-2), value: String(fy) });
+    }
+    const currentValue = sel.value;
+    sel.innerHTML = options.map(function(o) { return '<option value="' + o.value + '">' + o.label + '</option>'; }).join('');
+    if (currentValue && options.some(function(o) { return o.value === currentValue; })) sel.value = currentValue;
+    sel.onchange = renderAnnualReview;
+  }
+
+  /** Get quarter date bounds — Indian FY */
+  function _getQuarterBounds(value) {
+    // value format: "2026-Q1" (FY start year + quarter)
+    const parts = value.split('-Q');
+    const fyStart = parseInt(parts[0], 10);
+    const q = parseInt(parts[1], 10);
+    let startMonth, endMonth, yearOfEnd = fyStart;
+    if (q === 1) { startMonth = 3; endMonth = 5; }      // Apr-Jun
+    else if (q === 2) { startMonth = 6; endMonth = 8; } // Jul-Sep
+    else if (q === 3) { startMonth = 9; endMonth = 11; } // Oct-Dec
+    else { startMonth = 0; endMonth = 2; yearOfEnd = fyStart + 1; }  // Jan-Mar of next year
+    const startYear = (q === 4) ? fyStart + 1 : fyStart;
+    const start = new Date(startYear, startMonth, 1, 0, 0, 0, 0);
+    const end = new Date(yearOfEnd, endMonth + 1, 0, 23, 59, 59, 999);  // last day of end month
+    return { start: start.getTime(), end: end.getTime(), label: 'Q' + q + ' FY' + fyStart + '-' + String(fyStart + 1).slice(-2) };
+  }
+
+  /** Get annual bounds for Indian FY */
+  function _getYearBounds(fyStart) {
+    fyStart = parseInt(fyStart, 10);
+    const start = new Date(fyStart, 3, 1, 0, 0, 0, 0);      // Apr 1
+    const end = new Date(fyStart + 1, 2, 31, 23, 59, 59, 999);  // Mar 31 next year
+    return { start: start.getTime(), end: end.getTime(), label: 'FY' + fyStart + '-' + String(fyStart + 1).slice(-2) };
+  }
+
+  /** Build metrics object for a set of deals */
+  function _computeReviewMetrics(deals) {
+    const m = {
+      total: deals.length,
+      pipelineValue: 0,
+      wonCount: 0, wonValue: 0,
+      lostCount: 0, onHoldCount: 0,
+      oemCount: 0, oemValue: 0,
+      cavCount: 0, cavValue: 0,
+      uniquePartners: new Set(),
+      uniqueConsultants: new Set(),
+      uniqueEndClients: new Set(),
+    };
+    deals.forEach(function(r) {
+      const v = parseFloat(r.dealValueINR) || 0;
+      m.pipelineValue += v;
+      const outcome = String(r.outcome || '').toLowerCase();
+      const source = String(r.dealSource || '').toLowerCase();
+      if (outcome === 'won') { m.wonCount++; m.wonValue += v; }
+      else if (outcome === 'lost') m.lostCount++;
+      else if (outcome === 'on-hold') m.onHoldCount++;
+      if (source.includes('oem')) { m.oemCount++; m.oemValue += v; }
+      else { m.cavCount++; m.cavValue += v; }
+      if (r.partner) m.uniquePartners.add(String(r.partner).trim());
+      if (r.consultant) m.uniqueConsultants.add(String(r.consultant).trim());
+      if (r.endUser) m.uniqueEndClients.add(String(r.endUser).trim());
+    });
+    m.uniquePartners = m.uniquePartners.size;
+    m.uniqueConsultants = m.uniqueConsultants.size;
+    m.uniqueEndClients = m.uniqueEndClients.size;
+    m.winRate = m.total > 0 ? Math.round((m.wonCount / m.total) * 100) : 0;
+    return m;
+  }
+
+  function _fmtINR(v) {
+    v = parseFloat(v) || 0;
+    if (v >= 10000000) return '₹' + (v / 10000000).toFixed(2) + ' Cr';
+    if (v >= 100000) return '₹' + (v / 100000).toFixed(1) + ' L';
+    if (v > 0) return '₹' + Math.round(v).toLocaleString('en-IN');
+    return '₹0';
+  }
+
+  function _growthBadge(current, previous) {
+    if (!previous || previous === 0) {
+      if (current > 0) return '<span class="rev-metric-growth up">NEW</span>';
+      return '<span class="rev-metric-growth flat">—</span>';
+    }
+    const pct = Math.round(((current - previous) / previous) * 100);
+    if (pct > 2) return '<span class="rev-metric-growth up">↑ ' + pct + '%</span>';
+    if (pct < -2) return '<span class="rev-metric-growth down">↓ ' + Math.abs(pct) + '%</span>';
+    return '<span class="rev-metric-growth flat">flat</span>';
+  }
+
+  async function renderQuarterlyReview() {
+    populateQuarterDropdown_();
+    const sel = document.getElementById('quarterlyQuarterSelect');
+    const panel = document.getElementById('quarterlySummary');
+    if (!sel || !panel) return;
+    if (!Array.isArray(centralLog) || centralLog.length === 0) {
+      try { const _r = await fetchLog(); _rawCentralLog = _r; centralLog = scopeRowsToUser_(_r); } catch (e) { /* non-fatal */ }
+    }
+    const bounds = _getQuarterBounds(sel.value);
+    // Compute prior-year same-quarter for YoY
+    const parts = sel.value.split('-Q');
+    const priorValue = (parseInt(parts[0], 10) - 1) + '-Q' + parts[1];
+    const priorBounds = _getQuarterBounds(priorValue);
+    // Filter deals — also respect user scoping (Super/OEM see all; others see own)
+    const canSeeAll = currentUser && (currentUser.isSuper || currentUser.role === 'OEM');
+    const allDeals = (_rawCentralLog && _rawCentralLog.length ? _rawCentralLog : (centralLog || [])).filter(function(r) {
+      if (!canSeeAll) {
+        if (String(r.username || '').toLowerCase() !== String(currentUser.username || '').toLowerCase()) return false;
+      }
+      return true;
+    });
+    const inRange = allDeals.filter(function(r) {
+      const t = r.timestamp ? new Date(r.timestamp).getTime() : 0;
+      return t >= bounds.start && t <= bounds.end;
+    });
+    const priorInRange = allDeals.filter(function(r) {
+      const t = r.timestamp ? new Date(r.timestamp).getTime() : 0;
+      return t >= priorBounds.start && t <= priorBounds.end;
+    });
+    const cur = _computeReviewMetrics(inRange);
+    const prev = _computeReviewMetrics(priorInRange);
+
+    if (inRange.length === 0) {
+      panel.innerHTML = '<div class="log-empty" style="padding:30px;text-align:center">No deals registered in ' + bounds.label + '.</div>';
+      return;
+    }
+    const scopeNote = canSeeAll ? 'Team-wide' : 'Your deals only';
+    let html = '';
+    html += '<div style="font-size:12px;color:var(--ink-subtle);margin-bottom:14px">' + bounds.label + ' · ' + scopeNote + ' · ' + cur.total + ' deal' + (cur.total === 1 ? '' : 's') + '</div>';
+    html += '<div class="rev-metric-grid">';
+    html += '  <div class="rev-metric"><div class="rev-metric-label">Total Deals</div><div class="rev-metric-value">' + cur.total + '</div>' + _growthBadge(cur.total, prev.total) + ' vs prior year</div>';
+    html += '  <div class="rev-metric"><div class="rev-metric-label">Pipeline Value</div><div class="rev-metric-value">' + _fmtINR(cur.pipelineValue) + '</div>' + _growthBadge(cur.pipelineValue, prev.pipelineValue) + ' vs prior year</div>';
+    html += '  <div class="rev-metric"><div class="rev-metric-label">Won</div><div class="rev-metric-value">' + cur.wonCount + '</div><div class="rev-metric-sub">' + _fmtINR(cur.wonValue) + ' · ' + cur.winRate + '% win rate</div></div>';
+    html += '  <div class="rev-metric"><div class="rev-metric-label">Partners</div><div class="rev-metric-value">' + cur.uniquePartners + '</div>' + _growthBadge(cur.uniquePartners, prev.uniquePartners) + ' ecosystem</div>';
+    html += '</div>';
+    // OEM vs Cavitak split
+    const totalForPct = cur.cavValue + cur.oemValue;
+    const oemPct = totalForPct > 0 ? Math.round((cur.oemValue / totalForPct) * 100) : 0;
+    const cavPct = 100 - oemPct;
+    html += '<div class="card" style="margin-top:16px"><div class="card-title">OEM vs Cavitak Split</div>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">';
+    html += '  <div class="rev-metric" style="background:linear-gradient(135deg, rgba(212,175,55,0.1), rgba(212,175,55,0.02))"><div class="rev-metric-label">OEM-Referred</div><div class="rev-metric-value">' + oemPct + '%</div><div class="rev-metric-sub">' + cur.oemCount + ' deals · ' + _fmtINR(cur.oemValue) + '</div></div>';
+    html += '  <div class="rev-metric" style="background:linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.02))"><div class="rev-metric-label">Cavitak-Sourced</div><div class="rev-metric-value">' + cavPct + '%</div><div class="rev-metric-sub">' + cur.cavCount + ' deals · ' + _fmtINR(cur.cavValue) + '</div></div>';
+    html += '</div></div>';
+    // Ecosystem breadth
+    html += '<div class="card" style="margin-top:16px"><div class="card-title">Ecosystem Breadth</div>';
+    html += '<div class="rev-metric-grid">';
+    html += '  <div class="rev-metric"><div class="rev-metric-label">Unique Partners</div><div class="rev-metric-value">' + cur.uniquePartners + '</div>' + _growthBadge(cur.uniquePartners, prev.uniquePartners) + '</div>';
+    html += '  <div class="rev-metric"><div class="rev-metric-label">Unique Consultants</div><div class="rev-metric-value">' + cur.uniqueConsultants + '</div>' + _growthBadge(cur.uniqueConsultants, prev.uniqueConsultants) + '</div>';
+    html += '  <div class="rev-metric"><div class="rev-metric-label">Unique End-clients</div><div class="rev-metric-value">' + cur.uniqueEndClients + '</div>' + _growthBadge(cur.uniqueEndClients, prev.uniqueEndClients) + '</div>';
+    html += '</div></div>';
+    panel.innerHTML = html;
+  }
+
+  async function renderAnnualReview() {
+    populateYearDropdown_();
+    const sel = document.getElementById('annualYearSelect');
+    const panel = document.getElementById('annualSummary');
+    if (!sel || !panel) return;
+    if (!Array.isArray(centralLog) || centralLog.length === 0) {
+      try { const _r = await fetchLog(); _rawCentralLog = _r; centralLog = scopeRowsToUser_(_r); } catch (e) { /* non-fatal */ }
+    }
+    const fyStart = parseInt(sel.value, 10);
+    const bounds = _getYearBounds(fyStart);
+    const priorBounds = _getYearBounds(fyStart - 1);
+    const canSeeAll = currentUser && (currentUser.isSuper || currentUser.role === 'OEM');
+    const allDeals = (_rawCentralLog && _rawCentralLog.length ? _rawCentralLog : (centralLog || [])).filter(function(r) {
+      if (!canSeeAll) {
+        if (String(r.username || '').toLowerCase() !== String(currentUser.username || '').toLowerCase()) return false;
+      }
+      return true;
+    });
+    const inRange = allDeals.filter(function(r) {
+      const t = r.timestamp ? new Date(r.timestamp).getTime() : 0;
+      return t >= bounds.start && t <= bounds.end;
+    });
+    const priorInRange = allDeals.filter(function(r) {
+      const t = r.timestamp ? new Date(r.timestamp).getTime() : 0;
+      return t >= priorBounds.start && t <= priorBounds.end;
+    });
+    const cur = _computeReviewMetrics(inRange);
+    const prev = _computeReviewMetrics(priorInRange);
+
+    if (inRange.length === 0) {
+      panel.innerHTML = '<div class="log-empty" style="padding:30px;text-align:center">No deals registered in ' + bounds.label + '.</div>';
+      return;
+    }
+    const scopeNote = canSeeAll ? 'Team-wide' : 'Your deals only';
+    let html = '';
+    html += '<div style="font-size:12px;color:var(--ink-subtle);margin-bottom:14px">' + bounds.label + ' · ' + scopeNote + ' · ' + cur.total + ' deal' + (cur.total === 1 ? '' : 's') + '</div>';
+    html += '<div class="rev-metric-grid">';
+    html += '  <div class="rev-metric"><div class="rev-metric-label">Annual Total Deals</div><div class="rev-metric-value">' + cur.total + '</div>' + _growthBadge(cur.total, prev.total) + ' YoY</div>';
+    html += '  <div class="rev-metric"><div class="rev-metric-label">Annual Pipeline</div><div class="rev-metric-value">' + _fmtINR(cur.pipelineValue) + '</div>' + _growthBadge(cur.pipelineValue, prev.pipelineValue) + ' YoY</div>';
+    html += '  <div class="rev-metric"><div class="rev-metric-label">Won Value</div><div class="rev-metric-value">' + _fmtINR(cur.wonValue) + '</div><div class="rev-metric-sub">' + cur.wonCount + ' won · ' + cur.winRate + '% rate</div></div>';
+    html += '  <div class="rev-metric"><div class="rev-metric-label">Partner Network</div><div class="rev-metric-value">' + cur.uniquePartners + '</div>' + _growthBadge(cur.uniquePartners, prev.uniquePartners) + ' YoY</div>';
+    html += '</div>';
+    // Quarter-wise breakdown
+    html += '<div class="card" style="margin-top:16px"><div class="card-title">Quarter-wise Breakdown</div>';
+    html += '<table class="log-table"><thead><tr><th>Quarter</th><th style="text-align:right">Deals</th><th style="text-align:right">Pipeline</th><th style="text-align:right">Won</th><th style="text-align:right">Win %</th></tr></thead><tbody>';
+    for (let q = 1; q <= 4; q++) {
+      const qb = _getQuarterBounds(fyStart + '-Q' + q);
+      const qDeals = inRange.filter(function(r) {
+        const t = r.timestamp ? new Date(r.timestamp).getTime() : 0;
+        return t >= qb.start && t <= qb.end;
+      });
+      const qm = _computeReviewMetrics(qDeals);
+      html += '<tr>';
+      html += '<td><b>Q' + q + '</b></td>';
+      html += '<td class="col-num">' + qm.total + '</td>';
+      html += '<td class="col-num">' + _fmtINR(qm.pipelineValue) + '</td>';
+      html += '<td class="col-num">' + qm.wonCount + ' · ' + _fmtINR(qm.wonValue) + '</td>';
+      html += '<td class="col-num">' + qm.winRate + '%</td>';
+      html += '</tr>';
+    }
+    html += '</tbody></table></div>';
+    panel.innerHTML = html;
+  }
+
+  /** Export quarterly review as CSV — all deals in the selected quarter */
+  function exportQuarterlyCSV() {
+    const sel = document.getElementById('quarterlyQuarterSelect');
+    if (!sel) return;
+    const bounds = _getQuarterBounds(sel.value);
+    const canSeeAll = currentUser && (currentUser.isSuper || currentUser.role === 'OEM');
+    const deals = (_rawCentralLog && _rawCentralLog.length ? _rawCentralLog : (centralLog || [])).filter(function(r) {
+      if (!canSeeAll) {
+        if (String(r.username || '').toLowerCase() !== String(currentUser.username || '').toLowerCase()) return false;
+      }
+      const t = r.timestamp ? new Date(r.timestamp).getTime() : 0;
+      return t >= bounds.start && t <= bounds.end;
+    });
+    _downloadReviewCSV(deals, 'calico-quarterly-' + sel.value + '.csv');
+  }
+
+  function exportAnnualCSV() {
+    const sel = document.getElementById('annualYearSelect');
+    if (!sel) return;
+    const bounds = _getYearBounds(parseInt(sel.value, 10));
+    const canSeeAll = currentUser && (currentUser.isSuper || currentUser.role === 'OEM');
+    const deals = (_rawCentralLog && _rawCentralLog.length ? _rawCentralLog : (centralLog || [])).filter(function(r) {
+      if (!canSeeAll) {
+        if (String(r.username || '').toLowerCase() !== String(currentUser.username || '').toLowerCase()) return false;
+      }
+      const t = r.timestamp ? new Date(r.timestamp).getTime() : 0;
+      return t >= bounds.start && t <= bounds.end;
+    });
+    _downloadReviewCSV(deals, 'calico-annual-FY' + sel.value + '.csv');
+  }
+
+  function _downloadReviewCSV(deals, filename) {
+    if (!deals || deals.length === 0) {
+      alert('No deals in the selected period to export.');
+      return;
+    }
+    const headers = ['refId', 'timestamp', 'username', 'userFullName', 'project', 'stage', 'endUser', 'partner', 'consultant', 'city', 'state', 'dealSource', 'dealValueINR', 'outcome', 'recommended_chassis', 'screens_count', 'close', 'notes'];
+    const esc = function(v) {
+      if (v === null || v === undefined) return '';
+      const s = String(v).replace(/"/g, '""');
+      return /[",\n]/.test(s) ? '"' + s + '"' : s;
+    };
+    const lines = [headers.join(',')];
+    deals.forEach(function(r) {
+      lines.push(headers.map(function(h) { return esc(r[h]); }).join(','));
+    });
+    const csv = lines.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showSync('CSV exported · ' + deals.length + ' deals', 'success');
   }
 
   // --- On-demand review email triggers (Super only) ---
