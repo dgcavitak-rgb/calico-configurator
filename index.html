@@ -4069,38 +4069,78 @@
         <div class="field"><label>Project name <span class="req">*</span></label><input id="f_project" type="text" placeholder="e.g. HQ Lobby LED Wall"></div>
         <div class="field"><label>Project stage <span class="req">*</span></label>
           <select id="f_stage">
+            <!-- v25.9: Stage standardized to BrightSign's 5 pure-stage options. Outcome tracks resolution separately. -->
             <option value="">— Select —</option>
-            <option>Lead</option><option>Qualified</option><option>Proposal / Quoted</option>
-            <option>Design / Technical Stage</option><option>Won / Order Booked</option>
-            <option>Lost</option><option>On Hold</option>
+            <option>Lead</option>
+            <option>Opportunity</option>
+            <option>Proposal</option>
+            <option>Negotiation</option>
+            <option>Order</option>
           </select>
         </div>
         <div class="field"><label>End-user / Client <span class="req">*</span></label><input id="f_endUser" type="text" placeholder="e.g. Reliance Retail Ltd."></div>
         <div class="field"><label>Partner / SI / Dealer <span class="req">*</span></label><input id="f_partner" type="text" placeholder="System integrator / dealer"></div>
         <div class="field"><label>Consultant <span class="req">*</span></label><input id="f_consultant" type="text" placeholder="AV consultant / architect"></div>
-        <div class="field"><label>Venue name</label><input id="f_venueName" type="text" placeholder="e.g. Jio World Centre, BKC"></div>
-        <div class="field"><label>Venue type <span class="req">*</span></label>
+                <div class="field"><label>Venue type <span class="req">*</span></label>
           <select id="f_venueType">
+            <!-- v25.9: 34-option Venue Type list in 7 groups (Apr 2026 spec) -->
             <option value="">— Select —</option>
-            <option>Corporate Office / HQ</option><option>Lobby / Reception</option>
-            <option>Boardroom / Meeting Room</option><option>Auditorium</option>
-            <option>Training Room</option><option>Command / Control Room</option>
-            <option>NOC / Operations Center</option><option>Broadcast Studio</option>
-            <option>Retail Store / Showroom</option><option>Shopping Mall</option>
-            <option>Hotel / Resort</option><option>Restaurant / Cafe</option>
-            <option>Convention Center</option><option>Exhibition Hall</option>
-            <option>Museum / Gallery</option><option>Stadium / Arena</option>
-            <option>House of Worship</option><option>Temple</option>
-            <option>Educational Institute</option><option>University / College</option>
-            <option>Airport / Transit Hub</option><option>Hospital / Healthcare</option>
-            <option>Government / Public Sector</option><option>Experience Center</option>
-            <option>Bar / Nightclub</option><option>Digital Billboard / Outdoor</option>
-            <option>Rental / Live Event</option><option>Residential</option>
-            <option>Other</option>
+            <optgroup label="Corporate & Office">
+              <option>Meeting Room / Huddle Room</option>
+              <option>Boardroom</option>
+              <option>Training Room</option>
+              <option>Open Office / Collaboration Zone</option>
+              <option>Reception / Lobby</option>
+              <option>Experience Center / Demo Room</option>
+              <option>Control Room / NOC</option>
+            </optgroup>
+            <optgroup label="Education">
+              <option>Classroom / Lecture Hall</option>
+              <option>Auditorium</option>
+              <option>Campus (multi-building)</option>
+              <option>Library</option>
+              <option>Laboratory</option>
+            </optgroup>
+            <optgroup label="Retail &amp; Hospitality">
+              <option>Retail Store</option>
+              <option>Shopping Mall</option>
+              <option>Showroom (Auto / Electronics / Luxury)</option>
+              <option>Hotel Lobby / Public Area</option>
+              <option>Hotel Ballroom / Banquet</option>
+              <option>Restaurant / QSR / Café</option>
+              <option>Bar / Nightclub</option>
+            </optgroup>
+            <optgroup label="Healthcare &amp; Public">
+              <option>Hospital</option>
+              <option>Clinic / Diagnostic Center</option>
+              <option>Government Office</option>
+              <option>Courtroom</option>
+              <option>Place of Worship</option>
+            </optgroup>
+            <optgroup label="Transit &amp; Infrastructure">
+              <option>Airport</option>
+              <option>Metro / Railway Station</option>
+              <option>Bus Terminal</option>
+              <option>Transit Hub</option>
+            </optgroup>
+            <optgroup label="Venues &amp; Entertainment">
+              <option>Stadium / Arena</option>
+              <option>Concert Hall / Theater</option>
+              <option>Museum / Art Gallery</option>
+              <option>Theme Park / Aquarium / Zoo</option>
+              <option>Casino</option>
+              <option>Cinema / Multiplex</option>
+              <option>Convention Center / Exhibition</option>
+              <option>Broadcast / TV Studio</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option>Other (specify in notes)</option>
+            </optgroup>
           </select>
         </div>
-        <div class="field"><label>City <span class="req">*</span></label>
-          <select id="f_city">
+        <!-- v25.9: City auto-fills State on change (spec: composite "City, State" UX) -->
+        <div class="field"><label>City, State <span class="req">*</span></label>
+          <select id="f_city" onchange="autoFillStateFromCity()">
             <option value="">— Select —</option>
             <optgroup label="Metro (Tier 1)">
               <option>Ahmedabad</option>
@@ -4230,7 +4270,43 @@
             <option>Lakshadweep</option><option>International</option>
           </select>
         </div>
-        <div class="field full"><label>Primary contact (name, phone/email) <span class="req">*</span></label><input id="f_contact" type="text" placeholder="Main point of contact for this project"></div>
+        <!-- v25.9: Partner Contact split into 3 validated fields -->
+        <div class="field"><label>Partner Contact — Name <span class="req">*</span></label>
+          <input id="f_partnerContactName" type="text" placeholder="e.g. Rohit Sharma">
+        </div>
+        <div class="field"><label>Partner Contact — Mobile <span class="req">*</span></label>
+          <input id="f_partnerContactPhone" type="tel" placeholder="10-digit mobile"
+                 maxlength="10" pattern="[0-9]{10}" inputmode="numeric"
+                 oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
+        </div>
+        <div class="field"><label>Partner Contact — Email <span class="req">*</span></label>
+          <input id="f_partnerContactEmail" type="email" placeholder="name@company.com"
+                 oninput="validateEmailInline(this)">
+        </div>
+        <!-- v25.9: Lead Source required for Review tab OEM-vs-Cavitak analytics -->
+        <div class="field"><label>Lead Source <span class="req">*</span></label>
+          <select id="f_leadSource">
+            <option value="">— Select —</option>
+            <option value="OEM">OEM (tvONE / Green Hippo referral)</option>
+            <option value="Cavitak">Cavitak (self-sourced)</option>
+          </select>
+        </div>
+        <!-- v25.9: Outcome explicit — drives Review tab win rate -->
+        <div class="field"><label>Outcome <span class="req">*</span></label>
+          <select id="f_outcome">
+            <option value="open">Open (active)</option>
+            <option value="won">Won</option>
+            <option value="lost">Lost</option>
+            <option value="on-hold">On hold</option>
+          </select>
+        </div>
+        <!-- v25.9: Expected Closure moved up from Technical section (smart dropdown) -->
+        <div class="field"><label>Expected Closure <span class="req">*</span></label>
+          <select id="f_close">
+            <option value="">— Select month —</option>
+            <!-- Populated by populateCloseMonths_() -->
+          </select>
+        </div>
       </div>
     </div>
 
@@ -4318,12 +4394,7 @@
           <input id="f_dealValueINR" type="number" min="0" step="1000" placeholder="e.g. 4500000" oninput="onDealValueChange()">
           <div id="dealValueReadout" style="font-size:11.5px;color:var(--gold-bright);font-family:'JetBrains Mono',monospace;margin-top:4px;height:14px"></div>
         </div>
-        <div class="field"><label>Expected close month</label>
-          <select id="f_close">
-            <option value="">— Select month —</option>
-            <!-- Populated dynamically by populateCloseMonths_() on load -->
-          </select>
-        </div>
+        <!-- v25.9: Expected Closure moved to Project Context section above -->
         <div class="field full"><label>Notes / special requirements</label>
           <textarea id="f_notes" placeholder="HDR requirements, layout details, reference installs, 8K sources, audio handling, etc."></textarea>
         </div>
@@ -5269,6 +5340,60 @@
   // STATE
   // =================================================================
   let currentUser = null;
+
+  // v25.9: City → State mapping for auto-fill UX
+  const CITY_TO_STATE = {
+    'Ahmedabad':'Gujarat','Bengaluru':'Karnataka','Chennai':'Tamil Nadu',
+    'Delhi':'Delhi','Hyderabad':'Telangana','Kolkata':'West Bengal',
+    'Mumbai':'Maharashtra','Pune':'Maharashtra',
+    'Agra':'Uttar Pradesh','Aligarh':'Uttar Pradesh','Allahabad (Prayagraj)':'Uttar Pradesh',
+    'Amritsar':'Punjab','Bareilly':'Uttar Pradesh','Bhopal':'Madhya Pradesh',
+    'Chandigarh':'Chandigarh','Dehradun':'Uttarakhand','Faridabad':'Haryana',
+    'Ghaziabad':'Uttar Pradesh','Gorakhpur':'Uttar Pradesh','Gurugram':'Haryana',
+    'Gwalior':'Madhya Pradesh','Haridwar':'Uttarakhand','Indore':'Madhya Pradesh',
+    'Jabalpur':'Madhya Pradesh','Jaipur':'Rajasthan','Jalandhar':'Punjab',
+    'Jammu':'Jammu & Kashmir','Jhansi':'Uttar Pradesh','Jodhpur':'Rajasthan',
+    'Kanpur':'Uttar Pradesh','Kota':'Rajasthan','Lucknow':'Uttar Pradesh',
+    'Ludhiana':'Punjab','Meerut':'Uttar Pradesh','Moradabad':'Uttar Pradesh',
+    'Noida':'Uttar Pradesh','Patiala':'Punjab','Rohtak':'Haryana',
+    'Shimla':'Himachal Pradesh','Srinagar':'Jammu & Kashmir','Udaipur':'Rajasthan',
+    'Varanasi':'Uttar Pradesh',
+    'Ajmer':'Rajasthan','Aurangabad':'Maharashtra','Bhavnagar':'Gujarat',
+    'Goa (Panaji)':'Goa','Jamnagar':'Gujarat','Kolhapur':'Maharashtra',
+    'Nagpur':'Maharashtra','Nashik':'Maharashtra','Navi Mumbai':'Maharashtra',
+    'Rajkot':'Gujarat','Surat':'Gujarat','Thane':'Maharashtra',
+    'Vadodara':'Gujarat','Vasai-Virar':'Maharashtra',
+    'Belagavi':'Karnataka','Coimbatore':'Tamil Nadu','Ernakulam':'Kerala',
+    'Hubballi-Dharwad':'Karnataka','Kochi':'Kerala','Kozhikode':'Kerala',
+    'Madurai':'Tamil Nadu','Mangaluru':'Karnataka','Mysuru':'Karnataka',
+    'Nellore':'Andhra Pradesh','Puducherry':'Puducherry','Salem':'Tamil Nadu',
+    'Thiruvananthapuram':'Kerala','Tiruchirappalli':'Tamil Nadu',
+    'Tirunelveli':'Tamil Nadu','Tirupati':'Andhra Pradesh',
+    'Vijayawada':'Andhra Pradesh','Visakhapatnam':'Andhra Pradesh',
+    'Warangal':'Telangana',
+    'Agartala':'Tripura','Aizawl':'Mizoram','Asansol':'West Bengal',
+    'Bhubaneswar':'Odisha','Cuttack':'Odisha','Dhanbad':'Jharkhand',
+    'Dibrugarh':'Assam','Durgapur':'West Bengal','Gangtok':'Sikkim',
+    'Guwahati':'Assam','Howrah':'West Bengal','Imphal':'Manipur',
+    'Itanagar':'Arunachal Pradesh','Jamshedpur':'Jharkhand','Kohima':'Nagaland',
+    'Patna':'Bihar','Raipur':'Chhattisgarh','Ranchi':'Jharkhand',
+    'Shillong':'Meghalaya','Siliguri':'West Bengal'
+  };
+  function autoFillStateFromCity() {
+    const cityEl = document.getElementById('f_city');
+    const stateEl = document.getElementById('f_state');
+    if (!cityEl || !stateEl) return;
+    const mapped = CITY_TO_STATE[cityEl.value];
+    if (mapped) stateEl.value = mapped;
+  }
+  function validateEmailInline(el) {
+    if (!el) return;
+    const v = el.value.trim();
+    if (!v) { el.style.borderColor = ''; return; }
+    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    el.style.borderColor = ok ? '' : 'var(--danger, #e86358)';
+  }
+
   let sessionLog = [];
   let centralLog = [];
   let _rawCentralLog = [];  // unscoped full log (for Super/OEM to access team data in Review + Directory)
@@ -5671,11 +5796,26 @@
     setVal('f_endUser', input.endUser);
     setVal('f_partner', input.partner);
     setVal('f_consultant', input.consultant);
-    setVal('f_venueName', input.venueName);
+    // v25.9: venueName field removed
     setVal('f_venueType', input.venueType);
     setVal('f_city', input.city);
     setVal('f_state', input.state);
-    setVal('f_contact', input.contact);
+    // v25.9: contact split — prefer new split fields, fall back to parsing legacy contact
+    if (input.partnerContactName || input.partnerContactPhone || input.partnerContactEmail) {
+      setVal('f_partnerContactName', input.partnerContactName || '');
+      setVal('f_partnerContactPhone', input.partnerContactPhone || '');
+      setVal('f_partnerContactEmail', input.partnerContactEmail || '');
+    } else if (input.contact) {
+      const _p = String(input.contact).split(/\s*[·,]\s*/);
+      const _ph = _p.find(function(x){ return /^[0-9]{10}$/.test(x.replace(/\D/g,'')); }) || '';
+      const _em = _p.find(function(x){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x); }) || '';
+      const _nm = _p.find(function(x){ return x !== _ph && x !== _em; }) || _p[0] || '';
+      setVal('f_partnerContactName', _nm.trim());
+      setVal('f_partnerContactPhone', _ph.replace(/\D/g,'').slice(0,10));
+      setVal('f_partnerContactEmail', _em.trim());
+    }
+    setVal('f_leadSource', input.leadSource || input.dealSource || '');
+    setVal('f_outcome', input.outcome || 'open');
     setVal('f_outputType', input.outputType);
     setVal('f_outputSignal', input.outputSignal);
     setVal('f_sdiCount', input.sdiCount);
@@ -6158,16 +6298,26 @@
 
     const proj = getProjectorLoad();
     const input = {
+      // v25.9: payload updated for 13-field Project Context spec
       project: document.getElementById('f_project').value.trim(),
       stage: document.getElementById('f_stage').value,
       endUser: document.getElementById('f_endUser').value.trim(),
       partner: document.getElementById('f_partner').value.trim(),
       consultant: document.getElementById('f_consultant').value.trim(),
-      venueName: document.getElementById('f_venueName').value.trim(),
       venueType: document.getElementById('f_venueType').value,
       city: document.getElementById('f_city').value.trim(),
       state: document.getElementById('f_state').value,
-      contact: document.getElementById('f_contact').value.trim(),
+      partnerContactName:  document.getElementById('f_partnerContactName').value.trim(),
+      partnerContactPhone: document.getElementById('f_partnerContactPhone').value.trim(),
+      partnerContactEmail: document.getElementById('f_partnerContactEmail').value.trim(),
+      // Legacy `contact` string kept populated so old Sheet queries don't break
+      contact: [
+        document.getElementById('f_partnerContactName').value.trim(),
+        document.getElementById('f_partnerContactPhone').value.trim(),
+        document.getElementById('f_partnerContactEmail').value.trim()
+      ].filter(function(x){ return x; }).join(' · '),
+      leadSource: document.getElementById('f_leadSource').value,
+      outcome: document.getElementById('f_outcome').value || 'open',
       outputType: document.getElementById('f_outputType').value,
       outputSignal: document.getElementById('f_outputSignal').value,
       sdiCount: parseInt(document.getElementById('f_sdiCount').value) || 0,
@@ -6187,15 +6337,25 @@
 
     // Build a list of { id, label } pairs for required fields in the order they appear on the page
     const requiredFields = [];
-    if (!input.project)    requiredFields.push({ id: 'f_project',    label: 'Project name' });
-    if (!input.stage)      requiredFields.push({ id: 'f_stage',      label: 'Project stage' });
-    if (!input.endUser)    requiredFields.push({ id: 'f_endUser',    label: 'End-user / Client' });
-    if (!input.partner)    requiredFields.push({ id: 'f_partner',    label: 'Partner / SI / Dealer' });
-    if (!input.consultant) requiredFields.push({ id: 'f_consultant', label: 'Consultant' });
-    if (!input.venueType)  requiredFields.push({ id: 'f_venueType',  label: 'Venue type' });
-    if (!input.city)       requiredFields.push({ id: 'f_city',       label: 'City' });
-    if (!input.state)      requiredFields.push({ id: 'f_state',      label: 'State' });
-    if (!input.contact)    requiredFields.push({ id: 'f_contact',    label: 'Primary contact' });
+    // v25.9: validations for 13-field Project Context spec
+    if (!input.project)              requiredFields.push({ id: 'f_project',              label: 'Project Name' });
+    if (!input.endUser)              requiredFields.push({ id: 'f_endUser',              label: 'End-User Name' });
+    if (!input.venueType)            requiredFields.push({ id: 'f_venueType',            label: 'Venue Type' });
+    if (!input.consultant)           requiredFields.push({ id: 'f_consultant',           label: 'Consultant Name' });
+    if (!input.partner)              requiredFields.push({ id: 'f_partner',              label: 'Partner / SI Name' });
+    if (!input.city)                 requiredFields.push({ id: 'f_city',                 label: 'City' });
+    if (!input.state)                requiredFields.push({ id: 'f_state',                label: 'State' });
+    if (!input.stage)                requiredFields.push({ id: 'f_stage',                label: 'Deal Stage' });
+    if (!input.leadSource)           requiredFields.push({ id: 'f_leadSource',           label: 'Lead Source' });
+    if (!input.close)                requiredFields.push({ id: 'f_close',                label: 'Expected Closure' });
+    if (!input.outcome)              requiredFields.push({ id: 'f_outcome',              label: 'Outcome' });
+    if (!input.partnerContactName)   requiredFields.push({ id: 'f_partnerContactName',   label: 'Partner Contact — Name' });
+    if (!input.partnerContactPhone || !/^[0-9]{10}$/.test(input.partnerContactPhone)) {
+      requiredFields.push({ id: 'f_partnerContactPhone', label: 'Partner Contact — Mobile (10 digits)' });
+    }
+    if (!input.partnerContactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.partnerContactEmail)) {
+      requiredFields.push({ id: 'f_partnerContactEmail', label: 'Partner Contact — Email (valid format)' });
+    }
     if ((input.outputType === 'Projector' || input.outputType === 'Mixed') && !input.projectorCount) {
       requiredFields.push({ id: 'f_projectorCount', label: 'Number of projectors' });
     }
@@ -6272,8 +6432,11 @@
       userFullName: currentUser.name,
       userRole: currentUser.role,
       project: input.project, stage: input.stage, endUser: input.endUser,
-      partner: input.partner, consultant: input.consultant, venueName: input.venueName, venueType: input.venueType,
-      city: input.city, state: input.state, contact: input.contact,
+      partner: input.partner, consultant: input.consultant, venueType: input.venueType,
+      city: input.city, state: input.state,
+      partnerContactName: input.partnerContactName, partnerContactPhone: input.partnerContactPhone, partnerContactEmail: input.partnerContactEmail,
+      contact: input.contact,
+      leadSource: input.leadSource, outcome: input.outcome,
       outputType: input.outputType, outputSignal: input.outputSignal, sdiCount: input.sdiCount, projectorCount: input.projectorCount, projectorRes: input.projectorRes, projectorPorts: input.projectorPorts,
       inputs: input.inputs, inputs4K: input.inputs4K, inputsFHD: input.inputsFHD, signals: input.signals,
       budget: input.budget, close: input.close, notes: input.notes,
@@ -6619,7 +6782,22 @@
     setVal('f_venueType', r.venueType);
     setVal('f_city', r.city);
     setVal('f_state', r.state);
-    setVal('f_contact', r.contact);
+    // v25.9: second prefill path — same split logic
+    if (r.partnerContactName || r.partnerContactPhone || r.partnerContactEmail) {
+      setVal('f_partnerContactName', r.partnerContactName || '');
+      setVal('f_partnerContactPhone', r.partnerContactPhone || '');
+      setVal('f_partnerContactEmail', r.partnerContactEmail || '');
+    } else if (r.contact) {
+      const _p = String(r.contact).split(/\s*[·,]\s*/);
+      const _ph = _p.find(function(x){ return /^[0-9]{10}$/.test(x.replace(/\D/g,'')); }) || '';
+      const _em = _p.find(function(x){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x); }) || '';
+      const _nm = _p.find(function(x){ return x !== _ph && x !== _em; }) || _p[0] || '';
+      setVal('f_partnerContactName', _nm.trim());
+      setVal('f_partnerContactPhone', _ph.replace(/\D/g,'').slice(0,10));
+      setVal('f_partnerContactEmail', _em.trim());
+    }
+    setVal('f_leadSource', r.leadSource || r.dealSource || '');
+    setVal('f_outcome', r.outcome || 'open');
     setVal('f_outputType', r.outputType);
     setVal('f_outputSignal', r.outputSignal);
     setVal('f_sdiCount', r.sdiCount);
@@ -7080,7 +7258,9 @@
       ['Partner / SI', input.partner || '—'],
       ['End-user / Client', input.endUser || '—'],
       ['Consultant', input.consultant || '—'],
-      ['Primary Contact', input.contact || '—']
+      ['Partner Contact — Name',  input.partnerContactName  || '—'],
+      ['Partner Contact — Mobile', input.partnerContactPhone || '—'],
+      ['Partner Contact — Email',  input.partnerContactEmail || '—']
     ];
     const projPairs = [
       ['Project Name', input.project || '—'],
@@ -8473,7 +8653,7 @@
   // RESET
   // =================================================================
   function resetForm() {
-    ['f_project','f_endUser','f_partner','f_consultant','f_venueName','f_city','f_contact','f_inputs','f_inputs4K','f_inputsFHD','f_notes','f_close','f_projectorCount','f_sdiCount','f_dealValueINR'].forEach(function(id) {
+    ['f_project','f_endUser','f_partner','f_consultant','f_city','f_partnerContactName','f_partnerContactPhone','f_partnerContactEmail','f_leadSource','f_outcome','f_inputs','f_inputs4K','f_inputsFHD','f_notes','f_close','f_projectorCount','f_sdiCount','f_dealValueINR'].forEach(function(id) {
       document.getElementById(id).value = '';
     });
     document.getElementById('f_stage').value = '';
@@ -10194,7 +10374,7 @@
       alert('No deals in the selected period to export.');
       return;
     }
-    const headers = ['refId', 'timestamp', 'username', 'userFullName', 'project', 'stage', 'endUser', 'partner', 'consultant', 'city', 'state', 'dealSource', 'dealValueINR', 'outcome', 'recommended_chassis', 'screens_count', 'close', 'notes'];
+    const headers = ['refId', 'timestamp', 'username', 'userFullName', 'project', 'stage', 'endUser', 'partner', 'consultant', 'venueType', 'city', 'state', 'partnerContactName', 'partnerContactPhone', 'partnerContactEmail', 'leadSource', 'dealSource', 'dealValueINR', 'outcome', 'recommended_chassis', 'screens_count', 'close', 'notes']; // v25.9
     const esc = function(v) {
       if (v === null || v === undefined) return '';
       const s = String(v).replace(/"/g, '""');
@@ -10539,7 +10719,13 @@
     html += row('Consultant', r.consultant);
     html += row('Venue', [r.venueType, r.venueName].filter(Boolean).join(' · '));
     html += row('Location', [r.city, r.state].filter(Boolean).join(', '));
-    html += row('Contact', r.contact);
+    // v25.9: split contact rows
+    if (r.partnerContactName)  html += row('Partner Contact — Name', r.partnerContactName);
+    if (r.partnerContactPhone) html += row('Partner Contact — Mobile', r.partnerContactPhone);
+    if (r.partnerContactEmail) html += row('Partner Contact — Email', r.partnerContactEmail);
+    if (!r.partnerContactName && !r.partnerContactPhone && !r.partnerContactEmail && r.contact) {
+      html += row('Contact (legacy)', r.contact);
+    }
     html += '</table>';
 
     html += '<div style="font-family:JetBrains Mono,monospace;font-size:10.5px;font-weight:800;letter-spacing:0.12em;color:var(--gold-bright);text-transform:uppercase;margin:22px 0 10px">Technical Configuration</div>';
