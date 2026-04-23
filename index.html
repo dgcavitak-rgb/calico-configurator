@@ -6698,7 +6698,7 @@
    *   5. Never silently returns without feedback
    */
   async function startEditingSubmission(refId) {
-    console.log('[Edit] ▶ CLICKED — refId:', refId);
+    console.log('[Edit v25.9.3] ▶ CLICKED — refId:', refId);
     try {
       // 0. Basic guards
       if (!refId || String(refId).trim() === '') {
@@ -8207,7 +8207,11 @@
       html += '<td class="td-enduser">' + (s.endUser||'—') + '</td>';
       html += '<td class="td-partner">' + (s.partner||'—') + '</td>';
       if (canEdit) {
-        if (canEditThisRow) {
+        // v25.9.3: If refId is missing, show a disabled marker with a tooltip explaining why.
+        // Without this, the Edit button rendered for rows without refId would trigger a confusing alert on click.
+        if (canEditThisRow && !refEsc) {
+          html += '<td><span class="btn-tiny" style="opacity:0.4;cursor:not-allowed;border:1px dashed var(--border-soft);padding:4px 8px;border-radius:6px;font-size:11px;color:var(--ink-subtle)" title="This entry has no reference ID (saved under an older version). It cannot be edited — but you can delete it from the admin panel.">⚠ Legacy</span></td>';
+        } else if (canEditThisRow) {
           html += '<td onclick="event.stopPropagation()"><button class="btn-tiny" onclick="startEditingSubmission(\'' + refEsc + '\')" title="Edit this deal">✏ Edit</button></td>';
         } else {
           html += '<td><span style="font-size:11px;color:var(--ink-subtle);font-family:JetBrains Mono,monospace">—</span></td>';
