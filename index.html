@@ -4067,20 +4067,13 @@
       <div class="card-title">Project Context</div>
       <div class="grid">
         <div class="field"><label>Project Name <span class="req">*</span></label><input id="f_project" type="text" placeholder="e.g. HQ Lobby LED Wall"></div>
-        <div class="field"><label>Deal Stage <span class="req">*</span></label>
-          <select id="f_stage">
-            <!-- v25.9: Stage standardized to BrightSign's 5 pure-stage options. Outcome tracks resolution separately. -->
-            <option value="">— Select —</option>
-            <option>Lead</option>
-            <option>Opportunity</option>
-            <option>Proposal</option>
-            <option>Negotiation</option>
-            <option>Order</option>
-          </select>
-        </div>
+
         <div class="field"><label>End-user / Client <span class="req">*</span></label><input id="f_endUser" type="text" placeholder="e.g. Reliance Retail Ltd."></div>
+
         <div class="field"><label>Partner / SI <span class="req">*</span></label><input id="f_partner" type="text" placeholder="System integrator / dealer"></div>
+
         <div class="field"><label>Consultant <span class="req">*</span></label><input id="f_consultant" type="text" placeholder="AV consultant / architect"></div>
+
                 <div class="field"><label>Venue Type <span class="req">*</span></label>
           <select id="f_venueType">
             <!-- v25.9: 34-option Venue Type list in 7 groups (Apr 2026 spec) -->
@@ -4138,6 +4131,7 @@
             </optgroup>
           </select>
         </div>
+
         <!-- v25.9: City auto-fills State on change (spec: composite "City, State" UX) -->
         <div class="field"><label>City, State <span class="req">*</span></label>
           <select id="f_city" onchange="autoFillStateFromCity()">
@@ -4252,6 +4246,7 @@
             </optgroup>
           </select>
         </div>
+
         <div class="field"><label>State <span class="req">*</span></label>
           <select id="f_state">
             <option value="">— Select —</option>
@@ -4270,19 +4265,19 @@
             <option>Lakshadweep</option><option>International</option>
           </select>
         </div>
-        <!-- v25.9: Partner Contact split into 3 validated fields -->
-        <div class="field"><label>Partner Contact — Name <span class="req">*</span></label>
-          <input id="f_partnerContactName" type="text" placeholder="e.g. Rohit Sharma">
+
+        <div class="field"><label>Deal Stage <span class="req">*</span></label>
+          <select id="f_stage">
+            <!-- v25.9: Stage standardized to BrightSign's 5 pure-stage options. Outcome tracks resolution separately. -->
+            <option value="">— Select —</option>
+            <option>Lead</option>
+            <option>Opportunity</option>
+            <option>Proposal</option>
+            <option>Negotiation</option>
+            <option>Order</option>
+          </select>
         </div>
-        <div class="field"><label>Partner Contact — Mobile <span class="req">*</span></label>
-          <input id="f_partnerContactPhone" type="tel" placeholder="10-digit mobile"
-                 maxlength="10" pattern="[0-9]{10}" inputmode="numeric"
-                 oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
-        </div>
-        <div class="field"><label>Partner Contact — Email <span class="req">*</span></label>
-          <input id="f_partnerContactEmail" type="email" placeholder="name@company.com"
-                 oninput="validateEmailInline(this)">
-        </div>
+
         <!-- v25.9: Lead Source required for Review tab OEM-vs-Cavitak analytics -->
         <div class="field"><label>Lead Source <span class="req">*</span></label>
           <select id="f_leadSource">
@@ -4291,6 +4286,7 @@
             <option value="Cavitak">Cavitak (self-sourced)</option>
           </select>
         </div>
+
         <!-- v25.9: Outcome explicit — drives Review tab win rate -->
         <div class="field"><label>Outcome <span class="req">*</span></label>
           <select id="f_outcome">
@@ -4300,6 +4296,7 @@
             <option value="on-hold">On hold</option>
           </select>
         </div>
+
         <!-- v25.9.1: Expected Closure with BrightSign-style quick chips + dropdown -->
         <div class="field"><label>Expected Closure <span class="req">*</span></label>
           <div class="closemonth-picker" style="display:flex;flex-direction:column;gap:8px;">
@@ -4314,6 +4311,22 @@
               <!-- Populated by populateCloseMonths_() -->
             </select>
           </div>
+        </div>
+
+        <!-- v25.9: Partner Contact split into 3 validated fields -->
+        <div class="field"><label>Partner Contact — Name <span class="req">*</span></label>
+          <input id="f_partnerContactName" type="text" placeholder="e.g. Rohit Sharma">
+        </div>
+
+        <div class="field"><label>Partner Contact — Mobile <span class="req">*</span></label>
+          <input id="f_partnerContactPhone" type="tel" placeholder="10-digit mobile"
+                 maxlength="10" pattern="[0-9]{10}" inputmode="numeric"
+                 oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
+        </div>
+
+        <div class="field"><label>Partner Contact — Email <span class="req">*</span></label>
+          <input id="f_partnerContactEmail" type="email" placeholder="name@company.com"
+                 oninput="validateEmailInline(this)">
         </div>
       </div>
     </div>
