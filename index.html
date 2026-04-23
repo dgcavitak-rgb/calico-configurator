@@ -344,32 +344,212 @@
     letter-spacing: 0.04em;
     opacity: 0.9;
   }
-  .user-badge { font-size: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: relative; z-index: 1; }
-  .user-badge #userLabel { color: var(--ink); font-weight: 600; }
-  .user-badge button {
-    background: rgba(212, 175, 55, 0.08);
-    color: var(--gold-bright);
-    border: 1px solid rgba(212, 175, 55, 0.2);
-    padding: 8px 18px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 12px;
-    transition: all 0.25s var(--ease); font-weight: 700; letter-spacing: 0.04em;
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  /* =================================================================
+     HEADER — BrightSign-inspired clean 2-row layout
+     Row 1: Brand (left) · User controls (right)
+     Row 2: Navigation tabs (underlined, flat)
+     ================================================================= */
+  .header-top {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 14px;
+    width: 100%;
+    position: relative; z-index: 1;
   }
-  .user-badge button:hover {
-    background: rgba(212, 175, 55, 0.15);
-    border-color: rgba(212, 175, 55, 0.5);
+  .header-top-right {
+    display: flex; align-items: center; gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  /* User label + role pill cluster */
+  .header-user {
+    display: flex; align-items: center; gap: 10px;
+    text-align: right;
+  }
+  .header-user .hu-name {
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+    padding: 4px 2px;
+    transition: color 0.2s;
+  }
+  .header-user .hu-name:hover { color: var(--gold-bright); }
+
+  /* Avatar initials circle */
+  .user-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.35) 0%, rgba(156, 123, 33, 0.25) 100%);
+    border: 1.5px solid rgba(212, 175, 55, 0.45);
     color: var(--gold-bright);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px; font-weight: 800; letter-spacing: 0.04em;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s var(--ease);
+    text-transform: uppercase;
+  }
+  .user-avatar:hover {
+    border-color: var(--gold-bright);
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
     transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25), 0 0 24px rgba(212, 175, 55, 0.15);
   }
+  [data-theme="light"] .user-avatar {
+    background: linear-gradient(135deg, rgba(176, 141, 40, 0.25) 0%, rgba(139, 112, 38, 0.18) 100%);
+    border-color: rgba(176, 141, 40, 0.45);
+    color: #8B7026;
+  }
+
+  /* Theme icon trio — minimal flat circles, no dropdown */
+  .theme-icons {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    background: rgba(212, 175, 55, 0.06);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    border-radius: 24px;
+  }
+  .theme-ico {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    font-size: 15px;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.2s var(--ease);
+    filter: grayscale(0.3);
+    opacity: 0.55;
+  }
+  .theme-ico:hover {
+    background: rgba(212, 175, 55, 0.12);
+    opacity: 0.85;
+    transform: scale(1.08);
+  }
+  .theme-ico.active {
+    background: rgba(212, 175, 55, 0.25);
+    filter: grayscale(0);
+    opacity: 1;
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.3);
+  }
+  [data-theme="light"] .theme-icons {
+    background: rgba(176, 141, 40, 0.08);
+    border-color: rgba(176, 141, 40, 0.2);
+  }
+  [data-theme="light"] .theme-ico.active {
+    background: rgba(176, 141, 40, 0.2);
+    box-shadow: 0 0 12px rgba(176, 141, 40, 0.25);
+  }
+
+  /* Sign out — distinct but not red-aggressive */
+  .btn-signout {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    padding: 8px 18px; border-radius: 8px; cursor: pointer; font-family: inherit;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+    transition: all 0.2s var(--ease);
+  }
+  .btn-signout:hover {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: rgba(220, 38, 38, 0.5);
+    color: #F87171;
+  }
+  [data-theme="light"] .btn-signout {
+    color: #3F2F1C;
+    border-color: rgba(60, 40, 10, 0.25);
+  }
+  [data-theme="light"] .btn-signout:hover {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.4);
+    color: #B91C1C;
+  }
+
+  /* Navigation row — underlined flat tabs (BrightSign style) */
+  .header-nav-row {
+    display: flex; align-items: center; gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(212, 175, 55, 0.1);
+  }
+  [data-theme="light"] .header-nav-row {
+    border-top-color: rgba(60, 40, 10, 0.08);
+  }
+  .nav-tab {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: transparent;
+    color: var(--ink-soft);
+    border: none;
+    padding: 12px 16px 12px;
+    border-radius: 0;
+    cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    letter-spacing: 0.01em;
+    position: relative;
+    transition: color 0.2s var(--ease);
+    margin-top: 2px;
+  }
+  .nav-tab::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 16px; right: 16px;
+    height: 2px;
+    background: transparent;
+    transition: background 0.2s var(--ease);
+  }
+  .nav-tab:hover {
+    color: var(--gold-bright);
+  }
+  .nav-tab.active,
+  .nav-tab[data-active="true"] {
+    color: var(--gold-bright);
+  }
+  .nav-tab.active::after,
+  .nav-tab[data-active="true"]::after {
+    background: var(--gold-bright);
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+  }
+  .nav-tab-ico {
+    font-size: 13px;
+    opacity: 0.7;
+  }
+  .nav-tab.active .nav-tab-ico,
+  .nav-tab[data-active="true"] .nav-tab-ico { opacity: 1; }
+  [data-theme="light"] .nav-tab { color: #3F2F1C; }
+  [data-theme="light"] .nav-tab:hover,
+  [data-theme="light"] .nav-tab.active,
+  [data-theme="light"] .nav-tab[data-active="true"] { color: #8B7026; }
+  [data-theme="light"] .nav-tab.active::after,
+  [data-theme="light"] .nav-tab[data-active="true"]::after {
+    background: #B08D28;
+    box-shadow: 0 0 8px rgba(176, 141, 40, 0.4);
+  }
+
+  /* Role pill (unchanged) */
   .role-pill {
     background: var(--grad-red);
     color: #fff;
-    padding: 5px 12px; border-radius: 20px;
-    font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 800;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 800;
     box-shadow: 0 4px 16px rgba(225, 29, 72, 0.45), 0 0 0 1px rgba(255,255,255,0.15) inset,
                 0 0 20px rgba(225, 29, 72, 0.35);
     font-family: 'JetBrains Mono', monospace;
   }
+
+  /* Brand divider */
+  .brand-divider {
+    height: 36px; width: 1px;
+    background: rgba(255,255,255,0.2);
+  }
+  [data-theme="light"] .brand-divider {
+    background: rgba(60, 40, 10, 0.2);
+  }
+
+  /* Legacy .user-badge + .header-right retained as no-op stubs */
+  .user-badge { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .header-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .header-group { display: flex; align-items: center; gap: 10px; }
 
   .page { max-width: 1280px; margin: 0 auto; padding: 40px 24px 80px; position: relative; }
   .page-title {
@@ -3459,10 +3639,48 @@
     .brand-sub { font-size: 13px !important; }
     .brand-tagline { display: none; }    /* save space */
     .brand-logo-wrap img { max-height: 26px !important; }
-    /* Drop the vertical separator */
+    /* Drop the vertical separator on mobile */
+    .brand-divider { display: none !important; }
     header.app-header .brand > div[style*="height:36px"] { display: none !important; }
 
-    /* User badge: wrap + smaller */
+    /* Header top row: wrap cleanly */
+    .header-top { gap: 10px; }
+    .header-top-right {
+      width: 100%;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .header-user { gap: 6px; }
+    .header-user .hu-name {
+      font-size: 12.5px; max-width: 130px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .theme-icons { padding: 2px; }
+    .theme-ico { width: 28px; height: 28px; font-size: 13px; }
+    .user-avatar { width: 32px; height: 32px; font-size: 10.5px; }
+    .btn-signout { padding: 7px 12px; font-size: 11.5px; }
+
+    /* Navigation row on mobile: horizontal scroll, icon-only collapse */
+    .header-nav-row {
+      width: 100%;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 12px;
+      padding: 0 4px;
+      gap: 0;
+    }
+    .header-nav-row::-webkit-scrollbar { display: none; }
+    .nav-tab {
+      padding: 10px 12px;
+      font-size: 12px;
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+    .nav-tab::after { left: 12px; right: 12px; }
+
+    /* Legacy — in case any .user-badge elements remain */
     .user-badge {
       flex-wrap: wrap; gap: 6px;
       width: 100%; justify-content: flex-start;
@@ -3474,11 +3692,11 @@
     }
     .user-badge .role-pill { font-size: 10px; padding: 3px 8px; }
     .user-badge .theme-pill { padding: 5px 10px; font-size: 10px; gap: 5px; }
-    .user-badge .theme-pill #themeLabel { display: none; }  /* hide "Dark"/"Light" label on mobile, keep icon + chevron */
-    .user-badge .theme-pill .theme-chev { display: none; } /* hide chevron too on narrow mobile */
+    .user-badge .theme-pill #themeLabel { display: none; }
+    .user-badge .theme-pill .theme-chev { display: none; }
     .user-badge button {
       padding: 7px 11px !important; font-size: 12px !important;
-      min-height: 36px;   /* touch target */
+      min-height: 36px;
       border-radius: 9px;
     }
     /* Health + pending indicators: compact */
@@ -3760,58 +3978,74 @@
 <!-- APP -->
 <div id="appScreen" class="hidden">
   <header class="app-header">
-    <div class="brand">
-      <div class="brand-logo-wrap">
-        <img src="tvone-logo-dark.png" alt="tvONE" class="logo-dark" onerror="this.onerror=null; this.src='tvone-logo.png'; this.onerror=function(){this.style.display='none';this.parentNode.classList.add('logo-fallback')}">
-        <img src="tvone-logo-light.png" alt="tvONE" class="logo-light" onerror="this.onerror=null; this.src='tvone-logo.png'; this.onerror=function(){this.style.display='none';this.parentNode.classList.add('logo-fallback')}">
-        <span class="logo-fallback-text">tvONE</span>
-      </div>
-      <div style="height:36px; width:1px; background:rgba(255,255,255,0.2)"></div>
-      <div>
-        <div class="brand-sub">CALICO PRO Configurator</div>
-        <div class="brand-tagline">Command every pixel</div>
-      </div>
-    </div>
-    <div class="user-badge">
-      <span id="userLabel" onclick="showView('profile')" style="cursor:pointer" title="Click to view/edit your profile + change password"></span>
-      <span id="roleLabel" class="role-pill"></span>
-      <span id="webhookHealth" class="webhook-health" title="Status"><span class="wh-dot"></span><span class="wh-label">Status</span></span>
-      <span id="pendingIndicator" class="pending-indicator hidden" title="Some items are still being prepared — click to retry" onclick="drainPendingQueue()"><span class="pi-icon">⟳</span><span class="pi-count">0</span><span class="pi-label">preparing</span></span>
-      <div class="theme-menu-wrap" style="position:relative">
-        <button class="theme-pill" id="themePill" onclick="toggleThemeMenu(event)" title="Theme settings" aria-label="Theme">
-          <span class="icon" id="themeIcon">🌙</span>
-          <span id="themeLabel">Dark</span>
-          <span class="theme-chev">▾</span>
-        </button>
-        <div id="themeMenu" class="theme-menu">
-          <button class="theme-menu-item" data-mode="dark" onclick="setThemeMode('dark')"><span class="tmi-icon">🌙</span><span class="tmi-label">Dark</span><span class="tmi-check">✓</span></button>
-          <button class="theme-menu-item" data-mode="light" onclick="setThemeMode('light')"><span class="tmi-icon">☀️</span><span class="tmi-label">Light</span><span class="tmi-check">✓</span></button>
-          <div class="theme-menu-divider"></div>
-          <button class="theme-menu-item" data-mode="auto" onclick="setThemeMode('auto')"><span class="tmi-icon">🕐</span><span class="tmi-label">Auto (7AM–7PM)</span><span class="tmi-check">✓</span></button>
+    <!-- Row 1: Brand (left) · User + Controls + Exit (right) -->
+    <div class="header-top">
+      <!-- Brand -->
+      <div class="brand">
+        <div class="brand-logo-wrap">
+          <img src="tvone-logo-dark.png" alt="tvONE" class="logo-dark" onerror="this.onerror=null; this.src='tvone-logo.png'; this.onerror=function(){this.style.display='none';this.parentNode.classList.add('logo-fallback')}">
+          <img src="tvone-logo-light.png" alt="tvONE" class="logo-light" onerror="this.onerror=null; this.src='tvone-logo.png'; this.onerror=function(){this.style.display='none';this.parentNode.classList.add('logo-fallback')}">
+          <span class="logo-fallback-text">tvONE</span>
+        </div>
+        <div class="brand-divider"></div>
+        <div>
+          <div class="brand-sub">CALICO PRO Configurator</div>
+          <div class="brand-tagline">Command every pixel</div>
         </div>
       </div>
-      <div style="position: relative">
-        <button id="notifBell" class="notif-bell" onclick="toggleNotifPanel(event)" title="Notifications" aria-label="Notifications">
-          🔔
-          <span id="notifBadge" class="notif-badge hidden">0</span>
-        </button>
-        <div id="notifPanel" class="notif-panel">
-          <div class="notif-panel-header">
-            <div class="notif-panel-title">Notifications</div>
-            <button class="notif-mark-all" onclick="markAllNotificationsRead()">Mark all read</button>
+
+      <!-- Right side: user info · theme icons · avatar · Sign out -->
+      <div class="header-top-right">
+        <!-- User label + role pill -->
+        <div class="header-user">
+          <span id="userLabel" class="hu-name" onclick="showView('profile')" title="Click to view profile"></span>
+          <span id="roleLabel" class="role-pill"></span>
+        </div>
+
+        <!-- Theme switcher: 3 icon-only circle buttons (Dark / Light / Auto) -->
+        <div class="theme-icons" role="group" aria-label="Theme">
+          <button class="theme-ico" data-mode="dark" onclick="setThemeMode('dark')" title="Dark theme" aria-label="Dark">🌙</button>
+          <button class="theme-ico" data-mode="light" onclick="setThemeMode('light')" title="Light theme" aria-label="Light">☀️</button>
+          <button class="theme-ico" data-mode="auto" onclick="setThemeMode('auto')" title="Auto (7AM–7PM)" aria-label="Auto">🕐</button>
+        </div>
+
+        <!-- Notification bell -->
+        <div style="position: relative">
+          <button id="notifBell" class="notif-bell" onclick="toggleNotifPanel(event)" title="Notifications" aria-label="Notifications">
+            🔔
+            <span id="notifBadge" class="notif-badge hidden">0</span>
+          </button>
+          <div id="notifPanel" class="notif-panel">
+            <div class="notif-panel-header">
+              <div class="notif-panel-title">Notifications</div>
+              <button class="notif-mark-all" onclick="markAllNotificationsRead()">Mark all read</button>
+            </div>
+            <div id="notifPanelBody" class="notif-panel-body"></div>
           </div>
-          <div id="notifPanelBody" class="notif-panel-body"></div>
         </div>
+
+        <!-- Avatar initials circle (click → profile) -->
+        <button id="userAvatar" class="user-avatar" onclick="showView('profile')" title="Open profile" aria-label="Profile">DG</button>
+
+        <!-- Compact status chip (shown inline, small) -->
+        <span id="webhookHealth" class="webhook-health" title="Status"><span class="wh-dot"></span><span class="wh-label">Online</span></span>
+        <span id="pendingIndicator" class="pending-indicator hidden" title="Some items are still being prepared — click to retry" onclick="drainPendingQueue()"><span class="pi-icon">⟳</span><span class="pi-count">0</span><span class="pi-label">preparing</span></span>
+
+        <!-- Sign out -->
+        <button onclick="logout()" class="btn-signout">Sign out</button>
       </div>
-      <button onclick="startNewConfig()" id="newCfgBtn">New Selection</button>
-      <button onclick="showView('result')" id="resultBtn" class="hidden">Result</button>
-      <button onclick="showView('history')" id="historyBtn" class="hidden">History</button>
-      <button onclick="showView('dash')" id="logBtn" class="hidden">Dashboard</button>
-      <button onclick="showView('customers')" id="customersBtn" class="hidden">Directory</button>
-      <button onclick="showView('briefing')" id="briefingBtn" class="hidden">Review</button>
-      <button onclick="showView('team')" id="teamBtn" class="hidden">Team</button>
-      <button onclick="logout()">Exit</button>
     </div>
+
+    <!-- Row 2: Navigation tabs (underlined style) -->
+    <nav class="header-nav-row">
+      <button onclick="startNewConfig()" id="newCfgBtn" class="nav-tab"><span class="nav-tab-ico">＋</span>New Selection</button>
+      <button onclick="showView('result')" id="resultBtn" class="nav-tab hidden"><span class="nav-tab-ico">✓</span>Result</button>
+      <button onclick="showView('history')" id="historyBtn" class="nav-tab hidden"><span class="nav-tab-ico">◷</span>History</button>
+      <button onclick="showView('dash')" id="logBtn" class="nav-tab hidden"><span class="nav-tab-ico">▦</span>Dashboard</button>
+      <button onclick="showView('customers')" id="customersBtn" class="nav-tab hidden"><span class="nav-tab-ico">◉</span>Directory</button>
+      <button onclick="showView('briefing')" id="briefingBtn" class="nav-tab hidden"><span class="nav-tab-ico">◈</span>Review</button>
+      <button onclick="showView('team')" id="teamBtn" class="nav-tab hidden"><span class="nav-tab-ico">◎</span>Team</button>
+    </nav>
   </header>
 
   <!-- FORM -->
@@ -5226,6 +5460,9 @@
         if (!data.mustChange) hideLoginSplash();
       }, 2100);
       document.getElementById('userLabel').textContent = currentUser.name;
+      // Also set avatar initials (e.g. "Dipenkumar Gajjar" → "DG")
+      const avatar = document.getElementById('userAvatar');
+      if (avatar) avatar.textContent = _initialsFor(currentUser.name);
       // Refresh notification bell for the per-user storage
       if (typeof renderNotifBell === 'function') renderNotifBell();
       const rolePill = document.getElementById('roleLabel');
@@ -5331,6 +5568,8 @@
         resultBtn.classList.add('hidden');
       }
     }
+    // Update active nav-tab underline highlight
+    updateActiveNavTab_(v);
     if (v === 'dash') refreshLog();
     if (v === 'history') refreshLog();
     if (v === 'team') refreshTeam();
@@ -5344,6 +5583,34 @@
       setReviewType(_currentReviewType);
     }
     window.scrollTo(0,0);
+  }
+
+  /** Highlight which nav tab matches the current view. */
+  function updateActiveNavTab_(view) {
+    const map = {
+      form: 'newCfgBtn',
+      analyzing: 'newCfgBtn',
+      result: 'resultBtn',
+      history: 'historyBtn',
+      dash: 'logBtn',
+      customers: 'customersBtn',
+      briefing: 'briefingBtn',
+      team: 'teamBtn',
+      profile: null,  // profile is accessed via avatar, no tab highlights
+    };
+    const activeId = map[view];
+    document.querySelectorAll('.nav-tab').forEach(function(btn) {
+      btn.classList.toggle('active', btn.id === activeId);
+    });
+  }
+
+  /** Extract initials from full name — e.g. "Dipenkumar Gajjar" → "DG" */
+  function _initialsFor(name) {
+    const s = String(name || '').trim();
+    if (!s) return '??';
+    const parts = s.split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
 
   // Drive the analyzing steps animation (4 steps, each ~400ms)
@@ -8307,30 +8574,33 @@
     updateThemePill_();
   }
 
-  /** Reflects current mode in the header pill — icon, label, and auto-pulse indicator. */
+  /** Reflects current mode in header pill + 3-icon theme switcher. */
   function updateThemePill_() {
-    const pill = document.getElementById('themePill');
-    if (!pill) return;
     const mode = getThemeMode_();
+    const applied = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    // Old unified pill (still present in some views) — update if exists
+    const pill = document.getElementById('themePill');
     const icon = document.getElementById('themeIcon');
     const label = document.getElementById('themeLabel');
-    const applied = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-
-    // Update pill visuals based on mode
-    if (mode === 'auto') {
-      pill.classList.add('auto-active');
-      if (icon) icon.textContent = '🕐';
-      if (label) label.textContent = 'Auto';
-      pill.title = 'Auto theme ON — light 7AM-7PM · click to change';
-    } else {
-      pill.classList.remove('auto-active');
-      if (icon) icon.textContent = applied === 'light' ? '☀️' : '🌙';
-      if (label) label.textContent = applied === 'light' ? 'Light' : 'Dark';
-      pill.title = 'Theme: ' + (applied === 'light' ? 'Light' : 'Dark') + ' · click to change';
+    if (pill) {
+      if (mode === 'auto') {
+        pill.classList.add('auto-active');
+        if (icon) icon.textContent = '🕐';
+        if (label) label.textContent = 'Auto';
+        pill.title = 'Auto theme ON — light 7AM-7PM · click to change';
+      } else {
+        pill.classList.remove('auto-active');
+        if (icon) icon.textContent = applied === 'light' ? '☀️' : '🌙';
+        if (label) label.textContent = applied === 'light' ? 'Light' : 'Dark';
+        pill.title = 'Theme: ' + (applied === 'light' ? 'Light' : 'Dark') + ' · click to change';
+      }
     }
-
-    // Mark the active item in the dropdown
+    // Dropdown menu items
     document.querySelectorAll('.theme-menu-item').forEach(function(el) {
+      el.classList.toggle('active', el.getAttribute('data-mode') === mode);
+    });
+    // New icon trio
+    document.querySelectorAll('.theme-ico').forEach(function(el) {
       el.classList.toggle('active', el.getAttribute('data-mode') === mode);
     });
   }
