@@ -5065,6 +5065,16 @@
           </table>
         </div>
       </div>
+      <!-- v26.0 Cycle 3A — Stage velocity histogram (Super only) -->
+      <div id="tv-c3a-velocity-wrap" style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft); display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600;">Stage velocity <span id="tv-c3a-velocity-caption" style="font-weight:500; text-transform:none; letter-spacing:0; color:var(--ink-muted, var(--ink-subtle));"></span></div>
+        </div>
+        <div id="tv-c3a-velocity-body" style="background:var(--surface-2); border:1px solid var(--border-soft); border-radius:8px; padding:14px;">
+          <div style="height:220px; position:relative;"><canvas id="tv-c3a-velocity-chart"></canvas></div>
+          <div id="tv-c3a-velocity-empty" style="display:none; padding:28px 14px; text-align:center; color:var(--ink-subtle); font-size:13px;">Not enough recorded transitions yet — velocity will populate as deals move through stages.</div>
+        </div>
+      </div>
     </div>
 
     <!-- Quarterly Review panel -->
@@ -11515,7 +11525,15 @@
       await _tvC2aLoadNote(agg.periodKey, agg.fy, agg.scope, agg.quarterOrHalf);
     }
     // v25.15 Cycle 2b — refresh drilldown table
+    // v26.0 Cycle 3A: fetch stage transitions FIRST so drilldown daysInStage is accurate
+    if (typeof _tvC2bFetchTransitions === 'function') {
+      await _tvC2bFetchTransitions();
+    }
     if (typeof tvC2bRender === 'function') tvC2bRender();
+    // v26.0 Cycle 3A: render stage velocity card (fire-and-forget; does its own fetch + empty state)
+    if (typeof window.tvC3aRenderVelocity === 'function') {
+      window.tvC3aRenderVelocity();
+    }
     // Cache agg for Excel export
     window._tvC2aLastAgg = agg;
   };
@@ -11526,6 +11544,37 @@
    * ========================================================================== */
   const _TV_C2B_OPEN_STAGES = {Lead:1, Opportunity:1, Proposal:1, Negotiation:1, Order:1};
   let _tvC2bSort = {key:'dealValueINR', dir:'desc'};
+  // v26.0 Cycle 3A: cache of { refId -> {transitionedAtMs, toStage} } from backend stage_transitions_list.
+  // When present, daysInStage is measured from the latest transition. When absent (pre-v26.0 deals),
+  // falls back to deal timestamp and marks the row with a "~" reconstructed indicator.
+  let _tvC2bTransitions = null;  // null = not fetched yet, {} = fetched (may be empty)
+
+  // v26.0 Cycle 3A: fetch stage transitions from backend. Populates _tvC2bTransitions cache.
+  // Called from tvC2aRender hook. Silent on error — drilldown just falls back to timestamp marker.
+  async function _tvC2bFetchTransitions() {
+    try {
+      if (!WEB_APP_URL || !currentUser) return;
+      const resp = await fetch(WEB_APP_URL, {
+        method:'POST', mode:'cors',
+        headers:{'Content-Type':'text/plain'},
+        body: JSON.stringify({
+          action: 'stage_transitions_list',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash
+        })
+      });
+      const data = await resp.json();
+      if (data && data.ok && data.latestByRefId) {
+        _tvC2bTransitions = data.latestByRefId;
+      } else {
+        _tvC2bTransitions = {};
+      }
+    } catch (err) {
+      console.warn('[tvC2b stage_transitions_list] failed:', err);
+      _tvC2bTransitions = {};
+    }
+  }
+  window._tvC2bFetchTransitions = _tvC2bFetchTransitions;
 
   function _tvC2bFmtINR(n) {
     if (n === null || n === undefined || isNaN(n)) return '—';
@@ -11540,15 +11589,26 @@
     const log = (typeof sessionLog !== 'undefined' && Array.isArray(sessionLog)) ? sessionLog : [];
     const out = [];
     const now = Date.now();
+    const transitions = _tvC2bTransitions || {};
     for (let i = 0; i < log.length; i++) {
       const r = log[i] || {};
       const outcome = (r.outcome || 'open').toString().toLowerCase();
       if (outcome !== 'open') continue;
       const stage = (r.stage || '').toString();
       if (!_TV_C2B_OPEN_STAGES[stage]) continue;
-      const ts = r.timestamp || r.ts || r.confirmedAt || '';
-      const tsMs = ts ? Date.parse(ts) : 0;
-      const daysInStage = tsMs ? Math.max(0, Math.floor((now - tsMs) / 86400000)) : 0;
+      // v26.0 Cycle 3A: prefer stage-transition timestamp over deal timestamp
+      const refId = r.refId || '';
+      const tx = refId ? transitions[refId] : null;
+      let daysInStage = 0;
+      let daysReconstructed = false;
+      if (tx && tx.transitionedAtMs) {
+        daysInStage = Math.max(0, Math.floor((now - tx.transitionedAtMs) / 86400000));
+      } else {
+        const ts = r.timestamp || r.ts || r.confirmedAt || '';
+        const tsMs = ts ? Date.parse(ts) : 0;
+        daysInStage = tsMs ? Math.max(0, Math.floor((now - tsMs) / 86400000)) : 0;
+        daysReconstructed = true;
+      }
       out.push({
         project:      r.project || '—',
         enduser:      r.enduser || '—',
@@ -11557,6 +11617,7 @@
         dealValueINR: parseFloat(r.dealValueINR || r.dealvalueinr || 0) || 0,
         closemonth:   r.close || r.closemonth || '—',
         daysInStage:  daysInStage,
+        daysReconstructed: daysReconstructed,
         user:         r.user || r.username || r.loginName || '—',
         _raw:         r
       });
@@ -11609,6 +11670,10 @@
     }
 
     const html = rows.map(function(r){
+      // v26.0 Cycle 3A: "~" marker for rows with reconstructed daysInStage (no recorded transition yet)
+      const daysCell = r.daysReconstructed
+        ? '<span title="Reconstructed — no recorded stage transition yet. Accurate figure populates on next stage change." style="color:var(--ink-subtle);">~</span>' + r.daysInStage
+        : String(r.daysInStage);
       return '<tr>' +
         '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.project) + '</td>' +
         '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.enduser) + '</td>' +
@@ -11616,7 +11681,7 @@
         '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.stage) + '</td>' +
         '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink); text-align:right; font-variant-numeric:tabular-nums;">' + _tvC2bFmtINR(r.dealValueINR) + '</td>' +
         '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.closemonth) + '</td>' +
-        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink); text-align:right;">' + r.daysInStage + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink); text-align:right;">' + daysCell + '</td>' +
         '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.user) + '</td>' +
       '</tr>';
     }).join('');
@@ -11847,6 +11912,142 @@
     paint(activeUsers, pendingResets);
   };
   /* END v25.16 Cycle 2c block */
+
+  /* ============================================================================
+   * v26.0 Cycle 3A — Stage velocity histogram (Super only)
+   * Calls backend action=stage_velocity_aggregate and renders a Chart.js bar chart.
+   * Empty state shown when thresholdMet===false (no stage has sampleSize ≥ 5 yet).
+   * ============================================================================ */
+  window.tvC3aRenderVelocity = async function() {
+    const wrap = document.getElementById('tv-c3a-velocity-wrap');
+    if (!wrap) return;
+    // Super-only: hide the whole card for non-Super users
+    const isSuper = !!(currentUser && (currentUser.role === 'Super' || (typeof SUPER_LOGIN_NAMES !== 'undefined' && SUPER_LOGIN_NAMES && SUPER_LOGIN_NAMES.indexOf && SUPER_LOGIN_NAMES.indexOf(String(currentUser.username || '').toLowerCase()) >= 0)));
+    if (!isSuper) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+
+    const caption = document.getElementById('tv-c3a-velocity-caption');
+    const emptyEl = document.getElementById('tv-c3a-velocity-empty');
+    const canvas = document.getElementById('tv-c3a-velocity-chart');
+    if (!canvas || !emptyEl) return;
+
+    // Fetch aggregate
+    let data = null;
+    try {
+      if (!WEB_APP_URL || !currentUser) return;
+      const resp = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'stage_velocity_aggregate',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash
+        })
+      });
+      data = await resp.json();
+    } catch (err) {
+      console.warn('[tvC3a velocity fetch] failed:', err);
+      if (caption) caption.textContent = '· unable to load';
+      return;
+    }
+    if (!data || !data.ok) {
+      if (caption) caption.textContent = '· ' + ((data && data.error) || 'load failed');
+      return;
+    }
+
+    const metrics = Array.isArray(data.stageMetrics) ? data.stageMetrics : [];
+    const thresholdMet = !!data.thresholdMet;
+    const totalDeals = Number(data.totalDealsWithHistory || 0);
+
+    // Caption
+    if (caption) {
+      if (thresholdMet) {
+        caption.textContent = '· team average, based on ' + totalDeals + ' deal' + (totalDeals === 1 ? '' : 's') + ' with recorded transitions';
+      } else {
+        caption.textContent = '· awaiting more data';
+      }
+    }
+
+    // Empty-state handling
+    if (!thresholdMet) {
+      canvas.style.display = 'none';
+      emptyEl.style.display = 'block';
+      if (window._tvC3aVelocityChart) {
+        try { window._tvC3aVelocityChart.destroy(); } catch (_){}
+        window._tvC3aVelocityChart = null;
+      }
+      return;
+    }
+
+    canvas.style.display = 'block';
+    emptyEl.style.display = 'none';
+
+    // Chart.js must be loaded — the Review tab already uses it for other charts.
+    if (typeof Chart === 'undefined') {
+      if (caption) caption.textContent = '· Chart.js not loaded';
+      return;
+    }
+
+    const labels = metrics.map(function(m) { return m.stage; });
+    const values = metrics.map(function(m) { return Number((m.avgDays || 0).toFixed(1)); });
+    const samples = metrics.map(function(m) { return m.sampleSize || 0; });
+
+    // tvONE forest-green palette with gold accent on the terminal stage
+    const ctx = canvas.getContext('2d');
+    const palette = ['#064E3B', '#065F46', '#047857', '#059669', '#D4AF37'];
+    const bgColors = metrics.map(function(m, i) {
+      if ((m.sampleSize || 0) < 5) return 'rgba(148, 163, 184, 0.55)';  // muted gray for low-sample stages
+      return palette[i % palette.length];
+    });
+
+    // Tear down old chart before re-creating
+    if (window._tvC3aVelocityChart) {
+      try { window._tvC3aVelocityChart.destroy(); } catch (_){}
+      window._tvC3aVelocityChart = null;
+    }
+
+    window._tvC3aVelocityChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Avg days in stage',
+          data: values,
+          backgroundColor: bgColors,
+          borderRadius: 6,
+          borderSkipped: false,
+          _sampleSizes: samples
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const n = (ctx.dataset._sampleSizes && ctx.dataset._sampleSizes[ctx.dataIndex]) || 0;
+                return ctx.parsed.y + ' days avg · ' + n + ' sample' + (n === 1 ? '' : 's');
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 11 } }
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Days', font: { size: 11 } },
+            ticks: { font: { size: 11 } }
+          }
+        }
+      }
+    });
+  };
+  /* END v26.0 Cycle 3A block */
 </script>
 <!-- Silent sync toast indicator -->
 <div class="sync-status" id="syncStatus">
