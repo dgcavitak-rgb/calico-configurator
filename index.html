@@ -4296,13 +4296,9 @@
             <option value="on-hold">On hold</option>
           </select>
         </div>
-        <!-- v25.10: Plan of Action — per-deal narrative -->
-        <div class="field" style="grid-column:1/-1"><label>Plan of Action <span style="color:var(--ink-subtle);font-weight:400;font-size:11px">(optional · next step to close this deal)</span></label>
-          <textarea id="f_planOfAction" rows="2" placeholder="e.g. Site survey on Nov 15; demo at HO scheduled. Awaiting CapEx approval."></textarea>
-        </div>
+        <!-- v25.10.1 Cycle 2a: Per-deal Plan of Action textarea REMOVED — PoA now lives per-period on the Review tab -->
 
-        <!-- v25.9.1: Expected Closure with BrightSign-style quick chips + dropdown -->
-        <div class="field"><label>Expected Closure <span class="req">*</span></label>
+        <!-- v25.9.1: Expected Closure with BrightSign-style quick chips + dropdown -->        <div class="field"><label>Expected Closure <span class="req">*</span></label>
           <div class="closemonth-picker" style="display:flex;flex-direction:column;gap:8px;">
             <div class="closemonth-quick" style="display:flex;gap:6px;flex-wrap:wrap;">
               <button type="button" class="closemonth-chip" onclick="setCloseQuickChip_tv('thisMonth',this)" style="padding:6px 12px;border:1px solid var(--border-soft);background:var(--surface-2);color:var(--ink);border-radius:20px;font-size:12px;cursor:pointer;">This month</button>
@@ -4869,6 +4865,9 @@
     <h1 class="page-title">Team Management</h1>
     <p class="page-sub">Add or edit Cavitak team members. Role determines what they can see. Resetting a password forces the user to change it on next login.</p>
 
+    <!-- v25.16 Cycle 2c — Super profile polished header (rendered when currentUser.isSuper) -->
+    <div id="tv-c2c-super-header"></div>
+
     <!-- Password reset requests panel -->
     <div id="resetRequestsCard" class="card hidden" style="border-left:4px solid #DC2626">
       <div class="card-title">
@@ -4993,6 +4992,78 @@
         <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600;">Active End-Users</div>
         <div id="kpi-active-endusers" style="font-size:28px; font-weight:700; color:#D4AF37; margin-top:4px;">—</div>
         <div style="font-size:11px; color:var(--ink-subtle);">in open funnel</div>
+      </div>
+    </div>
+
+    <!-- v25.14 Cycle 2a — Comparison dropdown, 2-column card, Plan of Action textarea -->
+    <div id="tv-c2a-wrap" class="card" style="padding:18px; margin-bottom:18px;">
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:14px;">
+        <div>
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600; margin-bottom:4px;">Comparison</div>
+          <select id="tv-c2a-mode" onchange="tvC2aRender()" style="padding:9px 12px; background:var(--surface-2); border:1px solid var(--border-soft); color:var(--ink); border-radius:8px; font-size:13px; min-width:260px;">
+            <option value="qoq_yoy">Quarter vs same quarter last year</option>
+            <option value="qoq_seq">Quarter vs previous quarter</option>
+            <option value="yoy">Year-to-date vs last year YTD</option>
+            <option value="half">Half-year vs same half last year</option>
+            <option value="ytd">Year-to-date (no comparison)</option>
+          </select>
+        </div>
+        <div style="flex:1; min-width:180px; font-size:11px; color:var(--ink-subtle);" id="tv-c2a-asof">As of: —</div>
+      </div>
+      <div id="tv-c2a-card" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div style="background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; padding:14px;">
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600;">Current</div>
+          <div id="tv-c2a-cur-label" style="font-size:12px; color:var(--ink-muted, var(--ink-subtle)); margin:4px 0 10px; min-height:16px;">—</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div><div style="font-size:10px; color:var(--ink-subtle); text-transform:uppercase; letter-spacing:0.05em;">Actuals</div><div id="tv-c2a-cur-actuals" style="font-size:22px; font-weight:700; color:#D4AF37; margin-top:2px;">—</div></div>
+            <div><div style="font-size:10px; color:var(--ink-subtle); text-transform:uppercase; letter-spacing:0.05em;">Pipeline (open)</div><div id="tv-c2a-cur-pipeline" style="font-size:22px; font-weight:700; color:#D4AF37; margin-top:2px;">—</div></div>
+          </div>
+          <div id="tv-c2a-cur-tx" style="font-size:11px; color:var(--ink-subtle); margin-top:8px;">—</div>
+        </div>
+        <div id="tv-c2a-cmp-card" style="background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; padding:14px;">
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600;">Comparison</div>
+          <div id="tv-c2a-cmp-label" style="font-size:12px; color:var(--ink-muted, var(--ink-subtle)); margin:4px 0 10px; min-height:16px;">—</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div><div style="font-size:10px; color:var(--ink-subtle); text-transform:uppercase; letter-spacing:0.05em;">Actuals</div><div id="tv-c2a-cmp-actuals" style="font-size:22px; font-weight:700; color:var(--ink); margin-top:2px;">—</div></div>
+            <div><div style="font-size:10px; color:var(--ink-subtle); text-transform:uppercase; letter-spacing:0.05em;">Δ Actuals</div><div id="tv-c2a-delta" style="font-size:22px; font-weight:700; margin-top:2px;">—</div></div>
+          </div>
+          <div id="tv-c2a-cmp-tx" style="font-size:11px; color:var(--ink-subtle); margin-top:8px;">—</div>
+        </div>
+      </div>
+      <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft);">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600;">Plan of Action <span id="tv-c2a-poa-period" style="font-weight:500; text-transform:none; letter-spacing:0; color:var(--ink-muted, var(--ink-subtle));"></span></div>
+          <div id="tv-c2a-poa-status" style="font-size:11px; color:var(--ink-subtle);"></div>
+        </div>
+        <textarea id="tv-c2a-poa" rows="3" placeholder="Super only — write the plan / commentary for this review period. Saves automatically on blur." style="width:100%; padding:10px; background:var(--surface-2); border:1px solid var(--border-soft); color:var(--ink); border-radius:8px; font-family:inherit; font-size:13px; resize:vertical; box-sizing:border-box;"></textarea>
+        <div id="tv-c2a-poa-meta" style="font-size:11px; color:var(--ink-subtle); margin-top:4px; min-height:14px;"></div>
+      </div>
+      <!-- v25.15 Cycle 2b+2d — drilldown + export -->
+      <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600;">Open pipeline <span id="tv-c2b-count" style="font-weight:500; text-transform:none; letter-spacing:0; color:var(--ink-muted, var(--ink-subtle));"></span></div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input id="tv-c2b-filter" type="text" placeholder="Filter by project / partner / end-user…" oninput="tvC2bRender()" style="padding:7px 10px; background:var(--surface-2); border:1px solid var(--border-soft); color:var(--ink); border-radius:6px; font-size:12px; min-width:220px;">
+            <button id="tv-c2d-export" onclick="tvC2dExport()" style="padding:8px 14px; background:#D4AF37; color:#1a1a1a; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer;">📥 Export Review to Excel</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto; border:1px solid var(--border-soft); border-radius:8px;">
+          <table id="tv-c2b-table" style="width:100%; border-collapse:collapse; font-size:12px; min-width:720px;">
+            <thead>
+              <tr style="background:var(--surface-2);">
+                <th data-sort="project"      style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">Project ⇅</th>
+                <th data-sort="enduser"      style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">End-user ⇅</th>
+                <th data-sort="partner"      style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">Partner ⇅</th>
+                <th data-sort="stage"        style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">Stage ⇅</th>
+                <th data-sort="dealValueINR" style="padding:8px 10px; text-align:right; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">Deal value ⇅</th>
+                <th data-sort="closemonth"   style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">Expected close ⇅</th>
+                <th data-sort="daysInStage"  style="padding:8px 10px; text-align:right; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">Days in stage ⇅</th>
+                <th data-sort="user"         style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">Owner ⇅</th>
+              </tr>
+            </thead>
+            <tbody id="tv-c2b-tbody"><tr><td colspan="8" style="padding:18px; text-align:center; color:var(--ink-subtle);">Loading…</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -5798,7 +5869,7 @@
     updateActiveNavTab_(v);
     if (v === 'dash') refreshLog();
     if (v === 'history') refreshLog();
-    if (v === 'team') refreshTeam();
+    if (v === 'team') { refreshTeam(); if (typeof tvC2cRender === 'function') tvC2cRender(); }
     if (v === 'profile') renderProfile();
     if (v === 'customers') refreshCustomers();
     if (v === 'briefing') {
@@ -10312,6 +10383,8 @@
   function setReviewType(type) {
     updateRelationshipCounts_tv();
     updateReviewAdminBarVisibility_tv();
+    // v25.14 Cycle 2a — refresh comparison card + PoA textarea on every Review tab activation
+    if (typeof tvC2aRender === 'function') tvC2aRender();
     
     if (!['quarterly', 'annual', 'briefing'].includes(type)) type = 'quarterly';
     // Block non-super from briefing
@@ -11190,6 +11263,590 @@
     }
     requestAnimationFrame(step);
   };
+
+  /* ==========================================================================
+   * v25.14 Cycle 2a — Comparison dropdown + per-period Plan of Action (PoA)
+   * ========================================================================== */
+  const TV_C2A_LS_KEY  = 'tv-c2a-mode';
+  const TV_C2A_DEFAULT = 'qoq_yoy';
+  const TV_C2A_FAMILY  = 'tvONE|Green Hippo';  // tvONE app covers both families
+  let _tvC2aLastPeriodKey = null;
+  let _tvC2aLastPoaText   = '';
+  let _tvC2aSaving        = false;
+
+  function _tvC2aFmtINR(n) {
+    if (n === null || n === undefined || isNaN(n)) return '—';
+    const v = Number(n);
+    if (Math.abs(v) >= 10000000) return '₹' + (v/10000000).toFixed(2) + ' Cr';
+    if (Math.abs(v) >= 100000)   return '₹' + (v/100000).toFixed(1) + ' L';
+    if (Math.abs(v) >= 1000)     return '₹' + (v/1000).toFixed(0) + 'K';
+    return '₹' + Math.round(v);
+  }
+
+  function _tvC2aFmtDelta(pct) {
+    if (pct === null || pct === undefined || isNaN(pct)) return {text:'—', color:'var(--ink-subtle)'};
+    const rounded = pct.toFixed(1);
+    if (pct > 0) return {text:'+' + rounded + '%', color:'#5ECE9F'};
+    if (pct < 0) return {text: rounded + '%',        color:'#E26F6F'};
+    return {text:'0%', color:'var(--ink-subtle)'};
+  }
+
+  function _tvC2aCurrentPipeline() {
+    // Sum deal values for open deals in sessionLog (tvONE + Green Hippo)
+    const log = (typeof sessionLog !== 'undefined' && Array.isArray(sessionLog)) ? sessionLog : [];
+    const OPEN_STAGES = {Lead:1, Opportunity:1, Proposal:1, Negotiation:1, Order:1};
+    let total = 0, n = 0;
+    for (let i = 0; i < log.length; i++) {
+      const r = log[i] || {};
+      const outcome = (r.outcome || 'open').toString().toLowerCase();
+      if (outcome !== 'open') continue;
+      const stage = (r.stage || '').toString();
+      if (!OPEN_STAGES[stage]) continue;
+      const v = parseFloat(r.dealValueINR || r.dealvalueinr || 0);
+      if (!isNaN(v)) { total += v; n++; }
+    }
+    return {total:total, count:n};
+  }
+
+  async function _tvC2aFetchAggregate(mode) {
+    if (!WEB_APP_URL || !currentUser) return null;
+    try {
+      const resp = await fetch(WEB_APP_URL, {
+        method:'POST', mode:'cors',
+        headers:{'Content-Type':'text/plain'},
+        body: JSON.stringify({
+          action: 'sales_history_aggregate',
+          family: TV_C2A_FAMILY,
+          mode: mode,
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash
+        })
+      });
+      const data = await resp.json();
+      if (data && data.ok) return data;
+      console.warn('[C2a-tv] aggregate failed:', data);
+      return null;
+    } catch (e) {
+      console.error('[C2a-tv] aggregate error:', e);
+      return null;
+    }
+  }
+
+  async function _tvC2aFetchNote(periodKey) {
+    if (!WEB_APP_URL || !currentUser) return null;
+    try {
+      const resp = await fetch(WEB_APP_URL, {
+        method:'POST', mode:'cors',
+        headers:{'Content-Type':'text/plain'},
+        body: JSON.stringify({
+          action: 'review_note_get',
+          periodKey: periodKey,
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash
+        })
+      });
+      const data = await resp.json();
+      if (data && data.ok) return data;
+      return null;
+    } catch (e) {
+      console.error('[C2a-tv] note_get error:', e);
+      return null;
+    }
+  }
+
+  async function _tvC2aSaveNote(periodKey, fy, scope, qOrH, text) {
+    if (!WEB_APP_URL || !currentUser || !currentUser.isSuper) return null;
+    _tvC2aSaving = true;
+    const statusEl = document.getElementById('tv-c2a-poa-status');
+    if (statusEl) { statusEl.textContent = 'Saving…'; statusEl.style.color = 'var(--ink-subtle)'; }
+    try {
+      const resp = await fetch(WEB_APP_URL, {
+        method:'POST', mode:'cors',
+        headers:{'Content-Type':'text/plain'},
+        body: JSON.stringify({
+          action: 'review_note_upsert',
+          periodKey: periodKey,
+          fy: fy, scope: scope, quarterOrHalf: qOrH,
+          text: text,
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash
+        })
+      });
+      const data = await resp.json();
+      if (data && data.ok) {
+        _tvC2aLastPoaText = text;
+        if (statusEl) {
+          statusEl.textContent = 'Saved ✓';
+          statusEl.style.color = '#5ECE9F';
+          setTimeout(function(){ if (statusEl.textContent === 'Saved ✓') statusEl.textContent = ''; }, 2000);
+        }
+        const metaEl = document.getElementById('tv-c2a-poa-meta');
+        if (metaEl && data.updatedAt) {
+          const when = new Date(data.updatedAt);
+          metaEl.textContent = 'Last updated by ' + (data.updatedBy || '—') + ' on ' + when.toLocaleString();
+        }
+        return data;
+      }
+      if (statusEl) { statusEl.textContent = 'Save failed'; statusEl.style.color = '#E26F6F'; }
+      return null;
+    } catch (e) {
+      console.error('[C2a-tv] note_upsert error:', e);
+      if (statusEl) { statusEl.textContent = 'Save failed'; statusEl.style.color = '#E26F6F'; }
+      return null;
+    } finally {
+      _tvC2aSaving = false;
+    }
+  }
+
+  function _tvC2aRenderCard(agg) {
+    const pipeline = _tvC2aCurrentPipeline();
+    const asofEl = document.getElementById('tv-c2a-asof');
+    if (asofEl && agg && agg.asOfDate) {
+      const d = new Date(agg.asOfDate);
+      asofEl.textContent = 'As of: ' + d.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
+    } else if (asofEl) {
+      asofEl.textContent = 'As of: — (no sales data uploaded yet)';
+    }
+
+    if (!agg) {
+      ['tv-c2a-cur-label','tv-c2a-cmp-label','tv-c2a-cur-actuals','tv-c2a-cmp-actuals','tv-c2a-delta','tv-c2a-cur-pipeline','tv-c2a-cur-tx','tv-c2a-cmp-tx']
+        .forEach(function(id){ const el=document.getElementById(id); if (el) el.textContent='—'; });
+      return;
+    }
+
+    document.getElementById('tv-c2a-cur-label').textContent = agg.current ? agg.current.label : '—';
+    document.getElementById('tv-c2a-cur-actuals').textContent = _tvC2aFmtINR(agg.current ? agg.current.actuals : null);
+    document.getElementById('tv-c2a-cur-pipeline').textContent = _tvC2aFmtINR(pipeline.total);
+    document.getElementById('tv-c2a-cur-tx').textContent =
+      (agg.current ? (agg.current.txCount + ' invoices') : '—') + ' · ' + pipeline.count + ' open deals';
+
+    const cmpCard = document.getElementById('tv-c2a-cmp-card');
+    if (agg.compare) {
+      cmpCard.style.display = '';
+      document.getElementById('tv-c2a-cmp-label').textContent = agg.compare.label;
+      if (agg.compareHasData) {
+        document.getElementById('tv-c2a-cmp-actuals').textContent = _tvC2aFmtINR(agg.compare.actuals);
+        document.getElementById('tv-c2a-cmp-tx').textContent = agg.compare.txCount + ' invoices';
+        const d = _tvC2aFmtDelta(agg.deltaPct);
+        const deltaEl = document.getElementById('tv-c2a-delta');
+        deltaEl.textContent = d.text;
+        deltaEl.style.color = d.color;
+      } else {
+        document.getElementById('tv-c2a-cmp-actuals').textContent = '—';
+        document.getElementById('tv-c2a-cmp-tx').textContent = 'No data for this period';
+        const deltaEl = document.getElementById('tv-c2a-delta');
+        deltaEl.textContent = '—';
+        deltaEl.style.color = 'var(--ink-subtle)';
+      }
+    } else {
+      cmpCard.style.display = 'none';
+    }
+  }
+
+  async function _tvC2aLoadNote(periodKey, fy, scope, qOrH) {
+    const ta = document.getElementById('tv-c2a-poa');
+    const metaEl = document.getElementById('tv-c2a-poa-meta');
+    const periodLabel = document.getElementById('tv-c2a-poa-period');
+    if (!ta) return;
+
+    if (periodLabel) periodLabel.textContent = periodKey ? '· ' + periodKey : '';
+
+    if (_tvC2aLastPeriodKey === periodKey) return; // same period — keep current text
+
+    ta.disabled = true;
+    if (metaEl) metaEl.textContent = 'Loading…';
+    const note = await _tvC2aFetchNote(periodKey);
+    ta.value = note ? (note.text || '') : '';
+    _tvC2aLastPoaText   = ta.value;
+    _tvC2aLastPeriodKey = periodKey;
+    ta.dataset.periodKey = periodKey;
+    ta.dataset.fy = fy || '';
+    ta.dataset.scope = scope || '';
+    ta.dataset.qOrH = qOrH || '';
+
+    const isSuper = !!(currentUser && currentUser.isSuper);
+    ta.readOnly = !isSuper;
+    ta.disabled = false;
+    ta.placeholder = isSuper
+      ? 'Super only — write the plan / commentary for this review period. Saves automatically on blur.'
+      : (ta.value ? '' : 'No plan of action recorded for this period.');
+
+    if (metaEl) {
+      if (note && note.updatedAt) {
+        const when = new Date(note.updatedAt);
+        metaEl.textContent = 'Last updated by ' + (note.updatedBy || '—') + ' on ' + when.toLocaleString();
+      } else {
+        metaEl.textContent = note === null ? 'Could not load plan of action.' : 'Not yet written.';
+      }
+    }
+  }
+
+  function _tvC2aWirePoaBlur() {
+    const ta = document.getElementById('tv-c2a-poa');
+    if (!ta || ta.dataset.wired === '1') return;
+    ta.dataset.wired = '1';
+    ta.addEventListener('blur', async function(){
+      if (_tvC2aSaving) return;
+      if (!currentUser || !currentUser.isSuper) return;
+      const text = ta.value;
+      if (text === _tvC2aLastPoaText) return;
+      const periodKey = ta.dataset.periodKey;
+      if (!periodKey) return;
+      await _tvC2aSaveNote(periodKey, ta.dataset.fy, ta.dataset.scope, ta.dataset.qOrH, text);
+    });
+  }
+
+  window.tvC2aRender = async function() {
+    const sel = document.getElementById('tv-c2a-mode');
+    if (!sel) return;
+    try {
+      const saved = localStorage.getItem(TV_C2A_LS_KEY);
+      if (saved && sel.querySelector('option[value="' + saved + '"]')) sel.value = saved;
+      else if (!sel.value) sel.value = TV_C2A_DEFAULT;
+    } catch (e) { /* ignore */ }
+    try { localStorage.setItem(TV_C2A_LS_KEY, sel.value); } catch (e) {}
+
+    _tvC2aWirePoaBlur();
+
+    const agg = await _tvC2aFetchAggregate(sel.value);
+    _tvC2aRenderCard(agg);
+
+    if (agg && agg.periodKey) {
+      await _tvC2aLoadNote(agg.periodKey, agg.fy, agg.scope, agg.quarterOrHalf);
+    }
+    // v25.15 Cycle 2b — refresh drilldown table
+    if (typeof tvC2bRender === 'function') tvC2bRender();
+    // Cache agg for Excel export
+    window._tvC2aLastAgg = agg;
+  };
+  /* END v25.14 Cycle 2a block */
+
+  /* ==========================================================================
+   * v25.15 Cycle 2b + 2d — Forward funnel drilldown + Excel export
+   * ========================================================================== */
+  const _TV_C2B_OPEN_STAGES = {Lead:1, Opportunity:1, Proposal:1, Negotiation:1, Order:1};
+  let _tvC2bSort = {key:'dealValueINR', dir:'desc'};
+
+  function _tvC2bFmtINR(n) {
+    if (n === null || n === undefined || isNaN(n)) return '—';
+    const v = Number(n);
+    if (Math.abs(v) >= 10000000) return '₹' + (v/10000000).toFixed(2) + ' Cr';
+    if (Math.abs(v) >= 100000)   return '₹' + (v/100000).toFixed(1) + ' L';
+    if (Math.abs(v) >= 1000)     return '₹' + (v/1000).toFixed(0) + 'K';
+    return '₹' + Math.round(v);
+  }
+
+  function _tvC2bOpenDeals() {
+    const log = (typeof sessionLog !== 'undefined' && Array.isArray(sessionLog)) ? sessionLog : [];
+    const out = [];
+    const now = Date.now();
+    for (let i = 0; i < log.length; i++) {
+      const r = log[i] || {};
+      const outcome = (r.outcome || 'open').toString().toLowerCase();
+      if (outcome !== 'open') continue;
+      const stage = (r.stage || '').toString();
+      if (!_TV_C2B_OPEN_STAGES[stage]) continue;
+      const ts = r.timestamp || r.ts || r.confirmedAt || '';
+      const tsMs = ts ? Date.parse(ts) : 0;
+      const daysInStage = tsMs ? Math.max(0, Math.floor((now - tsMs) / 86400000)) : 0;
+      out.push({
+        project:      r.project || '—',
+        enduser:      r.enduser || '—',
+        partner:      r.partner || '—',
+        stage:        stage,
+        dealValueINR: parseFloat(r.dealValueINR || r.dealvalueinr || 0) || 0,
+        closemonth:   r.close || r.closemonth || '—',
+        daysInStage:  daysInStage,
+        user:         r.user || r.username || r.loginName || '—',
+        _raw:         r
+      });
+    }
+    return out;
+  }
+
+  function _tvC2bApplyFilter(rows, q) {
+    if (!q) return rows;
+    const needle = q.toLowerCase();
+    return rows.filter(function(r){
+      return (
+        (r.project||'').toLowerCase().indexOf(needle) >= 0 ||
+        (r.enduser||'').toLowerCase().indexOf(needle) >= 0 ||
+        (r.partner||'').toLowerCase().indexOf(needle) >= 0 ||
+        (r.user   ||'').toLowerCase().indexOf(needle) >= 0
+      );
+    });
+  }
+
+  function _tvC2bSortFn(rows, key, dir) {
+    const mul = (dir === 'asc') ? 1 : -1;
+    return rows.slice().sort(function(a,b){
+      const av = a[key], bv = b[key];
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * mul;
+      return String(av||'').localeCompare(String(bv||'')) * mul;
+    });
+  }
+
+  function _tvC2bEscape(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  window.tvC2bRender = function() {
+    const tbody = document.getElementById('tv-c2b-tbody');
+    const countEl = document.getElementById('tv-c2b-count');
+    const filterEl = document.getElementById('tv-c2b-filter');
+    if (!tbody) return;
+
+    let rows = _tvC2bOpenDeals();
+    if (filterEl && filterEl.value) rows = _tvC2bApplyFilter(rows, filterEl.value);
+    rows = _tvC2bSortFn(rows, _tvC2bSort.key, _tvC2bSort.dir);
+
+    if (countEl) {
+      const totalVal = rows.reduce(function(s, r){ return s + r.dealValueINR; }, 0);
+      countEl.textContent = '· ' + rows.length + ' open deals · ' + _tvC2bFmtINR(totalVal) + ' total';
+    }
+
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="padding:18px; text-align:center; color:var(--ink-subtle);">No open deals match.</td></tr>';
+      return;
+    }
+
+    const html = rows.map(function(r){
+      return '<tr>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.project) + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.enduser) + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.partner) + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.stage) + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink); text-align:right; font-variant-numeric:tabular-nums;">' + _tvC2bFmtINR(r.dealValueINR) + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.closemonth) + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink); text-align:right;">' + r.daysInStage + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.user) + '</td>' +
+      '</tr>';
+    }).join('');
+    tbody.innerHTML = html;
+  };
+
+  function _tvC2bWireSortHeaders() {
+    const table = document.getElementById('tv-c2b-table');
+    if (!table || table.dataset.wired === '1') return;
+    table.dataset.wired = '1';
+    const ths = table.querySelectorAll('th[data-sort]');
+    ths.forEach(function(th){
+      th.addEventListener('click', function(){
+        const key = th.getAttribute('data-sort');
+        if (_tvC2bSort.key === key) _tvC2bSort.dir = (_tvC2bSort.dir === 'asc') ? 'desc' : 'asc';
+        else { _tvC2bSort.key = key; _tvC2bSort.dir = 'desc'; }
+        window.tvC2bRender();
+      });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _tvC2bWireSortHeaders);
+  else _tvC2bWireSortHeaders();
+
+  /* ---------------- Cycle 2d — Excel export (uses ExcelJS from CDN) ---------------- */
+
+  window.tvC2dExport = async function() {
+    if (typeof ExcelJS === 'undefined') {
+      alert('Excel library not loaded. Please refresh and try again.');
+      return;
+    }
+    const agg = window._tvC2aLastAgg || null;
+    const poaEl = document.getElementById('tv-c2a-poa');
+    const poaText = poaEl ? (poaEl.value || '') : '';
+    const poaPeriod = (poaEl && poaEl.dataset.periodKey) || (agg && agg.periodKey) || '';
+
+    const openDeals = _tvC2bOpenDeals();
+    const pipelineTotal = openDeals.reduce(function(s,r){ return s + r.dealValueINR; }, 0);
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Cavitak CALICO';
+    wb.created = new Date();
+
+    // Sheet 1: Summary
+    const sum = wb.addWorksheet('Summary');
+    sum.columns = [{width:30},{width:60}];
+    sum.addRow(['tvONE CALICO — Channel Review Export']).font = {bold:true, size:14};
+    sum.addRow(['Generated', new Date().toLocaleString()]);
+    sum.addRow(['Generated by', (currentUser && currentUser.name) ? currentUser.name : '—']);
+    sum.addRow(['As of date', agg ? new Date(agg.asOfDate).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}) : '—']);
+    sum.addRow([]);
+    sum.addRow(['Comparison mode', agg ? agg.mode : '—']);
+    sum.addRow(['Period', agg && agg.current ? agg.current.label : '—']);
+    sum.addRow([]);
+    sum.addRow(['Current period']).font = {bold:true};
+    sum.addRow(['  Actuals (₹)',   agg && agg.current ? agg.current.actuals : 0]);
+    sum.addRow(['  Invoices',      agg && agg.current ? agg.current.txCount : 0]);
+    sum.addRow(['  Pipeline (₹)',  pipelineTotal]);
+    sum.addRow(['  Open deals',    openDeals.length]);
+    sum.addRow([]);
+    if (agg && agg.compare) {
+      sum.addRow(['Comparison period']).font = {bold:true};
+      sum.addRow(['  Label',       agg.compare.label]);
+      sum.addRow(['  Actuals (₹)', agg.compareHasData ? agg.compare.actuals : 0]);
+      sum.addRow(['  Invoices',    agg.compareHasData ? agg.compare.txCount : 0]);
+      sum.addRow(['  Δ Actuals %', (agg.deltaPct !== null && agg.deltaPct !== undefined) ? Number(agg.deltaPct.toFixed(2)) : '—']);
+      sum.addRow([]);
+    }
+    sum.addRow(['Plan of Action']).font = {bold:true};
+    sum.addRow(['  Period key', poaPeriod]);
+    sum.addRow(['  Text', poaText]);
+
+    // Sheet 2: Pipeline
+    const pip = wb.addWorksheet('Pipeline');
+    pip.columns = [
+      {header:'Project',        key:'project',      width:30},
+      {header:'End-user',       key:'enduser',      width:30},
+      {header:'Partner',        key:'partner',      width:30},
+      {header:'Stage',          key:'stage',        width:14},
+      {header:'Deal Value (₹)', key:'dealValueINR', width:16},
+      {header:'Expected Close', key:'closemonth',   width:16},
+      {header:'Days in Stage',  key:'daysInStage',  width:14},
+      {header:'Owner',          key:'user',         width:24}
+    ];
+    pip.getRow(1).font = {bold:true};
+    pip.getRow(1).fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFD4AF37'}};
+    openDeals.forEach(function(r){ pip.addRow(r); });
+
+    // Sheet 3: Relationship counts
+    const rel = wb.addWorksheet('Relationships');
+    rel.columns = [{width:30},{width:14}];
+    rel.addRow(['Metric','Count']).font = {bold:true};
+    rel.addRow(['Active Partners / SI', (document.getElementById('kpi-active-partners')||{}).textContent || '—']);
+    rel.addRow(['Active Consultants',   (document.getElementById('kpi-active-consultants')||{}).textContent || '—']);
+    rel.addRow(['Active End-Users',     (document.getElementById('kpi-active-endusers')||{}).textContent || '—']);
+
+    const fy = (agg && agg.fy) ? agg.fy : 'FY';
+    const mode = (agg && agg.mode) ? agg.mode : 'review';
+    const stamp = new Date().toISOString().replace(/[:.]/g,'-').slice(0,16);
+    const filename = 'tvONE_Review_' + fy + '_' + mode + '_' + stamp + '.xlsx';
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  };
+  /* END v25.15 Cycle 2b + 2d block */
+
+  /* ==========================================================================
+   * v25.16 Cycle 2c — Super profile polished header (tvONE)
+   * Option A: two fresh fetches per Team tab open (team roster + reset requests)
+   * ========================================================================== */
+  function _tvC2cFmtINR(n) {
+    if (!n) return '₹0';
+    if (n >= 10000000) return '₹' + (n/10000000).toFixed(2) + ' Cr';
+    if (n >= 100000)   return '₹' + (n/100000).toFixed(1) + ' L';
+    if (n >= 1000)     return '₹' + (n/1000).toFixed(0) + 'K';
+    return '₹' + Math.round(n);
+  }
+
+  function _tvC2cEscape(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  function _tvC2cStatBox(label, value) {
+    return '<div style="background:rgba(255,255,255,0.10); border-radius:10px; padding:10px 12px;">' +
+      '<div style="font-size:10px; text-transform:uppercase; letter-spacing:0.08em; opacity:0.75;">' + label + '</div>' +
+      '<div style="font-size:20px; font-weight:700; margin-top:2px; color:#D4AF37;">' + value + '</div>' +
+    '</div>';
+  }
+
+  async function _tvC2cFetchTeamCount() {
+    if (!WEB_APP_URL || !currentUser) return 0;
+    try {
+      const url = WEB_APP_URL + '?action=listusers&authUsername=' + encodeURIComponent(currentUser.username) + '&authPasswordHash=' + encodeURIComponent(_authHash);
+      const res = await fetch(url, { method: 'GET' });
+      const data = await res.json();
+      if (!data.ok) return 0;
+      const users = data.users || [];
+      // Match refreshTeam's active-check: String(active).toUpperCase() !== 'FALSE'
+      return users.filter(function(u){ return String(u.active).toUpperCase() !== 'FALSE'; }).length;
+    } catch (e) { return 0; }
+  }
+
+  async function _tvC2cFetchPendingResets() {
+    if (!WEB_APP_URL || !currentUser || !currentUser.isSuper) return 0;
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method:'POST', mode:'cors',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({
+          action: 'resetrequest_list',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) return 0;
+      const requests = data.requests || [];
+      return requests.filter(function(r){ return r.status === 'pending'; }).length;
+    } catch (e) { return 0; }
+  }
+
+  function _tvC2cComputeLogStats() {
+    // centralLog is module-scoped (let centralLog = [] at line 5570)
+    const log = (typeof centralLog !== 'undefined' && Array.isArray(centralLog)) ? centralLog : [];
+    const totalDeals = log.length;
+    const openPipe = log
+      .filter(function(r){ return (r.outcome||'open').toString().toLowerCase() === 'open'; })
+      .reduce(function(s, r){ return s + (parseFloat(r.dealValueINR || r.dealvalueinr || 0) || 0); }, 0);
+    return { totalDeals: totalDeals, openPipe: openPipe };
+  }
+
+  window.tvC2cRender = async function() {
+    const host = document.getElementById('tv-c2c-super-header');
+    if (!host) return;
+    if (!currentUser || !currentUser.isSuper) { host.innerHTML = ''; host.style.display = 'none'; return; }
+
+    // Initial render with skeleton while fetches run
+    host.style.display = 'block';
+    host.style.marginBottom = '20px';
+
+    const u = currentUser;
+    const initials = (u.name || u.username || '?').split(' ').map(function(s){return s[0];}).slice(0,2).join('').toUpperCase();
+    let lastLoginTxt = '—';
+    if (u.lastLogin) {
+      try { lastLoginTxt = new Date(u.lastLogin).toLocaleString(); } catch(e) { lastLoginTxt = String(u.lastLogin); }
+    }
+
+    const logStats = _tvC2cComputeLogStats();
+
+    // Render immediately with log stats; team + reset counts stream in
+    const paint = function(activeUsers, pendingResets) {
+      host.innerHTML =
+        '<div style="background:linear-gradient(135deg,#1a3a2e 0%,#0f4f3b 100%); border:1px solid #D4AF37; border-radius:14px; padding:20px 22px; color:#F5F1E8; box-shadow:0 4px 14px rgba(15,79,59,0.25);">' +
+          '<div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">' +
+            '<div style="width:56px; height:56px; border-radius:50%; background:#D4AF37; color:#1a3a2e; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; flex-shrink:0;">' + initials + '</div>' +
+            '<div style="flex:1; min-width:180px;">' +
+              '<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">' +
+                '<div style="font-size:18px; font-weight:700; color:#F5F1E8;">' + _tvC2cEscape(u.name || u.username) + '</div>' +
+                '<span style="font-size:10px; padding:2px 8px; background:#D4AF37; color:#1a3a2e; border-radius:10px; letter-spacing:0.08em; font-weight:700;">SUPER</span>' +
+              '</div>' +
+              '<div style="font-size:12px; opacity:0.8; margin-top:2px;">' + _tvC2cEscape(u.role || '—') + ' · Last login: ' + _tvC2cEscape(lastLoginTxt) + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-top:16px;">' +
+            _tvC2cStatBox('Active users', activeUsers === null ? '…' : activeUsers) +
+            _tvC2cStatBox('Total deals', logStats.totalDeals) +
+            _tvC2cStatBox('Open pipeline', _tvC2cFmtINR(logStats.openPipe)) +
+            _tvC2cStatBox('Pending resets', pendingResets === null ? '…' : pendingResets) +
+          '</div>' +
+          '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:16px;">' +
+            '<button onclick="openAddUserModal()" style="padding:8px 14px; background:#D4AF37; color:#1a3a2e; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer;">➕ Invite user</button>' +
+            '<button onclick="showView(\'briefing\')" style="padding:8px 14px; background:rgba(255,255,255,0.12); color:#F5F1E8; border:1px solid rgba(212,175,55,0.4); border-radius:8px; font-size:12px; font-weight:600; cursor:pointer;">📊 Go to Review</button>' +
+            (pendingResets && pendingResets > 0
+              ? '<button onclick="var el=document.getElementById(\'resetRequestsCard\');if(el)el.scrollIntoView({behavior:\'smooth\',block:\'start\'});" style="padding:8px 14px; background:#E26F6F; color:#fff; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer;">🔑 Review ' + pendingResets + ' pending</button>'
+              : '') +
+          '</div>' +
+        '</div>';
+    };
+
+    paint(null, null);
+    // Parallel fetches, then re-paint with real counts
+    const [activeUsers, pendingResets] = await Promise.all([
+      _tvC2cFetchTeamCount(),
+      _tvC2cFetchPendingResets()
+    ]);
+    paint(activeUsers, pendingResets);
+  };
+  /* END v25.16 Cycle 2c block */
 </script>
 <!-- Silent sync toast indicator -->
 <div class="sync-status" id="syncStatus">
