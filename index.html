@@ -4296,6 +4296,10 @@
             <option value="on-hold">On hold</option>
           </select>
         </div>
+        <!-- v25.10: Plan of Action — per-deal narrative -->
+        <div class="field" style="grid-column:1/-1"><label>Plan of Action <span style="color:var(--ink-subtle);font-weight:400;font-size:11px">(optional · next step to close this deal)</span></label>
+          <textarea id="f_planOfAction" rows="2" placeholder="e.g. Site survey on Nov 15; demo at HO scheduled. Awaiting CapEx approval."></textarea>
+        </div>
 
         <!-- v25.9.1: Expected Closure with BrightSign-style quick chips + dropdown -->
         <div class="field"><label>Expected Closure <span class="req">*</span></label>
@@ -4951,6 +4955,45 @@
         <span class="dir-seg-icon">💬</span>
         <span class="dir-seg-label">1:1 Briefing</span>
       </button>
+    </div>
+
+
+    <!-- v25.10: Super-only Excel upload for SalesHistory -->
+    <div id="review-admin-bar" style="display:none; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:12px; padding:14px 18px; margin-bottom:18px;">
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <div style="flex:1; min-width:220px;">
+          <div style="font-weight:600; font-size:13px; color:var(--ink); margin-bottom:2px;">Sales History Import (Super)</div>
+          <div style="font-size:12px; color:var(--ink-subtle);">Upload SAP invoice export Excel (.xlsx). App filters to tvONE SKUs server-side, stores in SalesHistory tab. Re-upload monthly to append new months.</div>
+        </div>
+        <label style="cursor:pointer; background:#D4AF37; color:#1a1a1a; padding:10px 16px; border-radius:8px; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+          📎 <span>Choose Excel file</span>
+          <input type="file" id="sales-history-file-tv" accept=".xlsx,.xls" onchange="handleSalesHistoryFile_tv(this)" style="display:none;">
+        </label>
+        <select id="sales-history-mode-tv" style="padding:10px 12px; border:1px solid var(--border-soft); background:var(--surface-2); color:var(--ink); border-radius:8px; font-size:13px;">
+          <option value="append">Append new rows</option>
+          <option value="replace">Replace all existing rows</option>
+        </select>
+      </div>
+      <div id="sales-history-status-tv" style="margin-top:10px; font-size:12px; color:var(--ink-subtle); font-family:'JetBrains Mono',monospace;"></div>
+    </div>
+
+    <!-- v25.10: Relationship counts — active partners / consultants / end-users -->
+    <div id="review-relationship-counts" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:18px;">
+      <div class="card" style="padding:16px;">
+        <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600;">Active Partners / SI</div>
+        <div id="kpi-active-partners" style="font-size:28px; font-weight:700; color:#D4AF37; margin-top:4px;">—</div>
+        <div style="font-size:11px; color:var(--ink-subtle);">in open funnel</div>
+      </div>
+      <div class="card" style="padding:16px;">
+        <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600;">Active Consultants</div>
+        <div id="kpi-active-consultants" style="font-size:28px; font-weight:700; color:#D4AF37; margin-top:4px;">—</div>
+        <div style="font-size:11px; color:var(--ink-subtle);">in open funnel</div>
+      </div>
+      <div class="card" style="padding:16px;">
+        <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600;">Active End-Users</div>
+        <div id="kpi-active-endusers" style="font-size:28px; font-weight:700; color:#D4AF37; margin-top:4px;">—</div>
+        <div style="font-size:11px; color:var(--ink-subtle);">in open funnel</div>
+      </div>
     </div>
 
     <!-- Quarterly Review panel -->
@@ -5874,6 +5917,7 @@
     }
     setVal('f_leadSource', input.leadSource || input.dealSource || '');
     setVal('f_outcome', input.outcome || 'open');
+    setVal('f_planOfAction', input.planOfAction || '');
     setVal('f_outputType', input.outputType);
     setVal('f_outputSignal', input.outputSignal);
     setVal('f_sdiCount', input.sdiCount);
@@ -6376,6 +6420,7 @@
       ].filter(function(x){ return x; }).join(' · '),
       leadSource: document.getElementById('f_leadSource').value,
       outcome: document.getElementById('f_outcome').value || 'open',
+      planOfAction: (document.getElementById('f_planOfAction') || {}).value || '',
       outputType: document.getElementById('f_outputType').value,
       outputSignal: document.getElementById('f_outputSignal').value,
       sdiCount: parseInt(document.getElementById('f_sdiCount').value) || 0,
@@ -6495,6 +6540,7 @@
       partnerContactName: input.partnerContactName, partnerContactPhone: input.partnerContactPhone, partnerContactEmail: input.partnerContactEmail,
       contact: input.contact,
       leadSource: input.leadSource, outcome: input.outcome,
+      planOfAction: input.planOfAction,
       outputType: input.outputType, outputSignal: input.outputSignal, sdiCount: input.sdiCount, projectorCount: input.projectorCount, projectorRes: input.projectorRes, projectorPorts: input.projectorPorts,
       inputs: input.inputs, inputs4K: input.inputs4K, inputsFHD: input.inputsFHD, signals: input.signals,
       budget: input.budget, close: input.close, notes: input.notes,
@@ -6698,7 +6744,7 @@
    *   5. Never silently returns without feedback
    */
   async function startEditingSubmission(refId) {
-    console.log('[Edit v25.9.3] ▶ CLICKED — refId:', refId);
+    console.log('[Edit v25.9.4] ▶ CLICKED — refId:', refId);
     try {
       // 0. Basic guards
       if (!refId || String(refId).trim() === '') {
@@ -6856,6 +6902,7 @@
     }
     setVal('f_leadSource', r.leadSource || r.dealSource || '');
     setVal('f_outcome', r.outcome || 'open');
+    setVal('f_planOfAction', r.planOfAction || '');
     setVal('f_outputType', r.outputType);
     setVal('f_outputSignal', r.outputSignal);
     setVal('f_sdiCount', r.sdiCount);
@@ -8207,11 +8254,10 @@
       html += '<td class="td-enduser">' + (s.endUser||'—') + '</td>';
       html += '<td class="td-partner">' + (s.partner||'—') + '</td>';
       if (canEdit) {
-        // v25.9.3: If refId is missing, show a disabled marker with a tooltip explaining why.
-        // Without this, the Edit button rendered for rows without refId would trigger a confusing alert on click.
-        if (canEditThisRow && !refEsc) {
-          html += '<td><span class="btn-tiny" style="opacity:0.4;cursor:not-allowed;border:1px dashed var(--border-soft);padding:4px 8px;border-radius:6px;font-size:11px;color:var(--ink-subtle)" title="This entry has no reference ID (saved under an older version). It cannot be edited — but you can delete it from the admin panel.">⚠ Legacy</span></td>';
-        } else if (canEditThisRow) {
+        // v25.9.4: Restored simple Edit button for all editable rows.
+        // The v25.11 backend handles the refId-missing case via self-healing headers
+        // + tolerant-match fallback (v25.10) so no frontend hardening is needed.
+        if (canEditThisRow) {
           html += '<td onclick="event.stopPropagation()"><button class="btn-tiny" onclick="startEditingSubmission(\'' + refEsc + '\')" title="Edit this deal">✏ Edit</button></td>';
         } else {
           html += '<td><span style="font-size:11px;color:var(--ink-subtle);font-family:JetBrains Mono,monospace">—</span></td>';
@@ -10133,7 +10179,140 @@
   // =================================================================
   let _currentReviewType = 'quarterly';  // 'quarterly' | 'annual' | 'briefing'
 
+
+
+  // ============================================================================
+  // v25.10 · Sales History Excel upload + Relationship counts
+  // ============================================================================
+
+  async function handleSalesHistoryFile_tv(inputEl) {
+    const statusEl = document.getElementById('sales-history-status-tv');
+    if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
+    if (!currentUser || !currentUser.isSuper) {
+      statusEl.textContent = '⚠ Super admin only — upload blocked.';
+      inputEl.value = '';
+      return;
+    }
+    const file = inputEl.files[0];
+    statusEl.textContent = '⏳ Reading ' + file.name + '…';
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+      const firstSheet = wb.Sheets[wb.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+      if (rawRows.length === 0) {
+        statusEl.textContent = '⚠ No rows found in the Excel file.';
+        inputEl.value = '';
+        return;
+      }
+      const findCol = function(row, candidates) {
+        const keys = Object.keys(row);
+        for (const cand of candidates) {
+          const match = keys.find(function(k) { return k.trim().toLowerCase() === cand.trim().toLowerCase(); });
+          if (match) return match;
+        }
+        return null;
+      };
+      const sample = rawRows[0];
+      const cols = {
+        postingDate: findCol(sample, ['Posting Date', 'PostingDate', 'Date']),
+        docNumber:   findCol(sample, ['Document Number', 'DocNumber', 'Invoice']),
+        itemCode:    findCol(sample, ['Item No.', 'Item Code', 'ItemCode']),
+        itemDesc:    findCol(sample, ['Item Description', 'Description', 'Product']),
+        quantity:    findCol(sample, ['Quantity', 'Qty']),
+        salesLakh:   findCol(sample, ['Sales (Lakh)', 'Sales_Lakh']),
+        rowTotal:    findCol(sample, ['Row_Total_After_Discount', 'Row Total', 'Total Amount', 'Amount']),
+        customerName:findCol(sample, ['Customer Name', 'Customer']),
+        salesEmp:    findCol(sample, ['Sales Emp. Name', 'Sales Emp', 'Salesman']),
+        bpRefNo:     findCol(sample, ['BP Ref. No.', 'BP Ref No', 'PO Number']),
+        companyRsm:  findCol(sample, ['Company RSM', 'RSM']),
+        productSub:  findCol(sample, ['Product Sub Group', 'Sub Group']),
+        insideSp:    findCol(sample, ['InsideSP', 'Inside SP']),
+        project:     findCol(sample, ['Project']),
+        custProj:    findCol(sample, ['Customer Project Name', 'Customer Project'])
+      };
+      const payloadRows = rawRows.map(function(r) {
+        return {
+          postingDate: cols.postingDate ? r[cols.postingDate] : '',
+          docNumber:   cols.docNumber ? r[cols.docNumber] : '',
+          itemCode:    cols.itemCode ? r[cols.itemCode] : '',
+          itemDescription: cols.itemDesc ? r[cols.itemDesc] : '',
+          quantity:    cols.quantity ? r[cols.quantity] : 0,
+          salesLakh:   cols.salesLakh ? r[cols.salesLakh] : 0,
+          rowTotal:    cols.rowTotal ? r[cols.rowTotal] : 0,
+          customerName:cols.customerName ? r[cols.customerName] : '',
+          salesEmp:    cols.salesEmp ? r[cols.salesEmp] : '',
+          bpRefNo:     cols.bpRefNo ? r[cols.bpRefNo] : '',
+          companyRsm:  cols.companyRsm ? r[cols.companyRsm] : '',
+          productSubGroup: cols.productSub ? r[cols.productSub] : '',
+          insideSp:    cols.insideSp ? r[cols.insideSp] : '',
+          project:     cols.project ? r[cols.project] : '',
+          customerProjectName: cols.custProj ? r[cols.custProj] : ''
+        };
+      });
+      const mode = (document.getElementById('sales-history-mode-tv') || {}).value || 'append';
+      statusEl.textContent = '⏳ Uploading ' + payloadRows.length + ' rows (' + mode + ' mode)…';
+      const resp = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'sales_history_import',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash,
+          rows: payloadRows,
+          replaceMode: mode
+        })
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        const byFam = data.summary && data.summary.byFamily || {};
+        const famStr = Object.keys(byFam).map(function(k) {
+          return k + ': ₹' + (byFam[k] / 100000).toFixed(1) + 'L';
+        }).join(' · ') || 'no family totals';
+        statusEl.textContent = '✓ Imported ' + data.imported + ' rows (' + mode + ' mode). ' + famStr;
+      } else {
+        statusEl.textContent = '✗ Import failed: ' + (data.error || 'unknown error');
+      }
+      inputEl.value = '';
+    } catch (err) {
+      console.error('[SalesHistory] upload failed:', err);
+      statusEl.textContent = '✗ Upload error: ' + err.message;
+      inputEl.value = '';
+    }
+  }
+
+  function updateRelationshipCounts_tv() {
+    const entries = Array.isArray(window._rawCentralLog) ? window._rawCentralLog
+                  : (Array.isArray(window.centralLog) ? window.centralLog : []);
+    const activeStages = { 'Lead': true, 'Opportunity': true, 'Proposal': true, 'Negotiation': true, 'Order': true };
+    const partners = new Set();
+    const consultants = new Set();
+    const endUsers = new Set();
+    entries.forEach(function(e) {
+      const stage = String(e.stage || '').trim();
+      const outcome = String(e.outcome || 'open').toLowerCase();
+      if (!activeStages[stage]) return;
+      if (outcome !== 'open') return;
+      if (e.partner && String(e.partner).trim()) partners.add(String(e.partner).trim().toLowerCase());
+      if (e.consultant && String(e.consultant).trim()) consultants.add(String(e.consultant).trim().toLowerCase());
+      if (e.endUser && String(e.endUser).trim()) endUsers.add(String(e.endUser).trim().toLowerCase());
+    });
+    const set = function(id, n) { const el = document.getElementById(id); if (el) el.textContent = n; };
+    set('kpi-active-partners', partners.size);
+    set('kpi-active-consultants', consultants.size);
+    set('kpi-active-endusers', endUsers.size);
+  }
+
+  function updateReviewAdminBarVisibility_tv() {
+    const bar = document.getElementById('review-admin-bar');
+    if (!bar) return;
+    bar.style.display = (currentUser && currentUser.isSuper) ? '' : 'none';
+  }
+
   function setReviewType(type) {
+    updateRelationshipCounts_tv();
+    updateReviewAdminBarVisibility_tv();
+    
     if (!['quarterly', 'annual', 'briefing'].includes(type)) type = 'quarterly';
     // Block non-super from briefing
     if (type === 'briefing' && (!currentUser || !currentUser.isSuper)) {
