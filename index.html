@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- tvONE CALICO Configurator · v25.22 — Delivery C-1: city label fix + login version + forced pwd auto-redirect + duplicate project warning + Errors panel (Super) -->
+<!-- tvONE CALICO Configurator · v25.23 — Calendar month picker port from BS, persistent version footer, hint copy parity -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1761,6 +1761,109 @@
   }
   .info-msg.show { display: block; }
   .hidden { display: none !important; }
+
+  /* v25.23: BS-ported calendar month picker — gold-accented for tvONE theme */
+  .cm-picker-tv { position: relative; display: block; }
+  .cm-picker-btn-tv {
+    width: 100%; padding: 12px 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    color: var(--ink);
+    font-family: 'Manrope', sans-serif; font-size: 14px;
+    cursor: pointer; display: flex; align-items: center;
+    transition: border-color 180ms, background 180ms;
+  }
+  .cm-picker-btn-tv:hover { border-color: rgba(212,175,55,0.45); }
+  .cm-picker-btn-tv:focus { outline: none; border-color: #D4AF37; box-shadow: 0 0 0 3px rgba(212,175,55,0.18); }
+  .cm-picker-value-tv { flex: 1; text-align: left; }
+  .cm-picker-value-tv.placeholder { color: var(--ink-soft); }
+  .cm-picker-icon-tv { margin-left: 10px; font-size: 16px; opacity: 0.7; }
+  .cm-picker-popover-tv {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 100;
+    background: var(--surface-1, #1a1a1a);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.45), 0 4px 8px rgba(0,0,0,0.25);
+    max-width: 360px;
+  }
+  [data-theme="light"] .cm-picker-popover-tv {
+    background: #FFFFFF;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06);
+  }
+  .cm-picker-head-tv { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cm-picker-year-tv { font-weight: 700; font-size: 15px; color: var(--ink); font-family: 'Manrope', sans-serif; }
+  .cm-picker-nav-tv {
+    width: 32px; height: 32px;
+    border: 1px solid var(--border-soft); background: transparent;
+    color: var(--ink); border-radius: 8px; cursor: pointer;
+    font-size: 18px; line-height: 1;
+    transition: background 150ms, border-color 150ms;
+  }
+  .cm-picker-nav-tv:hover { background: rgba(212,175,55,0.12); border-color: rgba(212,175,55,0.40); }
+  .cm-picker-grid-tv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .cm-picker-month-tv {
+    padding: 10px 6px;
+    border: 1px solid var(--border-soft);
+    background: var(--surface-2);
+    color: var(--ink);
+    border-radius: 8px; cursor: pointer;
+    font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 500;
+    transition: background 150ms, border-color 150ms, color 150ms;
+  }
+  .cm-picker-month-tv:hover {
+    background: rgba(212,175,55,0.12);
+    border-color: #D4AF37;
+    color: #D4AF37;
+  }
+  .cm-picker-month-tv.selected {
+    background: #D4AF37;
+    border-color: #D4AF37;
+    color: #1a1a1a;
+    font-weight: 700;
+  }
+  .cm-picker-month-tv.disabled {
+    opacity: 0.32; cursor: not-allowed;
+    background: var(--surface-2);
+  }
+  .cm-picker-month-tv.disabled:hover {
+    background: var(--surface-2);
+    border-color: var(--border-soft);
+    color: var(--ink-soft);
+  }
+  .cm-picker-foot-tv { display: flex; justify-content: space-between; margin-top: 12px; gap: 8px; }
+  .cm-picker-clear-tv, .cm-picker-close-tv {
+    padding: 7px 14px; border: 1px solid var(--border-soft);
+    background: transparent; color: var(--ink);
+    border-radius: 8px; cursor: pointer;
+    font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 500;
+    transition: background 150ms, border-color 150ms;
+  }
+  .cm-picker-clear-tv:hover { border-color: rgba(220,38,38,0.5); color: #FCA5A5; }
+  .cm-picker-close-tv:hover { border-color: #D4AF37; color: #D4AF37; }
+  .closemonth-display-tv {
+    font-size: 12px; color: var(--ink-soft);
+    padding: 6px 0; min-height: 18px;
+  }
+  .closemonth-display-tv.set { color: #D4AF37; font-weight: 600; }
+  .closemonth-chip.active {
+    background: rgba(212,175,55,0.18) !important;
+    border-color: #D4AF37 !important;
+    color: #D4AF37 !important;
+    font-weight: 600;
+  }
+
+  /* v25.23: Persistent version footer — bottom-right corner, every page */
+  .app-version-footer-tv {
+    position: fixed; bottom: 6px; right: 10px; z-index: 5;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--ink-soft);
+    opacity: 0.45;
+    pointer-events: none;
+    letter-spacing: 0.05em;
+  }
+  [data-theme="light"] .app-version-footer-tv { opacity: 0.55; }
 
   /* v25.22: Soft duplicate-project warning banner — gold accent for tvONE theme */
   .dup-banner-tv {
@@ -4026,7 +4129,7 @@
     </div>
     <!-- v25.22: Frontend version display for ops/debug -->
     <div id="login-version-wrap" style="text-align:center;margin-top:14px;font-size:11px;color:rgba(255,255,255,0.35);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em;">
-      <span id="login-version">v25.22</span>
+      <span id="login-version">v25.23</span>
     </div>
   </div>
 </div>
@@ -4334,17 +4437,17 @@
             <option>Negotiation</option>
             <option>Order</option>
           </select>
-          <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:4px;">Where this deal currently sits in the pipeline.</div>
+          <div style="font-size:11px;color:var(--ink-soft);margin-top:4px;">Where this deal stands in your funnel right now.</div>
         </div>
 
-        <!-- v25.9: Lead Source required for Review tab OEM-vs-Cavitak analytics -->
+        <!-- v25.9: Lead Source required for Review tab tvONE-vs-Cavitak analytics -->
         <div class="field"><label>Lead Source <span class="req">*</span></label>
           <select id="f_leadSource">
             <option value="">— Select —</option>
             <option value="tvONE">tvONE</option>
             <option value="Cavitak">Cavitak</option>
           </select>
-          <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:4px;">tvONE = Generated by tvONE. Cavitak = Generated by Cavitak team.</div>
+          <div style="font-size:11px;color:var(--ink-soft);margin-top:4px;">tvONE = Generated by tvONE. Cavitak = Generated by Cavitak team.</div>
         </div>
 
         <!-- v25.9: Outcome explicit — drives Review tab win rate -->
@@ -4355,22 +4458,39 @@
             <option value="lost">Lost</option>
             <option value="on-hold">On hold</option>
           </select>
-          <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:4px;">Final result. Open while still active, then change to Won/Lost/On hold.</div>
+          <div style="font-size:11px;color:var(--ink-soft);margin-top:4px;">Open = active deal. Won/Lost/On hold = final status.</div>
         </div>
         <!-- v25.10.1 Cycle 2a: Per-deal Plan of Action textarea REMOVED — PoA now lives per-period on the Review tab -->
 
-        <!-- v25.9.1: Expected Closure with BrightSign-style quick chips + dropdown -->        <div class="field"><label>Expected Closure <span class="req">*</span></label>
-          <div class="closemonth-picker" style="display:flex;flex-direction:column;gap:8px;">
+        <!-- v25.23: BS-ported calendar month picker. Hidden input #f_close keeps YYYY-MM format. -->
+        <div class="field"><label>Expected Closure <span class="req">*</span></label>
+          <div class="closemonth-picker" style="display:flex;flex-direction:column;gap:10px;">
             <div class="closemonth-quick" style="display:flex;gap:6px;flex-wrap:wrap;">
               <button type="button" class="closemonth-chip" onclick="setCloseQuickChip_tv('thisMonth',this)" style="padding:6px 12px;border:1px solid var(--border-soft);background:var(--surface-2);color:var(--ink);border-radius:20px;font-size:12px;cursor:pointer;">This month</button>
               <button type="button" class="closemonth-chip" onclick="setCloseQuickChip_tv('nextMonth',this)" style="padding:6px 12px;border:1px solid var(--border-soft);background:var(--surface-2);color:var(--ink);border-radius:20px;font-size:12px;cursor:pointer;">Next month</button>
               <button type="button" class="closemonth-chip" onclick="setCloseQuickChip_tv('endOfQuarter',this)" style="padding:6px 12px;border:1px solid var(--border-soft);background:var(--surface-2);color:var(--ink);border-radius:20px;font-size:12px;cursor:pointer;">End of quarter</button>
               <button type="button" class="closemonth-chip" onclick="setCloseQuickChip_tv('endOfFY',this)" style="padding:6px 12px;border:1px solid var(--border-soft);background:var(--surface-2);color:var(--ink);border-radius:20px;font-size:12px;cursor:pointer;">End of FY</button>
             </div>
-            <select id="f_close">
-              <option value="">— Select month —</option>
-              <!-- Populated by populateCloseMonths_() -->
-            </select>
+            <div class="cm-picker-tv">
+              <button type="button" class="cm-picker-btn-tv" id="cm-picker-btn-tv" onclick="cmPickerToggle_tv()" aria-haspopup="dialog" aria-expanded="false">
+                <span class="cm-picker-value-tv placeholder" id="cm-picker-value-tv">Pick month…</span>
+                <span class="cm-picker-icon-tv" aria-hidden="true">📅</span>
+              </button>
+              <div class="cm-picker-popover-tv" id="cm-picker-popover-tv" role="dialog" aria-label="Pick closure month" hidden>
+                <div class="cm-picker-head-tv">
+                  <button type="button" class="cm-picker-nav-tv" onclick="cmPickerNavYear_tv(-1)" aria-label="Previous year">‹</button>
+                  <span class="cm-picker-year-tv" id="cm-picker-year-tv"></span>
+                  <button type="button" class="cm-picker-nav-tv" onclick="cmPickerNavYear_tv(1)" aria-label="Next year">›</button>
+                </div>
+                <div class="cm-picker-grid-tv" id="cm-picker-grid-tv"></div>
+                <div class="cm-picker-foot-tv">
+                  <button type="button" class="cm-picker-clear-tv" onclick="cmPickerClear_tv()">Clear</button>
+                  <button type="button" class="cm-picker-close-tv" onclick="cmPickerClose_tv()">Close</button>
+                </div>
+              </div>
+            </div>
+            <input type="hidden" id="f_close" value="">
+            <div class="closemonth-display-tv" id="closemonth-display-tv">No month selected yet.</div>
           </div>
         </div>
 
@@ -5447,14 +5567,22 @@
 </div>
 
 <script>
-  // v25.22: tvONE frontend version constant — single source of truth.
-  // Visible on login page footer for ops/debug clarity.
-  const TVONE_FRONTEND_VERSION = '25.22';
+  // v25.23: tvONE frontend version constant — single source of truth.
+  // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
+  const TVONE_FRONTEND_VERSION = '25.23';
   // Stamp version into login footer once DOM is ready (defer-safe)
   try {
     document.addEventListener('DOMContentLoaded', function(){
       var el = document.getElementById('login-version');
       if (el) el.textContent = 'v' + TVONE_FRONTEND_VERSION;
+      // v25.23: Inject persistent version footer (bottom-right corner, every page)
+      if (!document.getElementById('app-version-footer-tv')) {
+        var f = document.createElement('div');
+        f.id = 'app-version-footer-tv';
+        f.className = 'app-version-footer-tv';
+        f.textContent = 'v' + TVONE_FRONTEND_VERSION;
+        document.body.appendChild(f);
+      }
     });
   } catch(e) { /* never block boot for a label */ }
 
@@ -5636,10 +5764,162 @@
     }
   }
 
-  // v25.9.1: Quick-chip handler for Expected Closure (Indian FY-aware).
+  // v25.23: BS-ported calendar month picker — writes YYYY-MM to hidden #f_close.
+  // Replaces the previous "Apr 2026" string-based select.
+  const CM_PICKER_MONTHS_TV = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let _cmPickerYear_tv = (new Date()).getFullYear();
+  let _cmPickerOpen_tv = false;
+
+  function _cmPickerCurrentSelection_tv() {
+    const hidden = document.getElementById('f_close');
+    if (!hidden || !hidden.value) return { year: null, month: null };
+    const m = String(hidden.value).match(/^(\d{4})-(\d{2})$/);
+    if (!m) return { year: null, month: null };
+    return { year: parseInt(m[1], 10), month: parseInt(m[2], 10) };
+  }
+
+  function cmPickerRender_tv(year) {
+    _cmPickerYear_tv = year;
+    const yearEl = document.getElementById('cm-picker-year-tv');
+    const grid = document.getElementById('cm-picker-grid-tv');
+    if (!yearEl || !grid) return;
+    yearEl.textContent = String(year);
+    const sel = _cmPickerCurrentSelection_tv();
+    const today = new Date();
+    const todayY = today.getFullYear();
+    const todayM = today.getMonth() + 1;
+    let html = '';
+    for (let m = 1; m <= 12; m++) {
+      const isPast = (year < todayY) || (year === todayY && m < todayM);
+      const isSelected = (sel.year === year && sel.month === m);
+      const cls = ['cm-picker-month-tv'];
+      if (isSelected) cls.push('selected');
+      if (isPast) cls.push('disabled');
+      html += '<button type="button" class="' + cls.join(' ') + '" data-m="' + m + '"' +
+              (isPast ? ' disabled' : '') +
+              ' onclick="cmPickerSelect_tv(' + year + ',' + m + ')">' +
+              CM_PICKER_MONTHS_TV[m - 1] + '</button>';
+    }
+    grid.innerHTML = html;
+  }
+
+  function cmPickerToggle_tv() {
+    const pop = document.getElementById('cm-picker-popover-tv');
+    const btn = document.getElementById('cm-picker-btn-tv');
+    if (!pop || !btn) return;
+    if (_cmPickerOpen_tv) { cmPickerClose_tv(); return; }
+    const sel = _cmPickerCurrentSelection_tv();
+    cmPickerRender_tv(sel.year || (new Date()).getFullYear());
+    pop.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+    _cmPickerOpen_tv = true;
+    setTimeout(function() {
+      document.addEventListener('click', cmPickerOutsideClick_tv, { once: false, capture: true });
+    }, 0);
+  }
+
+  function cmPickerClose_tv() {
+    const pop = document.getElementById('cm-picker-popover-tv');
+    const btn = document.getElementById('cm-picker-btn-tv');
+    if (pop) pop.hidden = true;
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+    _cmPickerOpen_tv = false;
+    document.removeEventListener('click', cmPickerOutsideClick_tv, { capture: true });
+  }
+
+  function cmPickerOutsideClick_tv(e) {
+    if (!_cmPickerOpen_tv) return;
+    const root = document.querySelector('.cm-picker-tv');
+    if (root && !root.contains(e.target)) cmPickerClose_tv();
+  }
+
+  function cmPickerNavYear_tv(delta) {
+    cmPickerRender_tv((_cmPickerYear_tv || (new Date()).getFullYear()) + delta);
+  }
+
+  function cmPickerSelect_tv(year, month) {
+    const hidden = document.getElementById('f_close');
+    if (!hidden) return;
+    const yyyyMm = year + '-' + String(month).padStart(2, '0');
+    hidden.value = yyyyMm;
+    cmPickerUpdateButton_tv();
+    updateCloseMonthDisplay_tv();
+    syncCloseMonthChips_tv();
+    cmPickerRender_tv(year);
+    cmPickerClose_tv();
+  }
+
+  function cmPickerClear_tv() {
+    const hidden = document.getElementById('f_close');
+    if (hidden) hidden.value = '';
+    cmPickerUpdateButton_tv();
+    updateCloseMonthDisplay_tv();
+    syncCloseMonthChips_tv();
+    cmPickerRender_tv(_cmPickerYear_tv);
+  }
+
+  function cmPickerUpdateButton_tv() {
+    const btnLabel = document.getElementById('cm-picker-value-tv');
+    if (!btnLabel) return;
+    const hidden = document.getElementById('f_close');
+    const v = hidden ? hidden.value : '';
+    if (!v) {
+      btnLabel.textContent = 'Pick month…';
+      btnLabel.classList.add('placeholder');
+      return;
+    }
+    const m = String(v).match(/^(\d{4})-(\d{2})$/);
+    if (!m) {
+      btnLabel.textContent = 'Pick month…';
+      btnLabel.classList.add('placeholder');
+      return;
+    }
+    const year = parseInt(m[1], 10);
+    const monthIdx = parseInt(m[2], 10) - 1;
+    btnLabel.textContent = CM_PICKER_MONTHS_TV[monthIdx] + ' ' + year;
+    btnLabel.classList.remove('placeholder');
+  }
+
+  function updateCloseMonthDisplay_tv() {
+    const hidden = document.getElementById('f_close');
+    const disp = document.getElementById('closemonth-display-tv');
+    if (!hidden || !disp) return;
+    const v = hidden.value;
+    if (!v || v.indexOf('-') < 0) {
+      disp.textContent = 'No month selected yet.';
+      disp.classList.remove('set');
+      return;
+    }
+    const parts = v.split('-');
+    const y = parts[0];
+    const m = parseInt(parts[1], 10);
+    if (isNaN(m) || m < 1 || m > 12) {
+      disp.textContent = 'Invalid selection.';
+      disp.classList.remove('set');
+      return;
+    }
+    disp.textContent = '✓ Target close: ' + CM_PICKER_MONTHS_TV[m - 1] + ' ' + y;
+    disp.classList.add('set');
+  }
+
+  function syncCloseMonthChips_tv() {
+    const hidden = document.getElementById('f_close');
+    const v = hidden ? hidden.value : '';
+    document.querySelectorAll('.closemonth-chip').forEach(function(c) {
+      c.classList.toggle('active', c.dataset.val === v);
+    });
+  }
+  // Expose for inline handlers
+  window.cmPickerToggle_tv = cmPickerToggle_tv;
+  window.cmPickerClose_tv = cmPickerClose_tv;
+  window.cmPickerNavYear_tv = cmPickerNavYear_tv;
+  window.cmPickerSelect_tv = cmPickerSelect_tv;
+  window.cmPickerClear_tv = cmPickerClear_tv;
+
+  // v25.23: Quick-chip handler — now writes YYYY-MM (was "Apr 2026" in v25.22).
   function setCloseQuickChip_tv(chip, btn) {
-    const sel = document.getElementById('f_close');
-    if (!sel) return;
+    const hidden = document.getElementById('f_close');
+    if (!hidden) return;
     const now = new Date();
     let target;
     if (chip === 'thisMonth') {
@@ -5660,16 +5940,24 @@
     }
     if (target) {
       const yyyyMm = target.getFullYear() + '-' + String(target.getMonth() + 1).padStart(2, '0');
-      const match = Array.from(sel.options).find(function(o){ return o.value === yyyyMm || o.value.startsWith(yyyyMm); });
-      if (match) sel.value = match.value;
+      hidden.value = yyyyMm;
+      // Tag the chip so syncCloseMonthChips_tv can highlight it after future loads
+      if (btn) btn.dataset.val = yyyyMm;
     }
-    // Visual feedback: highlight the active chip
-    const chips = document.querySelectorAll('.closemonth-chip');
-    chips.forEach(function(c){ c.style.background = 'var(--surface-2)'; c.style.borderColor = 'var(--border-soft)'; });
-    if (btn) {
-      btn.style.background = 'rgba(212,175,55,0.18)';
-      btn.style.borderColor = '#D4AF37';
-    }
+    cmPickerUpdateButton_tv();
+    updateCloseMonthDisplay_tv();
+    // Clear all chip styles, set this one active
+    document.querySelectorAll('.closemonth-chip').forEach(function(c) { c.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+  }
+  window.setCloseQuickChip_tv = setCloseQuickChip_tv;
+
+  // populateCloseMonths_ used to build the <select>. Now a no-op kept for compatibility
+  // with the existing call site in resetForm — picker doesn't need pre-populating.
+  function populateCloseMonths_() {
+    // Picker renders months on-demand. Nothing to populate up front.
+    cmPickerUpdateButton_tv();
+    updateCloseMonthDisplay_tv();
   }
 
   function validateEmailInline(el) {
@@ -6229,22 +6517,8 @@
     populateCloseMonths_();
   }
 
-  /** Populate the Expected Close Month dropdown with the next 18 months starting from current month. */
-  function populateCloseMonths_() {
-    const sel = document.getElementById('f_close');
-    if (!sel) return;
-    const currentValue = sel.value;  // preserve if already selected (e.g. during edit mode)
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const now = new Date();
-    const options = ['<option value="">— Select month —</option>'];
-    for (let i = 0; i < 18; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-      const label = months[d.getMonth()] + ' ' + d.getFullYear();
-      options.push('<option value="' + label + '">' + label + '</option>');
-    }
-    sel.innerHTML = options.join('');
-    if (currentValue) sel.value = currentValue;  // restore selection if applicable
-  }
+  /** v25.23: Old populateCloseMonths_ (which filled the <select>) removed —
+      replaced by the picker-based implementation earlier in this script. */
   function addScreen() {
     if (screenCount >= MAX_SCREENS) { alert('Maximum ' + MAX_SCREENS + ' screens.'); return; }
     screenCount++;
@@ -7123,6 +7397,12 @@
     setVal('f_budget', r.budget);
     setVal('f_dealValueINR', r.dealValueINR);
     setVal('f_close', r.close);
+    // v25.23: Refresh picker visual state to match restored value
+    try {
+      if (typeof cmPickerUpdateButton_tv === 'function') cmPickerUpdateButton_tv();
+      if (typeof updateCloseMonthDisplay_tv === 'function') updateCloseMonthDisplay_tv();
+      if (typeof syncCloseMonthChips_tv === 'function') syncCloseMonthChips_tv();
+    } catch (e) { /* fine */ }
     setVal('f_notes', r.notes);
 
     // Re-trigger conditional UI (projector field visibility, SDI count, etc.)
@@ -8981,6 +9261,12 @@
     // v25.22: Clear the duplicate-project warning banner
     var _dupBn = document.getElementById('dup-project-banner-tv');
     if (_dupBn) { _dupBn.style.display = 'none'; _dupBn.innerHTML = ''; }
+    // v25.23: Reset month-picker visual state (button label + display + chip highlights)
+    try {
+      if (typeof cmPickerUpdateButton_tv === 'function') cmPickerUpdateButton_tv();
+      if (typeof updateCloseMonthDisplay_tv === 'function') updateCloseMonthDisplay_tv();
+      document.querySelectorAll('.closemonth-chip').forEach(function(c) { c.classList.remove('active'); });
+    } catch (e) { /* picker not loaded yet — fine */ }
     document.getElementById('f_outputType').value = 'LED';
     document.getElementById('f_outputSignal').value = 'HDMI';
     document.getElementById('sdiNote').style.display = 'none';
