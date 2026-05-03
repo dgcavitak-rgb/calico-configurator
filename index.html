@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- tvONE CALICO Configurator · v25.21 — Delivery B: city→state auto-fill + lock; reset clears lock -->
+<!-- tvONE CALICO Configurator · v25.22 — Delivery C-1: city label fix + login version + forced pwd auto-redirect + duplicate project warning + Errors panel (Super) -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1761,6 +1761,46 @@
   }
   .info-msg.show { display: block; }
   .hidden { display: none !important; }
+
+  /* v25.22: Soft duplicate-project warning banner — gold accent for tvONE theme */
+  .dup-banner-tv {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 14px 18px; margin: -8px 0 18px;
+    background: linear-gradient(135deg, rgba(212,175,55,0.18) 0%, rgba(212,175,55,0.06) 100%);
+    border: 1px solid rgba(212,175,55,0.45);
+    border-left: 4px solid #D4AF37;
+    border-radius: 10px;
+    font-family: inherit;
+    animation: dupTvFadeIn 0.3s ease-out;
+  }
+  @keyframes dupTvFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .dup-banner-tv-icon { font-size: 22px; line-height: 1; flex-shrink: 0; color: #D4AF37; }
+  .dup-banner-tv-body { flex: 1; font-size: 13px; color: var(--ink); line-height: 1.5; }
+  .dup-banner-tv-body strong { font-weight: 700; color: #D4AF37; }
+  .dup-banner-tv-hint { margin-top: 6px; font-size: 11px; opacity: 0.78; font-weight: 500; }
+  .dup-banner-tv-action { flex-shrink: 0; }
+  .dup-banner-tv-link {
+    padding: 8px 14px; background: #D4AF37; color: #1a1a1a;
+    border: none; border-radius: 8px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: background 180ms, transform 180ms;
+    white-space: nowrap;
+  }
+  .dup-banner-tv-link:hover { background: #BC9A2C; transform: translateY(-1px); }
+  .dup-banner-tv-link:active { transform: translateY(0); }
+  [data-theme="light"] .dup-banner-tv {
+    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+    border-color: #D4AF37;
+  }
+  [data-theme="light"] .dup-banner-tv-body { color: #78350F; }
+  [data-theme="light"] .dup-banner-tv-body strong { color: #92400E; }
+  @media (max-width: 640px) {
+    .dup-banner-tv { flex-direction: column; }
+    .dup-banner-tv-action { align-self: stretch; }
+    .dup-banner-tv-link { width: 100%; }
+  }
 
   /* ================================================================= */
   /* SILENT SYNC TOAST — bottom-right corner sync indicator             */
@@ -3984,6 +4024,10 @@
         <a href="tel:+918160756906">+91 8160 756 906</a>
       </div>
     </div>
+    <!-- v25.22: Frontend version display for ops/debug -->
+    <div id="login-version-wrap" style="text-align:center;margin-top:14px;font-size:11px;color:rgba(255,255,255,0.35);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em;">
+      <span id="login-version">v25.22</span>
+    </div>
   </div>
 </div>
 
@@ -4078,7 +4122,9 @@
     <div class="card">
       <div class="card-title">Project Context</div>
       <div class="grid">
-        <div class="field"><label>Project Name <span class="req">*</span></label><input id="f_project" type="text" placeholder="e.g. Lobby LED Wall — City"></div>
+        <div class="field"><label>Project Name <span class="req">*</span></label><input id="f_project" type="text" placeholder="e.g. Lobby LED Wall — City" oninput="checkDuplicateProject_tv()"></div>
+        <!-- v25.22: Soft duplicate-project warning banner. Shown live while typing. -->
+        <div id="dup-project-banner-tv" class="dup-banner-tv" style="display:none;"></div>
 
         <div class="field"><label>End-user / Client <span class="req">*</span></label><input id="f_endUser" type="text" placeholder="e.g. End-user company name"></div>
 
@@ -4145,7 +4191,7 @@
         </div>
 
         <!-- v25.9: City auto-fills State on change (spec: composite "City, State" UX) -->
-        <div class="field"><label>City, State <span class="req">*</span></label>
+        <div class="field"><label>City <span class="req">*</span></label>
           <select id="f_city" onchange="autoFillStateFromCity()">
             <option value="">— Select —</option>
             <optgroup label="Metro (Tier 1)">
@@ -4900,6 +4946,20 @@
         <button class="secondary" onclick="refreshTeam()">↻ Refresh</button>
       </div>
     </div>
+
+    <!-- v25.22: Error log panel (Super-only diagnostics) -->
+    <div class="card" id="errorLogCard" style="border-left:4px solid #7F1D1D;margin-top:18px">
+      <div class="card-title">
+        ⚠ Error Log
+        <span id="errorLogBadge" style="display:none;margin-left:10px;padding:2px 10px;background:#DC2626;color:#fff;border-radius:10px;font-size:11px;font-weight:800;letter-spacing:0.05em">0 IN LAST 24H</span>
+      </div>
+      <p class="page-sub" style="margin-top:-4px">Frontend crashes &amp; backend rejections caught silently and logged here. Helps diagnose user-reported issues without reproducing them.</p>
+      <div id="errorLogContent" style="margin-top:12px;font-size:12.5px;color:var(--ink-subtle)">Loading…</div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="secondary" onclick="loadErrorLog_tv()">↻ Refresh</button>
+        <button class="secondary" onclick="clearErrorLog_tv()" style="border-color:rgba(220,38,38,0.4);color:#FCA5A5">🗑 Clear log</button>
+      </div>
+    </div>
   </div>
 
   <!-- DIRECTORY — Unified Customers + Partners + Consultants -->
@@ -5387,6 +5447,17 @@
 </div>
 
 <script>
+  // v25.22: tvONE frontend version constant — single source of truth.
+  // Visible on login page footer for ops/debug clarity.
+  const TVONE_FRONTEND_VERSION = '25.22';
+  // Stamp version into login footer once DOM is ready (defer-safe)
+  try {
+    document.addEventListener('DOMContentLoaded', function(){
+      var el = document.getElementById('login-version');
+      if (el) el.textContent = 'v' + TVONE_FRONTEND_VERSION;
+    });
+  } catch(e) { /* never block boot for a label */ }
+
   // =================================================================
   // GLOBAL ERROR HANDLERS — catch silent crashes so bugs don't hide
   // These log to console with [GLOBAL] prefix and show a brief user notice
@@ -5395,6 +5466,13 @@
   window.addEventListener('error', function(ev) {
     try {
       console.error('[GLOBAL ERROR]', ev.message, 'at', ev.filename + ':' + ev.lineno + ':' + ev.colno, ev.error);
+      // v25.22: also push to backend log for Super to review later
+      try {
+        if (typeof reportFrontendError_tv === 'function') {
+          const stack = (ev.error && ev.error.stack) ? ev.error.stack : (ev.filename + ':' + ev.lineno + ':' + ev.colno);
+          reportFrontendError_tv('GLOBAL_ERROR', ev.message, stack);
+        }
+      } catch (_) { /* never let logger break handler */ }
       // Only show UI alert for genuinely surprising errors, not during normal flow
       if (ev.message && !/script error|resizeobserver|Load failed/i.test(ev.message)) {
         const t = document.getElementById('syncStatus');
@@ -5407,6 +5485,15 @@
   window.addEventListener('unhandledrejection', function(ev) {
     try {
       console.error('[UNHANDLED PROMISE]', ev.reason);
+      // v25.22: push to backend log
+      try {
+        if (typeof reportFrontendError_tv === 'function') {
+          const reason = ev.reason;
+          const msg = (reason && reason.message) ? reason.message : String(reason);
+          const stack = (reason && reason.stack) ? reason.stack : '';
+          reportFrontendError_tv('UNHANDLED_PROMISE', msg, stack);
+        }
+      } catch (_) { /* silent */ }
       // Don't show UI for unhandled promises — they're usually network blips
     } catch (e) {}
   });
@@ -5896,7 +5983,20 @@
     updateActiveNavTab_(v);
     if (v === 'dash') refreshLog();
     if (v === 'history') refreshLog();
-    if (v === 'team') { refreshTeam(); if (typeof tvC2cRender === 'function') tvC2cRender(); }
+    if (v === 'team') {
+      refreshTeam();
+      if (typeof tvC2cRender === 'function') tvC2cRender();
+      // v25.22: Auto-load error log for Super on team tab open; hide for non-Super
+      const elc = document.getElementById('errorLogCard');
+      if (elc) {
+        if (currentUser && currentUser.isSuper) {
+          elc.style.display = '';
+          if (typeof loadErrorLog_tv === 'function') loadErrorLog_tv();
+        } else {
+          elc.style.display = 'none';
+        }
+      }
+    }
     if (v === 'profile') renderProfile();
     if (v === 'customers') refreshCustomers();
     if (v === 'briefing') {
@@ -8878,6 +8978,9 @@
     // v25.21: Reset state field's locked styling — city→state lock can leave it disabled
     var _stEl = document.getElementById('f_state');
     if (_stEl) { _stEl.disabled = false; _stEl.classList.remove('autoset-locked'); _stEl.title = ''; }
+    // v25.22: Clear the duplicate-project warning banner
+    var _dupBn = document.getElementById('dup-project-banner-tv');
+    if (_dupBn) { _dupBn.style.display = 'none'; _dupBn.innerHTML = ''; }
     document.getElementById('f_outputType').value = 'LED';
     document.getElementById('f_outputSignal').value = 'HDMI';
     document.getElementById('sdiNote').style.display = 'none';
@@ -9183,7 +9286,12 @@
         if (_pwdForceMode) {
           _pwdForceMode = false;
           document.getElementById('pwdModal').classList.add('hidden');
-          showView('form');
+          // v25.22: After forced password change, log the user out so they sign in
+          // again with the new password (clean session, mirrors BS v24.14.6).
+          try {
+            if (typeof logout === 'function') { logout(); }
+            else { window.location.reload(); }
+          } catch(e) { window.location.reload(); }
         } else {
           document.getElementById('pwdModal').classList.add('hidden');
         }
@@ -9887,6 +9995,125 @@
   function printBriefing() {
     window.print();
   }
+
+  // v25.22: Error log panel — Super-only. Auto-loads when Team tab opens.
+  // Pushes to backend on global JS errors and on backend errors caught by tryFetchJSON pattern.
+  async function loadErrorLog_tv() {
+    const content = document.getElementById('errorLogContent');
+    const badge = document.getElementById('errorLogBadge');
+    if (!content) return;
+    content.innerHTML = '<div style="padding:18px;text-align:center;color:var(--ink-subtle)">Loading recent errors…</div>';
+    if (!currentUser || !_authHash) {
+      content.innerHTML = '<div class="log-empty">Not authenticated.</div>';
+      return;
+    }
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'error_log_list',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash,
+          hoursBack: 168,
+          limit: 100
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        content.innerHTML = '<div class="log-empty">Could not load error log: ' + escapeHtml(data.error || 'unknown') + '</div>';
+        return;
+      }
+      const entries = data.entries || [];
+      // Badge
+      if (badge) {
+        const n = data.last24hCount || 0;
+        if (n > 0) {
+          badge.style.display = 'inline-block';
+          badge.textContent = n + ' IN LAST 24H';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+      if (!entries.length) {
+        content.innerHTML = '<div class="log-empty">✓ No errors logged in the last 7 days. App is healthy.</div>';
+        return;
+      }
+      // Build a table
+      let html = '<div style="overflow-x:auto"><table class="log-table" style="font-size:12px"><thead><tr>'
+               + '<th>Time</th><th>User</th><th>Code</th><th>Message</th><th>Version</th>'
+               + '</tr></thead><tbody>';
+      entries.forEach(function(e) {
+        const ts = e.timestamp ? new Date(e.timestamp).toLocaleString('en-IN', {dateStyle:'short', timeStyle:'short'}) : '—';
+        html += '<tr>'
+              + '<td style="white-space:nowrap;color:var(--ink-soft)">' + escapeHtml(ts) + '</td>'
+              + '<td>' + escapeHtml(e.user || '—') + '</td>'
+              + '<td style="font-family:JetBrains Mono,monospace;font-size:11px;color:#FCA5A5">' + escapeHtml(e.errorCode || '—') + '</td>'
+              + '<td title="' + escapeHtml(e.stackTrace || '') + '">' + escapeHtml((e.errorMessage || '').substring(0, 200)) + '</td>'
+              + '<td style="color:var(--ink-subtle);font-family:JetBrains Mono,monospace;font-size:10.5px">' + escapeHtml(e.appVersion || '—') + '</td>'
+              + '</tr>';
+      });
+      html += '</tbody></table></div>';
+      html += '<div style="margin-top:8px;font-size:11px;color:var(--ink-subtle)">Showing ' + entries.length + ' of ' + (data.total || entries.length) + ' (last 7 days)</div>';
+      content.innerHTML = html;
+    } catch (err) {
+      content.innerHTML = '<div class="log-empty">Network error loading log.</div>';
+      console.error('[errorLog] load failed:', err);
+    }
+  }
+  window.loadErrorLog_tv = loadErrorLog_tv;
+
+  async function clearErrorLog_tv() {
+    if (!confirm('Clear all entries from the error log? This cannot be undone.')) return;
+    if (!currentUser || !_authHash) {
+      alert('Not authenticated.');
+      return;
+    }
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'error_log_clear',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        if (typeof showSync === 'function') showSync('Error log cleared (' + (data.cleared || 0) + ')', 'success');
+        loadErrorLog_tv();
+      } else {
+        alert('Clear failed: ' + (data.error || 'unknown'));
+      }
+    } catch (err) {
+      alert('Network error.');
+      console.error('[errorLog] clear failed:', err);
+    }
+  }
+  window.clearErrorLog_tv = clearErrorLog_tv;
+
+  // Push a frontend error to the backend log (fire-and-forget, never blocks UI)
+  function reportFrontendError_tv(errorCode, errorMessage, stackTrace) {
+    try {
+      if (!WEB_APP_URL) return;
+      fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'no-cors',  // fire-and-forget; we don't read the response
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'error_log_append',
+          user: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.username : '',
+          action_context: 'frontend',
+          errorCode: String(errorCode || 'FRONTEND_ERROR'),
+          errorMessage: String(errorMessage || ''),
+          stackTrace: String(stackTrace || ''),
+          userAgent: (typeof navigator !== 'undefined') ? navigator.userAgent : '',
+          appVersion: (typeof TVONE_FRONTEND_VERSION !== 'undefined') ? TVONE_FRONTEND_VERSION : 'unknown'
+        })
+      }).catch(function(){ /* silent */ });
+    } catch (e) { /* silent — error logger must never throw */ }
+  }
+  window.reportFrontendError_tv = reportFrontendError_tv;
 
   async function refreshTeam() {
     const content = document.getElementById('teamContent');
@@ -10891,6 +11118,71 @@
   }
 
   // --- Fuzzy duplicate matching ---
+  // v25.22: Live soft duplicate-project warning. Triggered on input event for f_project.
+  // Reuses existing findSimilarSubmissions_ + normalizeForCompare_ helpers. Skips when
+  // user is in edit mode (would always self-match on the project being edited).
+  function checkDuplicateProject_tv() {
+    const banner = document.getElementById('dup-project-banner-tv');
+    if (!banner) return;
+    // Suppress while editing — _editingRefId is set when reopening a saved submission
+    if (typeof _editingRefId !== 'undefined' && _editingRefId) {
+      banner.style.display = 'none';
+      banner.innerHTML = '';
+      return;
+    }
+    const projectEl = document.getElementById('f_project');
+    if (!projectEl) return;
+    const typed = (projectEl.value || '').trim();
+    if (typed.length < 3) {
+      banner.style.display = 'none';
+      banner.innerHTML = '';
+      return;
+    }
+    const log = Array.isArray(centralLog) && centralLog.length ? centralLog
+              : (Array.isArray(_rawCentralLog) ? _rawCentralLog : []);
+    if (!log.length) {
+      banner.style.display = 'none';
+      return;
+    }
+    const np = normalizeForCompare_(typed);
+    if (!np) {
+      banner.style.display = 'none';
+      return;
+    }
+    // Pass empty end-user — the live warning is project-only; submit-time check handles end-user pairing.
+    const matches = findSimilarSubmissions_(np, '', log);
+    if (!matches.length) {
+      banner.style.display = 'none';
+      banner.innerHTML = '';
+      return;
+    }
+    const top = matches[0];
+    const r = top.row || {};
+    const simPct = Math.round((top.score || 0) * 100);
+    const matchType = top.exact ? 'Exact match' : 'Similar project';
+    const projName = escapeHtml(r.project || '—');
+    const userName = escapeHtml(r.userFullName || r.username || '—');
+    const dateStr = r.timestampLocal
+      ? escapeHtml(r.timestampLocal)
+      : (r.timestamp ? escapeHtml(new Date(r.timestamp).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'})) : '—');
+    const extra = matches.length > 1
+      ? ' · <em>' + (matches.length - 1) + ' more similar entr' + (matches.length - 1 === 1 ? 'y' : 'ies') + '</em>'
+      : '';
+    const refId = r.refId ? escapeHtml(String(r.refId)) : '';
+    const editLink = refId
+      ? '<button class="dup-banner-tv-link" onclick="goEditDuplicate(\'' + refId + '\')">Open existing entry to edit →</button>'
+      : '';
+    banner.innerHTML =
+      '<div class="dup-banner-tv-icon">⚠</div>' +
+      '<div class="dup-banner-tv-body"><strong>' + matchType + ' (' + simPct + '%):</strong> "' +
+      projName + '" by ' + userName + ' · ' + dateStr + extra +
+      '<div class="dup-banner-tv-hint">You can still proceed to log this as new, or edit the existing one.</div></div>' +
+      (editLink ? '<div class="dup-banner-tv-action">' + editLink + '</div>' : '');
+    banner.style.display = 'flex';
+  }
+  // Expose for inline oninput handler
+  window.checkDuplicateProject_tv = checkDuplicateProject_tv;
+
   // Normalize a string for comparison: lowercase, trim, collapse whitespace,
   // strip common noise words (the, a, project, for, at)
   function normalizeForCompare_(s) {
