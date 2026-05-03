@@ -4093,6 +4093,51 @@
     .modal-card { max-height: 96vh !important; height: auto !important; }
   }
 
+  /* v25.28 — Help icon tooltips next to confusing field labels (parity with BS) */
+  .help-icon-tv {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--surface-2, #ECFDF5);
+    color: var(--ink-soft, #64748B);
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 6px;
+    cursor: help;
+    border: 1px solid var(--border-soft, #D1FAE5);
+    position: relative;
+    vertical-align: middle;
+    user-select: none;
+  }
+  .help-icon-tv:hover {
+    background: #064E3B;
+    color: #fff;
+    border-color: #064E3B;
+  }
+  .help-icon-tv:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.96);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.45;
+    white-space: normal;
+    width: 240px;
+    text-align: left;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    z-index: 1000;
+    pointer-events: none;
+  }
+
 </style>
 </head>
 <body>
@@ -4219,6 +4264,18 @@
       </div>
       <button class="secondary" onclick="cancelEditMode()">Cancel Edit</button>
     </div>
+
+    <!-- v25.28: Draft resume banner — shows on app load if user has an unsaved draft -->
+    <div id="draft-resume-banner-tv" style="display:none;margin:12px 0 16px;padding:12px 16px;background:linear-gradient(135deg,rgba(6,78,59,0.06),rgba(20,83,45,0.10));border:1px solid #064E3B;border-radius:10px;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="font-size:20px;line-height:1;">💾</div>
+      <div style="flex:1;min-width:200px;">
+        <div style="font-weight:600;color:#064E3B;font-size:14px;">You have an unsaved draft</div>
+        <div id="draft-resume-summary-tv" style="font-size:12px;color:var(--ink-soft,#475569);margin-top:2px;">—</div>
+      </div>
+      <button type="button" onclick="_resumeDraftTV()" style="padding:7px 14px;font-size:13px;font-weight:600;background:#064E3B;color:#fff;border:none;border-radius:6px;cursor:pointer;">Resume</button>
+      <button type="button" onclick="if(confirm('Discard the saved draft? This cannot be undone.')){_clearDraftTV();}" style="padding:7px 14px;font-size:13px;font-weight:500;background:transparent;color:var(--ink-soft,#475569);border:1px solid var(--border-soft,#CBD5E1);border-radius:6px;cursor:pointer;">Discard</button>
+    </div>
+
     <h1 class="page-title">CALICO PRO Configuration</h1>
     <p class="page-sub">Engineered to <strong>size the right CALICO PRO chassis</strong> for your project — from single-screen LED walls to mixed multi-display installations. Enter your requirements and get a <strong>validated BOM</strong> instantly.</p>
 
@@ -4440,8 +4497,14 @@
           <div style="font-size:11px;color:var(--ink-soft);margin-top:4px;">Where this deal stands in your funnel right now.</div>
         </div>
 
+        <!-- v25.28: Stage change note — optional, captures "why this move" if stage changes on edit. -->
+        <div class="field">
+          <label style="font-size:13px;">Stage change note <span style="font-weight:400;font-size:11px;color:var(--ink-soft);">(optional)</span></label>
+          <textarea id="f_stageNote" rows="1" placeholder="If you're changing stage, share why — helps the team understand the move (only logged when stage actually changes)" style="width:100%;resize:vertical;min-height:36px;"></textarea>
+        </div>
+
         <!-- v25.9: Lead Source required for Review tab tvONE-vs-Cavitak analytics -->
-        <div class="field"><label>Lead Source <span class="req">*</span></label>
+        <div class="field"><label>Lead Source <span class="req">*</span><span class="help-icon-tv" data-tip="tvONE = referral from the tvONE team (will be tracked for OEM commissions). Cavitak = self-sourced by Cavitak.">?</span></label>
           <select id="f_leadSource">
             <option value="">— Select —</option>
             <option value="tvONE">tvONE</option>
@@ -4452,13 +4515,23 @@
 
         <!-- v25.9: Outcome explicit — drives Review tab win rate -->
         <div class="field"><label>Outcome <span class="req">*</span></label>
-          <select id="f_outcome">
+          <select id="f_outcome" onchange="toggleOutcomeReasonTV()">
             <option value="open">Open (active)</option>
             <option value="won">Won</option>
             <option value="lost">Lost</option>
             <option value="on-hold">On hold</option>
           </select>
           <div style="font-size:11px;color:var(--ink-soft);margin-top:4px;">Open = active deal. Won/Lost/On hold = final status.</div>
+        </div>
+
+        <!-- v25.28: Win/Loss/On-hold reason capture (parity with BS v24.17.0). Hidden when outcome=open. -->
+        <div id="f_outcomeReason_wrap" class="field" style="display:none;background:#ECFDF5;border:1px solid #064E3B;border-radius:8px;padding:12px;">
+          <label style="font-weight:600;color:#064E3B;" id="f_outcomeReason_label">Reason</label>
+          <select id="f_outcomeReason" style="margin-bottom:8px;">
+            <option value="">Select reason…</option>
+          </select>
+          <label style="font-size:11px;color:var(--ink-soft);font-weight:500;margin-top:4px;">Additional context (optional)</label>
+          <textarea id="f_outcomeReasonNote" rows="2" placeholder="Any details that help the team learn from this deal…" style="width:100%;resize:vertical;min-height:50px;"></textarea>
         </div>
         <!-- v25.10.1 Cycle 2a: Per-deal Plan of Action textarea REMOVED — PoA now lives per-period on the Review tab -->
 
@@ -5570,7 +5643,7 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.27';
+  const TVONE_FRONTEND_VERSION = '25.28';
   // Stamp version into login footer once DOM is ready (defer-safe)
   try {
     document.addEventListener('DOMContentLoaded', function(){
@@ -6249,6 +6322,15 @@
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appScreen').classList.remove('hidden');
     document.getElementById('userLabel').textContent = currentUser.name;
+    // v25.28: Wire up draft autosave + show resume banner if a draft exists for this user
+    setTimeout(function() {
+      try {
+        window._tvDraftSkipSave = true;  // prevent autosave during banner-paint phase
+        if (typeof _initDraftAutosaveTV === 'function') _initDraftAutosaveTV();
+        if (typeof _showDraftBannerTV === 'function') _showDraftBannerTV();
+        window._tvDraftSkipSave = false;
+      } catch (_) { /* never block app load */ }
+    }, 50);
     const avatar = document.getElementById('userAvatar');
     if (avatar) avatar.textContent = _initialsFor(currentUser.name);
     if (typeof renderNotifBell === 'function') renderNotifBell();
@@ -6686,6 +6768,11 @@
     }
     setVal('f_leadSource', input.leadSource || input.dealSource || '');
     setVal('f_outcome', input.outcome || 'open');
+    // v25.28: restore outcome reason fields
+    if (typeof toggleOutcomeReasonTV === 'function') toggleOutcomeReasonTV();
+    setVal('f_outcomeReason', input.outcomeReason || '');
+    setVal('f_outcomeReasonNote', input.outcomeReasonNote || '');
+    setVal('f_stageNote', '');
     setVal('f_planOfAction', input.planOfAction || '');
     setVal('f_outputType', input.outputType);
     setVal('f_outputSignal', input.outputSignal);
@@ -7175,6 +7262,10 @@
       ].filter(function(x){ return x; }).join(' · '),
       leadSource: document.getElementById('f_leadSource').value,
       outcome: document.getElementById('f_outcome').value || 'open',
+      // v25.28: Win/Loss reason capture + stage change note (parity with BS v24.17.0)
+      outcomeReason: (document.getElementById('f_outcomeReason') || {}).value || '',
+      outcomeReasonNote: (document.getElementById('f_outcomeReasonNote') || {}).value || '',
+      stageNote: (document.getElementById('f_stageNote') || {}).value || '',
       planOfAction: (document.getElementById('f_planOfAction') || {}).value || '',
       outputType: document.getElementById('f_outputType').value,
       outputSignal: document.getElementById('f_outputSignal').value,
@@ -7207,6 +7298,10 @@
     if (!input.leadSource)           requiredFields.push({ id: 'f_leadSource',           label: 'Lead Source' });
     if (!input.close)                requiredFields.push({ id: 'f_close',                label: 'Expected Closure' });
     if (!input.outcome)              requiredFields.push({ id: 'f_outcome',              label: 'Outcome' });
+    // v25.28: when outcome is final (not open), reason category is required
+    if (input.outcome !== 'open' && !input.outcomeReason) {
+      requiredFields.push({ id: 'f_outcomeReason', label: 'Outcome reason' });
+    }
     if (!input.partnerContactName)   requiredFields.push({ id: 'f_partnerContactName',   label: 'Partner Contact — Name' });
     if (!input.partnerContactPhone || !/^[0-9]{10}$/.test(input.partnerContactPhone)) {
       requiredFields.push({ id: 'f_partnerContactPhone', label: 'Partner Contact — Mobile (10 digits)' });
@@ -7295,6 +7390,10 @@
       partnerContactName: input.partnerContactName, partnerContactPhone: input.partnerContactPhone, partnerContactEmail: input.partnerContactEmail,
       contact: input.contact,
       leadSource: input.leadSource, outcome: input.outcome,
+      // v25.28: Win/Loss reason capture + stage change note
+      outcomeReason: input.outcomeReason || '',
+      outcomeReasonNote: input.outcomeReasonNote || '',
+      stageNote: input.stageNote || '',
       planOfAction: input.planOfAction,
       outputType: input.outputType, outputSignal: input.outputSignal, sdiCount: input.sdiCount, projectorCount: input.projectorCount, projectorRes: input.projectorRes, projectorPorts: input.projectorPorts,
       inputs: input.inputs, inputs4K: input.inputs4K, inputsFHD: input.inputsFHD, signals: input.signals,
@@ -7419,6 +7518,8 @@
           if (Array.isArray(_rawCentralLog)) {
             _rawCentralLog.unshift(submission);
           }
+          // v25.28: clear any saved draft once the user actually saves a real entry
+          try { if (typeof _clearDraftTV === 'function') _clearDraftTV(); } catch (_) {}
           showSync('Deal registered', 'success');
           pushNotification({
             title: 'Deal registered',
@@ -7444,6 +7545,7 @@
     if (_editingRefId) {
       _editingRefId = null;
       _editingOriginalRow = null;
+      window._tvEditMode = false;  // v25.28: re-enable draft autosave for new deals
       const banner = document.getElementById('editBanner');
       if (banner) banner.classList.add('hidden');
     }
@@ -7571,6 +7673,7 @@
       // 5. Set edit state BEFORE populating so form knows we're in edit mode
       _editingRefId = refId;
       _editingOriginalRow = row;
+      window._tvEditMode = true;  // v25.28: skip draft autosave during edit
 
       // 6. Populate form fields — any failure here rolls back edit state
       try {
@@ -7622,6 +7725,7 @@
   function cancelEditMode() {
     _editingRefId = null;
     _editingOriginalRow = null;
+    window._tvEditMode = false;  // v25.28: re-enable draft autosave
     const banner = document.getElementById('editBanner');
     if (banner) banner.classList.add('hidden');
     resetForm();
@@ -7667,6 +7771,12 @@
     }
     setVal('f_leadSource', r.leadSource || r.dealSource || '');
     setVal('f_outcome', r.outcome || 'open');
+    // v25.28: restore outcome reason fields + trigger conditional reveal
+    if (typeof toggleOutcomeReasonTV === 'function') toggleOutcomeReasonTV();
+    setVal('f_outcomeReason', r.outcomeReason || '');
+    setVal('f_outcomeReasonNote', r.outcomeReasonNote || '');
+    // stageNote intentionally NOT restored — per-transition not per-deal, always blank on edit-load
+    setVal('f_stageNote', '');
     setVal('f_planOfAction', r.planOfAction || '');
     setVal('f_outputType', r.outputType);
     setVal('f_outputSignal', r.outputSignal);
@@ -7768,6 +7878,160 @@
       showSync(remaining.length + ' still finalizing — will retry', 'pending');
     }
   }
+
+  // =================================================================
+  // v25.28 — Win/Loss reason capture (parity with BS v24.17.0)
+  // =================================================================
+  const OUTCOME_REASONS_TV = {
+    won: [
+      { v: 'price-value',     t: 'Price / Value match' },
+      { v: 'relationship',    t: 'Strong relationship / trust' },
+      { v: 'tech-fit',        t: 'Best technical fit' },
+      { v: 'timeline',        t: 'Right timing / availability' },
+      { v: 'incumbent',       t: 'Existing tvONE customer' },
+      { v: 'other',           t: 'Other (explain in note)' }
+    ],
+    lost: [
+      { v: 'price-too-high',     t: 'Price too high' },
+      { v: 'lost-to-competitor', t: 'Lost to competitor' },
+      { v: 'project-cancelled',  t: 'Project cancelled' },
+      { v: 'no-budget',          t: 'No budget approved' },
+      { v: 'tech-mismatch',      t: 'Technical mismatch' },
+      { v: 'lost-to-delay',      t: 'Lost to delay / timing' },
+      { v: 'no-decision',        t: 'Customer never decided' },
+      { v: 'other',              t: 'Other (explain in note)' }
+    ],
+    'on-hold': [
+      { v: 'budget-pending',       t: 'Budget approval pending' },
+      { v: 'decision-maker-out',   t: 'Decision maker unavailable' },
+      { v: 'awaiting-consultant',  t: 'Awaiting consultant input' },
+      { v: 'reorganization',       t: 'End-user reorganization' },
+      { v: 'project-paused',       t: 'Project paused / deferred' },
+      { v: 'other',                t: 'Other (explain in note)' }
+    ]
+  };
+  function toggleOutcomeReasonTV() {
+    const sel = document.getElementById('f_outcome');
+    const wrap = document.getElementById('f_outcomeReason_wrap');
+    const cat = document.getElementById('f_outcomeReason');
+    const lbl = document.getElementById('f_outcomeReason_label');
+    if (!sel || !wrap || !cat) return;
+    const v = sel.value;
+    if (v === 'open' || !v) {
+      wrap.style.display = 'none';
+      cat.value = '';
+      return;
+    }
+    wrap.style.display = '';
+    if (lbl) {
+      lbl.textContent = v === 'won' ? 'Why did we win?' : v === 'lost' ? 'Why did we lose?' : 'Why on hold?';
+    }
+    const opts = OUTCOME_REASONS_TV[v] || [];
+    const prev = cat.value;
+    cat.innerHTML = '<option value="">Select reason…</option>' +
+      opts.map(function(o) { return '<option value="' + o.v + '">' + o.t + '</option>'; }).join('');
+    if (prev && opts.some(function(o) { return o.v === prev; })) cat.value = prev;
+  }
+  // Expose globally (onchange attr in HTML)
+  window.toggleOutcomeReasonTV = toggleOutcomeReasonTV;
+
+  // =================================================================
+  // v25.28 — Save Draft / Resume (parity with BS v24.17.0)
+  // localStorage key: tv-draft__<username>, single-slot per user, cleared on save
+  // =================================================================
+  function _draftKeyTV() {
+    var u = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.username : null;
+    return u ? ('tv-draft__' + u) : null;
+  }
+  function _saveDraftTV() {
+    if (window._tvEditMode) return;          // skip during edit-from-history
+    if (window._tvDraftSkipSave) return;     // skip during initial paint
+    var key = _draftKeyTV();
+    if (!key) return;
+    try {
+      var snap = {};
+      // tvONE form fields use f_camelCase ids (e.g., f_project, f_endUser)
+      document.querySelectorAll('#formView input, #formView select, #formView textarea').forEach(function(el) {
+        if (el.id && el.id.indexOf('f_') === 0 && el.value) {
+          snap[el.id] = el.value;
+        }
+      });
+      if (Object.keys(snap).length === 0) {
+        localStorage.removeItem(key);
+        return;
+      }
+      snap._savedAt = Date.now();
+      localStorage.setItem(key, JSON.stringify(snap));
+    } catch (e) { /* fail silent — localStorage might be full */ }
+  }
+  function _loadDraftTV() {
+    var key = _draftKeyTV();
+    if (!key) return null;
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) return null;
+      var obj = JSON.parse(raw);
+      return obj && obj._savedAt ? obj : null;
+    } catch (e) { return null; }
+  }
+  function _clearDraftTV() {
+    var key = _draftKeyTV();
+    if (!key) return;
+    try { localStorage.removeItem(key); } catch (e) {}
+    var banner = document.getElementById('draft-resume-banner-tv');
+    if (banner) banner.style.display = 'none';
+  }
+  function _hasDraftTV() { return !!_loadDraftTV(); }
+  function _resumeDraftTV() {
+    var draft = _loadDraftTV();
+    if (!draft) return;
+    Object.keys(draft).forEach(function(id) {
+      if (id === '_savedAt') return;
+      var el = document.getElementById(id);
+      if (el) el.value = draft[id];
+    });
+    // Trigger any onchange handlers that depend on these values
+    if (typeof toggleOutcomeReasonTV === 'function') toggleOutcomeReasonTV();
+    var banner = document.getElementById('draft-resume-banner-tv');
+    if (banner) banner.style.display = 'none';
+    if (typeof showSync === 'function') showSync('Draft restored — continue where you left off', 'success');
+  }
+  function _humanAgoTV(ms) {
+    var m = Math.floor(ms / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return m + ' min ago';
+    var h = Math.floor(m / 60);
+    if (h < 24) return h + ' hr ago';
+    return Math.floor(h / 24) + ' day(s) ago';
+  }
+  function _showDraftBannerTV() {
+    if (!_hasDraftTV()) return;
+    var banner = document.getElementById('draft-resume-banner-tv');
+    if (!banner) return;
+    var draft = _loadDraftTV();
+    var ts = draft._savedAt ? new Date(draft._savedAt) : null;
+    var ago = ts ? _humanAgoTV(Date.now() - ts.getTime()) : '';
+    var proj = draft['f_project'] || '(unnamed project)';
+    var summary = document.getElementById('draft-resume-summary-tv');
+    if (summary) summary.textContent = proj + ' — saved ' + ago;
+    banner.style.display = '';
+  }
+  function _initDraftAutosaveTV() {
+    var root = document.getElementById('formView');
+    if (!root || root._tvDraftWired) return;
+    root._tvDraftWired = true;
+    root.addEventListener('blur', function(e) {
+      if (e.target && e.target.id && e.target.id.indexOf('f_') === 0) _saveDraftTV();
+    }, true);
+    root.addEventListener('change', function(e) {
+      if (e.target && e.target.id && e.target.id.indexOf('f_') === 0) _saveDraftTV();
+    }, true);
+  }
+  // Expose for onclick handlers
+  window._resumeDraftTV = _resumeDraftTV;
+  window._clearDraftTV = _clearDraftTV;
+  window._initDraftAutosaveTV = _initDraftAutosaveTV;
+  window._showDraftBannerTV = _showDraftBannerTV;
 
   // =================================================================
   // SILENT SYNC TOAST
@@ -8982,7 +9246,13 @@
     const el = document.getElementById('logContent');
     document.getElementById('logCount').textContent = '· ' + rows.length + ' of ' + centralLog.length;
     if (!rows.length) {
-      el.innerHTML = '<div class="log-empty">No deals match these filters. Try clearing some filters to broaden the search.</div>';
+      // v25.28: distinguish "filtered to nothing" vs "no deals ever"
+      var totalDeals = (centralLog && centralLog.length) || 0;
+      if (totalDeals === 0) {
+        el.innerHTML = '<div class="log-empty"><div style="font-size:18px;font-weight:600;margin-bottom:8px;">No quotes yet</div><div>Click <strong>+ New Configuration</strong> above to build your first BOM — most projects take under two minutes. Your draft auto-saves as you type, so you can step away and come back.</div></div>';
+      } else {
+        el.innerHTML = '<div class="log-empty">No deals match these filters. Try clearing some filters to broaden the search.</div>';
+      }
       return;
     }
     function stagePillClass(stage) {
@@ -9532,9 +9802,13 @@
   // RESET
   // =================================================================
   function resetForm() {
-    ['f_project','f_endUser','f_partner','f_consultant','f_city','f_partnerContactName','f_partnerContactPhone','f_partnerContactEmail','f_leadSource','f_outcome','f_inputs','f_inputs4K','f_inputsFHD','f_notes','f_close','f_projectorCount','f_sdiCount','f_dealValueINR'].forEach(function(id) {
-      document.getElementById(id).value = '';
+    ['f_project','f_endUser','f_partner','f_consultant','f_city','f_partnerContactName','f_partnerContactPhone','f_partnerContactEmail','f_leadSource','f_outcome','f_inputs','f_inputs4K','f_inputsFHD','f_notes','f_close','f_projectorCount','f_sdiCount','f_dealValueINR','f_outcomeReason','f_outcomeReasonNote','f_stageNote'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.value = '';
     });
+    // v25.28: hide outcome reason wrap on reset
+    var _orWrap = document.getElementById('f_outcomeReason_wrap');
+    if (_orWrap) _orWrap.style.display = 'none';
     document.getElementById('f_stage').value = '';
     document.getElementById('f_venueType').value = '';
     document.getElementById('f_state').value = '';
