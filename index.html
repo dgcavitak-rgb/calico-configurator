@@ -5601,7 +5601,7 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.24';
+  const TVONE_FRONTEND_VERSION = '25.25';
   // Stamp version into login footer once DOM is ready (defer-safe)
   try {
     document.addEventListener('DOMContentLoaded', function(){
@@ -6136,6 +6136,179 @@
   let _editingRefId = null;
   let _editingOriginalRow = null;
 
+  /* ==========================================================================
+   * v25.25 — Session rehydrate
+   * ==========================================================================
+   * sessionStorage-backed session that survives page refresh but dies on tab
+   * close. Same pattern as BS v24.14.11.
+   *
+   * tvONE-specific: _authHash is already stored as a hash (not raw password),
+   * so persist/restore is straightforward — no need to refactor consumer sites.
+   *
+   * Storage key: `tv-session-v1`
+   * Stored shape: { username, authHash, user, savedAt }
+   * TTL: 8 hours
+   * ========================================================================== */
+  const _TV_SESSION_KEY = 'tv-session-v1';
+  const _TV_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+
+  function _persistTvSession(username, authHash, userRecord) {
+    try {
+      sessionStorage.setItem(_TV_SESSION_KEY, JSON.stringify({
+        username: username,
+        authHash: authHash,
+        user: userRecord,
+        savedAt: Date.now()
+      }));
+    } catch (e) { /* sessionStorage may be disabled */ }
+  }
+
+  function _clearPersistedTvSession() {
+    try { sessionStorage.removeItem(_TV_SESSION_KEY); } catch (e) {}
+  }
+
+  function _readPersistedTvSession() {
+    try {
+      const raw = sessionStorage.getItem(_TV_SESSION_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj || !obj.username || !obj.authHash || !obj.user) return null;
+      if (Date.now() - (obj.savedAt || 0) > _TV_SESSION_TTL_MS) {
+        _clearPersistedTvSession();
+        return null;
+      }
+      return obj;
+    } catch (e) { return null; }
+  }
+
+  /* Apply post-login UI mutations — extracted from attemptLogin so the rehydrate
+     path can call the same code. Reads from currentUser (caller must populate first). */
+  function _applyTvPostLoginUI() {
+    if (!currentUser) return;
+    // Apply server-stored theme preference if set (overrides localStorage)
+    if (currentUser.themePreference === 'dark' || currentUser.themePreference === 'light') {
+      try { applyTheme(currentUser.themePreference); } catch (e) {}
+      try { localStorage.setItem('calicoTheme', currentUser.themePreference); } catch (e) {}
+    }
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+    document.getElementById('userLabel').textContent = currentUser.name;
+    const avatar = document.getElementById('userAvatar');
+    if (avatar) avatar.textContent = _initialsFor(currentUser.name);
+    if (typeof renderNotifBell === 'function') renderNotifBell();
+    const rolePill = document.getElementById('roleLabel');
+    const rolInfo = (typeof TEAM_ROSTER_LABELS !== 'undefined' && TEAM_ROSTER_LABELS[currentUser.role])
+      ? TEAM_ROSTER_LABELS[currentUser.role]
+      : { label: currentUser.role || '', pill: '' };
+    if (rolePill) {
+      rolePill.textContent = rolInfo.label;
+      rolePill.className = 'role-pill ' + (rolInfo.pill || '');
+    }
+    const isOEM = currentUser.role === 'tvONE';
+    const logBtn = document.getElementById('logBtn');
+    const historyBtn = document.getElementById('historyBtn');
+    const teamBtn = document.getElementById('teamBtn');
+    const profileBtn = document.getElementById('profileBtn');
+    const newCfgBtn = document.getElementById('newCfgBtn');
+    const resultBtn = document.getElementById('resultBtn');
+    if (logBtn) logBtn.classList.remove('hidden');
+    if (historyBtn) historyBtn.classList.remove('hidden');
+    if (teamBtn) teamBtn.classList.toggle('hidden', !currentUser.isSuper);
+    if (profileBtn) profileBtn.classList.remove('hidden');
+    if (newCfgBtn) newCfgBtn.classList.toggle('hidden', isOEM);
+    const customersBtn = document.getElementById('customersBtn');
+    if (customersBtn) customersBtn.classList.remove('hidden');
+    const briefingBtn = document.getElementById('briefingBtn');
+    if (briefingBtn) briefingBtn.classList.remove('hidden');
+    const revSegBriefing = document.getElementById('revSegBriefing');
+    if (revSegBriefing) revSegBriefing.classList.toggle('hidden', !currentUser.isSuper);
+    const superReview = document.getElementById('superReviewActions');
+    if (superReview) superReview.classList.toggle('hidden', !currentUser.isSuper);
+    if (resultBtn) resultBtn.classList.add('hidden');
+  }
+
+  /* Page-load rehydrate. Returns true if session restored, false otherwise. */
+  async function _attemptTvRehydrate() {
+    const stored = _readPersistedTvSession();
+    if (!stored) return false;
+    if (!WEB_APP_URL) {
+      _clearPersistedTvSession();
+      return false;
+    }
+    try { showLoginSplash(); updateLoginSplash(15, 'Restoring your session…'); } catch (_) {}
+    try {
+      // Reuse the 'login' action — backend accepts username + passwordHash and
+      // applies the salt internally. Our stored authHash IS the unsalted client
+      // hash (same thing sha256(password) produces), so the backend's salting
+      // logic still works correctly.
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'login', username: stored.username, passwordHash: stored.authHash })
+      });
+      const data = await res.json();
+      if (!data || !data.ok) {
+        console.info('[rehydrate] backend rejected:', data && data.error, '— falling back to login');
+        _clearPersistedTvSession();
+        try { hideLoginSplash(); } catch (_) {}
+        return false;
+      }
+      // Reseat session
+      _authHash = stored.authHash;
+      currentUser = {
+        username: data.user.username,
+        name: data.user.fullName,
+        fullName: data.user.fullName,
+        email: data.user.email,
+        phone: data.user.phone,
+        role: data.user.role,
+        lastLogin: data.user.lastLogin,
+        themePreference: data.user.themePreference || '',
+        isSuper: data.user.role === 'Super' ||
+                 (typeof SUPER_LOGIN_NAMES !== 'undefined' &&
+                  SUPER_LOGIN_NAMES.indexOf(data.user.username.toLowerCase()) >= 0)
+      };
+      // Refresh stored session with latest user record
+      _persistTvSession(stored.username, stored.authHash, currentUser);
+
+      updateLoginSplash(50, 'Loading your data…');
+      _applyTvPostLoginUI();
+
+      updateLoginSplash(75, 'Almost there…');
+      lastResult = null; sessionLog = [];
+      try { initScreens(); } catch (_) {}
+      try { resetForm(); } catch (_) {}
+      try { startSessionTimer(); } catch (_) {}
+
+      // Force password change if backend says so (Super reset since last login)
+      if (data.mustChange) {
+        try { openChangePasswordModal(true); } catch (_) {}
+      } else if (currentUser.role === 'tvONE') {
+        try { showView('dash'); } catch (_) {}
+      } else {
+        try { showView('form'); } catch (_) {}
+      }
+
+      try { checkWebhookHealth(); } catch (_) {}
+      setTimeout(function () { try { drainPendingQueue(); } catch (_) {} }, 1500);
+      setTimeout(async function () {
+        try {
+          const _r = await fetchLog();
+          _rawCentralLog = _r;
+          centralLog = scopeRowsToUser_(_r);
+        } catch (e) { /* silent */ }
+      }, 2000);
+
+      updateLoginSplash(100, 'Welcome back');
+      setTimeout(function () { try { hideLoginSplash(); } catch (_) {} }, 500);
+      return true;
+    } catch (err) {
+      console.warn('[rehydrate] failed:', err && err.message ? err.message : err);
+      try { hideLoginSplash(); } catch (_) {}
+      return false;  // keep sessionStorage so a transient network blip doesn't kick user out
+    }
+  }
+
   async function attemptLogin() {
     const u = document.getElementById('loginUser').value.trim().toLowerCase();
     const p = document.getElementById('loginPass').value;
@@ -6174,6 +6347,8 @@
         themePreference: data.user.themePreference || '',
         isSuper: data.user.role === 'Super' || SUPER_LOGIN_NAMES.indexOf(data.user.username.toLowerCase()) >= 0
       };
+      // v25.25: Persist session for refresh-survival
+      try { _persistTvSession(u, hash, currentUser); } catch (_) {}
       // Apply server-stored theme preference if set (overrides localStorage)
       if (currentUser.themePreference === 'dark' || currentUser.themePreference === 'light') {
         applyTheme(currentUser.themePreference);
@@ -6271,8 +6446,28 @@
     document.getElementById('appScreen').classList.add('hidden');
     document.getElementById('loginScreen').classList.remove('hidden');
   }
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); });
+  document.addEventListener('DOMContentLoaded', async () => {
+    // v25.25: Attempt to rehydrate a refresh-survivable session BEFORE the login
+    // screen visually renders. If sessionStorage has a stored session, hide the
+    // login screen immediately, then try to validate with the backend. On
+    // success, the splash screen takes over and the user goes straight into
+    // the app. On failure (expired, password changed elsewhere, network blip),
+    // we restore the login screen so the user can sign in normally.
+    try {
+      if (sessionStorage.getItem(_TV_SESSION_KEY)) {
+        const loginEl = document.getElementById('loginScreen');
+        if (loginEl) loginEl.classList.add('hidden');
+        const ok = await _attemptTvRehydrate();
+        if (!ok && loginEl) loginEl.classList.remove('hidden');
+      }
+    } catch (e) {
+      console.warn('[rehydrate] uncaught error:', e);
+      const loginEl = document.getElementById('loginScreen');
+      if (loginEl) loginEl.classList.remove('hidden');
+    }
+    // Always wire the Enter-key handler — needed if rehydrate failed or had no stored session
+    const passEl = document.getElementById('loginPass');
+    if (passEl) passEl.addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); });
   });
 
   // =================================================================
@@ -9598,6 +9793,12 @@
       }
       // Update stored auth hash
       _authHash = newHash;
+      // v25.25: refresh persisted session so next page refresh uses the new hash
+      try {
+        if (currentUser && currentUser.username) {
+          _persistTvSession(currentUser.username, newHash, currentUser);
+        }
+      } catch (_) { /* non-fatal */ }
       ok.textContent = 'Password updated successfully.';
       ok.classList.add('show');
       setTimeout(function() {
