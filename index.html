@@ -5601,7 +5601,7 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.25';
+  const TVONE_FRONTEND_VERSION = '25.26';
   // Stamp version into login footer once DOM is ready (defer-safe)
   try {
     document.addEventListener('DOMContentLoaded', function(){
@@ -6008,44 +6008,130 @@
   const MAX_SCREENS = 10;
 
   // =================================================================
-  // SESSION MANAGEMENT — 10-minute hard timeout
+  // SESSION MANAGEMENT — v25.26
+  // 30-min idle timeout (activity resets) + daily 02:00 IST forced logout.
+  // Replaces the v25.x fixed 10-min timer (which also had a bug: extendSession
+  // was setting a local `sessionStart` var instead of updating sessionStorage,
+  // so "Stay signed in" didn't actually extend the session).
   // =================================================================
-  const SESSION_DURATION_MS = 10 * 60 * 1000;   // 10 minutes
-  const WARN_BEFORE_MS = 60 * 1000;             // 1 minute
+  const IDLE_TIMEOUT_MS = 30 * 60 * 1000;          // 30 min of inactivity
+  const WARN_BEFORE_MS = 60 * 1000;                // popup shows 60s before logout
+  const FORCED_LOGOUT_TIME_IST = '02:00';          // single daily IST cutoff
+  const _IST_OFFSET_MS = 5.5 * 3600 * 1000;        // IST = UTC+5:30
+  const _IDLE_LAST_KEY = 'calico_lastActivityAt';
+
   let sessionTimerId = null;
   let sessionWarned = false;
+  let _sessionCountdownInterval = null;
+  let _idleResetThrottleAt = 0;
+  let _idleActivityHandlerAttached = false;
+  let _forcedLogoutTimerId = null;
+  let _forcedLogoutScheduledFor = 0;
+  let _forcedLogoutVisListenerAttached = false;
+
+  /* Compute next 02:00 IST cutoff strictly after fromMs (UTC ms). */
+  function _nextIstCutoffMs(fromMs) {
+    const istNow = new Date(fromMs + _IST_OFFSET_MS);
+    const parts = FORCED_LOGOUT_TIME_IST.split(':');
+    const hh = parseInt(parts[0], 10);
+    const mm = parseInt(parts[1], 10);
+    for (let dayOffset = 0; dayOffset <= 1; dayOffset++) {
+      const utcMs = Date.UTC(
+        istNow.getUTCFullYear(),
+        istNow.getUTCMonth(),
+        istNow.getUTCDate() + dayOffset,
+        hh, mm
+      ) - _IST_OFFSET_MS;
+      if (utcMs > fromMs) return utcMs;
+    }
+    return fromMs + 24 * 3600 * 1000;  // defensive
+  }
+
+  function _scheduleForcedLogout() {
+    if (_forcedLogoutTimerId) { clearTimeout(_forcedLogoutTimerId); _forcedLogoutTimerId = null; }
+    if (!currentUser) return;
+    _forcedLogoutScheduledFor = _nextIstCutoffMs(Date.now());
+    const ms = _forcedLogoutScheduledFor - Date.now();
+    console.log('[forced-logout] Next cutoff scheduled for', FORCED_LOGOUT_TIME_IST,
+                'IST (in', Math.round(ms / 60000), 'min)');
+    _forcedLogoutTimerId = setTimeout(_fireForcedLogout, ms);
+  }
+
+  function _fireForcedLogout() {
+    if (!currentUser) return;
+    console.log('[forced-logout] Firing daily IST cutoff at', new Date().toISOString());
+    forceLogout('Daily ' + FORCED_LOGOUT_TIME_IST + ' IST logout. Please sign in again.');
+  }
+
+  /* visibilitychange catch-up: if the tab was hidden through 02:00 IST and only
+     wakes up afterward, the setTimeout may not have fired. */
+  function _wireForcedLogoutVisibilityCatchup() {
+    if (_forcedLogoutVisListenerAttached) return;
+    _forcedLogoutVisListenerAttached = true;
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState !== 'visible') return;
+      if (!currentUser || !_forcedLogoutScheduledFor) return;
+      if (Date.now() >= _forcedLogoutScheduledFor) {
+        console.log('[forced-logout] visibilitychange caught up — cutoff was at',
+                    new Date(_forcedLogoutScheduledFor).toISOString(), '· firing now');
+        _fireForcedLogout();
+      }
+    });
+  }
 
   function startSessionTimer() {
     sessionWarned = false;
-    sessionStorage.setItem('calico_loginAt', String(Date.now()));
+    sessionStorage.setItem(_IDLE_LAST_KEY, String(Date.now()));
     if (sessionTimerId) clearInterval(sessionTimerId);
     sessionTimerId = setInterval(checkSessionExpiry, 5000); // check every 5s
+    _attachActivityListener();
+    _scheduleForcedLogout();
+    _wireForcedLogoutVisibilityCatchup();
   }
 
   function stopSessionTimer() {
     if (sessionTimerId) { clearInterval(sessionTimerId); sessionTimerId = null; }
-    sessionStorage.removeItem('calico_loginAt');
+    if (_forcedLogoutTimerId) { clearTimeout(_forcedLogoutTimerId); _forcedLogoutTimerId = null; }
+    if (_sessionCountdownInterval) { clearInterval(_sessionCountdownInterval); _sessionCountdownInterval = null; }
+    sessionStorage.removeItem(_IDLE_LAST_KEY);
     sessionWarned = false;
-    // Hide any warning banner
     const w = document.getElementById('sessionWarnBanner');
     if (w) w.classList.remove('show');
   }
 
   function checkSessionExpiry() {
-    const loginAt = parseInt(sessionStorage.getItem('calico_loginAt') || '0', 10);
-    if (!loginAt || !currentUser) return;
-    const elapsed = Date.now() - loginAt;
-    const remaining = SESSION_DURATION_MS - elapsed;
+    const lastActivity = parseInt(sessionStorage.getItem(_IDLE_LAST_KEY) || '0', 10);
+    if (!lastActivity || !currentUser) return;
+    const idleMs = Date.now() - lastActivity;
+    const remaining = IDLE_TIMEOUT_MS - idleMs;
     if (remaining <= 0) {
-      // Hard timeout — force logout
       stopSessionTimer();
-      forceLogout('Session expired after 10 minutes. Please log in again.');
+      forceLogout('Signed out for inactivity. Please sign in again.');
       return;
     }
     if (remaining <= WARN_BEFORE_MS && !sessionWarned) {
       sessionWarned = true;
       showSessionWarning();
     }
+  }
+
+  function _attachActivityListener() {
+    if (_idleActivityHandlerAttached) return;
+    _idleActivityHandlerAttached = true;
+    const handler = function () {
+      if (!currentUser) return;
+      const now = Date.now();
+      // Throttle to once per 5 sec to avoid touching sessionStorage on every mousemove
+      if (now - _idleResetThrottleAt < 5000) return;
+      _idleResetThrottleAt = now;
+      // Don't reset while warning is showing — user must click extend
+      const w = document.getElementById('sessionWarnBanner');
+      if (w && w.classList.contains('show')) return;
+      sessionStorage.setItem(_IDLE_LAST_KEY, String(now));
+    };
+    ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function (ev) {
+      document.addEventListener(ev, handler, { capture: true, passive: true });
+    });
   }
 
   function showSessionWarning() {
@@ -6060,14 +6146,12 @@
         '<button class="btn-tiny" style="margin-left:10px" onclick="extendSession()">Stay signed in</button>';
       document.body.appendChild(w);
     } else {
-      // Reset countdown text if re-shown
       const cd = w.querySelector('#sessionWarnCountdown'); if (cd) cd.textContent = '60';
     }
     w.classList.add('show');
-    // Start per-second countdown
     if (_sessionCountdownInterval) clearInterval(_sessionCountdownInterval);
     let remaining = 60;
-    _sessionCountdownInterval = setInterval(function() {
+    _sessionCountdownInterval = setInterval(function () {
       remaining--;
       const cd = document.getElementById('sessionWarnCountdown');
       if (cd) cd.textContent = Math.max(0, remaining);
@@ -6078,16 +6162,19 @@
     }, 1000);
   }
 
-  let _sessionCountdownInterval = null;
-
-  // User clicks "Stay signed in" in the warning banner — extend session by full SESSION_MS
+  // User clicks "Stay signed in" — reset idle clock by stamping fresh activity.
+  // Forced-logout (02:00 IST) timer is NOT touched.
+  // v25.26 fix: previous version updated only a local `sessionStart` var; the actual
+  // sessionStorage key was never refreshed, so extension didn't work.
   function extendSession() {
-    sessionStart = Date.now();
+    sessionStorage.setItem(_IDLE_LAST_KEY, String(Date.now()));
     sessionWarned = false;
+    _idleResetThrottleAt = Date.now();
     const w = document.getElementById('sessionWarnBanner');
     if (w) w.classList.remove('show');
     if (_sessionCountdownInterval) { clearInterval(_sessionCountdownInterval); _sessionCountdownInterval = null; }
-    showSync('Session extended', 'success');
+    showSync('Session extended ✓', 'success');
+    console.log('[session] Idle timer reset at', new Date().toLocaleTimeString());
   }
 
   function forceLogout(reason) {
