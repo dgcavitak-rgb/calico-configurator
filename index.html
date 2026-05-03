@@ -1777,11 +1777,12 @@
     cursor: pointer; display: flex; align-items: center;
     transition: border-color 180ms, background 180ms;
   }
-  .cm-picker-btn-tv:hover { border-color: rgba(212,175,55,0.45); }
+  .cm-picker-btn-tv:hover { border-color: rgba(212,175,55,0.45); background: rgba(212,175,55,0.04); }
   .cm-picker-btn-tv:focus { outline: none; border-color: #D4AF37; box-shadow: 0 0 0 3px rgba(212,175,55,0.18); }
   .cm-picker-value-tv { flex: 1; text-align: left; }
   .cm-picker-value-tv.placeholder { color: var(--ink-soft); }
-  .cm-picker-icon-tv { margin-left: 10px; font-size: 16px; opacity: 0.7; }
+  /* v25.30: Calendar icon — gold tint to match field focus ring + chip theme */
+  .cm-picker-icon-tv { margin-left: 10px; font-size: 16px; opacity: 0.85; color: #D4AF37; }
   .cm-picker-popover-tv {
     position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 100;
     background: var(--surface-1, #1a1a1a);
@@ -1850,6 +1851,16 @@
     padding: 6px 0; min-height: 18px;
   }
   .closemonth-display-tv.set { color: #D4AF37; font-weight: 600; }
+  /* v25.30: Default chip styling — soft gold tint, neutral but on-theme.
+     Was using bare var(--border-soft) which looked alien from gold focus ring on adjacent fields. */
+  .closemonth-chip {
+    transition: all 0.15s ease;
+  }
+  .closemonth-chip:hover {
+    background: rgba(212,175,55,0.10) !important;
+    border-color: rgba(212,175,55,0.45) !important;
+    color: #D4AF37 !important;
+  }
   .closemonth-chip.active {
     background: rgba(212,175,55,0.18) !important;
     border-color: #D4AF37 !important;
@@ -5534,7 +5545,7 @@
 </div>
 
 <!-- v25.29: WhatsApp share modal — uses real <a target="_blank"> to bypass popup blockers -->
-<div id="whatsappModalTV" class="modal-overlay hidden" style="display:none;">
+<div id="whatsappModalTV" class="modal-overlay" style="display:none;">
   <div class="modal-card" style="max-width: 560px;">
     <div class="modal-title">📱 Share via WhatsApp</div>
     <div class="modal-sub">Opens WhatsApp Web/app with the message pre-filled. PDF cannot be auto-attached — share it separately if needed.</div>
@@ -5561,7 +5572,7 @@
 </div>
 
 <!-- v25.29: Email-to-partner modal — sends PDF via backend MailApp/GmailApp -->
-<div id="emailModalTV" class="modal-overlay hidden" style="display:none;">
+<div id="emailModalTV" class="modal-overlay" style="display:none;">
   <div class="modal-card" style="max-width: 640px;">
     <div class="modal-title">✉ Email Quote to Partner</div>
     <div class="modal-sub">Sent <strong>from your email</strong> (<span id="emailModalFromHintTV">—</span>) · 📎 PDF auto-attached · <strong>dipen.g@cavitak.com</strong> always CC'd</div>
@@ -5590,6 +5601,49 @@
     <div class="btn-row" style="margin-top:16px;justify-content:flex-end;">
       <button class="secondary" onclick="closeEmailModalTV()">Cancel</button>
       <button class="primary" onclick="sendEmailViaBackendTV()" id="emailModalSendBtnTV">Send Email</button>
+    </div>
+  </div>
+</div>
+
+<!-- v25.32: Profile Setup Gate modal — runs after login (after any forced password change)
+     when professionalTitle/email/phone are missing. Forest green theme matches tvONE accents.
+     Cannot be dismissed (no close button, Esc disabled, click-outside disabled). -->
+<div id="profile-gate-modal-tv" class="modal-overlay" style="display:none;z-index:99999;">
+  <div class="modal-card" style="max-width:540px;">
+    <div style="background:linear-gradient(135deg,#064E3B 0%,#0F766E 100%);color:#fff;padding:18px 24px;border-radius:14px 14px 0 0;margin:-20px -20px 18px -20px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;opacity:0.9;font-weight:600;">Welcome aboard</div>
+      <div style="color:#fff;font-size:20px;margin-top:4px;font-weight:700;">Complete your profile</div>
+    </div>
+    <div style="background:rgba(6,78,59,0.08);border-left:3px solid #064E3B;padding:12px 14px;border-radius:6px;margin-bottom:18px;font-size:13px;color:var(--ink-soft,#475569);line-height:1.5;">
+      These details appear in your <strong>emails, WhatsApp messages, and quotes</strong> to partners. Please verify or fill them now — you can edit them anytime later.
+    </div>
+    <div id="profile-gate-error-tv" style="display:none;background:#FEE2E2;border:1px solid #DC2626;color:#991B1B;padding:10px 12px;border-radius:6px;margin-bottom:14px;font-size:13px;font-weight:500;"></div>
+
+    <div class="field" style="margin-bottom:14px;">
+      <label style="display:block;font-weight:600;font-size:13px;margin-bottom:5px;">Full Name <span style="color:#94A3B8;font-weight:400;font-size:11px;">(read-only — contact super to change)</span></label>
+      <input type="text" id="pgate-fullname-tv" readonly disabled style="width:100%;padding:9px 11px;border:1px solid var(--border-soft,#E5E7EB);border-radius:6px;background:#F8FAFC;color:var(--ink-soft,#64748B);">
+    </div>
+
+    <div class="field" style="margin-bottom:14px;">
+      <label style="display:block;font-weight:600;font-size:13px;margin-bottom:5px;">Professional Title <span style="color:#DC2626;">*</span></label>
+      <input type="text" id="pgate-title-tv" placeholder="e.g., Account Manager, Solutions Architect, Sales Executive" maxlength="80" style="width:100%;padding:9px 11px;border:1px solid var(--border-strong,#CBD5E1);border-radius:6px;font-size:14px;">
+      <div style="font-size:11px;color:var(--ink-subtle,#94A3B8);margin-top:4px;">How partners see you. Examples: "Senior Account Manager", "Presales Engineer", "Business Development Manager"</div>
+    </div>
+
+    <div class="field" style="margin-bottom:14px;">
+      <label style="display:block;font-weight:600;font-size:13px;margin-bottom:5px;">Email <span style="color:#DC2626;">*</span></label>
+      <input type="email" id="pgate-email-tv" placeholder="name@cavitak.com" style="width:100%;padding:9px 11px;border:1px solid var(--border-strong,#CBD5E1);border-radius:6px;font-size:14px;">
+      <div style="font-size:11px;color:var(--ink-subtle,#94A3B8);margin-top:4px;">Outgoing emails will appear from this address (with dipen.g@cavitak.com auto-CC'd).</div>
+    </div>
+
+    <div class="field" style="margin-bottom:14px;">
+      <label style="display:block;font-weight:600;font-size:13px;margin-bottom:5px;">Phone <span style="color:#DC2626;">*</span></label>
+      <input type="tel" id="pgate-phone-tv" placeholder="+91 98765 43210" style="width:100%;padding:9px 11px;border:1px solid var(--border-strong,#CBD5E1);border-radius:6px;font-size:14px;">
+      <div style="font-size:11px;color:var(--ink-subtle,#94A3B8);margin-top:4px;">Shown to partners in your communications. WhatsApp uses this number for the 'from' field.</div>
+    </div>
+
+    <div class="btn-row" style="margin-top:18px;justify-content:flex-end;">
+      <button class="primary" onclick="saveProfileGateTV()" id="profile-gate-save-btn-tv" style="background:#064E3B;border-color:#064E3B;color:#fff;padding:10px 22px;font-size:14px;font-weight:600;">Save & Continue</button>
     </div>
   </div>
 </div>
@@ -5711,7 +5765,7 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.29';
+  const TVONE_FRONTEND_VERSION = '25.32';
   // Stamp version into login footer once DOM is ready (defer-safe)
   try {
     document.addEventListener('DOMContentLoaded', function(){
@@ -6380,6 +6434,109 @@
 
   /* Apply post-login UI mutations — extracted from attemptLogin so the rehydrate
      path can call the same code. Reads from currentUser (caller must populate first). */
+  /* ===== v25.32 — Profile Setup Gate (parity with BS v24.19.0) =====
+     Forces user to fill professionalTitle + email + phone after first login.
+     Blocks app access via modal until fields valid. Cannot be dismissed (Esc/click-outside disabled). */
+  function _profileGateNeededTV() {
+    const u = currentUser;
+    if (!u) return false;
+    const titleOk = (u.professionalTitle || '').trim().length >= 2;
+    const emailOk = (u.email || '').trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((u.email || '').trim());
+    const phoneOk = (u.phone || '').trim().replace(/\D/g, '').length >= 10;
+    return !(titleOk && emailOk && phoneOk);
+  }
+  function _showProfileGateTV() {
+    const u = currentUser || {};
+    document.getElementById('pgate-fullname-tv').value = u.fullName || '';
+    document.getElementById('pgate-title-tv').value = u.professionalTitle || '';
+    document.getElementById('pgate-email-tv').value = u.email || '';
+    document.getElementById('pgate-phone-tv').value = u.phone || '';
+    document.getElementById('profile-gate-error-tv').style.display = 'none';
+    const overlay = document.getElementById('profile-gate-modal-tv');
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    setTimeout(function() {
+      const t = document.getElementById('pgate-title-tv');
+      if (t) t.focus();
+    }, 100);
+    if (!window._profileGateEscWiredTV) {
+      window._profileGateEscWiredTV = true;
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('profile-gate-modal-tv').style.display === 'flex') {
+          e.preventDefault(); e.stopPropagation();
+        }
+      }, true);
+    }
+  }
+  function _hideProfileGateTV() {
+    document.getElementById('profile-gate-modal-tv').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+  async function saveProfileGateTV() {
+    const errEl = document.getElementById('profile-gate-error-tv');
+    const saveBtn = document.getElementById('profile-gate-save-btn-tv');
+    errEl.style.display = 'none';
+    errEl.textContent = '';
+
+    const title = document.getElementById('pgate-title-tv').value.trim();
+    const email = document.getElementById('pgate-email-tv').value.trim();
+    const phone = document.getElementById('pgate-phone-tv').value.trim();
+
+    if (!title || title.length < 2) {
+      errEl.textContent = 'Professional Title is required (min 2 characters).';
+      errEl.style.display = 'block';
+      document.getElementById('pgate-title-tv').focus();
+      return;
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errEl.textContent = 'Valid email is required.';
+      errEl.style.display = 'block';
+      document.getElementById('pgate-email-tv').focus();
+      return;
+    }
+    if (!phone || phone.replace(/\D/g, '').length < 10) {
+      errEl.textContent = 'Phone is required (min 10 digits).';
+      errEl.style.display = 'block';
+      document.getElementById('pgate-phone-tv').focus();
+      return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+    try {
+      const resp = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'profile_update',
+          authUsername: currentUser ? currentUser.username : '',
+          authPasswordHash: _authHash || '',
+          professionalTitle: title,
+          email: email,
+          phone: phone
+        })
+      });
+      const data = await resp.json();
+      if (!data.ok) throw new Error(data.error || 'Save failed');
+      // Mirror to local session state so all rendering uses fresh data
+      currentUser.professionalTitle = title;
+      currentUser.email = email;
+      currentUser.phone = phone;
+      _hideProfileGateTV();
+      if (typeof showSync === 'function') {
+        showSync('Profile saved — welcome ' + (currentUser.fullName || '').split(' ')[0] + '!', 'success');
+      }
+    } catch (err) {
+      errEl.textContent = 'Save failed: ' + (err.message || err);
+      errEl.style.display = 'block';
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save & Continue';
+    }
+  }
+  // Expose for onclick handlers
+  window.saveProfileGateTV = saveProfileGateTV;
+
   function _applyTvPostLoginUI() {
     if (!currentUser) return;
     // Apply server-stored theme preference if set (overrides localStorage)
@@ -6399,6 +6556,16 @@
         window._tvDraftSkipSave = false;
       } catch (_) { /* never block app load */ }
     }, 50);
+    // v25.32: Profile Setup Gate — runs only if profile is incomplete.
+    // Defer 250ms so it appears AFTER any forced password change modal has had a chance
+    // to render. Forced PW change auto-logs out → next login re-triggers gate naturally.
+    setTimeout(function() {
+      try {
+        if (typeof _profileGateNeededTV === 'function' && _profileGateNeededTV()) {
+          _showProfileGateTV();
+        }
+      } catch (_) { /* never block app load */ }
+    }, 250);
     const avatar = document.getElementById('userAvatar');
     if (avatar) avatar.textContent = _initialsFor(currentUser.name);
     if (typeof renderNotifBell === 'function') renderNotifBell();
@@ -6470,6 +6637,7 @@
         role: data.user.role,
         lastLogin: data.user.lastLogin,
         themePreference: data.user.themePreference || '',
+        professionalTitle: data.user.professionalTitle || '',  // v25.32
         isSuper: data.user.role === 'Super' ||
                  (typeof SUPER_LOGIN_NAMES !== 'undefined' &&
                   SUPER_LOGIN_NAMES.indexOf(data.user.username.toLowerCase()) >= 0)
@@ -6551,6 +6719,7 @@
         role: data.user.role,
         lastLogin: data.user.lastLogin,
         themePreference: data.user.themePreference || '',
+        professionalTitle: data.user.professionalTitle || '',  // v25.32
         isSuper: data.user.role === 'Super' || SUPER_LOGIN_NAMES.indexOf(data.user.username.toLowerCase()) >= 0
       };
       // v25.25: Persist session for refresh-survival
@@ -6790,6 +6959,7 @@
     // Clear any edit-mode state — starting fresh
     _editingRefId = null;
     _editingOriginalRow = null;
+    window._tvEditMode = false;
     const banner = document.getElementById('editBanner');
     if (banner) banner.classList.add('hidden');
     // Result button goes away — no result to view yet for this new selection
@@ -6798,6 +6968,17 @@
     resetForm();
     lastResult = null;
     showView('form');
+    // v25.31: Re-check for draft after view is visible. Wait one tick so #formView is rendered.
+    // Without this, the banner from post-login would be in a hidden div initially; clicking "+ New"
+    // navigates user but doesn't re-trigger the banner check.
+    setTimeout(function() {
+      try {
+        window._tvDraftSkipSave = true;
+        if (typeof _initDraftAutosaveTV === 'function') _initDraftAutosaveTV();
+        if (typeof _showDraftBannerTV === 'function') _showDraftBannerTV();
+        window._tvDraftSkipSave = false;
+      } catch (_) { /* never block */ }
+    }, 30);
   }
 
   // =================================================================
@@ -8082,7 +8263,8 @@
     var proj = draft['f_project'] || '(unnamed project)';
     var summary = document.getElementById('draft-resume-summary-tv');
     if (summary) summary.textContent = proj + ' — saved ' + ago;
-    banner.style.display = '';
+    // v25.31: banner uses flex layout; setting display='' fell back to block which broke alignment
+    banner.style.display = 'flex';
   }
   function _initDraftAutosaveTV() {
     var root = document.getElementById('formView');
@@ -8490,11 +8672,11 @@
           '</div>' +
         '</div>' +
 
-        // Footer
+        // Footer (v25.32: uses professionalTitle, not internal role)
         '<div style="border-top:1px solid #E2E8F0;padding:14px 32px 18px;font-family:\'Helvetica Neue\',Arial,sans-serif;">' +
           '<div style="font-size:10px;color:#475569;font-weight:600;">' +
             _escapeHtmlTV(u.fullName || u.name || 'Cavitak Marketing') +
-            (u.role ? ' · ' + _escapeHtmlTV(u.role) : '') +
+            (u.professionalTitle ? ' · ' + _escapeHtmlTV(u.professionalTitle) : '') +
             (u.phone ? ' · ' + _escapeHtmlTV(u.phone) : '') +
             (u.email ? ' · ' + _escapeHtmlTV(u.email) : '') +
           '</div>' +
@@ -8561,7 +8743,17 @@
 
     const phoneRaw = String(input.partnerContactPhone || '').replace(/\D/g, '');
     const greeting = (input.partnerContactName || '').trim() || 'team';
-    const userName = (currentUser && (currentUser.fullName || currentUser.name)) || 'Cavitak Marketing';
+    // v25.32: Personalized sender block — uses partner-facing identity (name + title + phone + email)
+    const u = currentUser || {};
+    const userName  = (u.fullName || u.name || '').trim() || 'Cavitak Marketing';
+    const userTitle = (u.professionalTitle || '').trim();
+    const userPhone = (u.phone || '').trim();
+    const userEmail = (u.email || '').trim();
+    const senderBlock = userName +
+      (userTitle ? '\n' + userTitle : '') +
+      (userPhone ? '\n📞 ' + userPhone : '') +
+      (userEmail ? '\n✉ ' + userEmail : '') +
+      '\nCavitak Marketing Pvt Ltd';
     const validUntilStr = new Date(Date.now() + 15*24*60*60*1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
     const defaultMsg =
@@ -8573,7 +8765,7 @@
       '*Quote ref*: ' + refId + '\n' +
       '*Valid until*: ' + validUntilStr + '\n\n' +
       'I will share the detailed PDF separately. Pricing will follow per our commercial terms. Let me know if you need any changes.\n\n' +
-      'Regards,\n' + userName;
+      'Regards,\n' + senderBlock;
 
     let phoneFmt = '';
     if (phoneRaw.length === 10) phoneFmt = '91' + phoneRaw;
@@ -8624,8 +8816,16 @@
     const toEmail = (input.partnerContactEmail || '').trim();
     const greeting = (input.partnerContactName || '').trim() ? ('Dear ' + input.partnerContactName + ',') : 'Dear Partner,';
     const userName = (currentUser && (currentUser.fullName || currentUser.name)) || 'Cavitak Team';
-    const userRole = (currentUser && currentUser.role) || '';
+    // v25.32: Use partner-facing professionalTitle, NOT internal role.
+    const userTitle = (currentUser && currentUser.professionalTitle) || '';
+    const userPhone = (currentUser && currentUser.phone) || '';
     const subject = 'tvONE CALICO Quote · ' + (input.project || 'Project') + ' · ' + (reco.chassis || 'Configuration');
+
+    // Sign-off lines, skipping empty ones
+    const signOffLines = [userName];
+    if (userTitle) signOffLines.push(userTitle);
+    if (userPhone) signOffLines.push('📞 ' + userPhone);
+    signOffLines.push('Cavitak Marketing Pvt Ltd');
 
     const body = [
       greeting,
@@ -8640,11 +8840,8 @@
       '',
       'For any clarifications, technical specs, or stock position, please reach out anytime.',
       '',
-      'Regards,',
-      userName,
-      userRole,
-      'Cavitak Marketing Pvt Ltd'
-    ].join('\n');
+      'Regards,'
+    ].concat(signOffLines).join('\n');
 
     document.getElementById('emailModalToTV').value = toEmail;
     document.getElementById('emailModalCcTV').value = '';
@@ -10250,6 +10447,8 @@
   // RESET
   // =================================================================
   function resetForm() {
+    // v25.31: skip autosave during programmatic clear so we don't accidentally overwrite a saved draft
+    window._tvDraftSkipSave = true;
     ['f_project','f_endUser','f_partner','f_consultant','f_city','f_partnerContactName','f_partnerContactPhone','f_partnerContactEmail','f_leadSource','f_outcome','f_inputs','f_inputs4K','f_inputsFHD','f_notes','f_close','f_projectorCount','f_sdiCount','f_dealValueINR','f_outcomeReason','f_outcomeReasonNote','f_stageNote'].forEach(function(id) {
       var el = document.getElementById(id);
       if (el) el.value = '';
@@ -10288,6 +10487,8 @@
     // Clear any lingering red-border error states
     document.querySelectorAll('.field-error').forEach(function(n) { n.classList.remove('field-error'); });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // v25.31: re-enable autosave after form reset is complete
+    window._tvDraftSkipSave = false;
   }
 
   // =================================================================
