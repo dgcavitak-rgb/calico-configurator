@@ -5224,40 +5224,9 @@
 
     <!-- v25.14 Cycle 2a — Comparison dropdown, 2-column card, Plan of Action textarea -->
     <div id="tv-c2a-wrap" class="card" style="padding:18px; margin-bottom:18px;">
-      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:14px;">
-        <div>
-          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600; margin-bottom:4px;">Comparison</div>
-          <select id="tv-c2a-mode" onchange="tvC2aRender()" style="padding:9px 12px; background:var(--surface-2); border:1px solid var(--border-soft); color:var(--ink); border-radius:8px; font-size:13px; min-width:260px;">
-            <option value="qoq_yoy">Quarter vs same quarter last year</option>
-            <option value="qoq_seq">Quarter vs previous quarter</option>
-            <option value="yoy">Year-to-date vs last year YTD</option>
-            <option value="half">Half-year vs same half last year</option>
-            <option value="ytd">Year-to-date (no comparison)</option>
-          </select>
-        </div>
-        <div style="flex:1; min-width:180px; font-size:11px; color:var(--ink-subtle);" id="tv-c2a-asof">As of: —</div>
-      </div>
-      <div id="tv-c2a-card" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div style="background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; padding:14px;">
-          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600;">Current</div>
-          <div id="tv-c2a-cur-label" style="font-size:12px; color:var(--ink-muted, var(--ink-subtle)); margin:4px 0 10px; min-height:16px;">—</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div><div style="font-size:10px; color:var(--ink-subtle); text-transform:uppercase; letter-spacing:0.05em;">Actuals</div><div id="tv-c2a-cur-actuals" style="font-size:22px; font-weight:700; color:#D4AF37; margin-top:2px;">—</div></div>
-            <div><div style="font-size:10px; color:var(--ink-subtle); text-transform:uppercase; letter-spacing:0.05em;">Pipeline (open)</div><div id="tv-c2a-cur-pipeline" style="font-size:22px; font-weight:700; color:#D4AF37; margin-top:2px;">—</div></div>
-          </div>
-          <div id="tv-c2a-cur-tx" style="font-size:11px; color:var(--ink-subtle); margin-top:8px;">—</div>
-        </div>
-        <div id="tv-c2a-cmp-card" style="background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; padding:14px;">
-          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600;">Comparison</div>
-          <div id="tv-c2a-cmp-label" style="font-size:12px; color:var(--ink-muted, var(--ink-subtle)); margin:4px 0 10px; min-height:16px;">—</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div><div style="font-size:10px; color:var(--ink-subtle); text-transform:uppercase; letter-spacing:0.05em;">Actuals</div><div id="tv-c2a-cmp-actuals" style="font-size:22px; font-weight:700; color:var(--ink); margin-top:2px;">—</div></div>
-            <div><div style="font-size:10px; color:var(--ink-subtle); text-transform:uppercase; letter-spacing:0.05em;">Δ Actuals</div><div id="tv-c2a-delta" style="font-size:22px; font-weight:700; margin-top:2px;">—</div></div>
-          </div>
-          <div id="tv-c2a-cmp-tx" style="font-size:11px; color:var(--ink-subtle); margin-top:8px;">—</div>
-        </div>
-      </div>
-      <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft);">
+      <!-- v25.27 — SAP/C2a Actuals KPI widget removed (sales_history_aggregate is a stub).
+           Plan of Action + drilldown below are unaffected. -->
+      <div style="margin-bottom:14px;">
         <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
           <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600;">Plan of Action <span id="tv-c2a-poa-period" style="font-weight:500; text-transform:none; letter-spacing:0; color:var(--ink-muted, var(--ink-subtle));"></span></div>
           <div id="tv-c2a-poa-status" style="font-size:11px; color:var(--ink-subtle);"></div>
@@ -5601,7 +5570,7 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.26';
+  const TVONE_FRONTEND_VERSION = '25.27';
   // Stamp version into login footer once DOM is ready (defer-safe)
   try {
     document.addEventListener('DOMContentLoaded', function(){
@@ -12437,27 +12406,11 @@
   }
 
   window.tvC2aRender = async function() {
-    const sel = document.getElementById('tv-c2a-mode');
-    if (!sel) return;
-    try {
-      const saved = localStorage.getItem(TV_C2A_LS_KEY);
-      if (saved && sel.querySelector('option[value="' + saved + '"]')) sel.value = saved;
-      else if (!sel.value) sel.value = TV_C2A_DEFAULT;
-    } catch (e) { /* ignore */ }
-    try { localStorage.setItem(TV_C2A_LS_KEY, sel.value); } catch (e) {}
-
+    // v25.27: SAP/C2a Actuals comparison removed (sales_history_aggregate became
+    // a stub, mirrors BS v24.16.0 change). Function now only drives drilldown.
     _tvC2aWirePoaBlur();
-
-    const agg = await _tvC2aFetchAggregate(sel.value);
-    _tvC2aRenderCard(agg);
-
-    if (agg && agg.periodKey) {
-      await _tvC2aLoadNote(agg.periodKey, agg.fy, agg.scope, agg.quarterOrHalf);
-    }
     // v25.15 Cycle 2b — refresh drilldown table
     if (typeof tvC2bRender === 'function') tvC2bRender();
-    // Cache agg for Excel export
-    window._tvC2aLastAgg = agg;
   };
   /* END v25.14 Cycle 2a block */
 
