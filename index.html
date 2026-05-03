@@ -4965,9 +4965,12 @@
     <div id="bulkActionBar" class="bulk-action-bar hidden">
       <span class="bulk-count"><b id="bulkCount">0</b> selected</span>
       <select id="bulkStageAction">
+        <!-- v25.24: Stage dropdown aligned with form-entry (5 canonical stages, v25.9). -->
+        <!-- Won/Lost/Hold removed — those are outcome values, not stages. -->
+        <!-- Qualified/Design removed — pre-v25.9 funnel terms; old data normalizes via _normalizeStage in analytics. -->
         <option value="">Change stage to…</option>
-        <option>Lead</option><option>Qualified</option><option>Proposal</option>
-        <option>Design</option><option>Won</option><option>Lost</option><option>Hold</option>
+        <option>Lead</option><option>Opportunity</option><option>Proposal</option>
+        <option>Negotiation</option><option>Order</option>
       </select>
       <button class="primary" onclick="applyBulkStage()">Apply</button>
       <button class="secondary" onclick="clearBulkSelection()">Clear</button>
@@ -5011,14 +5014,13 @@
       </div>
       <div class="field"><label>Stage</label>
         <select id="hl_stage" onchange="applyHistFilters()">
+          <!-- v25.24: aligned with canonical 5 stages. -->
           <option value="">All</option>
           <option value="Lead">Lead</option>
-          <option value="Qualified">Qualified</option>
+          <option value="Opportunity">Opportunity</option>
           <option value="Proposal">Proposal</option>
-          <option value="Design">Design</option>
-          <option value="Won">Won</option>
-          <option value="Lost">Lost</option>
-          <option value="Hold">Hold</option>
+          <option value="Negotiation">Negotiation</option>
+          <option value="Order">Order</option>
         </select>
       </div>
     </div>
@@ -5189,6 +5191,36 @@
         <div style="font-size:11px; color:var(--ink-subtle);">in open funnel</div>
       </div>
     </div>
+
+    <!-- v25.24: Bi-monthly Review KPI dashboard — pure frontend, reads window._rawCentralLog -->
+    <div id="tv-kpi-wrap" class="card" style="padding:18px; margin-bottom:18px;">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+        <div>
+          <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600; margin-bottom:4px;">Bi-monthly review</div>
+          <div style="font-size:18px; font-weight:600; color:var(--ink); line-height:1.2;">Pipeline & velocity snapshot</div>
+        </div>
+        <div style="margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <select id="tv-kpi-period" onchange="tvKpiOnPeriodChange()" style="padding:9px 12px; background:var(--surface-2); border:1px solid var(--border-soft); color:var(--ink); border-radius:8px; font-size:13px;">
+            <option value="currentFY">Current FY (default)</option>
+            <option value="thisBimonth">This bi-month</option>
+            <option value="thisQuarter">This quarter</option>
+            <option value="last6m">Last 6 months</option>
+            <option value="custom">Custom range…</option>
+          </select>
+          <input type="month" id="tv-kpi-custom-start" style="display:none; padding:8px 10px; background:var(--surface-2); border:1px solid var(--border-soft); color:var(--ink); border-radius:8px; font-size:13px;" onchange="tvRenderReviewKPIs()" aria-label="Custom range start month">
+          <input type="month" id="tv-kpi-custom-end" style="display:none; padding:8px 10px; background:var(--surface-2); border:1px solid var(--border-soft); color:var(--ink); border-radius:8px; font-size:13px;" onchange="tvRenderReviewKPIs()" aria-label="Custom range end month">
+          <span id="tv-kpi-period-label" style="font-size:11px; color:var(--ink-subtle); padding:6px 10px; min-width:80px;">—</span>
+        </div>
+      </div>
+      <div id="tv-kpi-strip" style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-bottom:14px;"></div>
+      <div id="tv-kpi-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div id="tv-kpi-card-stage"></div>
+        <div id="tv-kpi-card-owner"></div>
+        <div id="tv-kpi-card-aging"></div>
+        <div id="tv-kpi-card-models"></div>
+      </div>
+    </div>
+    <!-- /v25.24 KPI dashboard -->
 
     <!-- v25.14 Cycle 2a — Comparison dropdown, 2-column card, Plan of Action textarea -->
     <div id="tv-c2a-wrap" class="card" style="padding:18px; margin-bottom:18px;">
@@ -5569,7 +5601,7 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.23';
+  const TVONE_FRONTEND_VERSION = '25.24';
   // Stamp version into login footer once DOM is ready (defer-safe)
   try {
     document.addEventListener('DOMContentLoaded', function(){
@@ -10938,6 +10970,8 @@
     updateReviewAdminBarVisibility_tv();
     // v25.14 Cycle 2a — refresh comparison card + PoA textarea on every Review tab activation
     if (typeof tvC2aRender === 'function') tvC2aRender();
+    // v25.24: Render the new KPI dashboard (pure-frontend, independent of period sub-segment)
+    try { if (typeof tvRenderReviewKPIs === 'function') tvRenderReviewKPIs(); } catch(e){ console.warn('tvRenderReviewKPIs failed:', e); }
     
     if (!['quarterly', 'annual', 'briefing'].includes(type)) type = 'quarterly';
     // Block non-super from briefing
@@ -12465,6 +12499,410 @@
     paint(activeUsers, pendingResets);
   };
   /* END v25.16 Cycle 2c block */
+/* ============================================================================
+ * v25.24 · Bi-monthly Review KPI dashboard (tvONE port of BS v24.14.9)
+ * ============================================================================
+ * Pure frontend. Reads window._rawCentralLog. Page-level above tv-c2a-wrap.
+ * Renders 5 KPI tiles + 4 analysis cards in a 2x2 grid. Gold theme.
+ *
+ * Differences from BS port:
+ *   - Reads _rawCentralLog (Super/OEM scope) not _centralLog
+ *   - References currentUser not state.user
+ *   - r.username not r.user / r.loginName
+ *   - r.timestamp || r.timestampLocal not r.ts
+ *   - r.close || r.closemonth not just r.closemonth
+ *   - _normalizeStage maps pre-v25.9 funnel terms (Qualified/Design) to canonical
+ *   - No window._bsC2bTransitions equivalent in tvONE — aging falls back to creation
+ *
+ * NOTE on Won/Lost timing: there is no outcomeAt column on the entry. We use
+ * r.close || r.closemonth (YYYY-MM) as the proxy for "when this deal closed",
+ * falling back to r.timestamp. Accurate at bi-monthly review cadence as long
+ * as users keep closure month current.
+ * ============================================================================ */
+(function(){
+  const LS_KEY = 'tv-kpi-period';
+  const OPEN_STAGES = ['Lead','Opportunity','Proposal','Negotiation','Order'];
+  const OPEN_STAGES_SET = {Lead:1,Opportunity:1,Proposal:1,Negotiation:1,Order:1};
+
+  // v25.24: Defensive normalization for pre-v25.9 stage values still in Sheet1.
+  // Old funnel: Lead → Qualified → Proposal → Design → (Won|Lost|Hold).
+  // New funnel: Lead → Opportunity → Proposal → Negotiation → Order. Outcome is separate.
+  // Maps return null for terminal states because Won/Lost/Hold belong in r.outcome only.
+  const STAGE_MAP = {
+    'Lead':'Lead',
+    'Qualified':'Opportunity', 'Opportunity':'Opportunity',
+    'Proposal':'Proposal',
+    'Design':'Negotiation', 'Negotiation':'Negotiation',
+    'Order':'Order',
+    'Won':null, 'Lost':null, 'Hold':null
+  };
+  function _normalizeStage(s){
+    const k = String(s||'').trim();
+    if(!k) return null;
+    return STAGE_MAP[k] !== undefined ? STAGE_MAP[k] : null;
+  }
+
+  // KPI tile accents — gold for pipeline-related, semantic for resolution.
+  const COL_OPEN  = '#D4AF37';   // gold
+  const COL_NEW   = '#B08D28';   // gold-deep
+  const COL_WON   = '#10B981';   // emerald (semantic)
+  const COL_LOST  = '#E11D48';   // rose (semantic)
+  const COL_RATE  = '#F59E0B';   // amber (semantic)
+
+  function _fmtINR(n){
+    if(n === null || n === undefined || isNaN(n)) return '₹0';
+    const v = Number(n);
+    if(Math.abs(v) >= 10000000) return '₹' + (v/10000000).toFixed(2) + ' Cr';
+    if(Math.abs(v) >= 100000)   return '₹' + (v/100000).toFixed(1) + ' L';
+    if(Math.abs(v) >= 1000)     return '₹' + (v/1000).toFixed(0) + 'K';
+    return '₹' + Math.round(v);
+  }
+
+  function _readDealValue(r){
+    return parseFloat(r.dealValueINR || r.dealValue || r.dealvalueinr || 0) || 0;
+  }
+  function _readOutcome(r){ return String(r.outcome || 'open').toLowerCase(); }
+
+  function _entryCreatedMs(r){
+    if(r.timestamp){
+      const t = Date.parse(r.timestamp);
+      if(!isNaN(t)) return t;
+    }
+    if(r.timestampLocal){
+      const t = Date.parse(r.timestampLocal);
+      if(!isNaN(t)) return t;
+    }
+    return 0;
+  }
+  function _entryClosedMs(r){
+    const cm = r.close || r.closemonth;
+    if(cm && /^\d{4}-\d{2}$/.test(String(cm))){
+      const parts = String(cm).split('-').map(Number);
+      return new Date(parts[0], parts[1], 0, 23, 59, 59).getTime();
+    }
+    return _entryCreatedMs(r);
+  }
+
+  // Defensive model field — tvONE may store under various keys depending on era
+  function _readModel(r){
+    return String(r.model || r.output || r.recommendedModel || r.recommendation || '').trim();
+  }
+
+  function _readOwner(r){
+    return String(r.username || r.userFullName || r.user || 'Unattributed').trim() || 'Unattributed';
+  }
+
+  /* Compute the period range. Returns {fromMs, toMs, label} or null if incomplete (custom). */
+  function _periodRange(periodKey){
+    const now = new Date();
+    const m = now.getMonth();
+    const y = now.getFullYear();
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    if(periodKey === 'currentFY'){
+      const fyStartYear = m >= 3 ? y : y - 1;
+      const from = new Date(fyStartYear, 3, 1);
+      const to   = new Date(fyStartYear + 1, 2, 31, 23, 59, 59);
+      const lbl  = 'FY ' + (('0'+(fyStartYear%100)).slice(-2)) + '-' + (('0'+((fyStartYear+1)%100)).slice(-2));
+      return { fromMs: from.getTime(), toMs: to.getTime(), label: lbl };
+    }
+    if(periodKey === 'thisBimonth'){
+      const pairs = [[3,4],[5,6],[7,8],[9,10],[11,0],[1,2]];
+      let startMonth = 3, endMonth = 4, startYr = y, endYr = y;
+      for(let i = 0; i < pairs.length; i++){
+        const p = pairs[i];
+        if(p[0] === m || p[1] === m){
+          startMonth = p[0]; endMonth = p[1];
+          if(startMonth === 11){
+            startYr = (m === 11) ? y : y - 1;
+            endYr = startYr + 1;
+          } else {
+            startYr = endYr = y;
+          }
+          break;
+        }
+      }
+      const from = new Date(startYr, startMonth, 1);
+      const to   = new Date(endYr, endMonth + 1, 0, 23, 59, 59);
+      return { fromMs: from.getTime(), toMs: to.getTime(),
+               label: monthNames[startMonth] + '-' + monthNames[endMonth] + ' ' + endYr };
+    }
+    if(periodKey === 'thisQuarter'){
+      let qStart, qLbl;
+      if(m >= 3 && m <= 5){ qStart = 3; qLbl = 'Q1'; }
+      else if(m >= 6 && m <= 8){ qStart = 6; qLbl = 'Q2'; }
+      else if(m >= 9 && m <= 11){ qStart = 9; qLbl = 'Q3'; }
+      else { qStart = 0; qLbl = 'Q4'; }
+      const from = new Date(y, qStart, 1);
+      const to   = new Date(y, qStart + 3, 0, 23, 59, 59);
+      return { fromMs: from.getTime(), toMs: to.getTime(), label: qLbl + ' ' + y };
+    }
+    if(periodKey === 'last6m'){
+      const to   = new Date(y, m + 1, 0, 23, 59, 59);
+      const from = new Date(y, m - 5, 1);
+      return { fromMs: from.getTime(), toMs: to.getTime(), label: 'Last 6 months' };
+    }
+    if(periodKey === 'custom'){
+      const sEl = document.getElementById('tv-kpi-custom-start');
+      const eEl = document.getElementById('tv-kpi-custom-end');
+      if(!sEl || !eEl || !sEl.value || !eEl.value) return null;
+      const sParts = sEl.value.split('-').map(Number);
+      const eParts = eEl.value.split('-').map(Number);
+      const from = new Date(sParts[0], sParts[1] - 1, 1);
+      const to   = new Date(eParts[0], eParts[1], 0, 23, 59, 59);
+      if(to.getTime() < from.getTime()) return null;
+      return { fromMs: from.getTime(), toMs: to.getTime(), label: sEl.value + ' to ' + eEl.value };
+    }
+    return null;
+  }
+
+  /* --- Tile renderer --- */
+  function _tileHTML(label, primary, secondary, color){
+    return '<div style="background:var(--surface-2); border:1px solid var(--border-soft); border-top:3px solid '+color+'; border-radius:10px; padding:12px 14px;">' +
+             '<div style="font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600; margin-bottom:6px;">'+label+'</div>' +
+             '<div style="font-size:22px; font-weight:700; color:'+color+'; line-height:1.1;">'+primary+'</div>' +
+             '<div style="font-size:11px; color:var(--ink-muted, var(--ink-subtle)); margin-top:4px;">'+secondary+'</div>' +
+           '</div>';
+  }
+
+  function _renderTiles(log, range){
+    const strip = document.getElementById('tv-kpi-strip');
+    if(!strip) return;
+    if(!log || !log.length || !range){
+      strip.innerHTML =
+        _tileHTML('Open Pipeline', '—', 'No data', COL_OPEN) +
+        _tileHTML('Period New',    '—', 'No data', COL_NEW)  +
+        _tileHTML('Won This Period','—','No data', COL_WON)  +
+        _tileHTML('Lost This Period','—','No data', COL_LOST)+
+        _tileHTML('Win Rate',      '—', 'No data', COL_RATE);
+      return;
+    }
+    let openCount=0, openValue=0, newCount=0, newValue=0;
+    let wonCount=0, wonValue=0, lostCount=0, lostValue=0;
+    for(let i=0; i<log.length; i++){
+      const r = log[i] || {};
+      const outcome = _readOutcome(r);
+      const v = _readDealValue(r);
+      const createdMs = _entryCreatedMs(r);
+      const closedMs  = _entryClosedMs(r);
+      const stageNorm = _normalizeStage(r.stage);
+
+      if(outcome === 'open' && stageNorm){ openCount++; openValue += v; }
+      if(createdMs && createdMs >= range.fromMs && createdMs <= range.toMs){ newCount++; newValue += v; }
+      if(outcome === 'won'  && closedMs >= range.fromMs && closedMs <= range.toMs){ wonCount++;  wonValue  += v; }
+      if(outcome === 'lost' && closedMs >= range.fromMs && closedMs <= range.toMs){ lostCount++; lostValue += v; }
+    }
+    const resolved = wonCount + lostCount;
+    const winRate = resolved > 0 ? Math.round((wonCount/resolved)*100) : null;
+    strip.innerHTML =
+      _tileHTML('Open Pipeline',    _fmtINR(openValue), openCount + ' deal' + (openCount===1?'':'s'), COL_OPEN) +
+      _tileHTML('Period New',       _fmtINR(newValue),  newCount  + ' deal' + (newCount===1?'':'s'),  COL_NEW)  +
+      _tileHTML('Won This Period',  _fmtINR(wonValue),  wonCount  + ' deal' + (wonCount===1?'':'s'),  COL_WON)  +
+      _tileHTML('Lost This Period', _fmtINR(lostValue), lostCount + ' deal' + (lostCount===1?'':'s'), COL_LOST) +
+      _tileHTML('Win Rate', (winRate!==null ? winRate+'%' : '—'), resolved + ' resolved', COL_RATE);
+  }
+
+  /* --- Card + bar-row helpers --- */
+  function _cardHTML(title, body, emptyMsg){
+    const inner = body || ('<div style="color:var(--ink-subtle); font-size:13px; padding:14px 0; text-align:center;">' + (emptyMsg||'No data in this period') + '</div>');
+    return '<div class="card" style="padding:14px;">' +
+             '<div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600; margin-bottom:10px;">'+title+'</div>' +
+             inner +
+           '</div>';
+  }
+  function _esc(s){ return String(s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function _barRow(label, value, max, displayVal, accentColor){
+    const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+    return '<div style="margin-bottom:8px;">' +
+             '<div style="display:flex; justify-content:space-between; align-items:baseline; font-size:12px; margin-bottom:3px; gap:8px;">' +
+               '<span style="color:var(--ink); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+_esc(label)+'</span>' +
+               '<span style="color:var(--ink-muted, var(--ink-subtle)); font-variant-numeric:tabular-nums; white-space:nowrap;">'+_esc(displayVal)+'</span>' +
+             '</div>' +
+             '<div style="height:6px; background:var(--surface); border:1px solid var(--border-soft); border-radius:3px; overflow:hidden;">' +
+               '<div style="width:'+pct.toFixed(1)+'%; height:100%; background:'+accentColor+'; border-radius:3px; transition:width 0.3s ease;"></div>' +
+             '</div>' +
+           '</div>';
+  }
+
+  /* Card A — Pipeline by Stage (open only, with normalization) */
+  function _renderStageCard(log){
+    const host = document.getElementById('tv-kpi-card-stage');
+    if(!host) return;
+    if(!log || !log.length){ host.innerHTML = _cardHTML('Pipeline by stage · open only', null, 'No deals loaded'); return; }
+    const byStage = {};
+    OPEN_STAGES.forEach(function(s){ byStage[s] = {count:0, value:0}; });
+    for(let i=0; i<log.length; i++){
+      const r = log[i] || {};
+      if(_readOutcome(r) !== 'open') continue;
+      const s = _normalizeStage(r.stage);
+      if(!s || !byStage[s]) continue;
+      byStage[s].count++;
+      byStage[s].value += _readDealValue(r);
+    }
+    const maxValue = Math.max.apply(null, OPEN_STAGES.map(function(s){ return byStage[s].value; }).concat([1]));
+    // Gold-bright → gold-deep progression by stage depth
+    const stageColors = ['#F4D47A','#E8C862','#D4AF37','#C19D2F','#B08D28'];
+    let body = '', totalCount = 0;
+    OPEN_STAGES.forEach(function(s, i){
+      const d = byStage[s];
+      totalCount += d.count;
+      body += _barRow(s, d.value, maxValue, d.count + ' · ' + _fmtINR(d.value), stageColors[i]);
+    });
+    host.innerHTML = _cardHTML('Pipeline by stage · open only', totalCount > 0 ? body : null, 'No open deals');
+  }
+
+  /* Card B — Pipeline by Owner (top 8, open only, ranked by ₹ desc) */
+  function _renderOwnerCard(log){
+    const host = document.getElementById('tv-kpi-card-owner');
+    if(!host) return;
+    if(!log || !log.length){ host.innerHTML = _cardHTML('Pipeline by owner · top 8', null, 'No deals loaded'); return; }
+    const byOwner = {};
+    for(let i=0; i<log.length; i++){
+      const r = log[i] || {};
+      if(_readOutcome(r) !== 'open') continue;
+      const s = _normalizeStage(r.stage);
+      if(!s) continue;
+      const owner = _readOwner(r);
+      if(!byOwner[owner]) byOwner[owner] = {count:0, value:0};
+      byOwner[owner].count++;
+      byOwner[owner].value += _readDealValue(r);
+    }
+    const ranked = Object.keys(byOwner).map(function(o){
+      return { owner:o, count:byOwner[o].count, value:byOwner[o].value };
+    }).sort(function(a,b){ return b.value - a.value; }).slice(0, 8);
+    if(!ranked.length){ host.innerHTML = _cardHTML('Pipeline by owner · top 8', null, 'No open deals'); return; }
+    const maxValue = Math.max.apply(null, ranked.map(function(o){ return o.value; }).concat([1]));
+    let body = '';
+    ranked.forEach(function(o){
+      body += _barRow(o.owner, o.value, maxValue, o.count + ' · ' + _fmtINR(o.value), '#D4AF37');
+    });
+    host.innerHTML = _cardHTML('Pipeline by owner · top 8', body);
+  }
+
+  /* Card C — Funnel Aging (count of open deals per band) */
+  function _renderAgingCard(log){
+    const host = document.getElementById('tv-kpi-card-aging');
+    if(!host) return;
+    if(!log || !log.length){ host.innerHTML = _cardHTML('Funnel aging · open deals', null, 'No deals loaded'); return; }
+    const bands = [
+      {label:'0-30 days',  min:0,  max:30,         count:0, color:'#10B981'},
+      {label:'31-60 days', min:31, max:60,         count:0, color:'#F59E0B'},
+      {label:'61-90 days', min:61, max:90,         count:0, color:'#EA580C'},
+      {label:'90+ days',   min:91, max:Infinity,   count:0, color:'#E11D48'}
+    ];
+    const now = Date.now();
+    let totalOpen = 0;
+    for(let i=0; i<log.length; i++){
+      const r = log[i] || {};
+      if(_readOutcome(r) !== 'open') continue;
+      const s = _normalizeStage(r.stage);
+      if(!s) continue;
+      const baseMs = _entryCreatedMs(r);
+      if(!baseMs) continue;
+      const days = Math.floor((now - baseMs) / 86400000);
+      for(let bi=0; bi<bands.length; bi++){
+        const b = bands[bi];
+        if(days >= b.min && days <= b.max){ b.count++; totalOpen++; break; }
+      }
+    }
+    if(totalOpen === 0){ host.innerHTML = _cardHTML('Funnel aging · open deals', null, 'No open deals'); return; }
+    const maxCount = Math.max.apply(null, bands.map(function(b){ return b.count; }).concat([1]));
+    let body = '';
+    bands.forEach(function(b){
+      body += _barRow(b.label, b.count, maxCount, b.count + ' deal' + (b.count===1?'':'s'), b.color);
+    });
+    const stuckPct = Math.round(((bands[2].count + bands[3].count) / totalOpen) * 100);
+    body += '<div style="font-size:11px; color:var(--ink-subtle); margin-top:8px; padding-top:8px; border-top:1px dashed var(--border-soft);">' +
+              stuckPct + '% of open deals stuck >60 days · aging from deal creation' +
+            '</div>';
+    host.innerHTML = _cardHTML('Funnel aging · open deals', body);
+  }
+
+  /* Card D — Top 8 Most Quoted Models (count, all deals in period) */
+  function _renderModelsCard(log, range){
+    const host = document.getElementById('tv-kpi-card-models');
+    if(!host) return;
+    if(!log || !log.length || !range){ host.innerHTML = _cardHTML('Top quoted models · in period', null, 'No deals loaded'); return; }
+    const byModel = {};
+    for(let i=0; i<log.length; i++){
+      const r = log[i] || {};
+      const createdMs = _entryCreatedMs(r);
+      if(!createdMs || createdMs < range.fromMs || createdMs > range.toMs) continue;
+      const model = _readModel(r);
+      if(!model || model === '—') continue;
+      byModel[model] = (byModel[model] || 0) + 1;
+    }
+    const ranked = Object.keys(byModel).map(function(m){ return { model:m, count:byModel[m] }; })
+      .sort(function(a,b){ return b.count - a.count; }).slice(0, 8);
+    if(!ranked.length){ host.innerHTML = _cardHTML('Top quoted models · in period', null, 'No deals in this period'); return; }
+    const maxCount = Math.max.apply(null, ranked.map(function(m){ return m.count; }).concat([1]));
+    let body = '';
+    ranked.forEach(function(m, i){
+      const accent = i === 0 ? '#D4AF37' : (i < 3 ? '#B08D28' : '#E8C862');
+      body += _barRow(m.model, m.count, maxCount, m.count + ' deal' + (m.count===1?'':'s'), accent);
+    });
+    host.innerHTML = _cardHTML('Top quoted models · in period', body);
+  }
+
+  /* --- Public entry points --- */
+  window.tvRenderReviewKPIs = function(){
+    const sel = document.getElementById('tv-kpi-period');
+    if(!sel) return;
+    try {
+      const saved = localStorage.getItem(LS_KEY);
+      if(saved && sel.querySelector('option[value="'+saved+'"]')) sel.value = saved;
+    } catch(e){}
+    const isCustom = sel.value === 'custom';
+    const sEl = document.getElementById('tv-kpi-custom-start');
+    const eEl = document.getElementById('tv-kpi-custom-end');
+    if(sEl) sEl.style.display = isCustom ? '' : 'none';
+    if(eEl) eEl.style.display = isCustom ? '' : 'none';
+
+    const range = _periodRange(sel.value);
+    const lblEl = document.getElementById('tv-kpi-period-label');
+    if(!range){
+      if(lblEl) lblEl.textContent = isCustom ? 'Pick start + end' : '—';
+      _renderTiles(null, null);
+      _renderStageCard(null);
+      _renderOwnerCard(null);
+      _renderAgingCard(null);
+      _renderModelsCard(null, null);
+      return;
+    }
+    if(lblEl) lblEl.textContent = range.label;
+
+    const log = Array.isArray(window._rawCentralLog) ? window._rawCentralLog : [];
+    _renderTiles(log, range);
+    _renderStageCard(log);
+    _renderOwnerCard(log);
+    _renderAgingCard(log);
+    _renderModelsCard(log, range);
+  };
+
+  window.tvKpiOnPeriodChange = function(){
+    const sel = document.getElementById('tv-kpi-period');
+    if(!sel) return;
+    try { localStorage.setItem(LS_KEY, sel.value); } catch(e){}
+    window.tvRenderReviewKPIs();
+  };
+
+  // Mobile responsive — same breakpoints as BS for parity
+  (function _injectMobileCSS(){
+    const css = '@media (max-width: 720px){' +
+                  '#tv-kpi-strip{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}' +
+                  '#tv-kpi-grid{grid-template-columns:1fr !important;}' +
+                '}' +
+                '@media (max-width: 460px){' +
+                  '#tv-kpi-strip{grid-template-columns:1fr !important;}' +
+                '}';
+    const tag = document.createElement('style');
+    tag.setAttribute('data-source', 'tv-kpi-v25.24');
+    tag.textContent = css;
+    document.head.appendChild(tag);
+  })();
+})();
+/* /v25.24 KPI dashboard */
+
 </script>
 <!-- Silent sync toast indicator -->
 <div class="sync-status" id="syncStatus">
