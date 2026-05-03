@@ -5765,7 +5765,7 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.32';
+  const TVONE_FRONTEND_VERSION = '25.33';
   // Stamp version into login footer once DOM is ready (defer-safe)
   try {
     document.addEventListener('DOMContentLoaded', function(){
@@ -9270,12 +9270,17 @@
 
     const terms = [
       ['Payment Terms', '100% advance along with purchase order'],
-      ['Delivery', 'Ex-warehouse, 30 days from receipt of confirmed PO & advance payment'],
-      ['Warranty', 'Standard 3-year OEM warranty (tvONE CALICO PRO series)'],
-      ['Validity', '15 days from quote date (' + quoteDate + ')'],
-      ['Taxes', 'GST @ 18% included above. Additional levies, if any, extra at actuals.'],
-      ['Freight & Insurance', 'Extra at actuals, unless specified otherwise'],
-      ['Installation', 'Commissioning & integration quoted separately on request']
+      ['Lead Time', 'Standard 4–5 weeks from receipt of confirmed PO & advance payment, subject to stock availability'],
+      ['Delivery', 'Ex-warehouse Ahmedabad. Outbound freight & in-transit insurance extra at actuals.'],
+      ['Warranty', "Standard 5-year OEM warranty on tvONE CALICO PRO series. Faulty units must be returned to Cavitak's Ahmedabad office for warranty processing; outbound logistics are at the customer's cost."],
+      ['Validity', '15 days from quote date (' + quoteDate + '). Pricing subject to revision thereafter.'],
+      ['Taxes', 'GST @ 18% included above. Any additional levies, cess or local duties extra at actuals.'],
+      ['Forex', 'Pricing based on prevailing INR–USD rate on quote date. Material forex movement (>3%) before PO may revise pricing.'],
+      ['Stock Validity', 'Stock subject to prior sale. Confirmation of availability at the time of PO placement.'],
+      ['Installation', "Partner's scope."],
+      ['Support', 'Onsite / Online support charges quoted extra on request.'],
+      ['Cancellation', 'Orders once placed are non-cancellable. Advance payment is non-refundable for despatched/in-transit goods.'],
+      ['Jurisdiction', 'All disputes subject to Ahmedabad jurisdiction. Indian law applies.']
     ];
     terms.forEach(function(t, i) {
       ws1.getCell('A' + r).value = t[0];
@@ -9298,6 +9303,16 @@
     r++;
 
     // --- CONTACT FOOTER ---
+    // v25.33: Use logged-in user's identity + Dipenkumar as escalation strip for non-Super
+    const _ueu = currentUser || {};
+    const _ueuName = (_ueu.fullName || _ueu.name || '').trim() || 'Cavitak Marketing';
+    const _ueuTitle = (_ueu.professionalTitle || '').trim() || 'Cavitak Marketing';
+    const _ueuEmail = (_ueu.email || '').trim() || 'dipen.g@cavitak.com';
+    const _ueuPhone = (_ueu.phone || '').trim() || '+91 8160 756 906';
+    const _ueuIsSuper = _ueu.role === 'Super' ||
+                       (typeof SUPER_LOGIN_NAMES !== 'undefined' &&
+                        SUPER_LOGIN_NAMES.indexOf(String(_ueu.username || '').toLowerCase()) >= 0);
+
     ws1.mergeCells('A' + r + ':G' + r);
     const contactHdr = ws1.getCell('A' + r);
     contactHdr.value = 'FOR PRICING & QUOTATION QUERIES';
@@ -9308,7 +9323,7 @@
     r++;
 
     ws1.mergeCells('A' + r + ':G' + r);
-    ws1.getCell('A' + r).value = 'Dipenkumar Gajjar · National Product Manager · CALICO PRO Portfolio';
+    ws1.getCell('A' + r).value = _ueuName + ' · ' + _ueuTitle + ' · Cavitak Marketing';
     ws1.getCell('A' + r).font = xlFont({ size: 12, bold: true, color: { argb: XL_FOREST_DARK } });
     ws1.getCell('A' + r).alignment = { vertical: 'middle', indent: 1 };
     ws1.getCell('A' + r).fill = xlFill(XL_CREAM);
@@ -9316,15 +9331,26 @@
     r++;
 
     ws1.mergeCells('A' + r + ':G' + r);
-    ws1.getCell('A' + r).value = 'Email: dipen.g@cavitak.com · Phone: +91 8160 756 906';
+    ws1.getCell('A' + r).value = 'Email: ' + _ueuEmail + ' · Phone: ' + _ueuPhone;
     ws1.getCell('A' + r).font = xlFont({ size: 11, color: { argb: XL_CAVITAK_RED } });
     ws1.getCell('A' + r).alignment = { vertical: 'middle', indent: 1 };
     ws1.getCell('A' + r).fill = xlFill(XL_CREAM);
     ws1.getRow(r).height = 20;
     r++;
 
+    // v25.33: Escalation strip — only for non-Super users (avoids "escalate to yourself")
+    if (!_ueuIsSuper) {
+      ws1.mergeCells('A' + r + ':G' + r);
+      ws1.getCell('A' + r).value = 'For pricing escalation: Dipenkumar Gajjar · National Product Manager · dipen.g@cavitak.com · +91 8160 756 906';
+      ws1.getCell('A' + r).font = xlFont({ size: 10, italic: true, color: { argb: XL_INK_SOFT } });
+      ws1.getCell('A' + r).alignment = { vertical: 'middle', indent: 1 };
+      ws1.getCell('A' + r).fill = xlFill(XL_CREAM);
+      ws1.getRow(r).height = 18;
+      r++;
+    }
+
     ws1.mergeCells('A' + r + ':G' + r);
-    ws1.getCell('A' + r).value = 'Issued by: ' + currentUser.name + ' · Cavitak Marketing Pvt Ltd';
+    ws1.getCell('A' + r).value = 'Issued by: ' + _ueuName + ' · Cavitak Marketing Pvt Ltd';
     ws1.getCell('A' + r).font = xlFont({ size: 9, italic: true, color: { argb: XL_INK_SOFT } });
     ws1.getCell('A' + r).alignment = { horizontal: 'right', vertical: 'middle' };
     r++;
