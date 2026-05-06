@@ -5765,7 +5765,7 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.33';
+  const TVONE_FRONTEND_VERSION = '25.34';
   // Stamp version into login footer once DOM is ready (defer-safe)
   try {
     document.addEventListener('DOMContentLoaded', function(){
@@ -6440,17 +6440,17 @@
   function _profileGateNeededTV() {
     const u = currentUser;
     if (!u) return false;
-    const titleOk = (u.professionalTitle || '').trim().length >= 2;
-    const emailOk = (u.email || '').trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((u.email || '').trim());
-    const phoneOk = (u.phone || '').trim().replace(/\D/g, '').length >= 10;
+    const titleOk = String(u.professionalTitle || '').trim().length >= 2;
+    const emailOk = String(u.email || '').trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(u.email || '').trim());
+    const phoneOk = String(u.phone || '').trim().replace(/\D/g, '').length >= 10;
     return !(titleOk && emailOk && phoneOk);
   }
   function _showProfileGateTV() {
     const u = currentUser || {};
-    document.getElementById('pgate-fullname-tv').value = u.fullName || '';
-    document.getElementById('pgate-title-tv').value = u.professionalTitle || '';
-    document.getElementById('pgate-email-tv').value = u.email || '';
-    document.getElementById('pgate-phone-tv').value = u.phone || '';
+    document.getElementById('pgate-fullname-tv').value = String(u.fullName || '');
+    document.getElementById('pgate-title-tv').value = String(u.professionalTitle || '');
+    document.getElementById('pgate-email-tv').value = String(u.email || '');
+    document.getElementById('pgate-phone-tv').value = String(u.phone || '');
     document.getElementById('profile-gate-error-tv').style.display = 'none';
     const overlay = document.getElementById('profile-gate-modal-tv');
     overlay.style.display = 'flex';
@@ -6524,7 +6524,7 @@
       currentUser.phone = phone;
       _hideProfileGateTV();
       if (typeof showSync === 'function') {
-        showSync('Profile saved — welcome ' + (currentUser.fullName || '').split(' ')[0] + '!', 'success');
+        showSync('Profile saved — welcome ' + String(String(currentUser.fullName || '')).split(' ')[0] + '!', 'success');
       }
     } catch (err) {
       errEl.textContent = 'Save failed: ' + (err.message || err);
@@ -7805,8 +7805,28 @@
     const elapsed = performance.now() - analyzingStartedAt;
     await new Promise(function(resolve) { setTimeout(resolve, Math.max(0, 2200 - elapsed)); });
 
-    renderResult(input, reco);
-    showView('result');
+    // v25.34 — Defensive try/catch around the result render chain.
+    // Previously a render-side exception (e.g. unsafe .trim() on numeric fields) would silently
+    // swallow the result page and bounce user back to the form view.
+    try {
+      console.log('[v25.34] About to renderResult', { hasInput: !!input, hasReco: !!reco });
+      renderResult(input, reco);
+      console.log('[v25.34] renderResult completed; switching to result view');
+      showView('result');
+      console.log('[v25.34] showView("result") completed');
+    } catch (err) {
+      console.error('[v25.34] FATAL: renderResult or showView threw:', err);
+      console.error('[v25.34] Stack:', err && err.stack);
+      console.error('[v25.34] Last input:', input);
+      const errEl = document.getElementById('formError');
+      if (errEl) {
+        errEl.textContent = 'Could not render result page: ' + (err.message || err) + ' — open browser console (F12) for details.';
+        errEl.style.display = 'block';
+        errEl.scrollIntoView({behavior:'smooth', block:'center'});
+      } else {
+        alert('Could not render result page. Please open browser console (F12) to see the error and report to Dipenkumar.');
+      }
+    }
   }
 
   async function logToSheet(submission) {
@@ -7912,7 +7932,7 @@
       }
 
       // 4. Ownership check
-      const isOwner = String(row.username || '').toLowerCase() === String(currentUser.username || '').toLowerCase();
+      const isOwner = String(row.username || '').toLowerCase() === String(String(currentUser.username || '')).toLowerCase();
       if (!isOwner && !currentUser.isSuper) {
         alert('You can only edit your own deals.\n\nThis one was registered by ' + (row.userFullName || row.username || 'someone else') + '.');
         return;
@@ -8745,10 +8765,10 @@
     const greeting = (input.partnerContactName || '').trim() || 'team';
     // v25.32: Personalized sender block — uses partner-facing identity (name + title + phone + email)
     const u = currentUser || {};
-    const userName  = (u.fullName || u.name || '').trim() || 'Cavitak Marketing';
-    const userTitle = (u.professionalTitle || '').trim();
-    const userPhone = (u.phone || '').trim();
-    const userEmail = (u.email || '').trim();
+    const userName  = String(u.fullName || u.name || '').trim() || 'Cavitak Marketing';
+    const userTitle = String(u.professionalTitle || '').trim();
+    const userPhone = String(u.phone || '').trim();
+    const userEmail = String(u.email || '').trim();
     const senderBlock = userName +
       (userTitle ? '\n' + userTitle : '') +
       (userPhone ? '\n📞 ' + userPhone : '') +
@@ -9305,10 +9325,10 @@
     // --- CONTACT FOOTER ---
     // v25.33: Use logged-in user's identity + Dipenkumar as escalation strip for non-Super
     const _ueu = currentUser || {};
-    const _ueuName = (_ueu.fullName || _ueu.name || '').trim() || 'Cavitak Marketing';
-    const _ueuTitle = (_ueu.professionalTitle || '').trim() || 'Cavitak Marketing';
-    const _ueuEmail = (_ueu.email || '').trim() || 'dipen.g@cavitak.com';
-    const _ueuPhone = (_ueu.phone || '').trim() || '+91 8160 756 906';
+    const _ueuName = String(_ueu.fullName || _ueu.name || '').trim() || 'Cavitak Marketing';
+    const _ueuTitle = String(_ueu.professionalTitle || '').trim() || 'Cavitak Marketing';
+    const _ueuEmail = String(_ueu.email || '').trim() || 'dipen.g@cavitak.com';
+    const _ueuPhone = String(_ueu.phone || '').trim() || '+91 8160 756 906';
     const _ueuIsSuper = _ueu.role === 'Super' ||
                        (typeof SUPER_LOGIN_NAMES !== 'undefined' &&
                         SUPER_LOGIN_NAMES.indexOf(String(_ueu.username || '').toLowerCase()) >= 0);
@@ -9734,7 +9754,7 @@
   function scopeRowsToUser_(rows) {
     if (hasFullDataAccess()) return rows;
     if (!currentUser) return [];
-    const uname = String(currentUser.username || '').toLowerCase();
+    const uname = String(String(currentUser.username || '')).toLowerCase();
     return rows.filter(function(r) {
       return String(r.username || '').toLowerCase() === uname;
     });
@@ -9851,7 +9871,7 @@
     // Dashboard always shows only the current user's OWN deals — regardless of role
     let sourceRows = centralLog;
     if (currentUser) {
-      const uname = String(currentUser.username || '').toLowerCase();
+      const uname = String(String(currentUser.username || '')).toLowerCase();
       sourceRows = (centralLog || []).filter(function(r) {
         return String(r.username || '').toLowerCase() === uname;
       });
@@ -9948,7 +9968,7 @@
     html += '</tr></thead><tbody>';
     rows.forEach(function(s) {
       const stageCls = stagePillClass(s.stage);
-      const isOwner = currentUser && String(s.username || '').toLowerCase() === String(currentUser.username || '').toLowerCase();
+      const isOwner = currentUser && String(s.username || '').toLowerCase() === String(String(currentUser.username || '')).toLowerCase();
       const canEditThisRow = canEdit && (isOwner || (currentUser && currentUser.isSuper));
       const refEsc = (s.refId || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
       // Make the row clickable to open the detail modal — but stop propagation on checkbox + action button so those still work independently
@@ -12334,7 +12354,7 @@
     const canSeeAll = currentUser && (currentUser.isSuper || currentUser.role === 'tvONE');
     const allDeals = (_rawCentralLog && _rawCentralLog.length ? _rawCentralLog : (centralLog || [])).filter(function(r) {
       if (!canSeeAll) {
-        if (String(r.username || '').toLowerCase() !== String(currentUser.username || '').toLowerCase()) return false;
+        if (String(r.username || '').toLowerCase() !== String(String(currentUser.username || '')).toLowerCase()) return false;
       }
       return true;
     });
@@ -12395,7 +12415,7 @@
     const canSeeAll = currentUser && (currentUser.isSuper || currentUser.role === 'tvONE');
     const allDeals = (_rawCentralLog && _rawCentralLog.length ? _rawCentralLog : (centralLog || [])).filter(function(r) {
       if (!canSeeAll) {
-        if (String(r.username || '').toLowerCase() !== String(currentUser.username || '').toLowerCase()) return false;
+        if (String(r.username || '').toLowerCase() !== String(String(currentUser.username || '')).toLowerCase()) return false;
       }
       return true;
     });
@@ -12453,7 +12473,7 @@
     const canSeeAll = currentUser && (currentUser.isSuper || currentUser.role === 'tvONE');
     const deals = (_rawCentralLog && _rawCentralLog.length ? _rawCentralLog : (centralLog || [])).filter(function(r) {
       if (!canSeeAll) {
-        if (String(r.username || '').toLowerCase() !== String(currentUser.username || '').toLowerCase()) return false;
+        if (String(r.username || '').toLowerCase() !== String(String(currentUser.username || '')).toLowerCase()) return false;
       }
       const t = r.timestamp ? new Date(r.timestamp).getTime() : 0;
       return t >= bounds.start && t <= bounds.end;
@@ -12468,7 +12488,7 @@
     const canSeeAll = currentUser && (currentUser.isSuper || currentUser.role === 'tvONE');
     const deals = (_rawCentralLog && _rawCentralLog.length ? _rawCentralLog : (centralLog || [])).filter(function(r) {
       if (!canSeeAll) {
-        if (String(r.username || '').toLowerCase() !== String(currentUser.username || '').toLowerCase()) return false;
+        if (String(r.username || '').toLowerCase() !== String(String(currentUser.username || '')).toLowerCase()) return false;
       }
       const t = r.timestamp ? new Date(r.timestamp).getTime() : 0;
       return t >= bounds.start && t <= bounds.end;
@@ -12591,7 +12611,7 @@
 
   // --- Personal stats computation ---
   function computePersonalStats(rows) {
-    const uname = currentUser ? String(currentUser.username || '').toLowerCase() : '';
+    const uname = currentUser ? String(String(currentUser.username || '')).toLowerCase() : '';
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     let submissions = 0, won = 0, pipeline = 0, month = 0, confirmed = 0;
@@ -12810,7 +12830,7 @@
     const editBtn = document.getElementById('detailEditBtn');
     if (editBtn) {
       const isOEM = currentUser && currentUser.role === 'tvONE';
-      const isOwner = currentUser && String(row.username || '').toLowerCase() === String(currentUser.username || '').toLowerCase();
+      const isOwner = currentUser && String(row.username || '').toLowerCase() === String(String(currentUser.username || '')).toLowerCase();
       const canEdit = !isOEM && (isOwner || (currentUser && currentUser.isSuper));
       editBtn.style.display = canEdit ? '' : 'none';
     }
@@ -12980,7 +13000,7 @@
       const row = centralLog.find(function(r) { return String(r.refId) === String(refIds[i]); });
       if (!row) continue;
       // Ownership check client-side (backend re-checks too)
-      const isOwner = String(row.username || '').toLowerCase() === String(currentUser.username || '').toLowerCase();
+      const isOwner = String(row.username || '').toLowerCase() === String(String(currentUser.username || '')).toLowerCase();
       if (!isOwner && !currentUser.isSuper) continue;
       const updated = Object.assign({}, row, { stage: newStage });
       try {
