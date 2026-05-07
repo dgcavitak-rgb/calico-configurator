@@ -5808,7 +5808,7 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.35';
+  const TVONE_FRONTEND_VERSION = '25.36';  // v25.36 — IST timezone explicit on all timestamp displays
   // v25.35 ports BS Session A+B+C items into tvONE:
   //   #3  Sales/Presales handoff (cols CC/CD) + B1 visibility expansion
   //   #4  Profile Gate hardening (watchdog + popstate + body dim + rehydrate)
@@ -7288,7 +7288,7 @@
       const wMm = Math.round(rW * pitch);
       const hMm = Math.round(rH * pitch);
       mmEl.style.display = 'block';
-      mmEl.innerHTML = '<b>Physical size:</b> ' + wMm.toLocaleString() + ' × ' + hMm.toLocaleString() + ' mm (' + (wMm/1000).toFixed(2) + ' × ' + (hMm/1000).toFixed(2) + ' m) — at ' + pitch + ' mm pitch';
+      mmEl.innerHTML = '<b>Physical size:</b> ' + wMm.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' × ' + hMm.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' mm (' + (wMm/1000).toFixed(2) + ' × ' + (hMm/1000).toFixed(2) + ' m) — at ' + pitch + ' mm pitch';
     } else {
       mmEl.style.display = 'none';
       mmEl.innerHTML = '';
@@ -7323,7 +7323,7 @@
     let fmt;
     if (raw >= 1e7) fmt = '₹' + (raw / 1e7).toFixed(2) + ' Cr';
     else if (raw >= 1e5) fmt = '₹' + (raw / 1e5).toFixed(2) + ' L';
-    else fmt = '₹' + Math.round(raw).toLocaleString('en-IN');
+    else fmt = '₹' + Math.round(raw).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     readout.textContent = '≈ ' + fmt;
   }
 
@@ -7747,7 +7747,7 @@
       refId: refId,
       status: 'viewed',
       timestamp: new Date().toISOString(),
-      timestampLocal: new Date().toLocaleString('en-IN'),
+      timestampLocal: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
       username: currentUser.username,
       userFullName: currentUser.name,
       userRole: currentUser.role,
@@ -8623,7 +8623,7 @@
     html += specCell('Partner', input.partner || '—');
     html += specCell('City/State', [input.city, input.state].filter(Boolean).join(', ') || '—');
     html += specCell('Submitted by', currentUser.name);
-    html += specCell('Logged at', new Date().toLocaleString('en-IN'));
+    html += specCell('Logged at', new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
     html += '</div></div>';
 
     // ---- Card 6: For Pricing (always shown) ----
@@ -9722,7 +9722,7 @@
     ws2Section('DOCUMENT TRAIL');
     ws2Pair('Quote No.', quoteNo);
     ws2Pair('Issued by', currentUser.name + ' (' + currentUser.username + ')');
-    ws2Pair('Generated at', now.toLocaleString('en-IN'));
+    ws2Pair('Generated at', now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
 
     // =================================================================
     // TAB 3 — BOM DETAIL
@@ -9933,7 +9933,7 @@
     // centralLog now holds the HISTORY-scoped view (for History tab, filters, duplicate detection)
     centralLog = historyRows;
     const now = new Date();
-    const stampText = 'Last refreshed · ' + now.toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) + scopeNote;
+    const stampText = 'Last refreshed · ' + now.toLocaleString('en-IN',{ day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' , timeZone: 'Asia/Kolkata'}) + scopeNote;
     if (metaEl) metaEl.textContent = stampText;
     if (histMeta) histMeta.textContent = stampText + ' · ' + historyRows.length + ' entries';
 
@@ -10332,7 +10332,7 @@
       html += '<div style="padding:14px 4px; color:var(--ink-subtle); font-size:13px">No pending requests right now.</div>';
     } else {
       pending.forEach(function(r) {
-        const when = r.requestedAt ? new Date(r.requestedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+        const when = r.requestedAt ? new Date(r.requestedAt).toLocaleString('en-IN',{ dateStyle: 'medium', timeStyle: 'short' , timeZone: 'Asia/Kolkata'}) : '—';
         html += '<div style="padding:14px 16px; background:rgba(220,38,38,0.07); border-left:3px solid #DC2626; border-radius:8px; margin-bottom:10px; display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap">';
         html += '<div style="flex:1 1 260px; min-width:200px">';
         html += '<div style="font-family:JetBrains Mono,monospace; font-size:13px; font-weight:700; color:var(--gold-bright)">@' + E(r.username) + '</div>';
@@ -10352,7 +10352,7 @@
       html += '<details style="margin-top:14px"><summary style="cursor:pointer; font-size:12.5px; color:var(--ink-subtle); font-family:JetBrains Mono,monospace; letter-spacing:0.06em; text-transform:uppercase; padding:6px 0">Resolved · last ' + show + '</summary>';
       html += '<div style="margin-top:10px">';
       resolved.slice(0, show).forEach(function(r) {
-        const when = r.resolvedAt ? new Date(r.resolvedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+        const when = r.resolvedAt ? new Date(r.resolvedAt).toLocaleString('en-IN',{ dateStyle: 'medium', timeStyle: 'short' , timeZone: 'Asia/Kolkata'}) : '—';
         const color = r.status === 'approved' ? '#10B981' : '#DC2626';
         const label = r.status === 'approved' ? 'APPROVED' : 'DENIED';
         html += '<div style="padding:10px 14px; background:rgba(255,255,255,0.03); border-left:2px solid ' + color + '; border-radius:6px; margin-bottom:6px; font-size:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center">';
@@ -10509,7 +10509,7 @@
       if (!v || v <= 0) return '₹0';
       if (v >= 1e7) return '₹' + (v / 1e7).toFixed(2) + ' Cr';
       if (v >= 1e5) return '₹' + (v / 1e5).toFixed(2) + ' L';
-      return '₹' + Math.round(v).toLocaleString('en-IN');
+      return '₹' + Math.round(v).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     };
     let activeSum = 0, wonSum = 0, lostSum = 0, totalSum = 0;
     let activeCount = 0, wonCount = 0, lostCount = 0;
@@ -10687,12 +10687,14 @@
     const users = await _fetchAllUsersTV();
     const isSuper = function(u) { return !!u.isSuper || u.role === 'Super'; };
     const isSales = function(u) {
+      // v25.35 update: include BU Head in sales dropdown (BS parity).
+      // Use anchored regex to avoid the substring trap (/sale/i would match 'Presales').
       const r = String(u.role || '').trim();
-      return r === 'Sales' || isSuper(u);
+      return /^Sales$/i.test(r) || /^BU[\s-]*Head$/i.test(r) || isSuper(u);
     };
     const isPresales = function(u) {
       const r = String(u.role || '').trim();
-      return r === 'Presales' || isSuper(u);
+      return /^Presales$/i.test(r) || isSuper(u);
     };
 
     const currentSales = salesSel.value;
@@ -10722,17 +10724,19 @@
     users.filter(isPresales).forEach(function(u) { presalesSel.appendChild(buildOpt(u)); });
 
     // Smart defaults — only if NO selection yet AND current user has the matching role.
-    // Exact role check, not substring. tvONE roles are capitalized.
+    // Anchored regex to avoid substring trap. BU Head also defaults into Sales.
     if (currentUser && currentUser.username) {
       const myUname = String(currentUser.username).toLowerCase();
       const myRole = String(currentUser.role || '').trim();
+      const isMyRoleSales = /^Sales$/i.test(myRole) || /^BU[\s-]*Head$/i.test(myRole);
+      const isMyRolePresales = /^Presales$/i.test(myRole);
 
-      if (!currentSales && myRole === 'Sales') {
+      if (!currentSales && isMyRoleSales) {
         if (salesSel.querySelector('option[value="' + CSS.escape(myUname) + '"]')) {
           salesSel.value = myUname;
         }
       }
-      if (!currentPresales && myRole === 'Presales') {
+      if (!currentPresales && isMyRolePresales) {
         if (presalesSel.querySelector('option[value="' + CSS.escape(myUname) + '"]')) {
           presalesSel.value = myUname;
         }
@@ -11399,7 +11403,7 @@
     document.getElementById('prof_role').textContent = rolInfo.label;
     const ll = currentUser.lastLogin;
     document.getElementById('prof_lastlogin').textContent = ll
-      ? new Date(ll).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+      ? new Date(ll).toLocaleString('en-IN',{ dateStyle: 'medium', timeStyle: 'short' , timeZone: 'Asia/Kolkata'})
       : '—';
     // Editable contact details — populated into inputs
     const nEl = document.getElementById('prof_edit_name');
@@ -11627,7 +11631,7 @@
       const v = parseFloat(n) || 0;
       if (v >= 10000000) return '₹' + (v / 10000000).toFixed(2) + ' Cr';
       if (v >= 100000) return '₹' + (v / 100000).toFixed(1) + ' L';
-      if (v > 0) return '₹' + Math.round(v).toLocaleString('en-IN');
+      if (v > 0) return '₹' + Math.round(v).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
       return '—';
     };
 
@@ -11992,7 +11996,7 @@
       const v = parseFloat(n) || 0;
       if (v >= 10000000) return '₹' + (v / 10000000).toFixed(2) + ' Cr';
       if (v >= 100000) return '₹' + (v / 100000).toFixed(1) + ' L';
-      if (v > 0) return '₹' + Math.round(v).toLocaleString('en-IN');
+      if (v > 0) return '₹' + Math.round(v).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
       return '—';
     };
     const selectedUserLabel = userSel.options[userSel.selectedIndex].textContent;
@@ -12002,7 +12006,7 @@
     html += '<div class="card" style="background:linear-gradient(135deg, rgba(30,64,175,0.12) 0%, rgba(16,185,129,0.08) 100%); border:1px solid rgba(30,64,175,0.3)">';
     html += '<div style="font-size:11px; color:var(--ink-subtle); letter-spacing:0.12em; text-transform:uppercase; font-weight:700; margin-bottom:6px">1:1 BRIEFING · Last ' + days + ' days</div>';
     html += '<div style="font-family:\'Fraunces\',serif; font-size:32px; font-weight:500; letter-spacing:-0.01em; color:var(--ink)">' + E(selectedUserLabel) + '</div>';
-    html += '<div style="font-size:13px; color:var(--ink-soft); margin-top:4px">Generated ' + new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) + '</div>';
+    html += '<div style="font-size:13px; color:var(--ink-soft); margin-top:4px">Generated ' + new Date().toLocaleString('en-IN',{ dateStyle: 'medium', timeStyle: 'short' , timeZone: 'Asia/Kolkata'}) + '</div>';
     html += '</div>';
 
     // KPI grid
@@ -12130,7 +12134,7 @@
                + '<th>Time</th><th>User</th><th>Code</th><th>Message</th><th>Version</th>'
                + '</tr></thead><tbody>';
       entries.forEach(function(e) {
-        const ts = e.timestamp ? new Date(e.timestamp).toLocaleString('en-IN', {dateStyle:'short', timeStyle:'short'}) : '—';
+        const ts = e.timestamp ? new Date(e.timestamp).toLocaleString('en-IN',{dateStyle:'short', timeStyle:'short', timeZone: 'Asia/Kolkata'}) : '—';
         html += '<tr>'
               + '<td style="white-space:nowrap;color:var(--ink-soft)">' + escapeHtml(ts) + '</td>'
               + '<td>' + escapeHtml(e.user || '—') + '</td>'
@@ -12864,7 +12868,7 @@
     v = parseFloat(v) || 0;
     if (v >= 10000000) return '₹' + (v / 10000000).toFixed(2) + ' Cr';
     if (v >= 100000) return '₹' + (v / 100000).toFixed(1) + ' L';
-    if (v > 0) return '₹' + Math.round(v).toLocaleString('en-IN');
+    if (v > 0) return '₹' + Math.round(v).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
     return '₹0';
   }
 
@@ -13366,7 +13370,7 @@
     try { _logViewTV(refId, 'detail_modal_open'); } catch (_) {}
     document.getElementById('detailModalTitle').textContent = row.project || 'Untitled';
     const sub = document.getElementById('detailModalSub');
-    const ll = row.timestampLocal || (row.timestamp ? new Date(row.timestamp).toLocaleString('en-IN') : '—');
+    const ll = row.timestampLocal || (row.timestamp ? new Date(row.timestamp).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '—');
     sub.innerHTML = 'ref <code style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--gold-bright);background:rgba(212,175,55,0.12);padding:2px 6px;border-radius:4px">' + escapeHtml(refId) + '</code> · logged ' + escapeHtml(ll) + ' by ' + escapeHtml(row.userFullName || row.username || '—');
     const body = document.getElementById('detailModalBody');
     body.innerHTML = buildDetailHTML_(row);
@@ -13410,7 +13414,7 @@
       const E = escapeHtml;
       let html = '';
       data.audit.forEach(function(entry) {
-        const when = entry.timestamp ? new Date(entry.timestamp).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+        const when = entry.timestamp ? new Date(entry.timestamp).toLocaleString('en-IN',{ dateStyle: 'medium', timeStyle: 'short' , timeZone: 'Asia/Kolkata'}) : '—';
         html += '<div style="padding:14px 16px; background:rgba(18,24,26,0.55); border:1px solid rgba(212,175,55,0.18); border-radius:10px; margin-bottom:10px">';
         html += '<div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; flex-wrap:wrap; gap:10px">';
         html += '<span style="font-family:JetBrains Mono,monospace; font-size:11.5px; font-weight:700; color:var(--gold-bright); text-transform:uppercase; letter-spacing:0.08em">' + E(entry.field) + '</span>';
@@ -13496,7 +13500,7 @@
         let dispVal;
         if (v >= 1e7) dispVal = '₹' + (v / 1e7).toFixed(2) + ' Cr';
         else if (v >= 1e5) dispVal = '₹' + (v / 1e5).toFixed(2) + ' L';
-        else dispVal = '₹' + Math.round(v).toLocaleString('en-IN');
+        else dispVal = '₹' + Math.round(v).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
         html += row('Deal Value', dispVal);
       }
       html += row('Expected Close', r.close);
@@ -13505,7 +13509,7 @@
     }
 
     if (r.status === 'confirmed' && r.confirmedAt) {
-      html += '<div style="margin-top:18px;padding:12px 16px;background:rgba(16,185,129,0.1);border-left:3px solid var(--emerald-bright);border-radius:8px;font-size:13px;color:var(--emerald-bright)">✓ Confirmed on ' + E(new Date(r.confirmedAt).toLocaleString('en-IN')) + ' by ' + E(r.confirmedBy || '—') + '</div>';
+      html += '<div style="margin-top:18px;padding:12px 16px;background:rgba(16,185,129,0.1);border-left:3px solid var(--emerald-bright);border-radius:8px;font-size:13px;color:var(--emerald-bright)">✓ Confirmed on ' + E(new Date(r.confirmedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })) + ' by ' + E(r.confirmedBy || '—') + '</div>';
     }
     html += '</div>';
     return html;
@@ -13805,7 +13809,7 @@
         const metaEl = document.getElementById('tv-c2a-poa-meta');
         if (metaEl && data.updatedAt) {
           const when = new Date(data.updatedAt);
-          metaEl.textContent = 'Last updated by ' + (data.updatedBy || '—') + ' on ' + when.toLocaleString();
+          metaEl.textContent = 'Last updated by ' + (data.updatedBy || '—') + ' on ' + when.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
         }
         return data;
       }
@@ -13896,7 +13900,7 @@
     if (metaEl) {
       if (note && note.updatedAt) {
         const when = new Date(note.updatedAt);
-        metaEl.textContent = 'Last updated by ' + (note.updatedBy || '—') + ' on ' + when.toLocaleString();
+        metaEl.textContent = 'Last updated by ' + (note.updatedBy || '—') + ' on ' + when.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
       } else {
         metaEl.textContent = note === null ? 'Could not load plan of action.' : 'Not yet written.';
       }
@@ -14069,7 +14073,7 @@
     const sum = wb.addWorksheet('Summary');
     sum.columns = [{width:30},{width:60}];
     sum.addRow(['tvONE CALICO — Channel Review Export']).font = {bold:true, size:14};
-    sum.addRow(['Generated', new Date().toLocaleString()]);
+    sum.addRow(['Generated', new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })]);
     sum.addRow(['Generated by', (currentUser && currentUser.name) ? currentUser.name : '—']);
     sum.addRow(['As of date', agg ? new Date(agg.asOfDate).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}) : '—']);
     sum.addRow([]);
@@ -14209,7 +14213,7 @@
     const initials = (u.name || u.username || '?').split(' ').map(function(s){return s[0];}).slice(0,2).join('').toUpperCase();
     let lastLoginTxt = '—';
     if (u.lastLogin) {
-      try { lastLoginTxt = new Date(u.lastLogin).toLocaleString(); } catch(e) { lastLoginTxt = String(u.lastLogin); }
+      try { lastLoginTxt = new Date(u.lastLogin).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }); } catch(e) { lastLoginTxt = String(u.lastLogin); }
     }
 
     const logStats = _tvC2cComputeLogStats();
