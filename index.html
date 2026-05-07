@@ -1697,6 +1697,9 @@
   .log-table tbody tr { transition: background 0.2s var(--ease); }
   .log-table tbody tr:hover td { background: rgba(212, 175, 55, 0.05); }
   .log-table tbody tr:last-child td { border-bottom: none; }
+  /* v25.35 (#17): Stage-aging row tints. Yellow >14 days, red >30 days at current stage. */
+  .log-table tbody tr.tv-aging-yellow td:first-child { box-shadow: inset 4px 0 0 #F59E0B; }
+  .log-table tbody tr.tv-aging-red td:first-child { box-shadow: inset 4px 0 0 #DC2626; }
   .log-table td.col-proj {
     font-weight: 700; color: var(--gold-bright);
     letter-spacing: -0.005em;
@@ -4195,6 +4198,12 @@
 
 <!-- APP -->
 <div id="appScreen" class="hidden">
+  <!-- v25.35 (#12): Test-mode banner — sticky orange strip when user has test mode on.
+       Submissions made now are flagged isTest=TRUE in col CB and excluded from Dashboard
+       + Review aggregations on the frontend. Toggle in Profile tab. -->
+  <div id="test-mode-banner-tv" style="display:none;background:linear-gradient(90deg,#F59E0B,#D97706);color:#fff;padding:7px 16px;font-size:12.5px;font-weight:600;letter-spacing:0.04em;text-align:center;position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(245,158,11,0.35);">
+    🧪 TEST MODE — submissions made now are flagged <code style="background:rgba(255,255,255,0.2);padding:1px 6px;border-radius:3px;font-family:monospace;">isTest=TRUE</code> and excluded from Dashboard + Review aggregations.
+  </div>
   <header class="app-header">
     <!-- Row 1: Brand (left) · User + Controls + Exit (right) -->
     <div class="header-top">
@@ -4546,6 +4555,24 @@
           </select>
           <label style="font-size:11px;color:var(--ink-soft);font-weight:500;margin-top:4px;">Additional context (optional)</label>
           <textarea id="f_outcomeReasonNote" rows="2" placeholder="Any details that help the team learn from this deal…" style="width:100%;resize:vertical;min-height:50px;"></textarea>
+        </div>
+
+        <!-- v25.35 (#3): Sales/Presales handoff. salesPerson REQUIRED, presalesPerson OPTIONAL.
+             Both store loginName lowercased. Same-person rule enforced in validation.
+             Display label is fullName (resolved from _allUsersTV cache). -->
+        <div class="field" style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:12px;">
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <label style="font-weight:600;color:#064E3B;font-size:13px;">Sales person <span class="req">*</span><span class="help-icon-tv" data-tip="The sales owner — gets credit and follow-ups for this deal. Required.">?</span></label>
+              <select id="f_salesPerson"><option value="">— Select sales owner —</option></select>
+              <div style="font-size:11px;color:var(--ink-soft);">Required. Sales credit is tracked here.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <label style="font-weight:600;color:#064E3B;font-size:13px;">Presales person <span style="font-weight:400;font-size:11px;color:var(--ink-soft);">(optional)</span><span class="help-icon-tv" data-tip="Presales engineer assisting with the technical scoping. Optional but useful for handoffs.">?</span></label>
+              <select id="f_presalesPerson"><option value="">— None —</option></select>
+              <div style="font-size:11px;color:var(--ink-soft);">Optional. For handoffs with technical/presales input.</div>
+            </div>
+          </div>
         </div>
         <!-- v25.10.1 Cycle 2a: Per-deal Plan of Action textarea REMOVED — PoA now lives per-period on the Review tab -->
 
@@ -5171,6 +5198,8 @@
       <div class="btn-row" style="margin-top:14px">
         <button class="secondary" onclick="loadErrorLog_tv()">↻ Refresh</button>
         <button class="secondary" onclick="clearErrorLog_tv()" style="border-color:rgba(220,38,38,0.4);color:#FCA5A5">🗑 Clear log</button>
+        <!-- v25.35 (#1): Manual force-send of the daily error summary email. Verifies the trigger pipeline. -->
+        <button class="secondary" id="errorSummaryTestBtnTV" onclick="sendErrorSummaryTestTV()" title="Force-send today's error digest to dipen.g@cavitak.com — confirms the daily 8 AM IST trigger pipeline works">📧 Send test summary</button>
       </div>
     </div>
   </div>
@@ -5411,6 +5440,20 @@
   <div id="profileView" class="page hidden">
     <h1 class="page-title">My Account</h1>
     <p class="page-sub">View your account, update your contact details, and manage your password.</p>
+
+    <!-- v25.35 (#12): Test mode toggle card. Per-user, localStorage-backed.
+         When ON, deals submitted are flagged isTest=TRUE in col CB and excluded from
+         Dashboard + Review aggregations. Banner appears at the top of the app. -->
+    <div class="card" style="background:#FFFBEB;border:1px solid #FCD34D;">
+      <div class="card-title" style="color:#92400E;">🧪 Test Mode</div>
+      <div style="font-size:14px; color:var(--ink-soft); margin-bottom:14px; line-height:1.6">
+        Submissions made while Test Mode is on are flagged as test data and excluded from your team's analytics. Use this when training, demoing, or experimenting — keep real deals separate from real numbers.
+      </div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;">
+        <input type="checkbox" id="test-mode-checkbox-tv" onchange="setTestModeTV(this.checked)" style="width:18px;height:18px;cursor:pointer;">
+        <span>Test Mode is <span id="test-mode-label-tv" style="font-weight:700;color:var(--ink-soft);">OFF</span></span>
+      </label>
+    </div>
 
     <!-- Identity (read-only) -->
     <div class="card">
@@ -5765,7 +5808,16 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.34';
+  const TVONE_FRONTEND_VERSION = '25.35';
+  // v25.35 ports BS Session A+B+C items into tvONE:
+  //   #3  Sales/Presales handoff (cols CC/CD) + B1 visibility expansion
+  //   #4  Profile Gate hardening (watchdog + popstate + body dim + rehydrate)
+  //   #6  Unsaved changes warning (_formDirty + beforeunload + tab-switch confirm)
+  //   #11 View tracking (fires view_log_append on detail/edit modal open)
+  //   #12 Test mode flag (banner, toggle, localStorage, History badge, aggregations filter)
+  //   #17 Stage-aging row tints (yellow >14d / red >30d, open deals only)
+  //   #1  Super-only "Send test error summary" button in Team tab
+  // Skipped (intentional): stage velocity (frontend-only, deferred); PDF/Excel logo (deferred)
   // Stamp version into login footer once DOM is ready (defer-safe)
   try {
     document.addEventListener('DOMContentLoaded', function(){
@@ -6566,6 +6618,12 @@
         }
       } catch (_) { /* never block app load */ }
     }, 250);
+    // v25.35: Init test mode flag from localStorage, wire form-dirty tracking, harden profile gate,
+    // and prefetch the all-users cache so the form's Sales/Presales dropdowns populate fast.
+    try { _initTestModeTV(); } catch (_) {}
+    try { _initFormDirtyTrackingTV(); } catch (_) {}
+    try { _hardenProfileGateTV(); } catch (_) {}
+    try { _fetchAllUsersTV(); } catch (_) {}
     const avatar = document.getElementById('userAvatar');
     if (avatar) avatar.textContent = _initialsFor(currentUser.name);
     if (typeof renderNotifBell === 'function') renderNotifBell();
@@ -6672,6 +6730,21 @@
           centralLog = scopeRowsToUser_(_r);
         } catch (e) { /* silent */ }
       }, 2000);
+
+      // v25.35: Profile Gate also runs on rehydrate. Without this, refreshing the page
+      // bypasses the gate even if the profile is incomplete.
+      setTimeout(function() {
+        try {
+          if (typeof _profileGateNeededTV === 'function' && _profileGateNeededTV()) {
+            _showProfileGateTV();
+          }
+        } catch (_) {}
+      }, 250);
+      // v25.35: Same init suite as fresh-login path.
+      try { _initTestModeTV(); } catch (_) {}
+      try { _initFormDirtyTrackingTV(); } catch (_) {}
+      try { _hardenProfileGateTV(); } catch (_) {}
+      try { _fetchAllUsersTV(); } catch (_) {}
 
       updateLoginSplash(100, 'Welcome back');
       setTimeout(function () { try { hideLoginSplash(); } catch (_) {} }, 500);
@@ -6855,6 +6928,21 @@
     if (currentUser && currentUser.role === 'tvONE' && (v === 'form' || v === 'result' || v === 'analyzing')) {
       v = 'dash';
     }
+    // v25.35 (#4): Block tab nav while Profile Gate is open. Re-show gate if dismissed.
+    try {
+      if (typeof _profileGateNeededTV === 'function' && _profileGateNeededTV()) {
+        _showProfileGateTV();
+        return;  // do NOT switch view while gate is needed
+      }
+    } catch (_) {}
+    // v25.35 (#6): Unsaved-changes guard — confirm before leaving the form
+    try {
+      if (window._formDirtyTV && v !== 'form' && v !== 'analyzing' && v !== 'result') {
+        const ok = confirm('You have unsaved changes on the form. Switch tabs and lose them?');
+        if (!ok) return;
+        window._formDirtyTV = false;  // user accepted; clear flag
+      }
+    } catch (_) {}
     ['form','analyzing','result','dash','history','team','profile','customers','briefing'].forEach(x => {
       const el = document.getElementById(x+'View');
       if (el) el.classList.add('hidden');
@@ -6871,6 +6959,17 @@
     }
     // Update active nav-tab underline highlight
     updateActiveNavTab_(v);
+    // v25.35 (#3): Populate Sales/Presales dropdowns when entering form tab
+    if (v === 'form') {
+      try { _populateSalesPresalesDropdownsTV(); } catch (_) {}
+    }
+    // v25.35 (#17): Fetch stage transitions cache when entering History tab (one-shot, cached)
+    if (v === 'history') {
+      try { _fetchStageTransitionsTV().then(function() {
+        // Re-render History to apply aging tints once cache lands
+        try { renderLog(); } catch (_) {}
+      }); } catch (_) {}
+    }
     if (v === 'dash') refreshLog();
     if (v === 'history') refreshLog();
     if (v === 'team') {
@@ -7023,6 +7122,12 @@
     setVal('f_outcomeReasonNote', input.outcomeReasonNote || '');
     setVal('f_stageNote', '');
     setVal('f_planOfAction', input.planOfAction || '');
+    // v25.35 (#3): Restore sales/presales selections (populate dropdowns first if needed)
+    if (typeof _populateSalesPresalesDropdownsTV === 'function') {
+      try { _populateSalesPresalesDropdownsTV(); } catch (_) {}
+    }
+    setVal('f_salesPerson', String(input.salesPerson || '').toLowerCase());
+    setVal('f_presalesPerson', String(input.presalesPerson || '').toLowerCase());
     setVal('f_outputType', input.outputType);
     setVal('f_outputSignal', input.outputSignal);
     setVal('f_sdiCount', input.sdiCount);
@@ -7516,6 +7621,11 @@
       outcomeReasonNote: (document.getElementById('f_outcomeReasonNote') || {}).value || '',
       stageNote: (document.getElementById('f_stageNote') || {}).value || '',
       planOfAction: (document.getElementById('f_planOfAction') || {}).value || '',
+      // v25.35 (#3): Sales/Presales handoff. Both stored as lowercase loginName.
+      salesPerson:    String(((document.getElementById('f_salesPerson')    || {}).value || '')).trim().toLowerCase(),
+      presalesPerson: String(((document.getElementById('f_presalesPerson') || {}).value || '')).trim().toLowerCase(),
+      // v25.35 (#12): Test mode flag. 'TRUE' when user has test mode toggled on, else empty.
+      isTest: (window._testModeOnTV === true) ? 'TRUE' : '',
       outputType: document.getElementById('f_outputType').value,
       outputSignal: document.getElementById('f_outputSignal').value,
       sdiCount: parseInt(document.getElementById('f_sdiCount').value) || 0,
@@ -7550,6 +7660,14 @@
     // v25.28: when outcome is final (not open), reason category is required
     if (input.outcome !== 'open' && !input.outcomeReason) {
       requiredFields.push({ id: 'f_outcomeReason', label: 'Outcome reason' });
+    }
+    // v25.35 (#3): Sales person REQUIRED. Presales optional.
+    if (!input.salesPerson) {
+      requiredFields.push({ id: 'f_salesPerson', label: 'Sales person' });
+    }
+    // v25.35 (#3): Same-person rule — sales and presales can't be the same loginName
+    if (input.salesPerson && input.presalesPerson && input.salesPerson === input.presalesPerson) {
+      requiredFields.push({ id: 'f_presalesPerson', label: 'Presales must be different from Sales' });
     }
     if (!input.partnerContactName)   requiredFields.push({ id: 'f_partnerContactName',   label: 'Partner Contact — Name' });
     if (!input.partnerContactPhone || !/^[0-9]{10}$/.test(input.partnerContactPhone)) {
@@ -7644,6 +7762,11 @@
       outcomeReasonNote: input.outcomeReasonNote || '',
       stageNote: input.stageNote || '',
       planOfAction: input.planOfAction,
+      // v25.35 (#3): Sales/Presales handoff (cols CC, CD on Submissions sheet)
+      salesPerson:    input.salesPerson    || '',
+      presalesPerson: input.presalesPerson || '',
+      // v25.35 (#12): Test mode flag (col CB on Submissions sheet)
+      isTest: input.isTest || '',
       outputType: input.outputType, outputSignal: input.outputSignal, sdiCount: input.sdiCount, projectorCount: input.projectorCount, projectorRes: input.projectorRes, projectorPorts: input.projectorPorts,
       inputs: input.inputs, inputs4K: input.inputs4K, inputsFHD: input.inputsFHD, signals: input.signals,
       budget: input.budget, close: input.close, notes: input.notes,
@@ -7754,6 +7877,8 @@
             if (ridx >= 0) _rawCentralLog[ridx] = submission;
           }
           showSync('Changes saved', 'success');
+          // v25.35 (#6): submit succeeded — clear dirty flag so user can navigate freely
+          window._formDirtyTV = false;
           pushNotification({
             title: 'Deal updated',
             sub: (submission.project || 'Untitled'),
@@ -7769,6 +7894,8 @@
           }
           // v25.28: clear any saved draft once the user actually saves a real entry
           try { if (typeof _clearDraftTV === 'function') _clearDraftTV(); } catch (_) {}
+          // v25.35 (#6): submit succeeded — clear dirty flag
+          window._formDirtyTV = false;
           showSync('Deal registered', 'success');
           pushNotification({
             title: 'Deal registered',
@@ -7938,6 +8065,8 @@
         return;
       }
       console.log('[Edit] ✓ Ownership check passed (isOwner=' + isOwner + ', isSuper=' + !!currentUser.isSuper + ')');
+      // v25.35 (#11): View tracking — fire-and-forget on edit modal open
+      try { _logViewTV(refId, 'edit_modal_open'); } catch (_) {}
 
       // 5. Set edit state BEFORE populating so form knows we're in edit mode
       _editingRefId = refId;
@@ -8047,6 +8176,12 @@
     // stageNote intentionally NOT restored — per-transition not per-deal, always blank on edit-load
     setVal('f_stageNote', '');
     setVal('f_planOfAction', r.planOfAction || '');
+    // v25.35 (#3): Restore sales/presales selections (populate dropdowns first if needed)
+    if (typeof _populateSalesPresalesDropdownsTV === 'function') {
+      try { _populateSalesPresalesDropdownsTV(); } catch (_) {}
+    }
+    setVal('f_salesPerson', String(r.salesPerson || '').toLowerCase());
+    setVal('f_presalesPerson', String(r.presalesPerson || '').toLowerCase());
     setVal('f_outputType', r.outputType);
     setVal('f_outputSignal', r.outputSignal);
     setVal('f_sdiCount', r.sdiCount);
@@ -9751,12 +9886,21 @@
   }
 
   // Scope a row array to the current user's permissions
+  // v25.35 (#3 visibility, B1): salesPerson and presalesPerson tags also grant
+  // History access — so if I'm tagged on a deal as either, I see it in my History
+  // even if someone else logged it in. Empty-string short-circuit (eX && eX === uname)
+  // prevents legacy untagged rows leaking via empty-equals-empty.
   function scopeRowsToUser_(rows) {
     if (hasFullDataAccess()) return rows;
     if (!currentUser) return [];
     const uname = String(String(currentUser.username || '')).toLowerCase();
     return rows.filter(function(r) {
-      return String(r.username || '').toLowerCase() === uname;
+      const elogin    = String(r.username       || '').toLowerCase();
+      const eSales    = String(r.salesPerson    || '').toLowerCase();
+      const ePresales = String(r.presalesPerson || '').toLowerCase();
+      return (elogin    && elogin    === uname)
+          || (eSales    && eSales    === uname)
+          || (ePresales && ePresales === uname);
     });
   }
 
@@ -9876,6 +10020,10 @@
         return String(r.username || '').toLowerCase() === uname;
       });
     }
+    // v25.35 (#12): exclude test-mode rows from Dashboard aggregations by default
+    if (typeof _filterTestDataTV === 'function') {
+      sourceRows = _filterTestDataTV(sourceRows, false);
+    }
     const filtered = filterRows_(f, sourceRows);
     updateStats(filtered);
     updateFilterChips(f, filtered.length, sourceRows.length);
@@ -9971,8 +10119,13 @@
       const isOwner = currentUser && String(s.username || '').toLowerCase() === String(String(currentUser.username || '')).toLowerCase();
       const canEditThisRow = canEdit && (isOwner || (currentUser && currentUser.isSuper));
       const refEsc = (s.refId || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      // v25.35 (#3, #12, #17): row enrichments
+      const aging = (typeof _computeAgingTV === 'function') ? _computeAgingTV(s) : { className: '', badgeHtml: '' };
+      const handoffStr = (typeof _buildHandoffStringTV === 'function') ? _buildHandoffStringTV(s) : '';
+      const testBadge = (typeof _buildTestBadgeTV === 'function') ? _buildTestBadgeTV(s) : '';
+      const trClass = aging.className ? ' class="' + aging.className + '"' : '';
       // Make the row clickable to open the detail modal — but stop propagation on checkbox + action button so those still work independently
-      html += '<tr style="cursor:pointer" onclick="openDetailModal(\'' + refEsc + '\')">';
+      html += '<tr' + trClass + ' style="cursor:pointer" onclick="openDetailModal(\'' + refEsc + '\')">';
       if (canEdit) {
         const checked = _bulkSelected && _bulkSelected.has(s.refId) ? 'checked' : '';
         if (canEditThisRow) {
@@ -9981,7 +10134,7 @@
           html += '<td></td>';
         }
       }
-      html += '<td class="col-proj">' + (s.project||'—') + '</td>';
+      html += '<td class="col-proj">' + (s.project||'—') + testBadge + aging.badgeHtml + handoffStr + '</td>';
       html += '<td>' + (s.stage ? '<span class="stage-pill ' + stageCls + '">' + s.stage + '</span>' : '—') + '</td>';
       html += '<td class="td-enduser">' + (s.endUser||'—') + '</td>';
       html += '<td class="td-partner">' + (s.partner||'—') + '</td>';
@@ -10490,12 +10643,399 @@
   }
 
   // =================================================================
+  // v25.35 — NEW HELPERS BLOCK (BS Session A+B+C ports)
+  // =================================================================
+
+  // ---- #3 Sales/Presales: users cache + dropdown populator ----
+  // Fetched once on first form-show, then reused. Cache invalidates on logout.
+  window._allUsersTV = null;
+
+  async function _fetchAllUsersTV() {
+    if (Array.isArray(window._allUsersTV)) return window._allUsersTV;
+    if (!currentUser || !_authHash) return [];
+    try {
+      const url = WEB_APP_URL + '?action=listusers'
+        + '&authUsername=' + encodeURIComponent(currentUser.username)
+        + '&authPasswordHash=' + encodeURIComponent(_authHash);
+      const res = await fetch(url, { method: 'GET' });
+      const data = await res.json();
+      if (data && data.ok && Array.isArray(data.users)) {
+        window._allUsersTV = data.users.filter(function(u) {
+          // Active users only; exclude OEM (tvONE) — they don't own deals.
+          return (u.active === true || String(u.active).toUpperCase() === 'TRUE')
+              && u.role !== 'tvONE';
+        });
+      } else {
+        window._allUsersTV = [];
+      }
+    } catch (e) {
+      console.warn('[v25.35 #3] _fetchAllUsersTV failed:', e);
+      window._allUsersTV = [];
+    }
+    return window._allUsersTV;
+  }
+
+  // Build the Sales/Presales dropdowns. Filter by EXACT role match (no /sale/i regex
+  // — that would match "Presales" too because the substring 'sale' is in 'presales').
+  // Sales eligible: role === 'Sales' OR isSuper.
+  // Presales eligible: role === 'Presales' OR isSuper.
+  async function _populateSalesPresalesDropdownsTV() {
+    const salesSel = document.getElementById('f_salesPerson');
+    const presalesSel = document.getElementById('f_presalesPerson');
+    if (!salesSel || !presalesSel) return;
+
+    const users = await _fetchAllUsersTV();
+    const isSuper = function(u) { return !!u.isSuper || u.role === 'Super'; };
+    const isSales = function(u) {
+      const r = String(u.role || '').trim();
+      return r === 'Sales' || isSuper(u);
+    };
+    const isPresales = function(u) {
+      const r = String(u.role || '').trim();
+      return r === 'Presales' || isSuper(u);
+    };
+
+    const currentSales = salesSel.value;
+    const currentPresales = presalesSel.value;
+
+    const buildOpt = function(u) {
+      const label = u.fullName || u.username;
+      const value = String(u.username || '').toLowerCase();
+      const o = document.createElement('option');
+      o.value = value;
+      o.textContent = label;
+      return o;
+    };
+
+    salesSel.innerHTML = '';
+    presalesSel.innerHTML = '';
+    const placeholder1 = document.createElement('option');
+    placeholder1.value = '';
+    placeholder1.textContent = '— Select sales owner —';
+    salesSel.appendChild(placeholder1);
+    const placeholder2 = document.createElement('option');
+    placeholder2.value = '';
+    placeholder2.textContent = '— None —';
+    presalesSel.appendChild(placeholder2);
+
+    users.filter(isSales).forEach(function(u) { salesSel.appendChild(buildOpt(u)); });
+    users.filter(isPresales).forEach(function(u) { presalesSel.appendChild(buildOpt(u)); });
+
+    // Smart defaults — only if NO selection yet AND current user has the matching role.
+    // Exact role check, not substring. tvONE roles are capitalized.
+    if (currentUser && currentUser.username) {
+      const myUname = String(currentUser.username).toLowerCase();
+      const myRole = String(currentUser.role || '').trim();
+
+      if (!currentSales && myRole === 'Sales') {
+        if (salesSel.querySelector('option[value="' + CSS.escape(myUname) + '"]')) {
+          salesSel.value = myUname;
+        }
+      }
+      if (!currentPresales && myRole === 'Presales') {
+        if (presalesSel.querySelector('option[value="' + CSS.escape(myUname) + '"]')) {
+          presalesSel.value = myUname;
+        }
+      }
+    }
+
+    // Restore manual selection if user already picked something
+    if (currentSales && salesSel.querySelector('option[value="' + CSS.escape(currentSales) + '"]')) {
+      salesSel.value = currentSales;
+    }
+    if (currentPresales && presalesSel.querySelector('option[value="' + CSS.escape(currentPresales) + '"]')) {
+      presalesSel.value = currentPresales;
+    }
+  }
+
+  // Resolve a loginName to a fullName via the cache (sync — relies on cache being warm)
+  function _resolveUserNameTV(login) {
+    if (!login) return null;
+    const u = (window._allUsersTV || []).find(function(x) {
+      return String(x.username || '').toLowerCase() === String(login).toLowerCase();
+    });
+    return u ? (u.fullName || u.username) : login;
+  }
+
+  // ---- #11 View tracking ----
+  // Fire-and-forget. Failures are logged to console, never surfaced to user.
+  function _logViewTV(refId, viewType) {
+    if (!refId || !currentUser || !_authHash || !WEB_APP_URL) return;
+    try {
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors',  // we don't need the response; just fire it off
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'view_log_append',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash,
+          refId: String(refId),
+          viewType: String(viewType || 'unknown')
+        })
+      }).catch(function() { /* fire-and-forget */ });
+    } catch (e) { /* fire-and-forget */ }
+  }
+
+  // ---- #12 Test mode flag ----
+  function _testModeKeyTV() {
+    const u = currentUser && currentUser.username;
+    return u ? ('tv-test-mode__' + String(u).toLowerCase()) : null;
+  }
+  function _initTestModeTV() {
+    const key = _testModeKeyTV();
+    if (!key) return;
+    try {
+      const stored = localStorage.getItem(key);
+      window._testModeOnTV = (stored === 'TRUE');
+    } catch (e) {
+      window._testModeOnTV = false;
+    }
+    _renderTestModeBannerTV();
+  }
+  function _renderTestModeBannerTV() {
+    const banner = document.getElementById('test-mode-banner-tv');
+    if (banner) banner.style.display = window._testModeOnTV ? 'block' : 'none';
+    const cb = document.getElementById('test-mode-checkbox-tv');
+    const lbl = document.getElementById('test-mode-label-tv');
+    if (cb) cb.checked = !!window._testModeOnTV;
+    if (lbl) {
+      lbl.textContent = window._testModeOnTV ? 'ON' : 'OFF';
+      lbl.style.color = window._testModeOnTV ? '#92400E' : 'var(--ink-soft)';
+    }
+  }
+  function setTestModeTV(on) {
+    window._testModeOnTV = !!on;
+    const key = _testModeKeyTV();
+    if (key) {
+      try {
+        if (on) localStorage.setItem(key, 'TRUE');
+        else    localStorage.removeItem(key);
+      } catch (e) { /* localStorage may be full */ }
+    }
+    _renderTestModeBannerTV();
+  }
+  window.setTestModeTV = setTestModeTV;
+
+  // Filter test rows out of an entries list. Defaults to excluding test data.
+  function _filterTestDataTV(entries, includeTest) {
+    if (!Array.isArray(entries)) return entries;
+    if (includeTest) return entries;
+    return entries.filter(function(e) {
+      return !e || (e.isTest !== true && String(e.isTest || '').toUpperCase() !== 'TRUE');
+    });
+  }
+  window._filterTestDataTV = _filterTestDataTV;
+
+  // ---- #6 Unsaved changes warning ----
+  // Set _formDirty=true on any form input change. Cleared on submit/reset.
+  // beforeunload triggers native browser dialog. showView checks before tab-switch.
+  window._formDirtyTV = false;
+
+  function _initFormDirtyTrackingTV() {
+    if (window._formDirtyWiredTV) return;
+    window._formDirtyWiredTV = true;
+    const formSection = document.getElementById('formView');
+    if (!formSection) return;
+    formSection.addEventListener('input', function() {
+      if (!window._tvEditMode && !window._tvDraftSkipSave) {
+        window._formDirtyTV = true;
+      }
+    });
+    formSection.addEventListener('change', function() {
+      if (!window._tvEditMode && !window._tvDraftSkipSave) {
+        window._formDirtyTV = true;
+      }
+    });
+    window.addEventListener('beforeunload', function(e) {
+      if (window._formDirtyTV) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    });
+  }
+
+  // ---- #4 Profile Gate hardening ----
+  // Watchdog re-shows gate if dismissed without filling. popstate/hashchange block
+  // back-forward nav while gate is open. Body data-attribute lets CSS dim app.
+  // Runs from BOTH login flow AND rehydrate.
+  function _hardenProfileGateTV() {
+    if (window._profileGateHardenedTV) return;
+    window._profileGateHardenedTV = true;
+
+    // Watchdog: every 1500ms, re-show gate if needed but hidden
+    setInterval(function() {
+      try {
+        if (typeof _profileGateNeededTV !== 'function') return;
+        if (!_profileGateNeededTV()) return;
+        const overlay = document.getElementById('profile-gate-modal-tv');
+        if (overlay && overlay.style.display !== 'flex') {
+          console.warn('[profileGate] watchdog: gate dismissed but profile incomplete — re-showing');
+          _showProfileGateTV();
+        }
+      } catch (_) { /* never throw from watchdog */ }
+    }, 1500);
+
+    // Block back/forward while gate is open
+    window.addEventListener('popstate', function() {
+      try {
+        if (typeof _profileGateNeededTV === 'function' && _profileGateNeededTV()) {
+          _showProfileGateTV();
+        }
+      } catch (_) {}
+    });
+    window.addEventListener('hashchange', function() {
+      try {
+        if (typeof _profileGateNeededTV === 'function' && _profileGateNeededTV()) {
+          _showProfileGateTV();
+        }
+      } catch (_) {}
+    });
+  }
+
+  // Wrap _showProfileGateTV to also set body dim, and _hideProfileGateTV to clear it.
+  // Use the const _orig pattern to avoid the BS hoisting trap.
+  if (typeof _showProfileGateTV === 'function' && !window._profileGateWrappedTV) {
+    window._profileGateWrappedTV = true;
+    const _origShow = _showProfileGateTV;
+    const _origHide = _hideProfileGateTV;
+    window._showProfileGateTV = function() {
+      try { document.body.setAttribute('data-app-dim', '1'); } catch (_) {}
+      return _origShow.apply(this, arguments);
+    };
+    window._hideProfileGateTV = function() {
+      try { document.body.removeAttribute('data-app-dim'); } catch (_) {}
+      return _origHide.apply(this, arguments);
+    };
+  }
+
+  // ---- #17 Stage-aging cache ----
+  // Fetched on first History tab open, used by the row builder to compute "days at
+  // current stage". Falls back to deal creation timestamp for rows without transitions.
+  window._tvC2bTransitions = null;  // null = not fetched yet, {} = fetched
+
+  async function _fetchStageTransitionsTV() {
+    if (window._tvC2bTransitions !== null) return window._tvC2bTransitions;
+    if (!currentUser || !_authHash || !WEB_APP_URL) {
+      window._tvC2bTransitions = {};
+      return {};
+    }
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'stage_transitions_list',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash
+        })
+      });
+      const data = await res.json();
+      if (data && data.ok && data.latestByRefId) {
+        window._tvC2bTransitions = data.latestByRefId;
+      } else {
+        window._tvC2bTransitions = {};
+      }
+    } catch (e) {
+      window._tvC2bTransitions = {};
+    }
+    return window._tvC2bTransitions;
+  }
+  window._fetchStageTransitionsTV = _fetchStageTransitionsTV;
+
+  // Compute aging classification for a row. Returns {className, badgeHtml} or empty.
+  function _computeAgingTV(row) {
+    const out = { className: '', badgeHtml: '' };
+    try {
+      const outcome = String(row.outcome || 'open').toLowerCase();
+      if (outcome !== 'open') return out;
+      const txMap = window._tvC2bTransitions || {};
+      const tx = row.refId ? txMap[row.refId] : null;
+      let baseMs = 0;
+      if (tx && tx.transitionedAtMs) baseMs = tx.transitionedAtMs;
+      else if (row.timestamp) baseMs = new Date(row.timestamp).getTime();
+      else if (row.timestampLocal) baseMs = new Date(row.timestampLocal).getTime();
+      if (!baseMs || isNaN(baseMs)) return out;
+      const days = Math.floor((Date.now() - baseMs) / 86400000);
+      const stage = String(row.stage || '?');
+      if (days > 30) {
+        out.className = 'tv-aging-red';
+        out.badgeHtml = '<span title="Stuck >30 days at this stage — needs attention" style="display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:0.04em;background:#FEE2E2;color:#991B1B;margin-left:6px;vertical-align:middle;white-space:nowrap;">🕐 ' + days + 'd · ' + stage + '</span>';
+      } else if (days > 14) {
+        out.className = 'tv-aging-yellow';
+        out.badgeHtml = '<span title="Aging — moved into this stage over 2 weeks ago" style="display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:0.04em;background:#FEF3C7;color:#92400E;margin-left:6px;vertical-align:middle;white-space:nowrap;">🕐 ' + days + 'd · ' + stage + '</span>';
+      }
+    } catch (_) {}
+    return out;
+  }
+  window._computeAgingTV = _computeAgingTV;
+
+  // Build the handoff display string for a row. Returns empty string if neither tagged.
+  function _buildHandoffStringTV(row) {
+    if (!row) return '';
+    const sName = _resolveUserNameTV(row.salesPerson);
+    const pName = _resolveUserNameTV(row.presalesPerson);
+    if (!sName && !pName) return '';
+    const parts = [];
+    if (sName) parts.push('<b>S:</b> ' + escapeHtml(sName));
+    if (pName) parts.push('<b>P:</b> ' + escapeHtml(pName));
+    return '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">👤 ' + parts.join(' · ') + '</div>';
+  }
+  window._buildHandoffStringTV = _buildHandoffStringTV;
+
+  // Build the test-mode badge for a row. Empty if not test.
+  function _buildTestBadgeTV(row) {
+    if (!row) return '';
+    const isTest = (row.isTest === true) || String(row.isTest || '').toUpperCase() === 'TRUE';
+    if (!isTest) return '';
+    return '<span title="Submitted in test mode — excluded from Dashboard + Review aggregations" style="display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:0.04em;background:#FEF3C7;color:#92400E;margin-left:6px;vertical-align:middle;white-space:nowrap;">🧪 TEST</span>';
+  }
+  window._buildTestBadgeTV = _buildTestBadgeTV;
+
+  // ---- #1 Manual error summary test send (Super-only) ----
+  async function sendErrorSummaryTestTV() {
+    if (!currentUser || !currentUser.isSuper) {
+      alert('Super only.');
+      return;
+    }
+    const btn = document.getElementById('errorSummaryTestBtnTV');
+    const oldLabel = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    try {
+      const res = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'error_summary_test',
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash
+        })
+      });
+      const data = await res.json();
+      if (data && data.ok) {
+        alert('✓ Test summary sent to dipen.g@cavitak.com — check your inbox in ~30 seconds.\n\n' +
+              'Errors in last 24h: ' + (data.errorCount || 0));
+      } else {
+        alert('✗ Failed to send test summary: ' + ((data && data.error) || 'unknown error'));
+      }
+    } catch (e) {
+      alert('✗ Network error sending test summary: ' + e);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = oldLabel; }
+    }
+  }
+  window.sendErrorSummaryTestTV = sendErrorSummaryTestTV;
+
+  // =================================================================
   // RESET
   // =================================================================
   function resetForm() {
     // v25.31: skip autosave during programmatic clear so we don't accidentally overwrite a saved draft
     window._tvDraftSkipSave = true;
-    ['f_project','f_endUser','f_partner','f_consultant','f_city','f_partnerContactName','f_partnerContactPhone','f_partnerContactEmail','f_leadSource','f_outcome','f_inputs','f_inputs4K','f_inputsFHD','f_notes','f_close','f_projectorCount','f_sdiCount','f_dealValueINR','f_outcomeReason','f_outcomeReasonNote','f_stageNote'].forEach(function(id) {
+    // v25.35 (#6): clear dirty flag — programmatic reset is not an "unsaved change"
+    window._formDirtyTV = false;
+    ['f_project','f_endUser','f_partner','f_consultant','f_city','f_partnerContactName','f_partnerContactPhone','f_partnerContactEmail','f_leadSource','f_outcome','f_inputs','f_inputs4K','f_inputsFHD','f_notes','f_close','f_projectorCount','f_sdiCount','f_dealValueINR','f_outcomeReason','f_outcomeReasonNote','f_stageNote','f_salesPerson','f_presalesPerson'].forEach(function(id) {
       var el = document.getElementById(id);
       if (el) el.value = '';
     });
@@ -10873,6 +11413,8 @@
     const okEl = document.getElementById('profileSaveOk');
     if (errEl) errEl.classList.remove('show');
     if (okEl) okEl.classList.remove('show');
+    // v25.35 (#12): refresh test-mode checkbox + label to reflect current state
+    try { _renderTestModeBannerTV(); } catch (_) {}
   }
 
   async function saveProfileDetails() {
@@ -12820,6 +13362,8 @@
     const row = centralLog.find(function(r) { return String(r.refId) === String(refId); });
     if (!row) { alert('Submission not found — may need Refresh.'); return; }
     _detailCurrentRefId = refId;
+    // v25.35 (#11): View tracking — fire-and-forget on detail modal open
+    try { _logViewTV(refId, 'detail_modal_open'); } catch (_) {}
     document.getElementById('detailModalTitle').textContent = row.project || 'Untitled';
     const sub = document.getElementById('detailModalSub');
     const ll = row.timestampLocal || (row.timestamp ? new Date(row.timestamp).toLocaleString('en-IN') : '—');
