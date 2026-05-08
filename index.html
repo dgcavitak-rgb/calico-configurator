@@ -5808,7 +5808,7 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.36';  // v25.36 — IST timezone explicit on all timestamp displays
+  const TVONE_FRONTEND_VERSION = '25.37';  // v25.37 — phone validator consistency: use lenient \D-strip pattern matching Profile Gate (was strict ^[0-9]{10}$ which broke for numbers Sheets coerced to Number type or formatted with separators)
   // v25.35 ports BS Session A+B+C items into tvONE:
   //   #3  Sales/Presales handoff (cols CC/CD) + B1 visibility expansion
   //   #4  Profile Gate hardening (watchdog + popstate + body dim + rehydrate)
@@ -12316,9 +12316,18 @@
     };
     if (!u.username || !u.fullName) { err.textContent = 'Username and Full Name are required.'; err.classList.add('show'); return; }
     if (!/^[a-z0-9_]+$/.test(u.username)) { err.textContent = 'Username: lowercase letters, digits, underscores only.'; err.classList.add('show'); return; }
-    if (u.phone && !/^[0-9]{10}$/.test(u.phone)) {
-      err.textContent = 'Phone must be exactly 10 digits, or leave blank.';
-      err.classList.add('show'); return;
+    // v25.37 — match Profile Gate's lenient validator. Strict /^[0-9]{10}$/ failed for:
+    //   (a) phones Sheets coerced to Number type (loses leading zeros, becomes scientific
+    //       notation for very large numbers); (b) phones with country code or separators
+    //       like "+91 9876543210" or "98765 43210"; (c) numbers entered legitimately as
+    //       "09876543210" (10 digits incl leading 0) which Sheets stored as 9876543210 (9 digits).
+    // Strip non-digits then require >= 10 digits — accepts all reasonable Indian phone formats.
+    if (u.phone) {
+      const _digitsOnly = String(u.phone).replace(/\D/g, '');
+      if (_digitsOnly.length < 10) {
+        err.textContent = 'Phone must be at least 10 digits (separators and country code allowed), or leave blank.';
+        err.classList.add('show'); return;
+      }
     }
     if (u.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(u.email)) {
       err.textContent = 'Enter a valid email address, or leave blank.';
