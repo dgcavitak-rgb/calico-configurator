@@ -5293,6 +5293,63 @@
       <div id="sales-history-status-tv" style="margin-top:10px; font-size:12px; color:var(--ink-subtle); font-family:'JetBrains Mono',monospace;"></div>
     </div>
 
+    <!-- v25.39 — Multi-select filter panel (parity with BS v24.21.2). Region auto-derived from State. -->
+    <div id="review-filters-wrap-tv" style="margin:0 0 14px 0; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; overflow:hidden;">
+      <button id="review-filters-toggle-tv" type="button" onclick="toggleReviewFiltersTV()" style="width:100%; display:flex; align-items:center; gap:10px; padding:12px 16px; background:transparent; border:none; cursor:pointer; font:inherit; color:var(--ink); text-align:left;">
+        <span style="font-size:13px; font-weight:600;">Filters</span>
+        <span id="review-filters-summary-tv" style="font-size:12px; color:var(--ink-subtle); flex:1;">— No filters applied (showing all data)</span>
+        <span id="review-filters-caret-tv" style="font-size:14px; color:var(--ink-soft); transition:transform 0.18s ease;">▾</span>
+      </button>
+      <div id="review-filters-panel-tv" style="display:none; padding:14px 16px 16px; border-top:1px solid var(--border-soft);">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
+          <div data-filter-group="leadSource">
+            <div class="rftv-label">Source</div>
+            <div class="rftv-options" id="rftv-leadSource"></div>
+          </div>
+          <div data-filter-group="region">
+            <div class="rftv-label">Region</div>
+            <div class="rftv-options" id="rftv-region"></div>
+          </div>
+          <div data-filter-group="state">
+            <div class="rftv-label">State</div>
+            <div class="rftv-options rftv-options-scroll" id="rftv-state"></div>
+          </div>
+          <div data-filter-group="salesPerson">
+            <div class="rftv-label">Sales Person</div>
+            <div class="rftv-options rftv-options-scroll" id="rftv-salesPerson"></div>
+          </div>
+          <div data-filter-group="presalesPerson">
+            <div class="rftv-label">Presales Person</div>
+            <div class="rftv-options rftv-options-scroll" id="rftv-presalesPerson"></div>
+          </div>
+          <div data-filter-group="endUser">
+            <div class="rftv-label">End-Client</div>
+            <div class="rftv-options rftv-options-scroll" id="rftv-endUser"></div>
+          </div>
+          <div data-filter-group="consultant">
+            <div class="rftv-label">Consultant</div>
+            <div class="rftv-options rftv-options-scroll" id="rftv-consultant"></div>
+          </div>
+        </div>
+        <div id="review-filters-active-tv" style="margin-top:12px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; min-height:0;"></div>
+        <div style="margin-top:10px; display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+          <button type="button" class="btn-secondary" onclick="clearAllReviewFiltersTV()" style="font-size:12px; padding:6px 12px;">Clear all</button>
+        </div>
+      </div>
+    </div>
+    <style>
+      #review-filters-wrap-tv .rftv-label { font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600; margin-bottom:6px; }
+      #review-filters-wrap-tv .rftv-options { display:flex; flex-wrap:wrap; gap:6px; }
+      #review-filters-wrap-tv .rftv-options-scroll { max-height:140px; overflow-y:auto; padding:4px; border:1px solid var(--border-soft); border-radius:8px; background:var(--surface-2); }
+      #review-filters-wrap-tv .rftv-chip { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; font-size:12px; line-height:1.4; border:1px solid var(--border-soft); border-radius:999px; background:var(--surface); color:var(--ink); cursor:pointer; user-select:none; transition:all 0.12s ease; }
+      #review-filters-wrap-tv .rftv-chip:hover { border-color:#D4AF37; }
+      #review-filters-wrap-tv .rftv-chip.active { background:#D4AF37; color:#0F0F0F; border-color:#D4AF37; font-weight:600; }
+      #review-filters-wrap-tv .rftv-chip.empty { opacity:0.6; font-style:italic; }
+      #review-filters-active-tv .rftv-active-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:11px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:999px; color:var(--ink-soft); }
+      #review-filters-active-tv .rftv-active-chip .rftv-x { cursor:pointer; padding:0 2px; opacity:0.6; }
+      #review-filters-active-tv .rftv-active-chip .rftv-x:hover { opacity:1; color:#DC2626; }
+    </style>
+
     <!-- v25.10: Relationship counts — active partners / consultants / end-users -->
     <div id="review-relationship-counts" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:18px;">
       <div class="card" style="padding:16px;">
@@ -5808,7 +5865,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.37';  // v25.37 — phone validator consistency: use lenient \D-strip pattern matching Profile Gate (was strict ^[0-9]{10}$ which broke for numbers Sheets coerced to Number type or formatted with separators)
+  const TVONE_FRONTEND_VERSION = '25.39';  // v25.39 — Review tab: 7-filter multi-select panel (Source/Region/State/Sales/Presales/End-Client/Consultant); region auto-derived from state; persists to localStorage
+  // v25.38 — save-time salesPerson auto-fill fallback for Sales/BU Head/Super users
   // v25.35 ports BS Session A+B+C items into tvONE:
   //   #3  Sales/Presales handoff (cols CC/CD) + B1 visibility expansion
   //   #4  Profile Gate hardening (watchdog + popstate + body dim + rehydrate)
@@ -7662,6 +7720,24 @@
       requiredFields.push({ id: 'f_outcomeReason', label: 'Outcome reason' });
     }
     // v25.35 (#3): Sales person REQUIRED. Presales optional.
+    // v25.38 — Last-resort auto-fill: if salesPerson is still empty but the current user
+    // has a Sales / BU Head / Super role, pin them as the salesPerson before validation.
+    // Catches the race where _allUsersTV fetch hadn't completed by submit time.
+    try {
+      if (!input.salesPerson && currentUser && currentUser.username) {
+        const _myRole = String(currentUser.role || '').trim();
+        const _isSalesRole = /^Sales$/i.test(_myRole) || /^BU[\s-]*Head$/i.test(_myRole) || currentUser.isSuper === true || _myRole === 'Super';
+        if (_isSalesRole) {
+          input.salesPerson = String(currentUser.username).toLowerCase();
+          // Reflect in DOM so user sees what got saved
+          const _spS = document.getElementById('f_salesPerson');
+          if (_spS && _spS.querySelector('option[value="' + CSS.escape(input.salesPerson) + '"]')) {
+            _spS.value = input.salesPerson;
+          }
+          console.log('[salesPerson save-time fallback TV] Applied:', input.salesPerson);
+        }
+      }
+    } catch(_) { /* never block save */ }
     if (!input.salesPerson) {
       requiredFields.push({ id: 'f_salesPerson', label: 'Sales person' });
     }
@@ -12719,8 +12795,12 @@
   }
 
   function updateRelationshipCounts_tv() {
-    const entries = Array.isArray(window._rawCentralLog) ? window._rawCentralLog
+    let entries = Array.isArray(window._rawCentralLog) ? window._rawCentralLog
                   : (Array.isArray(window.centralLog) ? window.centralLog : []);
+    // v25.39 — apply Review filters so relationship-count tiles re-scope too
+    if(typeof window.applyReviewFiltersTV === 'function'){
+      try { entries = window.applyReviewFiltersTV(entries); } catch(_){}
+    }
     const activeStages = { 'Lead': true, 'Opportunity': true, 'Proposal': true, 'Negotiation': true, 'Order': true };
     const partners = new Set();
     const consultants = new Set();
@@ -12749,6 +12829,8 @@
   function setReviewType(type) {
     updateRelationshipCounts_tv();
     updateReviewAdminBarVisibility_tv();
+    // v25.39 — refresh filter chip lists from current _rawCentralLog + _allUsersTV
+    try { if (typeof window.rebuildReviewFiltersTV === 'function') window.rebuildReviewFiltersTV(); } catch(_){}
     // v25.14 Cycle 2a — refresh comparison card + PoA textarea on every Review tab activation
     if (typeof tvC2aRender === 'function') tvC2aRender();
     // v25.24: Render the new KPI dashboard (pure-frontend, independent of period sub-segment)
@@ -14638,7 +14720,11 @@
     }
     if(lblEl) lblEl.textContent = range.label;
 
-    const log = Array.isArray(window._rawCentralLog) ? window._rawCentralLog : [];
+    // v25.39 — apply Review filters (Source/Region/State/Sales/Presales/End-Client/Consultant)
+    let log = Array.isArray(window._rawCentralLog) ? window._rawCentralLog : [];
+    if(typeof window.applyReviewFiltersTV === 'function'){
+      try { log = window.applyReviewFiltersTV(log); } catch(_){}
+    }
     _renderTiles(log, range);
     _renderStageCard(log);
     _renderOwnerCard(log);
@@ -14669,6 +14755,305 @@
   })();
 })();
 /* /v25.24 KPI dashboard */
+
+/* ===== v25.39 — Review Filters Module (tvONE port of BS v24.21.2) ============
+ * Multi-select filter system. Filters apply in-memory to window._rawCentralLog.
+ * Region auto-derived from State. Persistence: localStorage 'tv-review-filters-v1'.
+ * tvONE field name differences from BS:
+ *   - Log array: window._rawCentralLog (BS uses _centralLog)
+ *   - End-client field: 'endUser' camelCase (BS uses 'enduser')
+ *   - Users cache: window._allUsersTV (BS uses _allUsers)
+ *   - User loginName field: u.username (BS uses u.loginName)
+ * ============================================================================ */
+(function(){
+  const STATE_TO_REGION_TV = {
+    'andhra pradesh':'South','arunachal pradesh':'Northeast','assam':'Northeast',
+    'bihar':'East','chhattisgarh':'Central','goa':'West','gujarat':'West',
+    'haryana':'North','himachal pradesh':'North','jharkhand':'East',
+    'karnataka':'South','kerala':'South','madhya pradesh':'Central',
+    'maharashtra':'West','manipur':'Northeast','meghalaya':'Northeast',
+    'mizoram':'Northeast','nagaland':'Northeast','odisha':'East','punjab':'North',
+    'rajasthan':'North','sikkim':'Northeast','tamil nadu':'South',
+    'telangana':'South','tripura':'Northeast','uttar pradesh':'North',
+    'uttarakhand':'North','west bengal':'East','delhi':'North','chandigarh':'North',
+    'jammu & kashmir':'North','jammu and kashmir':'North','ladakh':'North',
+    'puducherry':'South','andaman & nicobar':'East','andaman and nicobar':'East',
+    'dadra & nagar haveli and daman & diu':'West','lakshadweep':'South',
+    'international':'International'
+  };
+  function _stateToRegionTV(s){
+    const k = String(s||'').toLowerCase().trim();
+    return STATE_TO_REGION_TV[k] || (k ? 'Other' : '');
+  }
+
+  const LS_KEY = 'tv-review-filters-v1';
+  const GROUPS = ['leadSource','region','state','salesPerson','presalesPerson','endUser','consultant'];
+  const LABELS = {
+    leadSource:'Source', region:'Region', state:'State',
+    salesPerson:'Sales', presalesPerson:'Presales',
+    endUser:'End-Client', consultant:'Consultant'
+  };
+
+  function _initFiltersTV(){
+    if(!window._reviewFiltersTV){
+      window._reviewFiltersTV = {};
+      GROUPS.forEach(function(g){ window._reviewFiltersTV[g] = new Set(); });
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if(raw){
+          const obj = JSON.parse(raw);
+          GROUPS.forEach(function(g){
+            if(Array.isArray(obj[g])) window._reviewFiltersTV[g] = new Set(obj[g]);
+          });
+        }
+      } catch(_){}
+    }
+    return window._reviewFiltersTV;
+  }
+  function _persistFiltersTV(){
+    try {
+      const f = window._reviewFiltersTV;
+      const out = {};
+      GROUPS.forEach(function(g){ out[g] = Array.from(f[g] || []); });
+      localStorage.setItem(LS_KEY, JSON.stringify(out));
+    } catch(_){}
+  }
+
+  function _resolveLabel(group, value){
+    if(group === 'salesPerson' || group === 'presalesPerson'){
+      const u = (window._allUsersTV || []).find(function(x){
+        return String(x.username||'').toLowerCase() === String(value||'').toLowerCase();
+      });
+      return (u && u.fullName) ? u.fullName : value;
+    }
+    if(group === 'endUser' || group === 'consultant'){
+      const sample = (window._reviewFilterSamplesTV || {})[group + ':' + value];
+      return sample || value;
+    }
+    return value;
+  }
+
+  function applyReviewFiltersTV(log){
+    if(!Array.isArray(log)) return [];
+    _initFiltersTV();
+    const f = window._reviewFiltersTV;
+    const hasAny = GROUPS.some(function(g){ return f[g] && f[g].size > 0; });
+    if(!hasAny) return log;
+
+    return log.filter(function(e){
+      if(f.leadSource.size){
+        const v = String(e.leadSource||'').trim();
+        if(!Array.from(f.leadSource).some(function(x){
+          return String(x).toLowerCase() === v.toLowerCase();
+        })) return false;
+      }
+      if(f.region.size){
+        const r = _stateToRegionTV(e.state);
+        if(!f.region.has(r)) return false;
+      }
+      if(f.state.size){
+        const v = String(e.state||'').trim();
+        if(!f.state.has(v)) return false;
+      }
+      if(f.salesPerson.size){
+        const v = String(e.salesPerson||'').toLowerCase().trim();
+        if(!v || !f.salesPerson.has(v)) return false;
+      }
+      if(f.presalesPerson.size){
+        const v = String(e.presalesPerson||'').toLowerCase().trim();
+        if(!v || !f.presalesPerson.has(v)) return false;
+      }
+      if(f.endUser.size){
+        const v = String(e.endUser||'').toLowerCase().trim();
+        if(!v || !f.endUser.has(v)) return false;
+      }
+      if(f.consultant.size){
+        const v = String(e.consultant||'').toLowerCase().trim();
+        if(!v || !f.consultant.has(v)) return false;
+      }
+      return true;
+    });
+  }
+  window.applyReviewFiltersTV = applyReviewFiltersTV;
+
+  function rebuildReviewFiltersTV(){
+    _initFiltersTV();
+    const log = Array.isArray(window._rawCentralLog) ? window._rawCentralLog : [];
+    const users = Array.isArray(window._allUsersTV) ? window._allUsersTV : [];
+
+    const distinct = {
+      leadSource: new Set(),
+      region: new Set(),
+      state: new Set(),
+      endUser: new Map(),
+      consultant: new Map()
+    };
+    log.forEach(function(e){
+      const ls = String(e.leadSource||'').trim();
+      if(ls) distinct.leadSource.add(ls);
+      const st = String(e.state||'').trim();
+      if(st) distinct.state.add(st);
+      const rg = _stateToRegionTV(st);
+      if(rg) distinct.region.add(rg);
+      const eu = String(e.endUser||'').trim();
+      if(eu) distinct.endUser.set(eu.toLowerCase(), eu);
+      const cs = String(e.consultant||'').trim();
+      if(cs) distinct.consultant.set(cs.toLowerCase(), cs);
+    });
+
+    window._reviewFilterSamplesTV = {};
+    distinct.endUser.forEach(function(orig, key){ window._reviewFilterSamplesTV['endUser:' + key] = orig; });
+    distinct.consultant.forEach(function(orig, key){ window._reviewFilterSamplesTV['consultant:' + key] = orig; });
+
+    const salesEligible = users.filter(function(u){
+      const r = String(u.role||'').trim();
+      return /^Sales$/i.test(r) || /^BU[\s-]*Head$/i.test(r) || u.isSuper === true || r === 'Super';
+    }).filter(function(u){ return String(u.active).toUpperCase() !== 'FALSE'; });
+    const presalesEligible = users.filter(function(u){
+      const r = String(u.role||'').trim();
+      return /^Presales$/i.test(r) || u.isSuper === true || r === 'Super';
+    }).filter(function(u){ return String(u.active).toUpperCase() !== 'FALSE'; });
+
+    const sortStrings = function(arr){ return arr.sort(function(a,b){ return String(a).localeCompare(String(b)); }); };
+    const sortUsers = function(arr){
+      return arr.sort(function(a,b){
+        return String(a.fullName||a.username).toLowerCase()
+          .localeCompare(String(b.fullName||b.username).toLowerCase());
+      });
+    };
+
+    const REGION_ORDER = ['North','South','East','West','Central','Northeast','International','Other'];
+    const regionList = REGION_ORDER.filter(function(r){ return distinct.region.has(r); });
+
+    _renderChipGroupTV('rftv-leadSource', 'leadSource', sortStrings(Array.from(distinct.leadSource)).map(function(v){ return { value: v, label: v }; }));
+    _renderChipGroupTV('rftv-region', 'region', regionList.map(function(v){ return { value: v, label: v }; }));
+    _renderChipGroupTV('rftv-state', 'state', sortStrings(Array.from(distinct.state)).map(function(v){ return { value: v, label: v }; }));
+    _renderChipGroupTV('rftv-salesPerson', 'salesPerson', sortUsers(salesEligible).map(function(u){
+      return { value: String(u.username||'').toLowerCase(), label: u.fullName || u.username };
+    }));
+    _renderChipGroupTV('rftv-presalesPerson', 'presalesPerson', sortUsers(presalesEligible).map(function(u){
+      return { value: String(u.username||'').toLowerCase(), label: u.fullName || u.username };
+    }));
+
+    const _topByFreq = function(map, log, fieldName, cap){
+      const counts = {};
+      log.forEach(function(e){
+        const v = String(e[fieldName]||'').toLowerCase().trim();
+        if(v) counts[v] = (counts[v]||0) + 1;
+      });
+      return Array.from(map.entries())
+        .sort(function(a,b){ return (counts[b[0]]||0) - (counts[a[0]]||0) || a[1].localeCompare(b[1]); })
+        .slice(0, cap)
+        .map(function(pair){ return { value: pair[0], label: pair[1] }; });
+    };
+    _renderChipGroupTV('rftv-endUser', 'endUser', _topByFreq(distinct.endUser, log, 'endUser', 30));
+    _renderChipGroupTV('rftv-consultant', 'consultant', _topByFreq(distinct.consultant, log, 'consultant', 30));
+
+    _renderActiveFiltersBarTV();
+    _updateFiltersSummaryTV();
+  }
+  window.rebuildReviewFiltersTV = rebuildReviewFiltersTV;
+
+  function _renderChipGroupTV(hostId, group, items){
+    const host = document.getElementById(hostId);
+    if(!host) return;
+    if(!items.length){
+      host.innerHTML = '<span class="rftv-chip empty">— no data yet —</span>';
+      return;
+    }
+    const f = window._reviewFiltersTV;
+    const escTV = (typeof _escapeHtmlTV === 'function') ? _escapeHtmlTV : function(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+    host.innerHTML = items.map(function(it){
+      const active = f[group].has(it.value);
+      const valEsc = String(it.value).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      const labelEsc = escTV(String(it.label));
+      return '<span class="rftv-chip' + (active ? ' active' : '') + '" onclick="toggleReviewFilterTV(\'' + group + '\',\'' + valEsc + '\')">' + labelEsc + '</span>';
+    }).join('');
+  }
+
+  window.toggleReviewFilterTV = function(group, value){
+    _initFiltersTV();
+    const f = window._reviewFiltersTV;
+    if(!f[group]) return;
+    if(f[group].has(value)) f[group].delete(value);
+    else f[group].add(value);
+    _persistFiltersTV();
+    rebuildReviewFiltersTV();
+    _refireAggregatorsTV();
+  };
+  window.clearAllReviewFiltersTV = function(){
+    _initFiltersTV();
+    GROUPS.forEach(function(g){ window._reviewFiltersTV[g].clear(); });
+    _persistFiltersTV();
+    rebuildReviewFiltersTV();
+    _refireAggregatorsTV();
+  };
+  window.toggleReviewFiltersTV = function(){
+    const panel = document.getElementById('review-filters-panel-tv');
+    const caret = document.getElementById('review-filters-caret-tv');
+    if(!panel) return;
+    const open = panel.style.display !== 'none' && panel.style.display !== '';
+    if(open){
+      panel.style.display = 'none';
+      if(caret) caret.style.transform = 'rotate(0deg)';
+    } else {
+      panel.style.display = 'block';
+      if(caret) caret.style.transform = 'rotate(180deg)';
+      try { rebuildReviewFiltersTV(); } catch(_){}
+    }
+  };
+
+  function _renderActiveFiltersBarTV(){
+    const host = document.getElementById('review-filters-active-tv');
+    if(!host) return;
+    _initFiltersTV();
+    const f = window._reviewFiltersTV;
+    const escTV = (typeof _escapeHtmlTV === 'function') ? _escapeHtmlTV : function(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+    const parts = [];
+    GROUPS.forEach(function(group){
+      f[group].forEach(function(value){
+        const lbl = _resolveLabel(group, value);
+        const labelEsc = escTV(String(lbl));
+        const groupLbl = LABELS[group] || group;
+        const valEsc = String(value).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        parts.push(
+          '<span class="rftv-active-chip">' +
+            '<strong>' + groupLbl + ':</strong> ' + labelEsc +
+            '<span class="rftv-x" onclick="toggleReviewFilterTV(\'' + group + '\',\'' + valEsc + '\')" title="Remove this filter">×</span>' +
+          '</span>'
+        );
+      });
+    });
+    host.innerHTML = parts.length
+      ? parts.join('')
+      : '<span style="font-size:11px; color:var(--ink-subtle); font-style:italic;">No active filters — showing all data.</span>';
+  }
+
+  function _updateFiltersSummaryTV(){
+    const sumEl = document.getElementById('review-filters-summary-tv');
+    if(!sumEl) return;
+    _initFiltersTV();
+    const f = window._reviewFiltersTV;
+    let count = 0;
+    GROUPS.forEach(function(g){ count += f[g].size; });
+    if(count === 0){
+      sumEl.textContent = '— No filters applied (showing all data)';
+      sumEl.style.color = 'var(--ink-subtle)';
+      sumEl.style.fontWeight = '';
+    } else {
+      sumEl.textContent = '🏷  ' + count + (count === 1 ? ' filter active' : ' filters active');
+      sumEl.style.color = '#D4AF37';
+      sumEl.style.fontWeight = '600';
+    }
+  }
+
+  function _refireAggregatorsTV(){
+    try { if(typeof updateRelationshipCounts_tv === 'function') updateRelationshipCounts_tv(); } catch(_){}
+    try { if(typeof window.tvRenderReviewKPIs === 'function') window.tvRenderReviewKPIs(); } catch(_){}
+    try { if(typeof tvC2aRender === 'function') tvC2aRender(); } catch(_){}
+  }
+})();
+/* /v25.39 Review Filters */
 
 </script>
 <!-- Silent sync toast indicator -->
