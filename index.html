@@ -5865,8 +5865,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.39';  // v25.39 — Review tab: 7-filter multi-select panel (Source/Region/State/Sales/Presales/End-Client/Consultant); region auto-derived from state; persists to localStorage
-  // v25.38 — save-time salesPerson auto-fill fallback for Sales/BU Head/Super users
+  const TVONE_FRONTEND_VERSION = '25.40';  // v25.40 — Region map remap (4 regions: West/North/South/East). Pairs with backend v26.10.0 BU Head visibility.
+  // v25.39 — Review tab: 7-filter multi-select panel
   // v25.35 ports BS Session A+B+C items into tvONE:
   //   #3  Sales/Presales handoff (cols CC/CD) + B1 visibility expansion
   //   #4  Profile Gate hardening (watchdog + popstate + body dim + rehydrate)
@@ -14766,15 +14766,17 @@
  *   - User loginName field: u.username (BS uses u.loginName)
  * ============================================================================ */
 (function(){
+  // tvONE state→region mapping. Aligned with backend STATE_TO_REGION_V2610TV (tvONE v26.10.0+).
+  // 4 regions only per Cavitak spec (no Central, no Northeast).
   const STATE_TO_REGION_TV = {
-    'andhra pradesh':'South','arunachal pradesh':'Northeast','assam':'Northeast',
-    'bihar':'East','chhattisgarh':'Central','goa':'West','gujarat':'West',
+    'andhra pradesh':'South','arunachal pradesh':'East','assam':'East',
+    'bihar':'North','chhattisgarh':'West','goa':'West','gujarat':'West',
     'haryana':'North','himachal pradesh':'North','jharkhand':'East',
-    'karnataka':'South','kerala':'South','madhya pradesh':'Central',
-    'maharashtra':'West','manipur':'Northeast','meghalaya':'Northeast',
-    'mizoram':'Northeast','nagaland':'Northeast','odisha':'East','punjab':'North',
-    'rajasthan':'North','sikkim':'Northeast','tamil nadu':'South',
-    'telangana':'South','tripura':'Northeast','uttar pradesh':'North',
+    'karnataka':'South','kerala':'South','madhya pradesh':'West',
+    'maharashtra':'West','manipur':'East','meghalaya':'East',
+    'mizoram':'East','nagaland':'East','odisha':'East','punjab':'North',
+    'rajasthan':'West','sikkim':'East','tamil nadu':'South',
+    'telangana':'South','tripura':'East','uttar pradesh':'North',
     'uttarakhand':'North','west bengal':'East','delhi':'North','chandigarh':'North',
     'jammu & kashmir':'North','jammu and kashmir':'North','ladakh':'North',
     'puducherry':'South','andaman & nicobar':'East','andaman and nicobar':'East',
@@ -14783,7 +14785,7 @@
   };
   function _stateToRegionTV(s){
     const k = String(s||'').toLowerCase().trim();
-    return STATE_TO_REGION_TV[k] || (k ? 'Other' : '');
+    return STATE_TO_REGION_TV[k] || '';
   }
 
   const LS_KEY = 'tv-review-filters-v1';
@@ -14922,7 +14924,7 @@
       });
     };
 
-    const REGION_ORDER = ['North','South','East','West','Central','Northeast','International','Other'];
+    const REGION_ORDER = ['North','South','East','West','International'];
     const regionList = REGION_ORDER.filter(function(r){ return distinct.region.has(r); });
 
     _renderChipGroupTV('rftv-leadSource', 'leadSource', sortStrings(Array.from(distinct.leadSource)).map(function(v){ return { value: v, label: v }; }));
