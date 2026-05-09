@@ -1777,8 +1777,8 @@
   .cm-picker-tv { position: relative; display: block; }
   .cm-picker-btn-tv {
     width: 100%; padding: 12px 14px;
-    background: var(--surface-2);
-    border: 1px solid var(--border-soft);
+    background: var(--paper-warm);
+    border: 1px solid var(--line-softer);
     border-radius: 10px;
     color: var(--ink);
     font-family: 'Manrope', sans-serif; font-size: 14px;
@@ -1794,7 +1794,7 @@
   .cm-picker-popover-tv {
     position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 100;
     background: var(--surface-1, #1a1a1a);
-    border: 1px solid var(--border-soft);
+    border: 1px solid var(--line-softer);
     border-radius: 12px;
     padding: 14px;
     box-shadow: 0 12px 32px rgba(0,0,0,0.45), 0 4px 8px rgba(0,0,0,0.25);
@@ -1808,7 +1808,7 @@
   .cm-picker-year-tv { font-weight: 700; font-size: 15px; color: var(--ink); font-family: 'Manrope', sans-serif; }
   .cm-picker-nav-tv {
     width: 32px; height: 32px;
-    border: 1px solid var(--border-soft); background: transparent;
+    border: 1px solid var(--line-softer); background: transparent;
     color: var(--ink); border-radius: 8px; cursor: pointer;
     font-size: 18px; line-height: 1;
     transition: background 150ms, border-color 150ms;
@@ -1817,8 +1817,8 @@
   .cm-picker-grid-tv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .cm-picker-month-tv {
     padding: 10px 6px;
-    border: 1px solid var(--border-soft);
-    background: var(--surface-2);
+    border: 1px solid var(--line-softer);
+    background: var(--paper-warm);
     color: var(--ink);
     border-radius: 8px; cursor: pointer;
     font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 500;
@@ -1837,16 +1837,16 @@
   }
   .cm-picker-month-tv.disabled {
     opacity: 0.32; cursor: not-allowed;
-    background: var(--surface-2);
+    background: var(--paper-warm);
   }
   .cm-picker-month-tv.disabled:hover {
-    background: var(--surface-2);
-    border-color: var(--border-soft);
+    background: var(--paper-warm);
+    border-color: var(--line-softer);
     color: var(--ink-soft);
   }
   .cm-picker-foot-tv { display: flex; justify-content: space-between; margin-top: 12px; gap: 8px; }
   .cm-picker-clear-tv, .cm-picker-close-tv {
-    padding: 7px 14px; border: 1px solid var(--border-soft);
+    padding: 7px 14px; border: 1px solid var(--line-softer);
     background: transparent; color: var(--ink);
     border-radius: 8px; cursor: pointer;
     font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 500;
@@ -1860,7 +1860,7 @@
   }
   .closemonth-display-tv.set { color: #D4AF37; font-weight: 600; }
   /* v25.30: Default chip styling — soft gold tint, neutral but on-theme.
-     Was using bare var(--border-soft) which looked alien from gold focus ring on adjacent fields. */
+     Was using bare var(--line-softer) which looked alien from gold focus ring on adjacent fields. */
   .closemonth-chip {
     transition: all 0.15s ease;
   }
@@ -2139,7 +2139,7 @@
     gap: 6px;
     padding: 6px;
     background: var(--surface-1);
-    border: 1px solid var(--border-soft);
+    border: 1px solid var(--line-softer);
     border-radius: 14px;
     margin: 0 0 24px 0;
     max-width: 620px;
@@ -2202,8 +2202,8 @@
   }
   .rev-metric {
     padding: 16px 18px;
-    background: var(--surface-2);
-    border: 1px solid var(--border-soft);
+    background: var(--paper-warm);
+    border: 1px solid var(--line-softer);
     border-radius: 12px;
   }
   .rev-metric-label {
@@ -4163,6 +4163,525 @@
     pointer-events: none;
   }
 
+
+/* ============================================================================
+ * v25.46 (tvONE port) — v26 DASHBOARD MODULE CSS — adapted from BS v24.26.12
+ * Var renames: --ink-muted → --ink-soft, --surface → --paper, --surface-2 → --paper-warm,
+ *              --border-soft → --line-softer, --indigo → --gold
+ * ============================================================================ */
+
+/* ==================================================================
+ * v24.26.0 — Dashboard + Review clean rebuild styles
+ * ================================================================== */
+.v26-tabs-wrap {
+  display: flex; gap: 6px; margin-bottom: 18px;
+  border-bottom: 1px solid var(--line-softer);
+  padding-bottom: 0;
+}
+.v26-tab {
+  padding: 10px 20px; background: transparent; border: none;
+  font-size: 14px; font-weight: 600; color: var(--ink-soft);
+  cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; transition: all 0.15s ease;
+}
+.v26-tab:hover { color: var(--ink, #0F172A); }
+.v26-tab-active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+.v26-pane { animation: v26-fade-in 0.18s ease-out; }
+@keyframes v26-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Filter bar */
+.v26-filters {
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px; margin-bottom: 18px;
+  background: var(--paper); border: 1px solid var(--line-softer);
+  border-radius: 12px; padding: 12px 14px;
+}
+.v26-filter-cell { display: flex; flex-direction: column; gap: 4px; }
+.v26-filter-cell-end { flex-direction: row; align-items: end; justify-content: flex-end; gap: 6px; }
+.v26-filter-label {
+  font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-subtle, #94A3B8); font-weight: 700;
+}
+.v26-filters select {
+  padding: 8px 10px; border: 1px solid var(--line-softer); border-radius: 8px;
+  background: var(--paper); color: var(--ink, #0F172A); font-size: 13px;
+  font-family: inherit; cursor: pointer;
+}
+.v26-btn-clear, .v26-btn-refresh, .v26-btn-secondary {
+  padding: 8px 12px; border: 1px solid var(--line-softer); border-radius: 8px;
+  background: var(--paper); color: var(--ink, #0F172A); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s ease;
+}
+.v26-btn-clear:hover, .v26-btn-refresh:hover, .v26-btn-secondary:hover {
+  border-color: var(--gold); color: var(--gold);
+}
+.v26-btn-refresh { font-size: 16px; padding: 8px 12px; }
+
+/* KPI tiles */
+.v26-kpis { display: grid; gap: 12px; margin-bottom: 20px; }
+.v26-kpis-mine { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.v26-kpis-team { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.v26-kpi {
+  padding: 16px 18px; border-radius: 12px; color: var(--paper);
+  display: flex; flex-direction: column; gap: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  position: relative; overflow: hidden;
+}
+.v26-kpi::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+.v26-kpi > * { position: relative; z-index: 1; }
+.v26-kpi-label { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700; opacity: 0.92; }
+.v26-kpi-value { font-size: 28px; font-weight: 800; line-height: 1.1; }
+.v26-kpi-sub { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+.v26-kpi-blue { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+.v26-kpi-green { background: linear-gradient(135deg, #10B981, #059669); }
+.v26-kpi-purple { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
+.v26-kpi-indigo { background: linear-gradient(135deg, #6366F1, #4F46E5); }
+.v26-kpi-orange { background: linear-gradient(135deg, #F59E0B, #D97706); }
+.v26-kpi-amber { background: linear-gradient(135deg, #F97316, #EA580C); }
+.v26-kpi-teal { background: linear-gradient(135deg, #14B8A6, #0D9488); }
+.v26-kpi-cyan { background: linear-gradient(135deg, #06B6D4, #0891B2); }
+
+/* To-do sections (My Pipeline) */
+.v26-todo-wrap {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.v26-todo-section {
+  background: var(--paper); border: 1px solid var(--line-softer);
+  border-radius: 12px; overflow: hidden;
+}
+.v26-todo-head {
+  padding: 10px 14px; font-size: 13px; font-weight: 700;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.v26-todo-head-red { background: rgba(239,68,68,0.08); color: #B91C1C; }
+.v26-todo-head-yellow { background: rgba(245,158,11,0.08); color: #B45309; }
+.v26-todo-head-grey { background: rgba(100,116,139,0.08); color: var(--ink-soft); }
+.v26-todo-count {
+  background: rgba(0,0,0,0.08); padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+}
+.v26-todo-body { padding: 8px 0; min-height: 60px; max-height: 280px; overflow-y: auto; }
+.v26-todo-empty { padding: 20px 14px; text-align: center; color: var(--ink-soft); font-size: 12px; }
+.v26-todo-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  cursor: pointer; transition: background 0.12s ease;
+  border-bottom: 1px solid var(--line-softer);
+}
+.v26-todo-item:last-child { border-bottom: none; }
+.v26-todo-item:hover { background: rgba(79,70,229,0.04); }
+.v26-todo-item-main { flex: 1; min-width: 0; }
+.v26-todo-item-title { font-size: 13px; font-weight: 600; color: var(--ink, #0F172A); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v26-todo-item-meta { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+.v26-todo-item-action { font-size: 16px; color: var(--ink-soft); flex-shrink: 0; }
+.v26-todo-more { padding: 8px 14px; font-size: 11px; color: var(--ink-soft); text-align: center; font-style: italic; }
+
+/* Charts grid (Team Analytics) */
+.v26-charts-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px; margin-bottom: 20px;
+}
+.v26-chart-card {
+  background: var(--paper); border: 1px solid var(--line-softer);
+  border-radius: 12px; padding: 14px;
+}
+.v26-chart-head {
+  font-size: 13px; font-weight: 700; color: var(--ink, #0F172A);
+  margin-bottom: 10px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px;
+}
+.v26-chart-sub { font-size: 11px; font-weight: 500; color: var(--ink-soft); }
+.v26-chart-body { height: 240px; position: relative; }
+
+/* v24.26.10 — Outcome Scorecard (replaces stacked bar) */
+.v26-outcome-grid {
+  display: grid; grid-template-columns: 200px 1fr; gap: 16px;
+  height: 100%; align-items: stretch;
+}
+@media (max-width: 600px){ .v26-outcome-grid { grid-template-columns: 1fr; } }
+.v26-winrate-hero {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, var(--bg, #F8FAFC) 0%, var(--paper-warm) 100%);
+  border-radius: 12px; padding: 14px 10px;
+  border: 1px solid var(--line-softer);
+  text-align: center;
+}
+.v26-winrate-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+.v26-winrate-pct {
+  font-size: 42px; font-weight: 800; line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 6px;
+}
+.v26-winrate-trophy { font-size: 22px; margin-bottom: 4px; opacity: 0.9; }
+.v26-winrate-detail {
+  font-size: 11px; color: var(--ink-soft); font-weight: 500;
+  line-height: 1.35;
+}
+.v26-winrate-empty {
+  font-size: 28px; font-weight: 700; color: var(--ink-soft);
+  margin-bottom: 4px;
+}
+.v26-outcome-tiles {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.v26-outcome-tile {
+  background: var(--paper); border: 1px solid var(--line-softer);
+  border-left: 4px solid var(--ink-subtle, #94A3B8);
+  border-radius: 8px; padding: 8px 10px;
+  display: flex; flex-direction: column; justify-content: center;
+  cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  min-height: 0;
+}
+.v26-outcome-tile:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+.v26-outcome-tile.is-zero { opacity: 0.5; cursor: default; }
+.v26-outcome-tile.is-zero:hover { transform: none; box-shadow: none; }
+.v26-tile-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--ink-soft);
+  margin-bottom: 2px;
+}
+.v26-tile-count {
+  font-size: 22px; font-weight: 800; color: var(--ink, #0F172A);
+  line-height: 1; font-variant-numeric: tabular-nums;
+}
+.v26-tile-meta {
+  font-size: 11px; font-weight: 600; color: var(--ink-soft);
+  margin-top: 3px;
+}
+
+/* v24.26.12 — Region Zone Tiles (replaces India map; zero CDN dependency).
+   5 tiles in one row on desktop, wraps to 3+2 on tablet, 2x3 or 3x2 on mobile.
+   Each tile: colored left-edge accent (zone color), big count, ₹ pipeline value,
+   top-state sub-line. Click any tile → filter Team Analytics by that zone. */
+.v26-region-zone-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  height: 100%;
+  align-items: stretch;
+}
+@media (max-width: 1100px){ .v26-region-zone-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 600px){ .v26-region-zone-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.v26-region-zone-tile {
+  background: var(--paper);
+  border: 1px solid var(--line-softer);
+  border-left: 4px solid #94A3B8;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex; flex-direction: column; justify-content: center;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  min-height: 0;
+}
+.v26-region-zone-tile:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+.v26-region-zone-tile.is-zero { opacity: 0.45; cursor: default; }
+.v26-region-zone-tile.is-zero:hover { transform: none; box-shadow: none; }
+.v26-region-zone-name {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ink-soft);
+  margin-bottom: 3px;
+}
+.v26-region-zone-count {
+  font-size: 26px; font-weight: 800; color: var(--ink, #0F172A);
+  line-height: 1; font-variant-numeric: tabular-nums;
+}
+.v26-region-zone-meta {
+  font-size: 11px; font-weight: 600; color: var(--ink-soft);
+  margin-top: 4px;
+}
+.v26-region-zone-top {
+  font-size: 10px; color: var(--ink-subtle, #94A3B8);
+  margin-top: 3px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Bottom row (Leaderboard + Stuck) */
+.v26-bottom-row {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px; margin-bottom: 20px;
+}
+.v26-bottom-card {
+  background: var(--paper); border: 1px solid var(--line-softer);
+  border-radius: 12px; padding: 14px;
+}
+.v26-bottom-head {
+  font-size: 13px; font-weight: 700; color: var(--ink, #0F172A);
+  margin-bottom: 10px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px;
+}
+
+/* Tables */
+.v26-table-wrap {
+  background: var(--paper); border: 1px solid var(--line-softer);
+  border-radius: 12px; overflow: hidden; margin-bottom: 20px;
+}
+.v26-table-head {
+  padding: 12px 16px; font-size: 13px; display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--line-softer);
+}
+.v26-table-counter { font-size: 12px; color: var(--ink-soft); font-weight: 500; }
+.v26-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.v26-table thead th {
+  padding: 10px 14px; text-align: left; font-size: 11px; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--ink-soft); font-weight: 700;
+  background: rgba(0,0,0,0.02); border-bottom: 1px solid var(--line-softer);
+  white-space: nowrap;
+}
+.v26-table thead th[data-sort]:hover { background: rgba(79,70,229,0.06); color: var(--gold); }
+.v26-table tbody tr {
+  cursor: pointer; transition: background 0.12s ease;
+  border-bottom: 1px solid var(--line-softer);
+}
+.v26-table tbody tr:last-child { border-bottom: none; }
+.v26-table tbody tr:hover { background: rgba(79,70,229,0.04); }
+.v26-table tbody td { padding: 10px 14px; color: var(--ink, #0F172A); }
+.v26-th-num { text-align: right !important; }
+.v26-table-compact thead th { padding: 8px 10px; font-size: 10px; }
+.v26-table-compact tbody td { padding: 7px 10px; font-size: 12px; }
+
+/* Stage badges */
+.v26-stage-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+}
+.v26-stage-lead { background: #DBEAFE; color: #1E40AF; }
+.v26-stage-opportunity { background: #EDE9FE; color: #5B21B6; }
+.v26-stage-proposal { background: #FCE7F3; color: #9D174D; }
+.v26-stage-negotiation { background: #FEF3C7; color: #92400E; }
+.v26-stage-order { background: #D1FAE5; color: #065F46; }
+
+/* Mobile responsive */
+@media (max-width: 1024px) {
+  .v26-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .v26-kpis-mine, .v26-kpis-team { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .v26-charts-grid, .v26-bottom-row, .v26-todo-wrap { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .v26-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .v26-filters, .v26-kpis-mine, .v26-kpis-team { grid-template-columns: 1fr; }
+}
+
+/* Dark theme adjustments */
+/* BS-port: dark theme override unused in tvONE since tvONE\'s default IS dark */ [data-theme="dark"] .v26-table thead th { background: rgba(255,255,255,0.04); }
+/* BS-port: dark theme override unused in tvONE since tvONE\'s default IS dark */ [data-theme="dark"] .v26-table tbody tr:hover { background: rgba(99,102,241,0.12); }
+/* BS-port: dark theme override unused in tvONE since tvONE\'s default IS dark */ [data-theme="dark"] .v26-todo-item:hover { background: rgba(99,102,241,0.10); }
+/* BS-port: dark theme override unused in tvONE since tvONE\'s default IS dark */ [data-theme="dark"] .v26-stage-lead { background: rgba(59,130,246,0.20); color: #93C5FD; }
+/* BS-port: dark theme override unused in tvONE since tvONE\'s default IS dark */ [data-theme="dark"] .v26-stage-opportunity { background: rgba(139,92,246,0.20); color: #C4B5FD; }
+/* BS-port: dark theme override unused in tvONE since tvONE\'s default IS dark */ [data-theme="dark"] .v26-stage-proposal { background: rgba(236,72,153,0.20); color: #F9A8D4; }
+/* BS-port: dark theme override unused in tvONE since tvONE\'s default IS dark */ [data-theme="dark"] .v26-stage-negotiation { background: rgba(245,158,11,0.20); color: #FCD34D; }
+/* BS-port: dark theme override unused in tvONE since tvONE\'s default IS dark */ [data-theme="dark"] .v26-stage-order { background: rgba(16,185,129,0.20); color: #6EE7B7; }
+/* v24.26.4: Horizontal breakdown rows (replaces 3 donut charts).
+   Layout: label | proportional bar | count | ₹ | % */
+.v26-breakdown-body {
+  height: auto !important;
+  min-height: 240px;
+  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.v26-bd-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 50px 70px 50px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 6px;
+  border-radius: 8px;
+  font-size: 13px;
+  transition: background 0.12s ease;
+}
+.v26-bd-row-clickable { cursor: pointer; }
+.v26-bd-row-clickable:hover { background: rgba(79,70,229,0.06); }
+.v26-bd-label {
+  font-weight: 600; color: var(--ink, #0F172A);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.v26-bd-bar-wrap {
+  position: relative; height: 8px; background: rgba(0,0,0,0.05);
+  border-radius: 4px; overflow: hidden;
+}
+.v26-bd-bar { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.v26-bd-count {
+  text-align: right; font-weight: 700; color: var(--ink, #0F172A); font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.v26-bd-val {
+  text-align: right; font-weight: 600; color: var(--ink-soft); font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.v26-bd-pct {
+  text-align: right; font-weight: 700; color: var(--gold); font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.v26-bd-empty {
+  padding: 32px; text-align: center; color: var(--ink-soft); font-size: 13px;
+}
+.v26-bd-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 6px 4px;
+  margin-top: 6px;
+  border-top: 1px solid var(--line-softer);
+  font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--ink-soft); font-weight: 700;
+}
+/* BS-port: dark theme override unused in tvONE since tvONE\'s default IS dark */ [data-theme="dark"] .v26-bd-bar-wrap { background: rgba(255,255,255,0.06); }
+/* BS-port: dark theme override unused in tvONE since tvONE\'s default IS dark */ [data-theme="dark"] .v26-bd-row-clickable:hover { background: rgba(99,102,241,0.10); }
+
+/* Mobile: collapse columns */
+@media (max-width: 600px) {
+  .v26-bd-row { grid-template-columns: 80px 1fr 40px 50px; }
+  .v26-bd-pct { display: none; }
+}
+/* v24.26.8: Top Partners + Top Consultants — Option B (KPI strip + ₹-sorted bars) */
+.v26-ob-kpi-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  margin-bottom: 12px;
+}
+.v26-ob-kpi {
+  background: var(--paper-warm); border: 1px solid var(--line-softer);
+  border-radius: 8px; padding: 8px 10px; text-align: center;
+}
+.v26-ob-kpi-num {
+  font-size: 22px; font-weight: 800; color: var(--ink, #0F172A); line-height: 1.1;
+}
+.v26-ob-kpi-lbl {
+  font-size: 10px; color: var(--ink-soft); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px;
+}
+.v26-ob-kpi-sub {
+  font-size: 10px; color: var(--ink-soft); margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.v26-ob-list {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.v26-ob-row {
+  display: grid; grid-template-columns: 110px 1fr 70px 60px;
+  gap: 8px; align-items: center;
+  padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  transition: background 0.12s ease;
+}
+.v26-ob-row:hover { background: var(--paper-warm); }
+.v26-ob-row-name {
+  font-size: 12px; font-weight: 600; color: var(--ink, #0F172A);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.v26-ob-row-bar {
+  height: 8px; background: var(--paper-warm); border-radius: 4px; overflow: hidden;
+}
+.v26-ob-row-fill {
+  height: 100%; border-radius: 4px; transition: width 0.4s ease;
+}
+.v26-ob-row-val {
+  font-size: 13px; font-weight: 700; color: var(--ink, #0F172A); text-align: right;
+}
+.v26-ob-row-cnt {
+  font-size: 11px; color: var(--ink-soft); text-align: right;
+}
+.v26-ob-more {
+  text-align: center; font-size: 11px; color: var(--ink-soft);
+  padding: 6px; font-style: italic;
+}
+
+/* v24.26.8: Per-chart sub-filter dropdowns */
+.v26-chart-subfilters {
+  display: flex; gap: 6px; margin: -4px 0 8px;
+}
+.v26-subfilter-select {
+  padding: 4px 8px; border: 1px solid var(--line-softer); border-radius: 6px;
+  background: var(--paper); color: var(--ink, #0F172A); font-size: 11px;
+  font-family: inherit; cursor: pointer;
+}
+
+/* v24.26.8: Stage funnel sidebar legend */
+.v26-stage-legend-side {
+  flex: 0 0 130px;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 8px 4px 8px 0; min-width: 0;
+  overflow-y: auto;
+}
+.v26-stage-legend-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px; border-radius: 8px;
+  background: var(--surface-2, rgba(0,0,0,0.02));
+  border: 1px solid var(--border-soft, transparent);
+  cursor: pointer; transition: background 0.12s ease, transform 0.12s ease;
+}
+.v26-stage-legend-item:hover { background: var(--surface-2, rgba(0,0,0,0.05)); transform: translateX(-1px); }
+.v26-stage-legend-empty { opacity: 0.45; }
+.v26-stage-legend-chip {
+  flex-shrink: 0; width: 12px; height: 12px; border-radius: 3px;
+}
+.v26-stage-legend-text { min-width: 0; flex: 1; }
+.v26-stage-legend-name { font-size: 11px; font-weight: 700; color: var(--ink, #0F172A); line-height: 1.3; }
+.v26-stage-legend-count { font-size: 10px; color: var(--ink-soft); margin-top: 1px; line-height: 1.3; }
+
+/* BS-port: dark theme override unused in tvONE since tvONE\'s default IS dark */ [data-theme="dark"] .v26-stage-legend-item { background: rgba(255,255,255,0.04); }
+/* BS-port: dark theme override unused in tvONE since tvONE\'s default IS dark */ [data-theme="dark"] .v26-stage-legend-item:hover { background: rgba(255,255,255,0.08); }
+
+/* v24.26.8: Deal History modal */
+.v26-history-modal-overlay {
+  position: fixed; inset: 0; background: rgba(15,23,42,0.6); z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  animation: v26-fade-in 0.18s ease-out;
+}
+.v26-history-modal {
+  background: var(--paper); border-radius: 14px; max-width: 540px; width: 90vw;
+  max-height: 80vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+}
+.v26-history-modal-head {
+  padding: 18px 22px; border-bottom: 1px solid var(--line-softer);
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+}
+.v26-history-modal-title { font-size: 18px; font-weight: 800; color: var(--ink, #0F172A); }
+.v26-history-modal-sub { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+.v26-history-modal-close {
+  background: transparent; border: none; cursor: pointer; font-size: 22px;
+  color: var(--ink-soft); padding: 0; line-height: 1;
+}
+.v26-history-modal-body { padding: 20px 22px; }
+.v26-history-event {
+  position: relative; padding: 10px 0 14px 28px;
+  border-left: 2px solid var(--line-softer);
+  margin-left: 10px;
+}
+.v26-history-event::before {
+  content: ''; position: absolute; left: -7px; top: 14px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--gold); border: 2px solid var(--paper);
+}
+.v26-history-event-now::before { background: #10B981; box-shadow: 0 0 0 4px rgba(16,185,129,0.2); }
+.v26-history-event-date { font-size: 11px; color: var(--ink-soft); font-weight: 600; }
+.v26-history-event-action { font-size: 14px; font-weight: 700; color: var(--ink, #0F172A); margin: 2px 0; }
+.v26-history-event-detail { font-size: 12px; color: var(--ink-soft); }
+.v26-history-event-gap { font-size: 10px; color: var(--ink-soft); margin: 4px 0 4px 30px; font-style: italic; }
+.v26-history-modal-foot {
+  padding: 14px 22px; border-top: 1px solid var(--line-softer);
+  background: rgba(0,0,0,0.02); border-radius: 0 0 14px 14px;
+  font-size: 12px; color: var(--ink-soft);
+}
+
+/* BS-port: dark theme override unused in tvONE since tvONE\'s default IS dark */ [data-theme="dark"] .v26-history-modal-foot { background: rgba(255,255,255,0.03); }
+
 </style>
 </head>
 <body>
@@ -4592,10 +5111,10 @@
         <div class="field"><label>Expected Closure <span class="req">*</span></label>
           <div class="closemonth-picker" style="display:flex;flex-direction:column;gap:10px;">
             <div class="closemonth-quick" style="display:flex;gap:6px;flex-wrap:wrap;">
-              <button type="button" class="closemonth-chip" onclick="setCloseQuickChip_tv('thisMonth',this)" style="padding:6px 12px;border:1px solid var(--border-soft);background:var(--surface-2);color:var(--ink);border-radius:20px;font-size:12px;cursor:pointer;">This month</button>
-              <button type="button" class="closemonth-chip" onclick="setCloseQuickChip_tv('nextMonth',this)" style="padding:6px 12px;border:1px solid var(--border-soft);background:var(--surface-2);color:var(--ink);border-radius:20px;font-size:12px;cursor:pointer;">Next month</button>
-              <button type="button" class="closemonth-chip" onclick="setCloseQuickChip_tv('endOfQuarter',this)" style="padding:6px 12px;border:1px solid var(--border-soft);background:var(--surface-2);color:var(--ink);border-radius:20px;font-size:12px;cursor:pointer;">End of quarter</button>
-              <button type="button" class="closemonth-chip" onclick="setCloseQuickChip_tv('endOfFY',this)" style="padding:6px 12px;border:1px solid var(--border-soft);background:var(--surface-2);color:var(--ink);border-radius:20px;font-size:12px;cursor:pointer;">End of FY</button>
+              <button type="button" class="closemonth-chip" onclick="setCloseQuickChip_tv('thisMonth',this)" style="padding:6px 12px;border:1px solid var(--line-softer);background:var(--paper-warm);color:var(--ink);border-radius:20px;font-size:12px;cursor:pointer;">This month</button>
+              <button type="button" class="closemonth-chip" onclick="setCloseQuickChip_tv('nextMonth',this)" style="padding:6px 12px;border:1px solid var(--line-softer);background:var(--paper-warm);color:var(--ink);border-radius:20px;font-size:12px;cursor:pointer;">Next month</button>
+              <button type="button" class="closemonth-chip" onclick="setCloseQuickChip_tv('endOfQuarter',this)" style="padding:6px 12px;border:1px solid var(--line-softer);background:var(--paper-warm);color:var(--ink);border-radius:20px;font-size:12px;cursor:pointer;">End of quarter</button>
+              <button type="button" class="closemonth-chip" onclick="setCloseQuickChip_tv('endOfFY',this)" style="padding:6px 12px;border:1px solid var(--line-softer);background:var(--paper-warm);color:var(--ink);border-radius:20px;font-size:12px;cursor:pointer;">End of FY</button>
             </div>
             <div class="cm-picker-tv">
               <button type="button" class="cm-picker-btn-tv" id="cm-picker-btn-tv" onclick="cmPickerToggle_tv()" aria-haspopup="dialog" aria-expanded="false">
@@ -4826,224 +5345,251 @@
   </div>
 
   <!-- DASHBOARD (analytics landing: hero + KPIs + filters + charts) -->
-  <div id="dashView" class="page hidden">
-    <!-- HERO HEADER -->
-    <div class="dash-hero">
-      <div class="dash-hero-head">
-        <div>
-          <div class="dash-hero-eyebrow"><span class="dash-hero-pulse"></span>Your Pipeline · Real-Time</div>
-          <div class="dash-hero-title">Your Dashboard</div>
-          <div class="dash-hero-sub">Your own deals — from first view through confirmed close. Team-wide analytics live on the Review tab.</div>
-          <div class="dash-hero-meta" id="dashMeta">Loading…</div>
-        </div>
-      </div>
+<div id="dashView" class="page hidden">
+  <div class="container">
+    <!-- v26-tabs — inner tab switcher for My Pipeline / Team Analytics -->
+    <div class="v26-tabs-wrap">
+      <button class="v26-tab" data-v26-tab="mine" id="v26-tab-mine" onclick="bsv26_switchTab('mine')">My Pipeline</button>
+      <button class="v26-tab" data-v26-tab="team" id="v26-tab-team" onclick="bsv26_switchTab('team')" style="display:none;">Team Analytics</button>
     </div>
 
-    <!-- SUPER-ONLY: On-demand review email buttons (hidden — moved into Review tab) -->
-    <div id="superReviewActions" class="super-review-actions hidden" style="display:none">
-      <div class="super-review-intro">
-        <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-subtle);font-weight:700">Super Admin · Email Reports</span>
+    <!-- ============================ MY PIPELINE ============================ -->
+    <div id="v26-pane-mine" class="v26-pane">
+      <div class="page-header">
+        <div class="page-eyebrow">My Pipeline</div>
+        <div class="page-title">My deals at a glance</div>
+        <div class="page-subtitle">Your open deals, deals due to close this week, and stuck items needing attention.</div>
       </div>
-      <div class="super-review-btnrow">
-        <button class="super-review-btn" onclick="sendQuarterlyReviewNow()" title="Email yourself the current-quarter summary">
-          <span class="srb-icon">📊</span>
-          <div class="srb-body">
-            <div class="srb-title">Email Quarterly Summary</div>
-            <div class="srb-sub" id="srbQSub">Current quarter · OEM vs Cavitak · YoY</div>
+
+      <!-- 4 KPI tiles -->
+      <div class="v26-kpis v26-kpis-mine">
+        <div class="v26-kpi v26-kpi-blue">
+          <div class="v26-kpi-label">My Open Pipeline</div>
+          <div class="v26-kpi-value" id="v26-mine-kpi-open">—</div>
+          <div class="v26-kpi-sub" id="v26-mine-kpi-open-sub">— deals</div>
+        </div>
+        <div class="v26-kpi v26-kpi-green">
+          <div class="v26-kpi-label">My Won This Quarter</div>
+          <div class="v26-kpi-value" id="v26-mine-kpi-won">—</div>
+          <div class="v26-kpi-sub" id="v26-mine-kpi-won-sub">— wins</div>
+        </div>
+        <div class="v26-kpi v26-kpi-purple">
+          <div class="v26-kpi-label">My Win Rate</div>
+          <div class="v26-kpi-value" id="v26-mine-kpi-rate">—</div>
+          <div class="v26-kpi-sub" id="v26-mine-kpi-rate-sub">— resolved</div>
+        </div>
+        <div class="v26-kpi v26-kpi-orange">
+          <div class="v26-kpi-label">Closing This Month</div>
+          <div class="v26-kpi-value" id="v26-mine-kpi-week">—</div>
+          <div class="v26-kpi-sub" id="v26-mine-kpi-week-sub">— deals due this month</div>
+        </div>
+      </div>
+
+      <!-- To-do list (3 sections) — v24.26.8 month-based -->
+      <div class="v26-todo-wrap">
+        <div class="v26-todo-section">
+          <div class="v26-todo-head v26-todo-head-red">
+            <span>🔴 Closing this month</span>
+            <span class="v26-todo-count" id="v26-mine-todo-closing-count">0</span>
           </div>
-        </button>
-        <button class="super-review-btn" onclick="sendYearlyReviewNow()" title="Email yourself the full-year summary">
-          <span class="srb-icon">🏆</span>
-          <div class="srb-body">
-            <div class="srb-title">Email Annual Summary</div>
-            <div class="srb-sub" id="srbYSub">Full year · Quarter-wise · Ecosystem growth</div>
+          <div class="v26-todo-body" id="v26-mine-todo-closing">—</div>
+        </div>
+        <div class="v26-todo-section">
+          <div class="v26-todo-head v26-todo-head-yellow">
+            <span>🟡 Closing next month</span>
+            <span class="v26-todo-count" id="v26-mine-todo-stuck-count">0</span>
           </div>
-        </button>
+          <div class="v26-todo-body" id="v26-mine-todo-stuck">—</div>
+        </div>
+        <div class="v26-todo-section">
+          <div class="v26-todo-head v26-todo-head-grey">
+            <span>⚠ Slipped (overdue)</span>
+            <span class="v26-todo-count" id="v26-mine-todo-stale-count">0</span>
+          </div>
+          <div class="v26-todo-body" id="v26-mine-todo-stale">—</div>
+        </div>
       </div>
-    </div>
 
-    <!-- PERSONAL STATS — quick summary for logged-in user -->
-    <div id="personalStatsStripDash" class="personal-stats hidden">
-      <div class="ps-card">
-        <div class="ps-label">Your Deals</div>
-        <div class="ps-val" id="ps_submissions_dash">—</div>
-      </div>
-      <div class="ps-card">
-        <div class="ps-label">Won Deals</div>
-        <div class="ps-val" id="ps_won_dash">—</div>
-      </div>
-      <div class="ps-card">
-        <div class="ps-label">In Pipeline</div>
-        <div class="ps-val" id="ps_pipeline_dash">—</div>
-      </div>
-      <div class="ps-card">
-        <div class="ps-label">This Month</div>
-        <div class="ps-val" id="ps_month_dash">—</div>
-      </div>
-      <div class="ps-card">
-        <div class="ps-label">Confirmed</div>
-        <div class="ps-val" id="ps_confirmed_dash">—</div>
-      </div>
-    </div>
-
-    <!-- PIPELINE VALUE STRIP — sum of dealValueINR by stage -->
-    <div class="dash-section-header">
-      <span class="dash-section-icon">₹</span>Pipeline Value (filtered view)
-    </div>
-    <div class="pipeline-value-strip">
-      <div class="pv-card pv-active">
-        <div class="pv-label">Active Pipeline</div>
-        <div class="pv-val" id="pv_active">—</div>
-        <div class="pv-sub" id="pv_active_sub">Lead · Qualified · Proposal · Design</div>
-      </div>
-      <div class="pv-card pv-won">
-        <div class="pv-label">Closed Won</div>
-        <div class="pv-val" id="pv_won">—</div>
-        <div class="pv-sub" id="pv_won_sub">—</div>
-      </div>
-      <div class="pv-card pv-lost">
-        <div class="pv-label">Closed Lost</div>
-        <div class="pv-val" id="pv_lost">—</div>
-        <div class="pv-sub" id="pv_lost_sub">—</div>
-      </div>
-      <div class="pv-card pv-total">
-        <div class="pv-label">Total Value</div>
-        <div class="pv-val" id="pv_total">—</div>
-        <div class="pv-sub" id="pv_total_sub">all logged deals</div>
-      </div>
-    </div>
-
-    <!-- KPI STRIP — 5 vibrant cards -->
-    <div class="dash-section-header">
-      <span class="dash-section-icon">▣</span>Key Performance Indicators
-    </div>
-    <div class="kpi-strip">
-      <div class="kpi-card kpi-purple">
-        <div class="kpi-card-head"><span class="kpi-icon">▤</span>Total Projects</div>
-        <div class="kpi-card-body">
-          <div class="val" id="stat_total">0</div>
-          <div class="sub" id="stat_total_note">all time · — deals</div>
+      <!-- My deals table -->
+      <div class="v26-table-wrap">
+        <div class="v26-table-head">
+          <span style="font-weight:700;">My Deals</span>
+          <span class="v26-table-counter" id="v26-mine-table-counter">— deals</span>
         </div>
-      </div>
-      <div class="kpi-card kpi-green">
-        <div class="kpi-card-head"><span class="kpi-icon">◆</span>Consultants</div>
-        <div class="kpi-card-body">
-          <div class="val" id="stat_consultants">0</div>
-          <div class="sub" id="stat_consultants_note">across — selections</div>
-        </div>
-      </div>
-      <div class="kpi-card kpi-orange">
-        <div class="kpi-card-head"><span class="kpi-icon">▲</span>Partners / SI</div>
-        <div class="kpi-card-body">
-          <div class="val" id="stat_partners">0</div>
-          <div class="sub" id="stat_partners_note">channel partners engaged</div>
-        </div>
-      </div>
-      <div class="kpi-card kpi-ink">
-        <div class="kpi-card-head"><span class="kpi-icon">◉</span>Cities</div>
-        <div class="kpi-card-body">
-          <div class="val" id="stat_cities">0</div>
-          <div class="sub" id="stat_cities_note">cities covered</div>
-        </div>
-      </div>
-      <div class="kpi-card kpi-red">
-        <div class="kpi-card-head"><span class="kpi-icon">♦</span>End-users</div>
-        <div class="kpi-card-body">
-          <div class="val" id="stat_endusers">0</div>
-          <div class="sub" id="stat_endusers_note">unique end-users</div>
+        <div style="overflow-x:auto;">
+          <table class="v26-table" id="v26-mine-table">
+            <thead>
+              <tr>
+                <th data-sort="project">Project</th>
+                <th data-sort="enduser">End-user</th>
+                <th data-sort="stage">Stage</th>
+                <th data-sort="dealValue" class="v26-th-num">Deal value</th>
+                <th data-sort="closemonth">Close</th>
+                <th data-sort="daysInStage" class="v26-th-num">Days in stage</th>
+                <th style="text-align:center;width:48px;">📜</th>
+              </tr>
+            </thead>
+            <tbody id="v26-mine-tbody">
+              <tr><td colspan="7" style="padding:32px;text-align:center;color:var(--ink-soft);">Loading…</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <!-- FILTERS (moved up, sits under KPIs) - all dropdowns -->
-    <div class="filter-bar">
-      <div class="field"><label>From Date</label>
-        <input type="date" id="fl_dateFrom" onchange="applyDashFilters()">
+    <!-- ============================ TEAM ANALYTICS ============================ -->
+    <div id="v26-pane-team" class="v26-pane" style="display:none;">
+      <div class="page-header">
+        <div class="page-eyebrow">Team Analytics</div>
+        <div class="page-title" id="v26-team-title">All-team dashboard</div>
+        <div class="page-subtitle" id="v26-team-subtitle">Pipeline · funnel · partner concentration · regional split · trends — for director and owner reviews.</div>
       </div>
-      <div class="field"><label>To Date</label>
-        <input type="date" id="fl_dateTo" onchange="applyDashFilters()">
+
+      <!-- Filter bar -->
+      <div class="v26-filters">
+        <div class="v26-filter-cell">
+          <label class="v26-filter-label">Time</label>
+          <select id="v26-f-time" onchange="bsv26_onFilterChange()">
+            <option value="month">This Month</option>
+            <option value="quarter" selected>This Quarter</option>
+            <option value="fy">This FY</option>
+            <option value="lastfy">Last FY</option>
+            <option value="all">All Time</option>
+          </select>
+        </div>
+        <div class="v26-filter-cell">
+          <label class="v26-filter-label">Region</label>
+          <select id="v26-f-region" onchange="bsv26_onFilterChange()">
+            <option value="all">All regions</option>
+            <option value="West">West</option>
+            <option value="North">North</option>
+            <option value="South">South</option>
+            <option value="East">East</option>
+            <option value="International">International</option>
+          </select>
+        </div>
+        <div class="v26-filter-cell">
+          <label class="v26-filter-label">Source</label>
+          <select id="v26-f-source" onchange="bsv26_onFilterChange()">
+            <option value="all">All sources</option>
+            <option value="BrightSign">BrightSign</option>
+            <option value="Cavitak">Cavitak</option>
+          </select>
+        </div>
+        <div class="v26-filter-cell">
+          <label class="v26-filter-label">Sales</label>
+          <select id="v26-f-sales" onchange="bsv26_onFilterChange()">
+            <option value="all">All sales</option>
+          </select>
+        </div>
+        <div class="v26-filter-cell">
+          <label class="v26-filter-label">Outcome</label>
+          <select id="v26-f-outcome" onchange="bsv26_onFilterChange()">
+            <option value="all">All outcomes</option>
+            <option value="open">Open</option>
+            <option value="won">Won</option>
+            <option value="lost">Lost</option>
+            <option value="on-hold">On hold</option>
+          </select>
+        </div>
+        <div class="v26-filter-cell">
+          <label class="v26-filter-label">Stage</label>
+          <select id="v26-f-stage" onchange="bsv26_onFilterChange()">
+            <option value="all">All stages</option>
+            <option value="Lead">Lead</option>
+            <option value="Opportunity">Opportunity</option>
+            <option value="Proposal">Proposal</option>
+            <option value="Negotiation">Negotiation</option>
+            <option value="Order">Order</option>
+          </select>
+        </div>
+        <div class="v26-filter-cell v26-filter-cell-end">
+          <button type="button" class="v26-btn-clear" onclick="bsv26_clearFilters()" title="Reset all filters">Clear</button>
+          <button type="button" class="v26-btn-refresh" onclick="bsv26_refresh()" title="Refresh data">↻</button>
+        </div>
       </div>
-      <div class="field"><label>State / Region</label>
-        <select id="fl_state" onchange="applyDashFilters()"><option value="">All</option></select>
+
+      <!-- 8 KPI tiles -->
+      <div class="v26-kpis v26-kpis-team">
+        <div class="v26-kpi v26-kpi-green"><div class="v26-kpi-label">Won</div><div class="v26-kpi-value" id="v26-team-kpi-won">—</div><div class="v26-kpi-sub" id="v26-team-kpi-won-sub">— wins</div></div>
+        <div class="v26-kpi v26-kpi-blue"><div class="v26-kpi-label">Open Pipeline</div><div class="v26-kpi-value" id="v26-team-kpi-open">—</div><div class="v26-kpi-sub" id="v26-team-kpi-open-sub">— deals</div></div>
+        <div class="v26-kpi v26-kpi-indigo"><div class="v26-kpi-label">Weighted Pipeline</div><div class="v26-kpi-value" id="v26-team-kpi-weighted">—</div><div class="v26-kpi-sub">stage-prob weighted</div></div>
+        <div class="v26-kpi v26-kpi-purple"><div class="v26-kpi-label">Win Rate</div><div class="v26-kpi-value" id="v26-team-kpi-rate">—</div><div class="v26-kpi-sub" id="v26-team-kpi-rate-sub">— resolved</div></div>
+        <div class="v26-kpi v26-kpi-teal"><div class="v26-kpi-label">Active Partners</div><div class="v26-kpi-value" id="v26-team-kpi-partners">—</div><div class="v26-kpi-sub">in open pipeline</div></div>
+        <div class="v26-kpi v26-kpi-cyan"><div class="v26-kpi-label">Active Consultants</div><div class="v26-kpi-value" id="v26-team-kpi-consultants">—</div><div class="v26-kpi-sub">in open pipeline</div></div>
+        <div class="v26-kpi v26-kpi-amber"><div class="v26-kpi-label">End-customers</div><div class="v26-kpi-value" id="v26-team-kpi-customers">—</div><div class="v26-kpi-sub">unique in pipeline</div></div>
+        <div class="v26-kpi v26-kpi-orange"><div class="v26-kpi-label">Days to Q Close</div><div class="v26-kpi-value" id="v26-team-kpi-qclose">—</div><div class="v26-kpi-sub" id="v26-team-kpi-qclose-sub">—</div></div>
       </div>
-      <div class="field"><label>City</label>
-        <select id="fl_city" onchange="applyDashFilters()"><option value="">All</option></select>
+
+      <!-- 8 charts in 4 rows of 2 -->
+      <div class="v26-charts-grid">
+        <div class="v26-chart-card"><div class="v26-chart-head">Source split <span class="v26-chart-sub">BS-generated vs Cavitak-generated · click slice to filter</span></div><div class="v26-chart-body" id="v26-chart-source"></div></div>
+        <div class="v26-chart-card"><div class="v26-chart-head">Stage funnel <span class="v26-chart-sub">₹ + count by stage · click to filter</span></div><div class="v26-chart-body" id="v26-chart-stage"></div></div>
+        <div class="v26-chart-card"><div class="v26-chart-head">Region · zone breakdown <span class="v26-chart-sub">deals + pipeline by zone · click any zone to filter</span></div><div class="v26-chart-body" id="v26-chart-region"></div></div>
+        <div class="v26-chart-card"><div class="v26-chart-head">Outcome scorecard <span class="v26-chart-sub">win rate · pipeline by outcome</span></div><div class="v26-chart-body" id="v26-chart-outcome"></div></div>
+        <div class="v26-chart-card"><div class="v26-chart-head">Top partners <span class="v26-chart-sub">Top 10 by # cases</span></div><div class="v26-chart-body" id="v26-chart-partners"></div></div>
+        <div class="v26-chart-card"><div class="v26-chart-head">Top consultants <span class="v26-chart-sub">Top 10 by # cases</span></div><div class="v26-chart-body" id="v26-chart-consultants"></div></div>
+        <!-- v25.46: Most Quoted Players card omitted in tvONE port — BrightSign-specific (model + outdoorModel + advancedSelectionsJson). May add tvONE-specific Output Type or Chassis chart in future. -->
+        <div class="v26-chart-card"><div class="v26-chart-head">Weekly trend <span class="v26-chart-sub">New vs Won · last 12 weeks</span></div><div class="v26-chart-body" id="v26-chart-trend"></div></div>
+        <div class="v26-chart-card"><div class="v26-chart-head">Time-to-close <span class="v26-chart-sub">Days from Lead → Won (won deals)</span></div><div class="v26-chart-body" id="v26-chart-ttc"></div></div>
       </div>
-      <div class="field"><label>User</label>
-        <select id="fl_user" onchange="applyDashFilters()"><option value="">All</option></select>
+
+      <!-- Sales leaderboard + Stuck deals (side-by-side) -->
+      <div class="v26-bottom-row">
+        <div class="v26-bottom-card">
+          <div class="v26-bottom-head">Sales leaderboard <span class="v26-chart-sub">Top performers · ranked by ₹ won</span></div>
+          <div style="overflow-x:auto;">
+            <table class="v26-table v26-table-compact" id="v26-team-leaderboard">
+              <thead><tr><th>#</th><th>Sales person</th><th class="v26-th-num"># Open</th><th class="v26-th-num">₹ Open</th><th class="v26-th-num"># Won</th><th class="v26-th-num">₹ Won</th><th class="v26-th-num">Win %</th></tr></thead>
+              <tbody id="v26-team-leaderboard-tbody"><tr><td colspan="7" style="padding:18px;text-align:center;color:var(--ink-soft);">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="v26-bottom-card">
+          <div class="v26-bottom-head">Stuck &amp; slipped <span class="v26-chart-sub">overdue closeMonth or no stage change &gt;30d · click to open</span></div>
+          <div style="overflow-x:auto;">
+            <table class="v26-table v26-table-compact" id="v26-team-stuck">
+              <thead><tr><th>Project</th><th>Stage</th><th class="v26-th-num">₹</th><th>Status</th><th>Owner</th></tr></thead>
+              <tbody id="v26-team-stuck-tbody"><tr><td colspan="5" style="padding:18px;text-align:center;color:var(--ink-soft);">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </div>
-      <div class="field"><label>Project</label>
-        <select id="fl_project" onchange="applyDashFilters()"><option value="">All</option></select>
+
+      <!-- Filtered deals table at the bottom -->
+      <div class="v26-table-wrap">
+        <div class="v26-table-head">
+          <span style="font-weight:700;">All filtered deals</span>
+          <span class="v26-table-counter" id="v26-team-table-counter">— deals</span>
+          <span style="margin-left:auto;display:flex;gap:6px;">
+            <button class="v26-btn-secondary" onclick="bsv26_exportTeamCSV()" title="Export filtered deals to CSV">📥 Export CSV</button>
+          </span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="v26-table" id="v26-team-table">
+            <thead>
+              <tr>
+                <th data-sort="project">Project</th>
+                <th data-sort="enduser">End-user</th>
+                <th data-sort="partner">Partner</th>
+                <th data-sort="stage">Stage</th>
+                <th data-sort="dealValue" class="v26-th-num">Deal value</th>
+                <th data-sort="closemonth">Close</th>
+                <th data-sort="daysInStage" class="v26-th-num">Days in stage</th>
+                <th data-sort="user">Owner</th>
+                <th style="text-align:center;width:48px;">📜</th>
+              </tr>
+            </thead>
+            <tbody id="v26-team-tbody">
+              <tr><td colspan="9" style="padding:32px;text-align:center;color:var(--ink-soft);">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="field"><label>Partner / SI</label>
-        <select id="fl_partner" onchange="applyDashFilters()"><option value="">All</option></select>
-      </div>
-      <div class="field"><label>Consultant</label>
-        <select id="fl_consultant" onchange="applyDashFilters()"><option value="">All</option></select>
-      </div>
-      <div class="field"><label>End-user</label>
-        <select id="fl_endUser" onchange="applyDashFilters()"><option value="">All</option></select>
-      </div>
-      <div class="field"><label>Chassis Model</label>
-        <select id="fl_model" onchange="applyDashFilters()">
-          <option value="">All</option>
-          <option value="C7-PRO-1200">C7-PRO-1200</option>
-          <option value="C7-PRO-2200">C7-PRO-2200</option>
-        </select>
-      </div>
-    </div>
-    <div class="filter-count-row">
-      Showing <span class="filter-count-pill" id="filterSummary">0</span> entries
     </div>
 
-    <!-- PERFORMANCE & MIX section -->
-    <div class="dash-section-header">
-      <span class="dash-section-icon">✉</span>Performance &amp; Mix
-    </div>
-
-    <!-- CHARTS — row 1: 3 columns -->
-    <div class="dash-charts" style="grid-template-columns: 1fr 1fr 1fr;">
-      <div class="chart-card">
-        <div class="chart-head">
-          <div class="chart-title">Deal Stage Funnel</div>
-          <div class="chart-meta" id="chart_stages_meta">Lead → Won</div>
-        </div>
-        <div id="chart_stages"></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-head">
-          <div class="chart-title">Chassis Mix</div>
-          <div class="chart-meta">recommended</div>
-        </div>
-        <div id="chart_models"></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-head">
-          <div class="chart-title">Deals by Team Member</div>
-          <div class="chart-meta" id="chart_users_meta">Top 8</div>
-        </div>
-        <div id="chart_users"></div>
-      </div>
-    </div>
-
-    <!-- CHARTS — row 2: partners -->
-    <div class="dash-charts" style="grid-template-columns: 1fr;">
-      <div class="chart-card">
-        <div class="chart-head">
-          <div class="chart-title">Top Partners / System Integrators</div>
-          <div class="chart-meta">Top 6 by volume</div>
-        </div>
-        <div id="chart_partners"></div>
-      </div>
-    </div>
-
-    <!-- ACTIONS -->
-    <div class="filter-actions" style="margin-top: 16px;">
-      <button class="secondary" onclick="refreshLog()">↻ Refresh</button>
-      <button class="secondary" onclick="clearDashFilters()">Clear Filters</button>
-      <button class="secondary" onclick="showView('history')">→ View Deals</button>
-    </div>
   </div>
+</div>
 
   <!-- HISTORY (records view: filter bar + full submission table + CSV export) -->
   <div id="historyView" class="page hidden">
@@ -5243,8 +5789,8 @@
     <div class="card">
       <div class="card-title" id="dirCardTitle">Search &amp; Filter</div>
       <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:14px">
-        <input type="text" id="customerSearch" placeholder="Search by name, city, industry…" oninput="renderCustomersTable()" style="flex:1; min-width:220px; padding:12px 14px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:14px">
-        <select id="customerIndustryFilter" onchange="renderCustomersTable()" style="padding:12px 14px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:13px; min-width:180px">
+        <input type="text" id="customerSearch" placeholder="Search by name, city, industry…" oninput="renderCustomersTable()" style="flex:1; min-width:220px; padding:12px 14px; background:var(--paper-warm); border:1px solid var(--line-softer); border-radius:10px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:14px">
+        <select id="customerIndustryFilter" onchange="renderCustomersTable()" style="padding:12px 14px; background:var(--paper-warm); border:1px solid var(--line-softer); border-radius:10px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:13px; min-width:180px">
           <option value="">All industries</option>
           <option>Hospitality</option>
           <option>Corporate</option>
@@ -5287,7 +5833,7 @@
 
 
     <!-- v25.10: Super-only Excel upload for SalesHistory -->
-    <div id="review-admin-bar" style="display:none; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:12px; padding:14px 18px; margin-bottom:18px;">
+    <div id="review-admin-bar" style="display:none; background:var(--paper-warm); border:1px solid var(--line-softer); border-radius:12px; padding:14px 18px; margin-bottom:18px;">
       <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
         <div style="flex:1; min-width:220px;">
           <div style="font-weight:600; font-size:13px; color:var(--ink); margin-bottom:2px;">Sales History Import (Super)</div>
@@ -5297,7 +5843,7 @@
           📎 <span>Choose Excel file</span>
           <input type="file" id="sales-history-file-tv" accept=".xlsx,.xls" onchange="handleSalesHistoryFile_tv(this)" style="display:none;">
         </label>
-        <select id="sales-history-mode-tv" style="padding:10px 12px; border:1px solid var(--border-soft); background:var(--surface-2); color:var(--ink); border-radius:8px; font-size:13px;">
+        <select id="sales-history-mode-tv" style="padding:10px 12px; border:1px solid var(--line-softer); background:var(--paper-warm); color:var(--ink); border-radius:8px; font-size:13px;">
           <option value="append">Append new rows</option>
           <option value="replace">Replace all existing rows</option>
         </select>
@@ -5306,13 +5852,13 @@
     </div>
 
     <!-- v25.39 — Multi-select filter panel (parity with BS v24.21.2). Region auto-derived from State. -->
-    <div id="review-filters-wrap-tv" style="margin:0 0 14px 0; background:var(--surface); border:1px solid var(--border-soft); border-radius:12px; overflow:hidden;">
+    <div id="review-filters-wrap-tv" style="margin:0 0 14px 0; background:var(--paper); border:1px solid var(--line-softer); border-radius:12px; overflow:hidden;">
       <button id="review-filters-toggle-tv" type="button" onclick="toggleReviewFiltersTV()" style="width:100%; display:flex; align-items:center; gap:10px; padding:12px 16px; background:transparent; border:none; cursor:pointer; font:inherit; color:var(--ink); text-align:left;">
         <span style="font-size:13px; font-weight:600;">Filters</span>
         <span id="review-filters-summary-tv" style="font-size:12px; color:var(--ink-subtle); flex:1;">— No filters applied (showing all data)</span>
         <span id="review-filters-caret-tv" style="font-size:14px; color:var(--ink-soft); transition:transform 0.18s ease;">▾</span>
       </button>
-      <div id="review-filters-panel-tv" style="display:none; padding:14px 16px 16px; border-top:1px solid var(--border-soft);">
+      <div id="review-filters-panel-tv" style="display:none; padding:14px 16px 16px; border-top:1px solid var(--line-softer);">
         <!-- v25.44 — explicit 4-col grid at desktop, falls to 3/2/1 responsively -->
         <div class="rftv-grid" style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:14px;">
           <div data-filter-group="leadSource">
@@ -5358,12 +5904,12 @@
     <style>
       #review-filters-wrap-tv .rftv-label { font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600; margin-bottom:6px; }
       #review-filters-wrap-tv .rftv-options { display:flex; flex-wrap:wrap; gap:6px; }
-      #review-filters-wrap-tv .rftv-options-scroll { max-height:140px; overflow-y:auto; padding:4px; border:1px solid var(--border-soft); border-radius:8px; background:var(--surface-2); }
-      #review-filters-wrap-tv .rftv-chip { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; font-size:12px; line-height:1.4; border:1px solid var(--border-soft); border-radius:999px; background:var(--surface); color:var(--ink); cursor:pointer; user-select:none; transition:all 0.12s ease; }
+      #review-filters-wrap-tv .rftv-options-scroll { max-height:140px; overflow-y:auto; padding:4px; border:1px solid var(--line-softer); border-radius:8px; background:var(--paper-warm); }
+      #review-filters-wrap-tv .rftv-chip { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; font-size:12px; line-height:1.4; border:1px solid var(--line-softer); border-radius:999px; background:var(--paper); color:var(--ink); cursor:pointer; user-select:none; transition:all 0.12s ease; }
       #review-filters-wrap-tv .rftv-chip:hover { border-color:#D4AF37; }
       #review-filters-wrap-tv .rftv-chip.active { background:#D4AF37; color:#0F0F0F; border-color:#D4AF37; font-weight:600; }
       #review-filters-wrap-tv .rftv-chip.empty { opacity:0.6; font-style:italic; }
-      #review-filters-active-tv .rftv-active-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:11px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:999px; color:var(--ink-soft); }
+      #review-filters-active-tv .rftv-active-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; font-size:11px; background:var(--paper-warm); border:1px solid var(--line-softer); border-radius:999px; color:var(--ink-soft); }
       #review-filters-active-tv .rftv-active-chip .rftv-x { cursor:pointer; padding:0 2px; opacity:0.6; }
       #review-filters-active-tv .rftv-active-chip .rftv-x:hover { opacity:1; color:#DC2626; }
     </style>
@@ -5395,15 +5941,15 @@
           <div style="font-size:18px; font-weight:600; color:var(--ink); line-height:1.2;">Pipeline & velocity snapshot</div>
         </div>
         <div style="margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <select id="tv-kpi-period" onchange="tvKpiOnPeriodChange()" style="padding:9px 12px; background:var(--surface-2); border:1px solid var(--border-soft); color:var(--ink); border-radius:8px; font-size:13px;">
+          <select id="tv-kpi-period" onchange="tvKpiOnPeriodChange()" style="padding:9px 12px; background:var(--paper-warm); border:1px solid var(--line-softer); color:var(--ink); border-radius:8px; font-size:13px;">
             <option value="currentFY">Current FY (default)</option>
             <option value="thisBimonth">This bi-month</option>
             <option value="thisQuarter">This quarter</option>
             <option value="last6m">Last 6 months</option>
             <option value="custom">Custom range…</option>
           </select>
-          <input type="month" id="tv-kpi-custom-start" style="display:none; padding:8px 10px; background:var(--surface-2); border:1px solid var(--border-soft); color:var(--ink); border-radius:8px; font-size:13px;" onchange="tvRenderReviewKPIs()" aria-label="Custom range start month">
-          <input type="month" id="tv-kpi-custom-end" style="display:none; padding:8px 10px; background:var(--surface-2); border:1px solid var(--border-soft); color:var(--ink); border-radius:8px; font-size:13px;" onchange="tvRenderReviewKPIs()" aria-label="Custom range end month">
+          <input type="month" id="tv-kpi-custom-start" style="display:none; padding:8px 10px; background:var(--paper-warm); border:1px solid var(--line-softer); color:var(--ink); border-radius:8px; font-size:13px;" onchange="tvRenderReviewKPIs()" aria-label="Custom range start month">
+          <input type="month" id="tv-kpi-custom-end" style="display:none; padding:8px 10px; background:var(--paper-warm); border:1px solid var(--line-softer); color:var(--ink); border-radius:8px; font-size:13px;" onchange="tvRenderReviewKPIs()" aria-label="Custom range end month">
           <span id="tv-kpi-period-label" style="font-size:11px; color:var(--ink-subtle); padding:6px 10px; min-width:80px;">—</span>
         </div>
       </div>
@@ -5426,30 +5972,30 @@
           <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600;">Plan of Action <span id="tv-c2a-poa-period" style="font-weight:500; text-transform:none; letter-spacing:0; color:var(--ink-muted, var(--ink-subtle));"></span></div>
           <div id="tv-c2a-poa-status" style="font-size:11px; color:var(--ink-subtle);"></div>
         </div>
-        <textarea id="tv-c2a-poa" rows="3" placeholder="Super only — write the plan / commentary for this review period. Saves automatically on blur." style="width:100%; padding:10px; background:var(--surface-2); border:1px solid var(--border-soft); color:var(--ink); border-radius:8px; font-family:inherit; font-size:13px; resize:vertical; box-sizing:border-box;"></textarea>
+        <textarea id="tv-c2a-poa" rows="3" placeholder="Super only — write the plan / commentary for this review period. Saves automatically on blur." style="width:100%; padding:10px; background:var(--paper-warm); border:1px solid var(--line-softer); color:var(--ink); border-radius:8px; font-family:inherit; font-size:13px; resize:vertical; box-sizing:border-box;"></textarea>
         <div id="tv-c2a-poa-meta" style="font-size:11px; color:var(--ink-subtle); margin-top:4px; min-height:14px;"></div>
       </div>
       <!-- v25.15 Cycle 2b+2d — drilldown + export -->
-      <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft);">
+      <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line-softer);">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
           <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600;">Open pipeline <span id="tv-c2b-count" style="font-weight:500; text-transform:none; letter-spacing:0; color:var(--ink-muted, var(--ink-subtle));"></span></div>
           <div style="display:flex; gap:8px; align-items:center;">
-            <input id="tv-c2b-filter" type="text" placeholder="Filter by project / partner / end-user…" oninput="tvC2bRender()" style="padding:7px 10px; background:var(--surface-2); border:1px solid var(--border-soft); color:var(--ink); border-radius:6px; font-size:12px; min-width:220px;">
+            <input id="tv-c2b-filter" type="text" placeholder="Filter by project / partner / end-user…" oninput="tvC2bRender()" style="padding:7px 10px; background:var(--paper-warm); border:1px solid var(--line-softer); color:var(--ink); border-radius:6px; font-size:12px; min-width:220px;">
             <button id="tv-c2d-export" onclick="tvC2dExport()" style="padding:8px 14px; background:#D4AF37; color:#1a1a1a; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer;">📥 Export Review to Excel</button>
           </div>
         </div>
-        <div style="overflow-x:auto; border:1px solid var(--border-soft); border-radius:8px;">
+        <div style="overflow-x:auto; border:1px solid var(--line-softer); border-radius:8px;">
           <table id="tv-c2b-table" style="width:100%; border-collapse:collapse; font-size:12px; min-width:720px;">
             <thead>
-              <tr style="background:var(--surface-2);">
-                <th data-sort="project"      style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">Project ⇅</th>
-                <th data-sort="enduser"      style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">End-user ⇅</th>
-                <th data-sort="partner"      style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">Partner ⇅</th>
-                <th data-sort="stage"        style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">Stage ⇅</th>
-                <th data-sort="dealValueINR" style="padding:8px 10px; text-align:right; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">Deal value ⇅</th>
-                <th data-sort="closemonth"   style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">Expected close ⇅</th>
-                <th data-sort="daysInStage"  style="padding:8px 10px; text-align:right; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">Days in stage ⇅</th>
-                <th data-sort="user"         style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--border-soft); color:var(--ink);">Owner ⇅</th>
+              <tr style="background:var(--paper-warm);">
+                <th data-sort="project"      style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--line-softer); color:var(--ink);">Project ⇅</th>
+                <th data-sort="enduser"      style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--line-softer); color:var(--ink);">End-user ⇅</th>
+                <th data-sort="partner"      style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--line-softer); color:var(--ink);">Partner ⇅</th>
+                <th data-sort="stage"        style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--line-softer); color:var(--ink);">Stage ⇅</th>
+                <th data-sort="dealValueINR" style="padding:8px 10px; text-align:right; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--line-softer); color:var(--ink);">Deal value ⇅</th>
+                <th data-sort="closemonth"   style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--line-softer); color:var(--ink);">Expected close ⇅</th>
+                <th data-sort="daysInStage"  style="padding:8px 10px; text-align:right; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--line-softer); color:var(--ink);">Days in stage ⇅</th>
+                <th data-sort="user"         style="padding:8px 10px; text-align:left; cursor:pointer; user-select:none; white-space:nowrap; border-bottom:1px solid var(--line-softer); color:var(--ink);">Owner ⇅</th>
               </tr>
             </thead>
             <tbody id="tv-c2b-tbody"><tr><td colspan="8" style="padding:18px; text-align:center; color:var(--ink-subtle);">Loading…</td></tr></tbody>
@@ -5464,7 +6010,7 @@
         <div class="card-title">Quarterly Performance Review</div>
         <p style="color:var(--ink-subtle); font-size:13px; margin-bottom:16px">Executive summary with OEM vs Cavitak split, ecosystem breadth, and YoY / QoQ comparisons.</p>
         <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:14px">
-          <select id="quarterlyQuarterSelect" style="padding:11px 14px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; color:var(--ink); font-size:13px">
+          <select id="quarterlyQuarterSelect" style="padding:11px 14px; background:var(--paper-warm); border:1px solid var(--line-softer); border-radius:10px; color:var(--ink); font-size:13px">
             <!-- Populated by JS -->
           </select>
           <button class="primary" onclick="sendQuarterlyReviewNow()">📧 Email Report</button>
@@ -5480,7 +6026,7 @@
         <div class="card-title">Annual Performance Review</div>
         <p style="color:var(--ink-subtle); font-size:13px; margin-bottom:16px">Full-year view with quarter-wise breakdown, OEM vs Cavitak split, ecosystem growth YoY.</p>
         <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:14px">
-          <select id="annualYearSelect" style="padding:11px 14px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; color:var(--ink); font-size:13px">
+          <select id="annualYearSelect" style="padding:11px 14px; background:var(--paper-warm); border:1px solid var(--line-softer); border-radius:10px; color:var(--ink); font-size:13px">
             <!-- Populated by JS -->
           </select>
           <button class="primary" onclick="sendYearlyReviewNow()">📧 Email Report</button>
@@ -5495,10 +6041,10 @@
       <div class="card">
         <div class="card-title">Select Team Member</div>
         <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center">
-          <select id="briefingUserSelect" onchange="renderBriefing()" style="flex:1; min-width:240px; padding:12px 14px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:14px">
+          <select id="briefingUserSelect" onchange="renderBriefing()" style="flex:1; min-width:240px; padding:12px 14px; background:var(--paper-warm); border:1px solid var(--line-softer); border-radius:10px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:14px">
             <option value="">— Choose team member —</option>
           </select>
-          <select id="briefingRangeSelect" onchange="renderBriefing()" style="padding:12px 14px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:10px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:13px">
+          <select id="briefingRangeSelect" onchange="renderBriefing()" style="padding:12px 14px; background:var(--paper-warm); border:1px solid var(--line-softer); border-radius:10px; color:var(--ink); font-family:'Manrope',sans-serif; font-size:13px">
             <option value="7">Last 7 days</option>
             <option value="14">Last 14 days</option>
             <option value="30">Last 30 days</option>
@@ -5894,7 +6440,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.45';  // v25.45 — BUG FIX PARITY + V26 DASHBOARD FOUNDATION (Step 1 of 2 for tvONE v26 port). Five changes: (1) CONFIRM-ON-EDIT FIX — port from BS v24.26.7. confirmBtn DOM is OUTSIDE #recoOutput so it persists across navigations; when user edits a previously-confirmed deal and re-renders, button stayed in stale "Confirmed ✓ disabled" state, blocking re-confirmation. Fix: reset disabled/textContent/classes at top of renderResult. (2) AUTO-FETCH RACE FIX (2 sites: rehydrate + fresh-login) — port from BS v24.25.8. Was silent setTimeout(2000) with empty catch — transient blip during preload left centralLog empty for the rest of session, Dashboard rendered empty until manual refresh. New: try-await with 1 retry after 3s, console markers for visibility ([v25.45] centralLog ready/failed). (3) SALES AUTO-DEFAULT OVERRIDE — port from BS v24.25.8. Two new module-scope flags _salesUserTouchedTV / _presalesUserTouchedTV gate the auto-default conditional. Change listeners wired idempotently on dropdown elements (data-attr guard prevents double-binding across the 3 call sites). resetForm() resets both flags so a fresh form allows auto-default again. (4) LIGHT-MODE CSS GAP — added [data-theme="light"] .logo-fallback-text { color: var(--ink); } so white fallback text isn't invisible on cream header bg when logo PNG fails. .chassis-hero was a false positive in audit — has its own dark gradient bg, white text correct in both themes. (5) ECHARTS CDN LOAD — added echarts@5.4.3 + echarts-gl@2.0.9 CDN scripts as foundation for v25.46 dashboard port. Skipped from BS port: phone field String() coercion (already correct in tvONE rowToUser at line ~6606), window.state lurking bug (not present in tvONE codebase). Pairs with backend v26.11.0 — no backend changes. NEXT (v25.46 — Step 2 of 2): Full v26 dashboard port — replace renderQuarterlyReview + renderAnnualReview with v26 module (My Pipeline + Team Analytics), adapt CSS vars for warm palette, adapt schema fields where tvONE differs from BS.
+  const TVONE_FRONTEND_VERSION = '25.46';  // v25.46 — V26 DASHBOARD MODULE PORT (Step 2 of 2 for tvONE v26 port). The full v26 dashboard rebuild from BS v24.26.0–v24.26.12 is now ported to tvONE: My Pipeline + Team Analytics dual-tab UI replaces the legacy Review tab. Brings 18 features across 1800+ lines of CSS+JS+HTML transplant. CSS adaptations: --ink-muted → --ink-soft, --surface → --paper, --surface-2 → --paper-warm, --border-soft → --line-softer, --indigo → --gold (var() system handles light/dark theme flip — tvONE has dark default, light opt-in). JS adaptations: window._centralLog → centralLog (tvONE pattern), showTab() → showView() hook (tvONE pattern), 'dashboard' tab key → 'dash' (tvONE pattern). Dropped: Most Quoted Players chart (BrightSign-specific — uses model + outdoorModel + advancedSelectionsJson which don't apply to tvONE chassis configurations). Stub left in JS module for future tvONE-relevant chart (Output Type mix or Chassis utilization). Deprecated: legacy briefingView (Quarterly/Annual review functions) — container kept as harmless dead code, nav button permanently hidden. Functionality moved to v26 dashboard's Team Analytics inner tab. Inherits: all 17 ported features (KPIs, filters, drill-through, deal history modal, top partners/consultants Option B, region zone tiles, outcome scorecard, weekly trend, time-to-close, sales leaderboard, stuck&slipped, CSV export, dark mode-aware ECharts via _themeColors helper). Pairs with backend v26.11.0 — no backend changes.
+// v25.45 — BUG FIX PARITY + V26 DASHBOARD FOUNDATION (Step 1 of 2 for tvONE v26 port). Five changes: (1) CONFIRM-ON-EDIT FIX — port from BS v24.26.7. (2) AUTO-FETCH RACE FIX (2 sites: rehydrate + fresh-login) — port from BS v24.25.8. (3) SALES AUTO-DEFAULT OVERRIDE — port from BS v24.25.8. (4) LIGHT-MODE CSS GAP — added [data-theme="light"] .logo-fallback-text override. (5) ECHARTS CDN LOAD — added echarts@5.4.3 + echarts-gl@2.0.9 CDN scripts as foundation for v25.46 dashboard port.
 // v25.44 — Critical-fixes parity port from BS v24.25.0 → v24.25.6. Pipeline cutoff (Apr 1 2026, 'TVONE_PIPELINE_DATA_START'). Header name fallback fix. Test Mode banner upgraded to diagonal-stripe + flashing emoji + bigger Turn-off button + permanent Profile-tab toggle card with explainer (Super-only). Sales Person auto-default extended to Super users. Notification "Untitled" backfill for legacy entries. Resilience: _safeFetchJson with HTML-not-JSON detection + silent retry on review fetch, dup error suppression in error_log_append. Review filter row 4×2 grid. Region card empty state actionable. Pairs with backend v26.11.0 — no backend changes.
 // v25.43 — features #19 Customer 360 modal (clickable endUser in History) + #18 server-side handoff notifications (bell pulls from new Notifications sheet, click jumps to deal). Pairs with backend v26.11.0.
   // v25.42 — Feature parity bundle with BS v24.22.0
@@ -6784,8 +7331,10 @@
     if (newCfgBtn) newCfgBtn.classList.toggle('hidden', isOEM);
     const customersBtn = document.getElementById('customersBtn');
     if (customersBtn) customersBtn.classList.remove('hidden');
+    // v25.46: Review tab CONSOLIDATED into v26 dashboard's Team Analytics inner tab. Permanently hidden.
+    // The briefingView container + functions stay defined as harmless dead code; nav button stays hidden.
     const briefingBtn = document.getElementById('briefingBtn');
-    if (briefingBtn) briefingBtn.classList.remove('hidden');
+    if (briefingBtn) briefingBtn.classList.add('hidden');
     const revSegBriefing = document.getElementById('revSegBriefing');
     if (revSegBriefing) revSegBriefing.classList.toggle('hidden', !currentUser.isSuper);
     const superReview = document.getElementById('superReviewActions');
@@ -7006,9 +7555,9 @@
       // Customers: visible to all authenticated users
       const customersBtn = document.getElementById('customersBtn');
       if (customersBtn) customersBtn.classList.remove('hidden');
-      // Review (Quarterly + Annual + Briefing): visible to all
+      // v25.46: Review (briefing) is CONSOLIDATED into v26 dashboard. Permanently hidden from nav.
       const briefingBtn = document.getElementById('briefingBtn');
-      if (briefingBtn) briefingBtn.classList.remove('hidden');
+      if (briefingBtn) briefingBtn.classList.add('hidden');
       // Hide the 1:1 Briefing sub-tab inside Review for non-Super users
       const revSegBriefing = document.getElementById('revSegBriefing');
       if (revSegBriefing) revSegBriefing.classList.toggle('hidden', !currentUser.isSuper);
@@ -8842,10 +9391,10 @@
     const st = document.createElement('style');
     st.id = 'quick-stage-css-tv';
     st.textContent =
-      '.quick-stage-menu-tv { background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.15); padding:6px; min-width:180px; }' +
+      '.quick-stage-menu-tv { background:var(--paper); border:1px solid var(--line-softer); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.15); padding:6px; min-width:180px; }' +
       '.quick-stage-menu-tv .qs-head-tv { font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-subtle); padding:6px 10px 4px; font-weight:600; }' +
       '.quick-stage-menu-tv .qs-item-tv { display:block; width:100%; text-align:left; padding:8px 12px; border:none; background:transparent; cursor:pointer; font-size:13px; border-radius:6px; color:var(--ink); font-family:inherit; }' +
-      '.quick-stage-menu-tv .qs-item-tv:hover:not(:disabled) { background:var(--surface-2); color:#D4AF37; }' +
+      '.quick-stage-menu-tv .qs-item-tv:hover:not(:disabled) { background:var(--paper-warm); color:#D4AF37; }' +
       '.quick-stage-menu-tv .qs-item-tv.qs-current { color:var(--ink-subtle); font-style:italic; cursor:default; }';
     document.head.appendChild(st);
   })();
@@ -12515,7 +13064,7 @@
       { label: 'Stale Deals (>14d)', value: stale.length, sub: (stale.length > 0 ? 'needs follow-up' : 'all moving'), accent: stale.length > 0 ? '#F59E0B' : '#10B981' }
     ];
     kpis.forEach(function(k) {
-      html += '<div style="padding:16px 18px; background:var(--surface-2); border-radius:10px; border-left:3px solid ' + k.accent + '">';
+      html += '<div style="padding:16px 18px; background:var(--paper-warm); border-radius:10px; border-left:3px solid ' + k.accent + '">';
       html += '<div style="font-size:10.5px; color:var(--ink-subtle); text-transform:uppercase; letter-spacing:0.1em; font-weight:700; margin-bottom:6px">' + k.label + '</div>';
       html += '<div style="font-family:\'Fraunces\',serif; font-size:28px; font-weight:500; color:' + k.accent + '">' + E(String(k.value)) + '</div>';
       if (k.sub) html += '<div style="font-size:11px; color:var(--ink-subtle); margin-top:2px">' + E(k.sub) + '</div>';
@@ -14730,14 +15279,14 @@
 
     const html = rows.map(function(r){
       return '<tr>' +
-        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.project) + '</td>' +
-        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.enduser) + '</td>' +
-        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.partner) + '</td>' +
-        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.stage) + '</td>' +
-        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink); text-align:right; font-variant-numeric:tabular-nums;">' + _tvC2bFmtINR(r.dealValueINR) + '</td>' +
-        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.closemonth) + '</td>' +
-        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink); text-align:right;">' + r.daysInStage + '</td>' +
-        '<td style="padding:8px 10px; border-bottom:1px solid var(--border-soft); color:var(--ink);">' + _tvC2bEscape(r.user) + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--line-softer); color:var(--ink);">' + _tvC2bEscape(r.project) + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--line-softer); color:var(--ink);">' + _tvC2bEscape(r.enduser) + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--line-softer); color:var(--ink);">' + _tvC2bEscape(r.partner) + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--line-softer); color:var(--ink);">' + _tvC2bEscape(r.stage) + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--line-softer); color:var(--ink); text-align:right; font-variant-numeric:tabular-nums;">' + _tvC2bFmtINR(r.dealValueINR) + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--line-softer); color:var(--ink);">' + _tvC2bEscape(r.closemonth) + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--line-softer); color:var(--ink); text-align:right;">' + r.daysInStage + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid var(--line-softer); color:var(--ink);">' + _tvC2bEscape(r.user) + '</td>' +
       '</tr>';
     }).join('');
     tbody.innerHTML = html;
@@ -15126,7 +15675,7 @@
 
   /* --- Tile renderer --- */
   function _tileHTML(label, primary, secondary, color){
-    return '<div style="background:var(--surface-2); border:1px solid var(--border-soft); border-top:3px solid '+color+'; border-radius:10px; padding:12px 14px;">' +
+    return '<div style="background:var(--paper-warm); border:1px solid var(--line-softer); border-top:3px solid '+color+'; border-radius:10px; padding:12px 14px;">' +
              '<div style="font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-subtle); font-weight:600; margin-bottom:6px;">'+label+'</div>' +
              '<div style="font-size:22px; font-weight:700; color:'+color+'; line-height:1.1;">'+primary+'</div>' +
              '<div style="font-size:11px; color:var(--ink-muted, var(--ink-subtle)); margin-top:4px;">'+secondary+'</div>' +
@@ -15186,7 +15735,7 @@
                '<span style="color:var(--ink); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+_esc(label)+'</span>' +
                '<span style="color:var(--ink-muted, var(--ink-subtle)); font-variant-numeric:tabular-nums; white-space:nowrap;">'+_esc(displayVal)+'</span>' +
              '</div>' +
-             '<div style="height:6px; background:var(--surface); border:1px solid var(--border-soft); border-radius:3px; overflow:hidden;">' +
+             '<div style="height:6px; background:var(--paper); border:1px solid var(--line-softer); border-radius:3px; overflow:hidden;">' +
                '<div style="width:'+pct.toFixed(1)+'%; height:100%; background:'+accentColor+'; border-radius:3px; transition:width 0.3s ease;"></div>' +
              '</div>' +
            '</div>';
@@ -15261,7 +15810,7 @@
       }
       body += _barRow(o.owner, o.value, maxValue, o.count + ' · ' + _fmtINR(o.value) + velStr, '#D4AF37');
     });
-    body += '<div style="font-size:11px; color:var(--ink-subtle); margin-top:8px; padding-top:8px; border-top:1px dashed var(--border-soft);">' +
+    body += '<div style="font-size:11px; color:var(--ink-subtle); margin-top:8px; padding-top:8px; border-top:1px dashed var(--line-softer);">' +
               'Avg days-in-stage per owner · green ≤30d, amber ≤60d, red &gt;60d' +
             '</div>';
     host.innerHTML = _cardHTML('Pipeline by owner · top 8', body);
@@ -15300,7 +15849,7 @@
       body += _barRow(b.label, b.count, maxCount, b.count + ' deal' + (b.count===1?'':'s'), b.color);
     });
     const stuckPct = Math.round(((bands[2].count + bands[3].count) / totalOpen) * 100);
-    body += '<div style="font-size:11px; color:var(--ink-subtle); margin-top:8px; padding-top:8px; border-top:1px dashed var(--border-soft);">' +
+    body += '<div style="font-size:11px; color:var(--ink-subtle); margin-top:8px; padding-top:8px; border-top:1px dashed var(--line-softer);">' +
               stuckPct + '% of open deals stuck >60 days · aging from deal creation' +
             '</div>';
     host.innerHTML = _cardHTML('Funnel aging · open deals', body);
@@ -15699,8 +16248,8 @@
 </script>
 <!-- v25.43 (#19) — Customer 360 modal for tvONE. -->
 <div id="cust360-modal-tv" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:9000;padding:32px 16px;overflow-y:auto;" onclick="closeCustomer360TV(event)">
-  <div id="cust360-card-tv" style="max-width:920px;margin:0 auto;background:var(--surface);border-radius:14px;box-shadow:0 24px 64px rgba(0,0,0,0.4);padding:0;color:var(--ink);" onclick="event.stopPropagation();">
-    <div style="padding:20px 24px;border-bottom:1px solid var(--border-soft);display:flex;align-items:center;gap:14px;">
+  <div id="cust360-card-tv" style="max-width:920px;margin:0 auto;background:var(--paper);border-radius:14px;box-shadow:0 24px 64px rgba(0,0,0,0.4);padding:0;color:var(--ink);" onclick="event.stopPropagation();">
+    <div style="padding:20px 24px;border-bottom:1px solid var(--line-softer);display:flex;align-items:center;gap:14px;">
       <div style="flex:1;min-width:0;">
         <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-subtle);font-weight:600;">Customer 360</div>
         <div id="cust360-name-tv" style="font-size:22px;font-weight:600;color:var(--ink);margin-top:2px;line-height:1.2;">—</div>
@@ -15720,7 +16269,7 @@
     </div>
     <div style="padding:6px 24px 24px;">
       <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);font-weight:600;margin-bottom:8px;">Deals · most recent first</div>
-      <div id="cust360-deals-tv" style="max-height:340px;overflow-y:auto;border:1px solid var(--border-soft);border-radius:8px;"></div>
+      <div id="cust360-deals-tv" style="max-height:340px;overflow-y:auto;border:1px solid var(--line-softer);border-radius:8px;"></div>
     </div>
   </div>
 </div>
@@ -15782,7 +16331,7 @@ window.openCustomer360TV = function(customerName){
     : '—';
 
   const _kpiTileTV = function(label, value, sub, color){
-    return '<div style="background:var(--surface-2);border:1px solid var(--border-soft);border-radius:10px;padding:12px;border-left:3px solid ' + color + ';">' +
+    return '<div style="background:var(--paper-warm);border:1px solid var(--line-softer);border-radius:10px;padding:12px;border-left:3px solid ' + color + ';">' +
       '<div style="font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);font-weight:600;">' + label + '</div>' +
       '<div style="font-size:18px;font-weight:600;color:var(--ink);margin-top:4px;line-height:1.2;">' + value + '</div>' +
       '<div style="font-size:11px;color:var(--ink-subtle);margin-top:2px;">' + sub + '</div>' +
@@ -15810,7 +16359,7 @@ window.openCustomer360TV = function(customerName){
     const pct = Math.round((n / maxStage) * 100);
     stageHTML += '<div style="display:flex;align-items:center;gap:10px;font-size:12px;margin-bottom:6px;">' +
       '<div style="width:96px;color:var(--ink-soft);">' + s + '</div>' +
-      '<div style="flex:1;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;">' +
+      '<div style="flex:1;height:8px;background:var(--paper-warm);border-radius:4px;overflow:hidden;">' +
         (n > 0 ? '<div style="height:100%;width:' + pct + '%;background:#D4AF37;border-radius:4px;"></div>' : '') +
       '</div>' +
       '<div style="min-width:24px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink);">' + n + '</div>' +
@@ -15835,14 +16384,14 @@ window.openCustomer360TV = function(customerName){
     const pct = Math.round((n / maxOut) * 100);
     outcomeHTML += '<div style="display:flex;align-items:center;gap:10px;font-size:12px;margin-bottom:6px;">' +
       '<div style="width:80px;color:var(--ink-soft);">' + outcomeLabels[k] + '</div>' +
-      '<div style="flex:1;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;">' +
+      '<div style="flex:1;height:8px;background:var(--paper-warm);border-radius:4px;overflow:hidden;">' +
         (n > 0 ? '<div style="height:100%;width:' + pct + '%;background:' + outcomeColors[k] + ';border-radius:4px;"></div>' : '') +
       '</div>' +
       '<div style="min-width:24px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink);">' + n + '</div>' +
       '</div>';
   });
   if (winRate !== null) {
-    outcomeHTML += '<div style="font-size:11px;color:var(--ink-subtle);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border-soft);">' +
+    outcomeHTML += '<div style="font-size:11px;color:var(--ink-subtle);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line-softer);">' +
       'Win rate: <b style="color:#10B981;">' + winRate + '%</b> (Won &divide; Closed)</div>';
   }
   document.getElementById('cust360-outcome-bars-tv').innerHTML = outcomeHTML;
@@ -15856,7 +16405,7 @@ window.openCustomer360TV = function(customerName){
   };
   const escTV = function(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
   let dealsHTML = '<table style="width:100%;border-collapse:collapse;font-size:12.5px;">';
-  dealsHTML += '<thead><tr style="background:var(--surface-2);text-align:left;">' +
+  dealsHTML += '<thead><tr style="background:var(--paper-warm);text-align:left;">' +
     '<th style="padding:8px 10px;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);">Date</th>' +
     '<th style="padding:8px 10px;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);">Project</th>' +
     '<th style="padding:8px 10px;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);">Stage</th>' +
@@ -15878,7 +16427,7 @@ window.openCustomer360TV = function(customerName){
         (e.salesPerson && e.presalesPerson ? ' &middot; ' : '') +
         (e.presalesPerson ? '<b>P:</b> ' + escTV(presalesName) : '')
       : '—';
-    dealsHTML += '<tr style="border-top:1px solid var(--border-soft);">' +
+    dealsHTML += '<tr style="border-top:1px solid var(--line-softer);">' +
       '<td style="padding:8px 10px;color:var(--ink-soft);font-family:monospace;white-space:nowrap;">' + escTV(dateStr) + (e.refId ? '<br><span style="font-size:10px;opacity:0.65;">' + escTV(e.refId) + '</span>' : '') + '</td>' +
       '<td style="padding:8px 10px;"><b>' + escTV(e.project || '—') + '</b><br><span style="font-size:11px;color:var(--ink-subtle);">' + escTV(e.partner || '—') + ' &middot; ' + escTV(e.city || '—') + '</span></td>' +
       '<td style="padding:8px 10px;color:var(--ink);">' + escTV(e.stage || '—') + '</td>' +
@@ -15904,6 +16453,1499 @@ window.closeCustomer360TV = function(ev){
 function _cust360EscCloseTV(e){
   if(e.key === 'Escape') closeCustomer360TV();
 }
+
+/* ============================================================================
+ * v24.26.0 — DASHBOARD + REVIEW CLEAN REBUILD MODULE
+ * ============================================================================
+ * Single, self-contained module that owns the entire Dashboard section.
+ * No interactions with v18 / cockpit / Detailed Analytics code paths.
+ * Reads directly from centralLog. Writes filter state to localStorage.
+ *
+ * Public API:
+ *   bsv26_init()             — wire up tab buttons + restore filter state
+ *   bsv26_renderActiveTab()  — render whichever subtab is active
+ *   bsv26_switchTab(which)   — programmatic switch ('mine' | 'team')
+ *   bsv26_onFilterChange()   — fired by filter dropdowns
+ *   bsv26_clearFilters()     — reset all filters to "all"
+ *   bsv26_refresh()          — re-fetch _centralLog then re-render
+ *   bsv26_exportTeamCSV()    — export filtered team deals to CSV
+ *
+ * Persistence: localStorage key 'bsv26-team-filters' (JSON).
+ *
+ * Stage probability weights (locked):
+ *   Lead 10% / Opportunity 25% / Proposal 50% / Negotiation 75% / Order 90%
+ * ============================================================================
+ */
+(function(){
+  'use strict';
+
+  const STAGE_WEIGHTS = { Lead: 0.10, Opportunity: 0.25, Proposal: 0.50, Negotiation: 0.75, Order: 0.90 };
+  const STAGES_OPEN = ['Lead', 'Opportunity', 'Proposal', 'Negotiation', 'Order'];
+  const FILTER_KEY = 'bsv26-team-filters';
+
+  // Active subtab — set by bsv26_switchTab. Persisted in localStorage.
+  let _activeTab = (function(){
+    try { return localStorage.getItem('bsv26-active-tab') || 'team'; } catch(_){ return 'team'; }
+  })();
+  let _activeSort = { mine: { col: 'closemonth', dir: 'asc' }, team: { col: 'dealValue', dir: 'desc' } };
+  let _v26Charts = {};  // Chart.js instance store
+
+  // ---- Helpers ----
+  function _readEntries(){ return Array.isArray(centralLog) ? centralLog : []; }
+  // v24.26.6: Display helper — turns "2026-05-31T18:30:00.000Z" or "2026-05" into "May 2026"
+  function _formatCloseMonth(v){
+    if(v == null || v === '') return '—';
+    const s = String(v);
+    let m = s.match(/^(\d{4})-(\d{2})/);
+    if(m){
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const idx = parseInt(m[2], 10) - 1;
+      if(idx >= 0 && idx < 12) return months[idx] + ' ' + m[1];
+    }
+    return s;
+  }
+  // v24.26.8: Parse closeMonth/closemonth field → numeric YYYYMM (e.g. 202605) for month math
+  function _parseCloseYM(v){
+    if(v == null || v === '') return 0;
+    const m = String(v).match(/^(\d{4})-(\d{2})/);
+    if(!m) return 0;
+    return parseInt(m[1], 10) * 100 + parseInt(m[2], 10);
+  }
+  // v24.26.8: Current month / next / last as YYYYMM numbers — for month-based filtering
+  function _currentYM(){
+    const d = new Date();
+    return d.getFullYear() * 100 + (d.getMonth() + 1);
+  }
+  function _nextYM(){
+    const d = new Date(); d.setMonth(d.getMonth() + 1);
+    return d.getFullYear() * 100 + (d.getMonth() + 1);
+  }
+  function _lastYM(){
+    const d = new Date(); d.setMonth(d.getMonth() - 1);
+    return d.getFullYear() * 100 + (d.getMonth() + 1);
+  }
+  // v24.26.8: Days since stage last changed. Uses stageEnteredAt if backend provides; falls back to ts.
+  // Returns 0 if no timestamp data exists.
+  function _daysInCurrentStage(e){
+    if(!e) return 0;
+    const cand = e.stageEnteredAt || e.stageChangedAt;
+    if(cand){
+      const d = new Date(cand);
+      if(!isNaN(d.getTime())) return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+    }
+    // fallback: use deal creation timestamp
+    return _daysSince(_parseTs(e));
+  }
+  function _readDealValue(e){
+    if(!e) return 0;
+    const v = e.dealValueINR != null ? e.dealValueINR : (e.dealValue != null ? e.dealValue : (e.dealvalueinr != null ? e.dealvalueinr : 0));
+    const n = parseFloat(v);
+    return isFinite(n) && n > 0 ? n : 0;
+  }
+  function _stateRegion(s){
+    if(typeof window._stateToRegion === 'function'){ try { return window._stateToRegion(s); } catch(_){} }
+    // Fallback minimal region map
+    if(!s) return null;
+    const W = ['Maharashtra','Gujarat','Goa','Madhya Pradesh','Chhattisgarh','Rajasthan'];
+    const N = ['Delhi','Haryana','Punjab','Uttar Pradesh','Uttarakhand','Himachal Pradesh','Chandigarh','Jammu & Kashmir','Ladakh','Bihar','Jharkhand'];
+    const S = ['Tamil Nadu','Karnataka','Kerala','Andhra Pradesh','Telangana','Puducherry'];
+    const E = ['West Bengal','Odisha','Assam','Meghalaya','Manipur','Mizoram','Nagaland','Tripura','Arunachal Pradesh','Sikkim'];
+    if(W.indexOf(s) >= 0) return 'West';
+    if(N.indexOf(s) >= 0) return 'North';
+    if(S.indexOf(s) >= 0) return 'South';
+    if(E.indexOf(s) >= 0) return 'East';
+    return 'International';
+  }
+  function _formatINR(n){
+    if(typeof window.formatINR === 'function'){ try { return window.formatINR(n); } catch(_){} }
+    if(!isFinite(n) || !n) return '₹0';
+    return '₹' + Math.round(n).toLocaleString('en-IN');
+  }
+  function _shortINR(n){
+    // Owner-friendly short form for tile values
+    if(!isFinite(n) || !n) return '₹0';
+    const abs = Math.abs(n);
+    if(abs >= 10000000) return '₹' + (n/10000000).toFixed(2) + ' Cr';
+    if(abs >= 100000) return '₹' + (n/100000).toFixed(1) + ' L';
+    if(abs >= 1000) return '₹' + (n/1000).toFixed(0) + 'K';
+    return '₹' + Math.round(n);
+  }
+  function _esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+  function _parseTs(e){
+    if(!e) return 0;
+    const cands = [e.timestamp, e.ts, e.created, e.createdAt];
+    for(let i = 0; i < cands.length; i++){
+      const v = cands[i];
+      if(v == null || v === '') continue;
+      const d = (v instanceof Date) ? v : new Date(v);
+      if(!isNaN(d.getTime())) return d.getTime();
+    }
+    return 0;
+  }
+  function _daysSince(ms){
+    if(!ms) return 0;
+    return Math.floor((Date.now() - ms) / (1000 * 60 * 60 * 24));
+  }
+  // Days in current stage = days since last stage transition (or since timestamp if no transitions known)
+  function _daysInStage(e){
+    if(!e) return 0;
+    // Use stageEnteredAt if backend provides it; else fall back to timestamp
+    const candidate = e.stageEnteredAt || e.stageChangedAt || e.timestamp || e.ts;
+    const d = candidate ? new Date(candidate) : null;
+    if(!d || isNaN(d.getTime())) return 0;
+    return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+  }
+  // Extract Cavitak FY from a date. FY April-March. e.g. April 2026 = FY 26-27
+  function _fyOf(ms){
+    if(!ms) return null;
+    const d = new Date(ms);
+    const y = d.getFullYear();
+    const m = d.getMonth(); // 0-11
+    return m >= 3 ? y : y - 1; // returns starting year (2026 for FY26-27)
+  }
+  function _quarterClose(){
+    // Cavitak FY April-March, quarters: Apr-Jun, Jul-Sep, Oct-Dec, Jan-Mar
+    const now = new Date();
+    const m = now.getMonth();
+    let endMonth, endYear;
+    if(m >= 0 && m <= 2)        { endMonth = 2;  endYear = now.getFullYear(); }       // Q4 closes Mar
+    else if(m >= 3 && m <= 5)   { endMonth = 5;  endYear = now.getFullYear(); }       // Q1 closes Jun
+    else if(m >= 6 && m <= 8)   { endMonth = 8;  endYear = now.getFullYear(); }       // Q2 closes Sep
+    else                        { endMonth = 11; endYear = now.getFullYear(); }       // Q3 closes Dec
+    const closeDate = new Date(endYear, endMonth + 1, 0);
+    const days = Math.ceil((closeDate.getTime() - Date.now()) / (1000*60*60*24));
+    let qLabel;
+    if(m >= 3 && m <= 5)        qLabel = 'Q1';
+    else if(m >= 6 && m <= 8)   qLabel = 'Q2';
+    else if(m >= 9 && m <= 11)  qLabel = 'Q3';
+    else                        qLabel = 'Q4';
+    return { days: Math.max(0, days), label: qLabel };
+  }
+  function _readFilterState(){
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(FILTER_KEY) || '{}'); } catch(_){}
+    return {
+      time: saved.time || 'quarter',
+      region: saved.region || 'all',
+      source: saved.source || 'all',
+      sales: saved.sales || 'all',
+      outcome: saved.outcome || 'all',
+      stage: saved.stage || 'all'
+    };
+  }
+  function _saveFilterState(state){
+    try { localStorage.setItem(FILTER_KEY, JSON.stringify(state)); } catch(_){}
+  }
+  function _applyFilters(entries, f){
+    if(!Array.isArray(entries)) return [];
+    // v24.26.2: The global _entryAfterPipelineCutoff fallback chain misses `entry.ts`
+    // which is the field the live data actually uses. Result: all 7 deals filtered out
+    // → ₹0 across the board. Use our robust _parseTs (which DOES check ts) and apply
+    // the cutoff inline. This is a v26-local fix; the global fn stays untouched so we
+    // don't accidentally affect other code paths.
+    const cutoffMs = (typeof window.PIPELINE_CUTOFF_MS === 'number') ? window.PIPELINE_CUTOFF_MS : null;
+    return entries.filter(function(e){
+      if(!e) return false;
+      if(cutoffMs != null){
+        const ts = _parseTs(e);
+        if(!ts || ts < cutoffMs) return false;
+      }
+      // Time filter
+      if(f.time && f.time !== 'all'){
+        const ts = _parseTs(e);
+        const now = new Date();
+        if(f.time === 'month'){
+          const start = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+          if(ts < start) return false;
+        } else if(f.time === 'quarter'){
+          const m = now.getMonth();
+          let qStartMonth = m >= 0 && m <= 2 ? 0 : (m >= 3 && m <= 5 ? 3 : (m >= 6 && m <= 8 ? 6 : 9));
+          const start = new Date(now.getFullYear(), qStartMonth, 1).getTime();
+          if(ts < start) return false;
+        } else if(f.time === 'fy'){
+          const fyStart = (now.getMonth() >= 3) ? new Date(now.getFullYear(), 3, 1).getTime() : new Date(now.getFullYear()-1, 3, 1).getTime();
+          if(ts < fyStart) return false;
+        } else if(f.time === 'lastfy'){
+          const fyStartCur = (now.getMonth() >= 3) ? new Date(now.getFullYear(), 3, 1).getTime() : new Date(now.getFullYear()-1, 3, 1).getTime();
+          const fyStartLast = (new Date(fyStartCur)).setFullYear(new Date(fyStartCur).getFullYear() - 1);
+          if(ts < fyStartLast || ts >= fyStartCur) return false;
+        }
+      }
+      if(f.region && f.region !== 'all'){
+        if(_stateRegion(e.state) !== f.region) return false;
+      }
+      if(f.source && f.source !== 'all'){
+        if(String(e.leadSource || '').toLowerCase() !== f.source.toLowerCase()) return false;
+      }
+      if(f.sales && f.sales !== 'all'){
+        if(String(e.salesPerson || '').toLowerCase() !== f.sales.toLowerCase()) return false;
+      }
+      if(f.outcome && f.outcome !== 'all'){
+        if(String(e.outcome || '').toLowerCase() !== f.outcome.toLowerCase()) return false;
+      }
+      if(f.stage && f.stage !== 'all'){
+        if(String(e.stage || '') !== f.stage) return false;
+      }
+      return true;
+    });
+  }
+
+  // v24.26.3: state is declared as a top-level `var state = {...}` but NOT attached
+  // to window. So window.state is undefined. Our IIFE has lexical access to state
+  // via closure scope (since the v26 module is in the same script context). Use a
+  // helper that prefers the lexical reference and falls back to window for safety.
+  function _getStateUser(){
+    try { if(typeof state !== 'undefined' && state && state.user) return state.user; } catch(_){}
+    if(typeof window !== 'undefined' && window.state && window.state.user) return window.state.user;
+    return null;
+  }
+
+  // ---- Mohit (Presales) scope filter — applied BEFORE filter state ----
+  function _scopeForUser(entries){
+    const u = _getStateUser();
+    if(!u) return [];
+    if(u.isSuper) return entries;  // Super sees everything
+    const role = String(u.role || '').toLowerCase().trim();
+    const myLogin = String(u.loginName || '').toLowerCase();
+    // Mohit (Presales) — only deals where presalesPerson = me
+    if(role === 'presales'){
+      return entries.filter(function(e){ return String(e.presalesPerson || '').toLowerCase() === myLogin; });
+    }
+    // BU Head, BrightSign — see all (data-rich access)
+    if(/bu.?head/i.test(role) || role === 'brightsign'){ return entries; }
+    // Sales — only their own deals (won't normally see Team Analytics anyway)
+    if(role === 'sales'){
+      return entries.filter(function(e){
+        const owner = String(e.loginName || '').toLowerCase();
+        const sales = String(e.salesPerson || '').toLowerCase();
+        return owner === myLogin || sales === myLogin;
+      });
+    }
+    // Default — own deals only
+    return entries.filter(function(e){ return String(e.loginName || '').toLowerCase() === myLogin; });
+  }
+
+  // ---- TAB SWITCHING + ROUTING ----
+  function bsv26_switchTab(which){
+    if(which !== 'mine' && which !== 'team') which = 'mine';
+    _activeTab = which;
+    try { localStorage.setItem('bsv26-active-tab', which); } catch(_){}
+    // Toggle pane visibility
+    const paneMine = document.getElementById('v26-pane-mine');
+    const paneTeam = document.getElementById('v26-pane-team');
+    if(paneMine) paneMine.style.display = (which === 'mine') ? 'block' : 'none';
+    if(paneTeam) paneTeam.style.display = (which === 'team') ? 'block' : 'none';
+    // Toggle button active state
+    document.querySelectorAll('.v26-tab').forEach(function(b){
+      b.classList.toggle('v26-tab-active', b.getAttribute('data-v26-tab') === which);
+    });
+    // Render the active pane
+    bsv26_renderActiveTab();
+  }
+  window.bsv26_switchTab = bsv26_switchTab;
+
+  function bsv26_renderActiveTab(){
+    if(_activeTab === 'mine') _renderMine();
+    else _renderTeam();
+  }
+  window.bsv26_renderActiveTab = bsv26_renderActiveTab;
+
+  // ---- ACCESS CONTROL: who sees Team Analytics tab button? ----
+  function _setupTabButtonsForUser(){
+    const u = _getStateUser();
+    const teamBtn = document.getElementById('v26-tab-team');
+    const mineBtn = document.getElementById('v26-tab-mine');
+    if(!u){
+      if(teamBtn) teamBtn.style.display = 'none';
+      return;
+    }
+    const role = String(u.role || '').toLowerCase().trim();
+    const isSupport = /support/i.test(role);
+    const isSales = role === 'sales';
+    // Hide BOTH tabs from Support — they shouldn't even see this section
+    if(isSupport){
+      if(teamBtn) teamBtn.style.display = 'none';
+      if(mineBtn) mineBtn.style.display = 'none';
+      return;
+    }
+    // Mine button visible to everyone except Support
+    if(mineBtn) mineBtn.style.display = '';
+    // Team button visible to: Super, BU Head, BrightSign, Presales (scoped). Sales sees only My Pipeline.
+    const showTeam = u.isSuper || /bu.?head/i.test(role) || role === 'brightsign' || role === 'presales';
+    if(teamBtn) teamBtn.style.display = showTeam ? '' : 'none';
+    // Default tab routing: Super/BU Head/BrightSign land on team; Sales/Presales on mine
+    let defaultTab = _activeTab;
+    if(!_activeTab || _activeTab === 'team' && !showTeam){
+      defaultTab = (u.isSuper || /bu.?head/i.test(role) || role === 'brightsign') ? 'team' : 'mine';
+      _activeTab = defaultTab;
+    }
+    // For Mohit (Presales) — title hint that data is scoped to handoffs
+    if(role === 'presales'){
+      const t = document.getElementById('v26-team-title');
+      const s = document.getElementById('v26-team-subtitle');
+      if(t) t.textContent = 'My handoffs · Team Analytics';
+      if(s) s.textContent = 'Showing only deals where you are tagged as Presales. Filters apply within this scope.';
+    }
+  }
+
+  // ---- FILTER CHANGE HANDLERS ----
+  function bsv26_onFilterChange(){
+    const f = {
+      time: (document.getElementById('v26-f-time') || {}).value || 'quarter',
+      region: (document.getElementById('v26-f-region') || {}).value || 'all',
+      source: (document.getElementById('v26-f-source') || {}).value || 'all',
+      sales: (document.getElementById('v26-f-sales') || {}).value || 'all',
+      outcome: (document.getElementById('v26-f-outcome') || {}).value || 'all',
+      stage: (document.getElementById('v26-f-stage') || {}).value || 'all'
+    };
+    _saveFilterState(f);
+    if(_activeTab === 'team') _renderTeam();
+  }
+  window.bsv26_onFilterChange = bsv26_onFilterChange;
+
+  function bsv26_clearFilters(){
+    _saveFilterState({ time: 'quarter', region: 'all', source: 'all', sales: 'all', outcome: 'all', stage: 'all' });
+    _restoreFilterUI();
+    if(_activeTab === 'team') _renderTeam();
+  }
+  window.bsv26_clearFilters = bsv26_clearFilters;
+
+  function bsv26_refresh(){
+    if(typeof window.refreshLog === 'function'){
+      window.refreshLog().then ? window.refreshLog().then(bsv26_renderActiveTab) : (function(){
+        setTimeout(bsv26_renderActiveTab, 600);
+      })();
+    } else {
+      bsv26_renderActiveTab();
+    }
+  }
+  window.bsv26_refresh = bsv26_refresh;
+
+  function _restoreFilterUI(){
+    const f = _readFilterState();
+    ['time','region','source','sales','outcome','stage'].forEach(function(k){
+      const el = document.getElementById('v26-f-' + k);
+      if(el) el.value = f[k] || 'all';
+    });
+  }
+  function _populateSalesFilter(entries){
+    const sel = document.getElementById('v26-f-sales');
+    if(!sel) return;
+    const current = sel.value;
+    const seen = {};
+    entries.forEach(function(e){
+      const sp = String(e.salesPerson || '').toLowerCase().trim();
+      if(sp) seen[sp] = true;
+    });
+    const opts = Object.keys(seen).sort();
+    sel.innerHTML = '<option value="all">All sales</option>' + opts.map(function(s){
+      // Try to resolve to fullName via _allUsers cache
+      let label = s;
+      if(Array.isArray(window._allUsers)){
+        const u = window._allUsers.find(function(x){ return String(x.loginName || '').toLowerCase() === s; });
+        if(u && u.fullName) label = u.fullName;
+      }
+      return '<option value="' + _esc(s) + '">' + _esc(label) + '</option>';
+    }).join('');
+    if(current && opts.indexOf(current) >= 0) sel.value = current;
+  }
+
+  // ============================================================================
+  // MY PIPELINE RENDERER
+  // ============================================================================
+  function _renderMine(){
+    const u = _getStateUser();
+    if(!u){ return; }
+    const myLogin = String(u.loginName || '').toLowerCase();
+    const all = _readEntries();
+    const mine = all.filter(function(e){
+      if(!e) return false;
+      const owner = String(e.loginName || '').toLowerCase();
+      const sales = String(e.salesPerson || '').toLowerCase();
+      return owner === myLogin || sales === myLogin;
+    });
+
+    // KPI calculations
+    const open = mine.filter(function(e){ return String(e.outcome || '').toLowerCase() === 'open'; });
+    const openVal = open.reduce(function(s, e){ return s + _readDealValue(e); }, 0);
+    // This quarter wins
+    const qStart = (function(){
+      const now = new Date();
+      const m = now.getMonth();
+      const qStartMonth = m >= 0 && m <= 2 ? 0 : (m >= 3 && m <= 5 ? 3 : (m >= 6 && m <= 8 ? 6 : 9));
+      return new Date(now.getFullYear(), qStartMonth, 1).getTime();
+    })();
+    const wonThisQ = mine.filter(function(e){
+      if(String(e.outcome || '').toLowerCase() !== 'won') return false;
+      return _parseTs(e) >= qStart;
+    });
+    const wonVal = wonThisQ.reduce(function(s, e){ return s + _readDealValue(e); }, 0);
+    // Win rate
+    const resolved = mine.filter(function(e){
+      const o = String(e.outcome || '').toLowerCase();
+      return o === 'won' || o === 'lost';
+    });
+    const wonAll = resolved.filter(function(e){ return String(e.outcome || '').toLowerCase() === 'won'; });
+    const winRate = resolved.length ? Math.round((wonAll.length / resolved.length) * 100) : null;
+    // Closing this week (≤7 days from today)
+    // v24.26.8: MONTH-BASED to-do segmentation (was days-based — wrong for Cavitak's monthly cadence).
+    //   Closing this month = closeMonth = current YYYYMM
+    //   Closing next month = closeMonth = next YYYYMM
+    //   Slipped (overdue)  = closeMonth < current YYYYMM AND outcome=open
+    const curYM = _currentYM();
+    const nxtYM = _nextYM();
+    const closingThisMonth = open.filter(function(e){ return _parseCloseYM(e.closemonth || e.closeMonth) === curYM; });
+    const closingNextMonth = open.filter(function(e){ return _parseCloseYM(e.closemonth || e.closeMonth) === nxtYM; });
+    const slipped = open.filter(function(e){ const ym = _parseCloseYM(e.closemonth || e.closeMonth); return ym > 0 && ym < curYM; });
+
+    // Paint KPIs
+    _setText('v26-mine-kpi-open', _shortINR(openVal));
+    _setText('v26-mine-kpi-open-sub', open.length + ' deal' + (open.length === 1 ? '' : 's'));
+    _setText('v26-mine-kpi-won', _shortINR(wonVal));
+    _setText('v26-mine-kpi-won-sub', wonThisQ.length + ' win' + (wonThisQ.length === 1 ? '' : 's'));
+    _setText('v26-mine-kpi-rate', winRate == null ? '—' : (winRate + '%'));
+    _setText('v26-mine-kpi-rate-sub', resolved.length + ' resolved');
+    _setText('v26-mine-kpi-week', closingThisMonth.length);
+    _setText('v26-mine-kpi-week-sub', closingThisMonth.length === 0 ? 'nothing due this month' : 'closing this month');
+
+    // v24.26.8: To-do lists — month-based segments
+    _renderTodoSection('v26-mine-todo-closing', 'v26-mine-todo-closing-count', closingThisMonth);
+    _renderTodoSection('v26-mine-todo-stuck', 'v26-mine-todo-stuck-count', closingNextMonth);
+    _renderTodoSection('v26-mine-todo-stale', 'v26-mine-todo-stale-count', slipped);
+
+    // Deals table
+    _renderMyTable(mine);
+  }
+
+  function _renderTodoSection(bodyId, countId, deals){
+    const body = document.getElementById(bodyId);
+    const cnt = document.getElementById(countId);
+    if(cnt) cnt.textContent = String(deals.length);
+    if(!body) return;
+    if(!deals.length){
+      body.innerHTML = '<div class="v26-todo-empty">No deals here ✓</div>';
+      return;
+    }
+    const html = deals.slice(0, 5).map(function(e, idx){
+      const title = _esc(e.project || '(no project name)');
+      const stage = _esc(e.stage || '—');
+      const val = _shortINR(_readDealValue(e));
+      const days = _daysInStage(e);
+      const close = _esc(_formatCloseMonth(e.closemonth));
+      const refId = _esc(e.refId || '');
+      return '<div class="v26-todo-item" onclick="bsv26_openDeal(\'' + refId + '\')">' +
+             '<div class="v26-todo-item-main">' +
+               '<div class="v26-todo-item-title">' + title + '</div>' +
+               '<div class="v26-todo-item-meta">' + stage + ' · ' + val + ' · close ' + close + ' · ' + days + 'd in stage</div>' +
+             '</div>' +
+             '<div class="v26-todo-item-action">→</div>' +
+             '</div>';
+    }).join('');
+    const more = deals.length > 5 ? '<div class="v26-todo-more">+ ' + (deals.length - 5) + ' more</div>' : '';
+    body.innerHTML = html + more;
+  }
+
+  function _renderMyTable(deals){
+    const tbody = document.getElementById('v26-mine-tbody');
+    const counter = document.getElementById('v26-mine-table-counter');
+    if(counter) counter.textContent = deals.length + ' deal' + (deals.length === 1 ? '' : 's');
+    if(!tbody) return;
+    if(!deals.length){
+      tbody.innerHTML = '<tr><td colspan="6" style="padding:32px;text-align:center;color:var(--ink-soft);">No deals yet — go to "+ New selection" to start one.</td></tr>';
+      return;
+    }
+    // Sort
+    const sortCol = _activeSort.mine.col;
+    const sortDir = _activeSort.mine.dir;
+    const sorted = deals.slice().sort(function(a, b){
+      let av = a[sortCol], bv = b[sortCol];
+      if(sortCol === 'dealValue'){ av = _readDealValue(a); bv = _readDealValue(b); }
+      if(sortCol === 'daysInStage'){ av = _daysInStage(a); bv = _daysInStage(b); }
+      if(av == null) av = '';
+      if(bv == null) bv = '';
+      if(typeof av === 'number' && typeof bv === 'number'){ return sortDir === 'asc' ? av - bv : bv - av; }
+      return sortDir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+    });
+    tbody.innerHTML = sorted.map(function(e){
+      const days = _daysInStage(e);
+      const stuckCls = days >= 30 ? ' style="color:#DC2626;font-weight:700;"' : (days >= 14 ? ' style="color:#D97706;font-weight:600;"' : '');
+      return '<tr>' +
+             '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _esc(e.project || '—') + '</td>' +
+             '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _esc(e.enduser || '—') + '</td>' +
+             '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;"><span class="v26-stage-badge v26-stage-' + _esc(String(e.stage || '').toLowerCase()) + '">' + _esc(e.stage || '—') + '</span></td>' +
+             '<td class="v26-th-num" onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _formatINR(_readDealValue(e)) + '</td>' +
+             '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _esc(_formatCloseMonth(e.closemonth)) + '</td>' +
+             '<td class="v26-th-num" onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;"' + stuckCls + '>' + days + 'd</td>' +
+             '<td style="text-align:center;"><button onclick="event.stopPropagation();bsv26_openDealHistory(\'' + _esc(e.refId || '') + '\')" title="View deal journey" style="background:transparent;border:1px solid var(--line-softer);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:14px;">📜</button></td>' +
+             '</tr>';
+    }).join('');
+  }
+
+  // ============================================================================
+  // TEAM ANALYTICS RENDERER
+  // ============================================================================
+  function _renderTeam(){
+    const all = _readEntries();
+    const scoped = _scopeForUser(all);
+    _populateSalesFilter(scoped);
+    _restoreFilterUI();
+    const f = _readFilterState();
+    const filtered = _applyFilters(scoped, f);
+
+    _renderTeamKPIs(filtered);
+    _renderTeamCharts(filtered);
+    _renderTeamLeaderboard(filtered);
+    _renderTeamStuck(filtered);
+    _renderTeamTable(filtered);
+  }
+
+  function _renderTeamKPIs(deals){
+    const open = deals.filter(function(e){ return String(e.outcome || '').toLowerCase() === 'open'; });
+    const won = deals.filter(function(e){ return String(e.outcome || '').toLowerCase() === 'won'; });
+    const lost = deals.filter(function(e){ return String(e.outcome || '').toLowerCase() === 'lost'; });
+
+    const openVal = open.reduce(function(s, e){ return s + _readDealValue(e); }, 0);
+    const wonVal = won.reduce(function(s, e){ return s + _readDealValue(e); }, 0);
+    const weightedVal = open.reduce(function(s, e){
+      const w = STAGE_WEIGHTS[e.stage] || 0;
+      return s + (_readDealValue(e) * w);
+    }, 0);
+    const winRate = (won.length + lost.length) > 0 ? Math.round((won.length / (won.length + lost.length)) * 100) : null;
+    const partners = {};
+    const consultants = {};
+    const customers = {};
+    open.forEach(function(e){
+      const p = String(e.partner || '').trim();
+      const c = String(e.consultant || '').trim();
+      const cust = String(e.enduser || '').trim();
+      if(p && p.toLowerCase() !== 'na') partners[p.toLowerCase()] = true;
+      if(c && c.toLowerCase() !== 'na') consultants[c.toLowerCase()] = true;
+      if(cust && cust.toLowerCase() !== 'na') customers[cust.toLowerCase()] = true;
+    });
+    const qc = _quarterClose();
+
+    _setText('v26-team-kpi-won', _shortINR(wonVal));
+    _setText('v26-team-kpi-won-sub', won.length + ' win' + (won.length === 1 ? '' : 's'));
+    _setText('v26-team-kpi-open', _shortINR(openVal));
+    _setText('v26-team-kpi-open-sub', open.length + ' deal' + (open.length === 1 ? '' : 's'));
+    _setText('v26-team-kpi-weighted', _shortINR(weightedVal));
+    _setText('v26-team-kpi-rate', winRate == null ? '—' : (winRate + '%'));
+    _setText('v26-team-kpi-rate-sub', (won.length + lost.length) + ' resolved');
+    _setText('v26-team-kpi-partners', Object.keys(partners).length);
+    _setText('v26-team-kpi-consultants', Object.keys(consultants).length);
+    _setText('v26-team-kpi-customers', Object.keys(customers).length);
+    _setText('v26-team-kpi-qclose', qc.days);
+    _setText('v26-team-kpi-qclose-sub', 'days to ' + qc.label + ' close');
+  }
+
+  // ---- 8 CHARTS — v24.26.5 ECharts migration ----
+  // Each chart is owned by ECharts. Chart instances stored on _v26Charts; destroy() on re-render.
+  // v24.26.12: India choropleth was retired in favor of zone tiles (zero CDN dependency).
+  // Removed: _v26IndiaMapLoaded, _v26IndiaMapLoading, _INDIA_GEOJSON_SOURCES, _loadIndiaMap.
+  // _STATE_ZONE_MAP and _ZONE_COLORS are still used (zone classification logic).
+
+  function _destroyChart(key){
+    if(_v26Charts[key]){ try { _v26Charts[key].dispose(); } catch(_){} _v26Charts[key] = null; }
+  }
+  function _initECharts(domId){
+    if(typeof echarts === 'undefined') return null;
+    const dom = document.getElementById(domId);
+    if(!dom) return null;
+    return echarts.init(dom, null, { renderer: 'svg' });
+  }
+  function _wireClickFilter(chartInstance, filterKey, getFilterValueFromParams){
+    if(!chartInstance) return;
+    chartInstance.on('click', function(params){
+      const fv = getFilterValueFromParams(params);
+      if(!fv) return;
+      const f = _readFilterState(); f[filterKey] = fv; _saveFilterState(f); _restoreFilterUI(); _renderTeam();
+    });
+  }
+  // v24.26.11: Theme-aware ECharts colors. Reads <html data-theme="dark|light"> set by applyTheme().
+  //   Used inside chart renderers for axis labels, legend text, grid splitLines, value labels.
+  //   Vibrant brand/palette colors (KPI gradients, bar colors, status badges) intentionally stay
+  //   constant across themes — they look correct on both backgrounds.
+  function _themeColors(){
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+      ink:        isDark ? '#F1F5F9' : '#0F172A',
+      inkMuted:   isDark ? '#CBD5E1' : '#64748B',
+      inkSubtle:  isDark ? '#94A3B8' : '#94A3B8',
+      splitLine:  isDark ? 'rgba(148,163,184,0.14)' : '#F1F5F9',
+      border:     isDark ? 'rgba(148,163,184,0.18)' : '#E5E7EB',
+      surface:    isDark ? '#141937' : '#FFFFFF',
+      isDark:     isDark
+    };
+  }
+  function _renderTeamCharts(deals){
+    if(typeof echarts === 'undefined'){
+      console.warn('[v26.5] ECharts not loaded — charts skipped');
+      return;
+    }
+    _renderChartSource(deals);
+    _renderChartStage(deals);
+    _renderChartRegion(deals);
+    _renderChartOutcome(deals);
+    _renderChartPartners(deals);
+    _renderChartConsultants(deals);
+    _renderChartPlayers(deals);
+    _renderChartTrend(deals);
+    _renderChartTTC(deals);
+  }
+
+  /* ────────────────────── Source split — DONUT WITH CENTER TOTAL ────────────────────── */
+  function _renderChartSource(deals){
+    _destroyChart('source');
+    const _theme = _themeColors();
+    const dom = document.getElementById('v26-chart-source');
+    if(!dom) return;
+    // The HTML had v26-chart-source as a div for breakdown (v26.4) — convert back to canvas-style for ECharts
+    dom.classList.remove('v26-breakdown-body');
+    dom.style.height = '260px';
+    dom.innerHTML = '';
+    const counts = { BrightSign: { count: 0, value: 0 }, Cavitak: { count: 0, value: 0 }, Other: { count: 0, value: 0 } };
+    deals.forEach(function(e){
+      const s = String(e.leadSource || '').trim().toLowerCase();
+      const v = _readDealValue(e);
+      if(s === 'brightsign'){ counts.BrightSign.count++; counts.BrightSign.value += v; }
+      else if(s === 'cavitak'){ counts.Cavitak.count++; counts.Cavitak.value += v; }
+      else { counts.Other.count++; counts.Other.value += v; }
+    });
+    const data = [];
+    if(counts.BrightSign.count) data.push({ name: 'BrightSign', value: counts.BrightSign.count, dealVal: counts.BrightSign.value, itemStyle: { color: '#4F46E5' } });
+    if(counts.Cavitak.count) data.push({ name: 'Cavitak', value: counts.Cavitak.count, dealVal: counts.Cavitak.value, itemStyle: { color: '#10B981' } });
+    if(counts.Other.count) data.push({ name: 'Other', value: counts.Other.count, dealVal: counts.Other.value, itemStyle: { color: _theme.inkSubtle } });
+    const totalCount = data.reduce(function(s, d){ return s + d.value; }, 0);
+    const totalVal = data.reduce(function(s, d){ return s + d.dealVal; }, 0);
+    const inst = _initECharts('v26-chart-source');
+    if(!inst) return;
+    inst.setOption({
+      tooltip: { trigger: 'item', formatter: function(p){ return p.name + ': ' + p.value + ' deals · ' + _shortINR(p.data.dealVal) + ' (' + p.percent + '%)'; } },
+      legend: { bottom: 0, itemWidth: 12, itemHeight: 12, textStyle: { color: _theme.inkMuted, fontSize: 12 } },
+      graphic: { type: 'group', left: 'center', top: 'middle', children: [
+        { type: 'text', style: { text: String(totalCount), fontSize: 30, fontWeight: 700, fill: '#0F172A', textAlign: 'center' }, top: -16 },
+        { type: 'text', style: { text: 'deals', fontSize: 11, fill: '#64748B', textAlign: 'center' }, top: 18 }
+      ]},
+      series: [{
+        type: 'pie', radius: ['58%', '82%'], center: ['50%', '45%'],
+        avoidLabelOverlap: true,
+        itemStyle: { borderColor: '#fff', borderWidth: 2 },
+        label: { show: true, position: 'outside', formatter: '{b}: {d}%', fontSize: 11, color: _theme.ink },
+        labelLine: { length: 8, length2: 8 },
+        data: data
+      }]
+    });
+    _v26Charts.source = inst;
+    _wireClickFilter(inst, 'source', function(p){
+      if(p.name === 'BrightSign' || p.name === 'Cavitak') return p.name;
+      return null;
+    });
+  }
+
+  /* ────────────────────── Stage funnel — VISUAL FUNNEL ────────────────────── */
+  /* ────────────────────── Stage funnel — FIXED ORDER + BIG NUMBERS + LEGEND ────────────────────── */
+  // v24.26.8: Three fixes for v26.7 funnel:
+  //   1. ORDER: Always Lead→Opportunity→Proposal→Negotiation→Order regardless of count
+  //      (sales pipeline progression — not a "biggest first" ranking)
+  //   2. NUMBERS: Big 24px count + small stage name below (number-focused per request)
+  //   3. LEGEND: Render sidebar chips next to funnel showing all stages + counts + ₹
+  function _renderChartStage(deals){
+    _destroyChart('stage');
+    const _theme = _themeColors();
+    const dom = document.getElementById('v26-chart-stage');
+    if(!dom) return;
+    dom.innerHTML = '';
+    dom.style.height = '300px';
+    const open = deals.filter(function(e){ return String(e.outcome || '').toLowerCase() === 'open'; });
+    // Build data in PIPELINE ORDER, not count order. Stages with 0 deals omitted from funnel
+    // (ECharts funnel can't render 0-value), but appear in legend.
+    const stageData = STAGES_OPEN.map(function(s){
+      const stageDeals = open.filter(function(e){ return e.stage === s; });
+      const val = stageDeals.reduce(function(t, e){ return t + _readDealValue(e); }, 0);
+      return { name: s, value: stageDeals.length, dealVal: val };
+    });
+    const funnelData = stageData.filter(function(d){ return d.value > 0; });
+    if(!funnelData.length){
+      dom.innerHTML = '<div style="padding:60px;text-align:center;color:var(--ink-soft);">No open deals to chart</div>';
+      return;
+    }
+
+    // Layout: split into 2 columns — funnel chart (left ~70%) + legend sidebar (right ~30%)
+    dom.style.display = 'flex';
+    dom.style.flexDirection = 'row';
+    dom.style.gap = '8px';
+    dom.style.alignItems = 'stretch';
+    const funnelHost = document.createElement('div');
+    funnelHost.style.flex = '1 1 70%';
+    funnelHost.style.minWidth = '0';
+    funnelHost.style.height = '300px';
+    funnelHost.id = 'v26-chart-stage-funnel-host';
+    dom.appendChild(funnelHost);
+    const legendHost = document.createElement('div');
+    legendHost.className = 'v26-stage-legend-side';
+    dom.appendChild(legendHost);
+
+    const stageColors = { Lead: '#6366F1', Opportunity: '#7C3AED', Proposal: '#A855F7', Negotiation: '#C026D3', Order: '#DB2777' };
+    const inst = echarts.init(funnelHost, null, { renderer: 'svg' });
+    inst.setOption({
+      tooltip: { trigger: 'item', formatter: function(p){ return p.name + ': ' + p.value + ' deal' + (p.value === 1 ? '' : 's') + ' · ' + _shortINR(p.data.dealVal); } },
+      series: [{
+        type: 'funnel', left: '8%', right: '8%', top: 12, bottom: 8,
+        sort: 'none',  // CRITICAL: 'none' = render in data order (pipeline order), not by count
+        gap: 4, minSize: '20%', maxSize: '100%',
+        label: {
+          show: true, position: 'inside',
+          formatter: function(p){ return '{n|' + p.value + '}\n{s|' + p.name + '}'; },
+          rich: {
+            n: { fontSize: 24, fontWeight: 700, color: '#fff', lineHeight: 28 },
+            s: { fontSize: 12, color: '#fff', opacity: 0.92, lineHeight: 16, fontWeight: 500 }
+          }
+        },
+        labelLine: { show: false },
+        itemStyle: { borderColor: '#fff', borderWidth: 2 },
+        data: funnelData.map(function(d){ return { name: d.name, value: d.value, dealVal: d.dealVal, itemStyle: { color: stageColors[d.name] || '#94A3B8' } }; })
+      }]
+    });
+    _v26Charts.stage = inst;
+    inst.on('click', function(p){ if(!p || !p.name) return; const f = _readFilterState(); f.stage = p.name; _saveFilterState(f); _restoreFilterUI(); _renderTeam(); });
+
+    // Build sidebar legend — all 5 stages, color chip + name + count + ₹
+    legendHost.innerHTML = stageData.map(function(d){
+      const color = stageColors[d.name] || '#94A3B8';
+      const isEmpty = d.value === 0;
+      return '<div class="v26-stage-legend-item' + (isEmpty ? ' v26-stage-legend-empty' : '') + '" data-stage="' + _esc(d.name) + '">' +
+        '<span class="v26-stage-legend-chip" style="background:' + color + ';"></span>' +
+        '<div class="v26-stage-legend-text">' +
+          '<div class="v26-stage-legend-name">' + _esc(d.name) + '</div>' +
+          '<div class="v26-stage-legend-count">' + d.value + ' · ' + _shortINR(d.dealVal) + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    legendHost.querySelectorAll('.v26-stage-legend-item').forEach(function(item){
+      item.addEventListener('click', function(){
+        const stage = item.getAttribute('data-stage');
+        if(!stage) return;
+        const f = _readFilterState(); f.stage = stage; _saveFilterState(f); _restoreFilterUI(); _renderTeam();
+      });
+    });
+  }
+
+  /* ────────────────────── Region — INDIA CHOROPLETH (lazy-load) with vertical-bar fallback ────────────────────── */
+  // v24.26.6: Try multiple known-good GeoJSON sources. First success wins.
+  // Maps Indian state names → our 5 zones. Used by tiles for "Top: <state>" computation.
+  const _STATE_ZONE_MAP = {
+    'Maharashtra': 'West', 'Gujarat': 'West', 'Goa': 'West', 'Madhya Pradesh': 'West', 'Chhattisgarh': 'West', 'Rajasthan': 'West', 'Dadra and Nagar Haveli and Daman and Diu': 'West', 'Daman and Diu': 'West', 'Dadra and Nagar Haveli': 'West',
+    'Delhi': 'North', 'NCT of Delhi': 'North', 'Haryana': 'North', 'Punjab': 'North', 'Uttar Pradesh': 'North', 'Uttarakhand': 'North', 'Himachal Pradesh': 'North', 'Chandigarh': 'North', 'Jammu and Kashmir': 'North', 'Jammu & Kashmir': 'North', 'Ladakh': 'North', 'Bihar': 'North', 'Jharkhand': 'North',
+    'Tamil Nadu': 'South', 'Karnataka': 'South', 'Kerala': 'South', 'Andhra Pradesh': 'South', 'Telangana': 'South', 'Puducherry': 'South', 'Lakshadweep': 'South',
+    'West Bengal': 'East', 'Odisha': 'East', 'Orissa': 'East', 'Assam': 'East', 'Meghalaya': 'East', 'Manipur': 'East', 'Mizoram': 'East', 'Nagaland': 'East', 'Tripura': 'East', 'Arunachal Pradesh': 'East', 'Sikkim': 'East', 'Andaman and Nicobar Islands': 'East', 'Andaman & Nicobar': 'East'
+  };
+  const _ZONE_COLORS = { West: '#10B981', North: '#F59E0B', South: '#3B82F6', East: '#EF4444', International: '#8B5CF6' };
+
+  function _renderChartRegion(deals){
+    // v24.26.12: Replaced India choropleth (CDN-dependent, repeatedly failed) with zone tiles.
+    //   5 tiles in a row: West / North / South / East / International. Each shows count + ₹ + top state.
+    //   Pure HTML — zero CDN dependency, always renders, theme-aware via CSS vars.
+    //   Zone colors come from _ZONE_COLORS (left-edge accent). Click any tile → filter Team Analytics.
+    _destroyChart('region');  // safety: dispose any stale ECharts instance from before zone-tile switch
+    const dom = document.getElementById('v26-chart-region');
+    if(!dom) return;
+    dom.classList.remove('v26-breakdown-body');
+    dom.style.height = 'auto';
+    dom.style.minHeight = '160px';
+    dom.innerHTML = '';
+    // Aggregate per zone + per state (so we can find top state in each zone)
+    const byZone = { West: { c:0, v:0 }, North: { c:0, v:0 }, South: { c:0, v:0 }, East: { c:0, v:0 }, International: { c:0, v:0 } };
+    const byState = {};  // state -> { c, v, zone }
+    deals.forEach(function(e){
+      const st = String(e.state || '').trim();
+      const zone = _stateRegion(e.state) || 'International';
+      const v = _readDealValue(e);
+      if(byZone[zone]){ byZone[zone].c++; byZone[zone].v += v; }
+      if(st){
+        if(!byState[st]) byState[st] = { c: 0, v: 0, zone: zone };
+        byState[st].c++;
+        byState[st].v += v;
+      }
+    });
+    // Compute top state per zone (by deal count, ties broken by ₹)
+    const topStateByZone = {};
+    Object.keys(byState).forEach(function(st){
+      const z = byState[st].zone;
+      const cur = topStateByZone[z];
+      if(!cur || byState[st].c > cur.c || (byState[st].c === cur.c && byState[st].v > cur.v)){
+        topStateByZone[z] = { name: st, c: byState[st].c, v: byState[st].v };
+      }
+    });
+    function _esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    // Build tiles in fixed zone order (W, N, S, E, International — matches India geography reading order)
+    const ZONES_ORDER = ['West', 'North', 'South', 'East', 'International'];
+    const tiles = ZONES_ORDER.map(function(z){
+      const c = byZone[z].c;
+      const v = byZone[z].v;
+      const isZero = c === 0;
+      const top = topStateByZone[z];
+      const topLine = top ? '<div class="v26-region-zone-top" title="Top state in ' + _esc(z) + ' zone">Top: ' + _esc(top.name) + ' (' + top.c + ')</div>' : '';
+      return '<div class="v26-region-zone-tile' + (isZero ? ' is-zero' : '') + '" ' +
+             'data-zone="' + _esc(z) + '" ' +
+             'style="border-left-color:' + _ZONE_COLORS[z] + ';">' +
+             '<div class="v26-region-zone-name">' + _esc(z) + '</div>' +
+             '<div class="v26-region-zone-count" style="color:' + (isZero ? 'var(--ink-subtle, #94A3B8)' : 'var(--ink, #0F172A)') + '">' + c + '</div>' +
+             '<div class="v26-region-zone-meta">' + (c === 1 ? 'deal' : 'deals') + ' · ' + _shortINR(v) + '</div>' +
+             topLine +
+           '</div>';
+    });
+    dom.innerHTML = '<div class="v26-region-zone-grid">' + tiles.join('') + '</div>';
+    // Wire click → filter (skip zero tiles)
+    dom.querySelectorAll('.v26-region-zone-tile').forEach(function(t){
+      if(t.classList.contains('is-zero')) return;
+      t.addEventListener('click', function(){
+        const zone = t.getAttribute('data-zone');
+        if(!zone) return;
+        const f = _readFilterState(); f.region = zone; _saveFilterState(f); _restoreFilterUI(); _renderTeam();
+      });
+    });
+  }
+
+  /* ────────────────────── Outcome — STACKED SINGLE BAR ────────────────────── */
+  function _renderChartOutcome(deals){
+    // v24.26.10: Replaced stacked horizontal bar (v26.5) with HTML scorecard.
+    //   Hero: Win Rate % (Won / Won+Lost) — color-coded green ≥60 / amber 40-59 / red <40, trophy ≥80.
+    //   4 tiles: Open / Won / Lost / On hold — count + %total + ₹value, left-edge color, click→filter.
+    //   Zero-count tiles render greyed-out (no click). Pure HTML — no ECharts instance for this card.
+    _destroyChart('outcome');  // safety: ensure no stale ECharts instance from previous v26 paint
+    const dom = document.getElementById('v26-chart-outcome');
+    if(!dom) return;
+    dom.classList.remove('v26-breakdown-body');
+    dom.style.height = '260px';
+    dom.innerHTML = '';
+    const counts = { Open: 0, Won: 0, Lost: 0, 'On hold': 0 };
+    const vals = { Open: 0, Won: 0, Lost: 0, 'On hold': 0 };
+    deals.forEach(function(e){
+      const o = String(e.outcome || 'open').toLowerCase();
+      const v = _readDealValue(e);
+      if(o === 'open'){ counts.Open++; vals.Open += v; }
+      else if(o === 'won'){ counts.Won++; vals.Won += v; }
+      else if(o === 'lost'){ counts.Lost++; vals.Lost += v; }
+      else if(o === 'on-hold' || o === 'on hold'){ counts['On hold']++; vals['On hold'] += v; }
+    });
+    const total = counts.Open + counts.Won + counts.Lost + counts['On hold'];
+    if(!total){ dom.innerHTML = '<div style="padding:60px;text-align:center;color:var(--ink-soft);">No deals to chart</div>'; return; }
+    const closed = counts.Won + counts.Lost;
+    const winRate = closed > 0 ? Math.round((counts.Won / closed) * 100) : null;
+    let winColor = '#94A3B8', trophy = '';
+    if(winRate !== null){
+      if(winRate >= 80){ winColor = '#10B981'; trophy = '🏆'; }
+      else if(winRate >= 60){ winColor = '#10B981'; }
+      else if(winRate >= 40){ winColor = '#F59E0B'; }
+      else { winColor = '#EF4444'; }
+    }
+    const colors = { Open: '#3B82F6', Won: '#10B981', Lost: '#EF4444', 'On hold': '#F59E0B' };
+    const filterValues = { Open: 'open', Won: 'won', Lost: 'lost', 'On hold': 'on-hold' };
+    function _esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    const heroHtml = winRate !== null
+      ? '<div class="v26-winrate-hero">' +
+          (trophy ? '<div class="v26-winrate-trophy">' + trophy + '</div>' : '') +
+          '<div class="v26-winrate-label">Win Rate</div>' +
+          '<div class="v26-winrate-pct" style="color:' + winColor + '">' + winRate + '%</div>' +
+          '<div class="v26-winrate-detail">' + counts.Won + ' won of ' + closed + ' closed deal' + (closed === 1 ? '' : 's') + '</div>' +
+        '</div>'
+      : '<div class="v26-winrate-hero">' +
+          '<div class="v26-winrate-label">Win Rate</div>' +
+          '<div class="v26-winrate-empty">—</div>' +
+          '<div class="v26-winrate-detail">No closed deals yet</div>' +
+        '</div>';
+    function tile(name){
+      const c = counts[name], v = vals[name];
+      const pct = Math.round((c / total) * 100);
+      const isZero = c === 0;
+      return '<div class="v26-outcome-tile' + (isZero ? ' is-zero' : '') + '" ' +
+             'data-outcome="' + filterValues[name] + '" ' +
+             'style="border-left-color:' + colors[name] + '">' +
+             '<div class="v26-tile-label">' + _esc(name) + '</div>' +
+             '<div class="v26-tile-count" style="color:' + (isZero ? '#94A3B8' : '#0F172A') + '">' + c + '</div>' +
+             '<div class="v26-tile-meta">' + pct + '% · ' + _shortINR(v) + '</div>' +
+           '</div>';
+    }
+    dom.innerHTML =
+      '<div class="v26-outcome-grid">' +
+        heroHtml +
+        '<div class="v26-outcome-tiles">' +
+          tile('Open') + tile('Won') + tile('Lost') + tile('On hold') +
+        '</div>' +
+      '</div>';
+    // Wire click-to-filter — preserves v26.5 drill-through behavior.
+    Array.prototype.forEach.call(dom.querySelectorAll('.v26-outcome-tile'), function(el){
+      if(el.classList.contains('is-zero')) return;  // zero tiles aren't actionable
+      el.addEventListener('click', function(){
+        const fv = el.getAttribute('data-outcome');
+        if(!fv) return;
+        const f = _readFilterState(); f.outcome = fv; _saveFilterState(f); _restoreFilterUI(); _renderTeam();
+      });
+    });
+  }
+
+  /* ────────────────────── Top Partners — HORIZONTAL BAR (kept) ────────────────────── */
+  function _topNByCount(deals, key, n){
+    const map = {};
+    deals.forEach(function(e){
+      const k = String(e[key] || '').trim();
+      // v24.26.7: Exclude blanks + all common N/A variants ("N/A", "n/a", "NA", "—", "-", "none")
+      if(!k) return;
+      const kLower = k.toLowerCase().replace(/[\s\.\-\/]/g, '');
+      if(kLower === '' || kLower === 'na' || kLower === 'none' || kLower === 'nil' || k === '—' || k === '-') return;
+      map[k] = (map[k] || 0) + 1;
+    });
+    return Object.keys(map).sort(function(a, b){ return map[b] - map[a]; }).slice(0, n).map(function(k){ return { name: k, count: map[k] }; });
+  }
+  function _renderHorizBars(domId, top, color, key){
+    _destroyChart(key);
+    const _theme = _themeColors();
+    const dom = document.getElementById(domId);
+    if(!dom) return;
+    dom.innerHTML = '';
+    if(!top.length){ dom.innerHTML = '<div style="padding:32px;text-align:center;color:var(--ink-soft);">No data yet</div>'; return; }
+    const inst = _initECharts(domId);
+    if(!inst) return;
+    inst.setOption({
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: 8, right: 24, top: 12, bottom: 12, containLabel: true },
+      xAxis: { type: 'value', axisLabel: { color: _theme.inkMuted, fontSize: 11 }, splitLine: { lineStyle: { color: _theme.splitLine } } },
+      yAxis: { type: 'category', data: top.map(function(t){ return t.name; }).reverse(), axisLabel: { color: _theme.ink, fontSize: 11 } },
+      series: [{
+        type: 'bar', data: top.map(function(t){ return t.count; }).reverse(),
+        itemStyle: { color: color, borderRadius: [0, 6, 6, 0] },
+        label: { show: true, position: 'right', color: _theme.ink, fontSize: 11, fontWeight: 700 }
+      }]
+    });
+    _v26Charts[key] = inst;
+  }
+  /* ────────────────────── Top Partners + Top Consultants — v24.26.8 OPTION B ──────────────────────
+   * KPI STRIP (4 cards) + ₹-sorted bars. Tells the concentration & pipeline story.
+   *   Total = unique entities · Repeat = entities with 2+ deals · Pipeline = ₹ total · Top share = % from #1
+   * Bars sorted by ₹ pipeline (not count). Click row → filters to that partner/consultant.
+   * Why ditched "Top N by count": at small data scale all bars equal-length, useless.
+   *   ₹ sorting reveals StreamSoft's ₹32.6L vs Regale's ₹0.5L — actionable. */
+  function _aggregateByEntity(deals, key){
+    // Returns { name: { count, value, lastTs } }
+    const acc = {};
+    deals.forEach(function(e){
+      let k = String(e[key] || '').trim();
+      if(!k) return;
+      const kLower = k.toLowerCase().replace(/[\s\.\-\/]/g, '');
+      if(kLower === '' || kLower === 'na' || kLower === 'none' || kLower === 'nil' || k === '—' || k === '-') return;
+      if(!acc[k]) acc[k] = { count: 0, value: 0, lastTs: 0 };
+      acc[k].count++;
+      acc[k].value += _readDealValue(e);
+      const ts = _parseTs(e);
+      if(ts > acc[k].lastTs) acc[k].lastTs = ts;
+    });
+    return acc;
+  }
+  function _renderEntityCardOptionB(domId, deals, key, accentColor){
+    const host = document.getElementById(domId);
+    if(!host) return;
+    host.innerHTML = '';
+    host.style.height = 'auto';
+    host.style.minHeight = '260px';
+    const agg = _aggregateByEntity(deals, key);
+    const entities = Object.keys(agg).map(function(name){
+      return { name: name, count: agg[name].count, value: agg[name].value, lastTs: agg[name].lastTs };
+    }).sort(function(a, b){ return b.value - a.value; });
+
+    if(!entities.length){
+      host.innerHTML = '<div style="padding:60px;text-align:center;color:var(--ink-soft);font-size:13px;">No data yet</div>';
+      return;
+    }
+
+    const total = entities.length;
+    const repeat = entities.filter(function(e){ return e.count >= 2; }).length;
+    const pipeline = entities.reduce(function(s, e){ return s + e.value; }, 0);
+    const topPct = pipeline > 0 ? Math.round((entities[0].value / pipeline) * 100) : 0;
+    const topName = entities[0].name;
+    const maxVal = entities[0].value || 1;
+
+    // Build KPI strip
+    let html = '<div class="v26-ob-kpi-strip">' +
+      '<div class="v26-ob-kpi"><div class="v26-ob-kpi-num">' + total + '</div><div class="v26-ob-kpi-lbl">Total</div><div class="v26-ob-kpi-sub">unique</div></div>' +
+      '<div class="v26-ob-kpi"><div class="v26-ob-kpi-num">' + repeat + '</div><div class="v26-ob-kpi-lbl">Repeat</div><div class="v26-ob-kpi-sub">2+ deals</div></div>' +
+      '<div class="v26-ob-kpi"><div class="v26-ob-kpi-num" style="font-size:18px;">' + _shortINR(pipeline) + '</div><div class="v26-ob-kpi-lbl">Pipeline</div><div class="v26-ob-kpi-sub">total ₹</div></div>' +
+      '<div class="v26-ob-kpi"><div class="v26-ob-kpi-num">' + topPct + '%</div><div class="v26-ob-kpi-lbl">Top share</div><div class="v26-ob-kpi-sub" title="' + _esc(topName) + '">' + _esc(topName.length > 12 ? topName.substring(0, 11) + '…' : topName) + '</div></div>' +
+      '</div>';
+
+    // Build bars (top 8 to fit nicely)
+    html += '<div class="v26-ob-list">';
+    entities.slice(0, 8).forEach(function(e){
+      const pct = (e.value / maxVal) * 100;
+      html += '<div class="v26-ob-row" data-name="' + _esc(e.name) + '" title="Click to filter to ' + _esc(e.name) + '">' +
+        '<div class="v26-ob-row-name">' + _esc(e.name) + '</div>' +
+        '<div class="v26-ob-row-bar"><div class="v26-ob-row-fill" style="width:' + pct.toFixed(1) + '%;background:' + accentColor + ';"></div></div>' +
+        '<div class="v26-ob-row-val">' + _shortINR(e.value) + '</div>' +
+        '<div class="v26-ob-row-cnt">' + e.count + ' deal' + (e.count === 1 ? '' : 's') + '</div>' +
+        '</div>';
+    });
+    if(entities.length > 8){
+      html += '<div class="v26-ob-more">+ ' + (entities.length - 8) + ' more</div>';
+    }
+    html += '</div>';
+
+    host.innerHTML = html;
+
+    // Click rows → filter
+    host.querySelectorAll('.v26-ob-row').forEach(function(row){
+      row.addEventListener('click', function(){
+        const name = row.getAttribute('data-name');
+        if(!name) return;
+        // Reuse search filter — sets the search to entity name
+        const f = _readFilterState();
+        f.search = name;
+        _saveFilterState(f);
+        _restoreFilterUI();
+        _renderTeam();
+      });
+    });
+  }
+  function _renderChartPartners(deals){
+    _destroyChart('partners');
+    _renderEntityCardOptionB('v26-chart-partners', deals, 'partner', '#3B82F6');
+  }
+  function _renderChartConsultants(deals){
+    _destroyChart('consultants');
+    _renderEntityCardOptionB('v26-chart-consultants', deals, 'consultant', '#8B5CF6');
+  }
+
+  /* ────────────────────── Most Quoted Players — HORIZONTAL BAR ────────────────────── */
+  // v24.26.7: Product-mix intel for Cavitak ownership. Shows which BrightSign models
+  // are being recommended most. Reads from entry.model + entry.outdoorModel + advanced
+  // selections JSON (when deals were saved as Custom BOQ).
+  // v24.26.8: REVERTED Open/Won split — current chart is fine; main filters above
+  //           cover region/sales drill-down.
+  function _renderChartPlayers(deals){
+    // v25.46 (tvONE port): Most Quoted Players is BrightSign-specific (player models from
+    //   advancedSelectionsJson + outdoorModel). tvONE has chassis configurations instead.
+    //   Stubbed as no-op for now. Future: replace with tvONE-relevant chart (Output Type mix,
+    //   Chassis utilization, Top input source counts). DOM card is not rendered in tvONE HTML.
+    _destroyChart('players');
+  }
+
+  /* ────────────────────── Trend — AREA CHART ────────────────────── */
+  function _renderChartTrend(deals){
+    _destroyChart('trend');
+    const _theme = _themeColors();
+    const dom = document.getElementById('v26-chart-trend');
+    if(!dom) return;
+    dom.style.height = '260px';
+    dom.innerHTML = '';
+    const weeks = [];
+    const now = new Date();
+    for(let i = 11; i >= 0; i--){
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (i*7));
+      const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 6);
+      weeks.push({ start: start.getTime(), end: end.getTime() + 24*60*60*1000 - 1, label: (start.getMonth()+1) + '/' + start.getDate() });
+    }
+    const newCounts = weeks.map(function(w){ return deals.filter(function(e){ const t = _parseTs(e); return t >= w.start && t <= w.end; }).length; });
+    const wonCounts = weeks.map(function(w){
+      return deals.filter(function(e){
+        if(String(e.outcome || '').toLowerCase() !== 'won') return false;
+        const t = _parseTs(e); return t >= w.start && t <= w.end;
+      }).length;
+    });
+    const inst = _initECharts('v26-chart-trend');
+    if(!inst) return;
+    inst.setOption({
+      tooltip: { trigger: 'axis' },
+      legend: { bottom: 0, itemWidth: 12, itemHeight: 12, textStyle: { fontSize: 11, color: _theme.inkMuted } },
+      grid: { left: 8, right: 16, top: 16, bottom: 36, containLabel: true },
+      xAxis: { type: 'category', data: weeks.map(function(w){ return w.label; }), axisLabel: { color: _theme.inkMuted, fontSize: 10 } },
+      yAxis: { type: 'value', axisLabel: { color: _theme.inkMuted, fontSize: 11 }, splitLine: { lineStyle: { color: _theme.splitLine } } },
+      series: [
+        { name: 'New', type: 'line', smooth: 0.3, data: newCounts, symbol: 'circle', symbolSize: 6,
+          areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(59,130,246,0.4)' }, { offset: 1, color: 'rgba(59,130,246,0.02)' }] } },
+          itemStyle: { color: '#3B82F6' }, lineStyle: { color: '#3B82F6', width: 2 } },
+        { name: 'Won', type: 'line', smooth: 0.3, data: wonCounts, symbol: 'circle', symbolSize: 6,
+          areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(16,185,129,0.4)' }, { offset: 1, color: 'rgba(16,185,129,0.02)' }] } },
+          itemStyle: { color: '#10B981' }, lineStyle: { color: '#10B981', width: 2 } }
+      ]
+    });
+    _v26Charts.trend = inst;
+  }
+
+  /* ────────────────────── Time-to-close — VERTICAL BAR HISTOGRAM (kept) ────────────────────── */
+  function _renderChartTTC(deals){
+    _destroyChart('ttc');
+    const _theme = _themeColors();
+    const dom = document.getElementById('v26-chart-ttc');
+    if(!dom) return;
+    dom.style.height = '260px';
+    dom.innerHTML = '';
+    const won = deals.filter(function(e){ return String(e.outcome || '').toLowerCase() === 'won'; });
+    if(!won.length){ dom.innerHTML = '<div style="padding:60px;text-align:center;color:var(--ink-soft);">No won deals yet — time-to-close will populate after wins.</div>'; return; }
+    const buckets = { '<30d': 0, '30-60d': 0, '60-90d': 0, '90-180d': 0, '180+d': 0 };
+    won.forEach(function(e){
+      const t = _parseTs(e);
+      if(!t) return;
+      const days = Math.floor((Date.now() - t) / (1000*60*60*24));
+      if(days < 30) buckets['<30d']++;
+      else if(days < 60) buckets['30-60d']++;
+      else if(days < 90) buckets['60-90d']++;
+      else if(days < 180) buckets['90-180d']++;
+      else buckets['180+d']++;
+    });
+    const inst = _initECharts('v26-chart-ttc');
+    if(!inst) return;
+    inst.setOption({
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: 8, right: 16, top: 16, bottom: 24, containLabel: true },
+      xAxis: { type: 'category', data: Object.keys(buckets), axisLabel: { color: _theme.inkMuted, fontSize: 11 } },
+      yAxis: { type: 'value', axisLabel: { color: _theme.inkMuted, fontSize: 11 }, splitLine: { lineStyle: { color: _theme.splitLine } } },
+      series: [{
+        type: 'bar', data: Object.values(buckets), barWidth: '50%',
+        itemStyle: { color: '#F59E0B', borderRadius: [6, 6, 0, 0] },
+        label: { show: true, position: 'top', fontSize: 11, color: _theme.ink }
+      }]
+    });
+    _v26Charts.ttc = inst;
+  }
+
+  // ---- Resize all charts on window resize ----
+  let _v26ResizeTimer = null;
+  window.addEventListener('resize', function(){
+    if(_v26ResizeTimer) clearTimeout(_v26ResizeTimer);
+    _v26ResizeTimer = setTimeout(function(){
+      Object.keys(_v26Charts).forEach(function(k){
+        if(_v26Charts[k] && typeof _v26Charts[k].resize === 'function'){
+          try { _v26Charts[k].resize(); } catch(_){}
+        }
+      });
+    }, 120);
+  });
+
+
+  // ---- Sales leaderboard ----
+  function _renderTeamLeaderboard(deals){
+    const tbody = document.getElementById('v26-team-leaderboard-tbody');
+    if(!tbody) return;
+    const map = {};
+    deals.forEach(function(e){
+      const sp = String(e.salesPerson || '').toLowerCase().trim();
+      if(!sp) return;
+      if(!map[sp]) map[sp] = { name: sp, openCount: 0, openVal: 0, wonCount: 0, wonVal: 0, lostCount: 0 };
+      const o = String(e.outcome || '').toLowerCase();
+      if(o === 'open'){ map[sp].openCount++; map[sp].openVal += _readDealValue(e); }
+      else if(o === 'won'){ map[sp].wonCount++; map[sp].wonVal += _readDealValue(e); }
+      else if(o === 'lost'){ map[sp].lostCount++; }
+    });
+    const list = Object.values(map);
+    if(Array.isArray(window._allUsers)){
+      list.forEach(function(r){
+        const u = window._allUsers.find(function(x){ return String(x.loginName || '').toLowerCase() === r.name; });
+        if(u && u.fullName) r.display = u.fullName;
+        else r.display = r.name;
+      });
+    } else {
+      list.forEach(function(r){ r.display = r.name; });
+    }
+    list.sort(function(a, b){ return b.wonVal - a.wonVal; });
+    const top = list.slice(0, 10);
+    if(!top.length){
+      tbody.innerHTML = '<tr><td colspan="7" style="padding:18px;text-align:center;color:var(--ink-soft);">No salesperson data in this filter.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = top.map(function(r, i){
+      const total = r.wonCount + r.lostCount;
+      const winPct = total ? Math.round((r.wonCount/total)*100) + '%' : '—';
+      return '<tr>' +
+        '<td>' + (i+1) + '</td>' +
+        '<td>' + _esc(r.display) + '</td>' +
+        '<td class="v26-th-num">' + r.openCount + '</td>' +
+        '<td class="v26-th-num">' + _shortINR(r.openVal) + '</td>' +
+        '<td class="v26-th-num">' + r.wonCount + '</td>' +
+        '<td class="v26-th-num">' + _shortINR(r.wonVal) + '</td>' +
+        '<td class="v26-th-num">' + winPct + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  // ---- Stuck deals ----
+  // v24.26.8: Stuck deals = SLIPPED (closeMonth past) OR stage unchanged >30 days.
+  // Stale by Cavitak's monthly cadence. Sorted: slipped first, then by days-in-stage desc.
+  function _renderTeamStuck(deals){
+    const tbody = document.getElementById('v26-team-stuck-tbody');
+    if(!tbody) return;
+    const curYM = _currentYM();
+    const stuck = deals.filter(function(e){
+      if(String(e.outcome || '').toLowerCase() !== 'open') return false;
+      const ym = _parseCloseYM(e.closemonth || e.closeMonth);
+      const slipped = ym > 0 && ym < curYM;
+      const stageFrozen = _daysInCurrentStage(e) >= 30;
+      return slipped || stageFrozen;
+    }).sort(function(a, b){
+      const ymA = _parseCloseYM(a.closemonth || a.closeMonth);
+      const ymB = _parseCloseYM(b.closemonth || b.closeMonth);
+      const slipA = ymA > 0 && ymA < curYM;
+      const slipB = ymB > 0 && ymB < curYM;
+      if(slipA && !slipB) return -1;
+      if(!slipA && slipB) return 1;
+      // Both slipped or both stage-frozen — sort by days-in-stage desc
+      return _daysInCurrentStage(b) - _daysInCurrentStage(a);
+    }).slice(0, 10);
+    if(!stuck.length){
+      tbody.innerHTML = '<tr><td colspan="5" style="padding:18px;text-align:center;color:var(--ink-soft);">No leakage 🔥</td></tr>';
+      return;
+    }
+    tbody.innerHTML = stuck.map(function(e){
+      const days = _daysInCurrentStage(e);
+      const ym = _parseCloseYM(e.closemonth || e.closeMonth);
+      const isSlipped = ym > 0 && ym < curYM;
+      const reason = isSlipped ? ('Slipped · was ' + _formatCloseMonth(e.closemonth || e.closeMonth)) : (days + 'd in ' + (e.stage || '—'));
+      const owner = e.salesPerson || e.loginName || '—';
+      let ownerDisplay = owner;
+      if(Array.isArray(window._allUsers)){
+        const u = window._allUsers.find(function(x){ return String(x.loginName || '').toLowerCase() === String(owner).toLowerCase(); });
+        if(u && u.fullName) ownerDisplay = u.fullName;
+      }
+      return '<tr onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')">' +
+        '<td>' + _esc(e.project || '—') + '</td>' +
+        '<td><span class="v26-stage-badge v26-stage-' + _esc(String(e.stage || '').toLowerCase()) + '">' + _esc(e.stage || '—') + '</span></td>' +
+        '<td class="v26-th-num">' + _shortINR(_readDealValue(e)) + '</td>' +
+        '<td style="color:#DC2626;font-weight:700;font-size:11px;">' + _esc(reason) + '</td>' +
+        '<td>' + _esc(ownerDisplay) + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  // ---- All filtered deals table ----
+  function _renderTeamTable(deals){
+    const tbody = document.getElementById('v26-team-tbody');
+    const counter = document.getElementById('v26-team-table-counter');
+    if(counter) counter.textContent = deals.length + ' deal' + (deals.length === 1 ? '' : 's');
+    if(!tbody) return;
+    if(!deals.length){
+      tbody.innerHTML = '<tr><td colspan="9" style="padding:32px;text-align:center;color:var(--ink-soft);">No deals match these filters.</td></tr>';
+      return;
+    }
+    const sortCol = _activeSort.team.col;
+    const sortDir = _activeSort.team.dir;
+    const sorted = deals.slice().sort(function(a, b){
+      let av = a[sortCol], bv = b[sortCol];
+      if(sortCol === 'dealValue'){ av = _readDealValue(a); bv = _readDealValue(b); }
+      if(sortCol === 'daysInStage'){ av = _daysInStage(a); bv = _daysInStage(b); }
+      if(sortCol === 'user'){ av = a.salesPerson || a.loginName; bv = b.salesPerson || b.loginName; }
+      if(av == null) av = ''; if(bv == null) bv = '';
+      if(typeof av === 'number' && typeof bv === 'number'){ return sortDir === 'asc' ? av - bv : bv - av; }
+      return sortDir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+    });
+    tbody.innerHTML = sorted.map(function(e){
+      const days = _daysInStage(e);
+      const stuckCls = days >= 30 ? ' style="color:#DC2626;font-weight:700;"' : (days >= 14 ? ' style="color:#D97706;font-weight:600;"' : '');
+      const owner = e.salesPerson || e.loginName || '—';
+      let ownerDisplay = owner;
+      if(Array.isArray(window._allUsers)){
+        const u = window._allUsers.find(function(x){ return String(x.loginName || '').toLowerCase() === String(owner).toLowerCase(); });
+        if(u && u.fullName) ownerDisplay = u.fullName;
+      }
+      return '<tr>' +
+        '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _esc(e.project || '—') + '</td>' +
+        '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _esc(e.enduser || '—') + '</td>' +
+        '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _esc(e.partner || '—') + '</td>' +
+        '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;"><span class="v26-stage-badge v26-stage-' + _esc(String(e.stage || '').toLowerCase()) + '">' + _esc(e.stage || '—') + '</span></td>' +
+        '<td class="v26-th-num" onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _formatINR(_readDealValue(e)) + '</td>' +
+        '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _esc(_formatCloseMonth(e.closemonth)) + '</td>' +
+        '<td class="v26-th-num" onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;"' + stuckCls + '>' + days + 'd</td>' +
+        '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _esc(ownerDisplay) + '</td>' +
+        '<td style="text-align:center;"><button onclick="event.stopPropagation();bsv26_openDealHistory(\'' + _esc(e.refId || '') + '\')" title="View deal journey" style="background:transparent;border:1px solid var(--line-softer);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:14px;">📜</button></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  // ---- Misc helpers ----
+  function _setText(id, txt){ const el = document.getElementById(id); if(el) el.textContent = txt; }
+
+  // ---- Open deal modal helper (delegates to existing modal logic) ----
+  window.bsv26_openDeal = function(refId){
+    if(!refId) return;
+    const idx = _readEntries().findIndex(function(e){ return String(e.refId) === String(refId); });
+    if(idx < 0) return;
+    if(typeof window.openLogEntryDetail === 'function'){ try { window.openLogEntryDetail(idx); return; } catch(_){} }
+    if(typeof window.editEntry === 'function'){ try { window.editEntry(idx); return; } catch(_){} }
+  };
+
+  // ---- CSV export ----
+  window.bsv26_exportTeamCSV = function(){
+    const all = _readEntries();
+    const scoped = _scopeForUser(all);
+    const f = _readFilterState();
+    const filtered = _applyFilters(scoped, f);
+    if(!filtered.length){ alert('No deals to export with current filters.'); return; }
+    const headers = ['refId','project','enduser','partner','consultant','stage','dealValue','closemonth','outcome','source','region','salesPerson','daysInStage','timestamp'];
+    const rows = filtered.map(function(e){
+      return [
+        e.refId || '', e.project || '', e.enduser || '', e.partner || '', e.consultant || '',
+        e.stage || '', _readDealValue(e), e.closemonth || '', e.outcome || '',
+        e.leadSource || '', _stateRegion(e.state) || '', e.salesPerson || '', _daysInStage(e),
+        new Date(_parseTs(e)).toISOString()
+      ];
+    });
+    const csv = [headers.concat(['']).slice(0,-1)].concat(rows).map(function(r){
+      return r.map(function(c){ return '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"'; }).join(',');
+    }).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bs-team-analytics-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ---- Sort header wiring ----
+  function _wireSortHeaders(){
+    document.querySelectorAll('#v26-mine-table th[data-sort]').forEach(function(th){
+      if(th.dataset.v26SortWired) return;
+      th.dataset.v26SortWired = '1';
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', function(){
+        const col = th.getAttribute('data-sort');
+        if(_activeSort.mine.col === col) _activeSort.mine.dir = _activeSort.mine.dir === 'asc' ? 'desc' : 'asc';
+        else { _activeSort.mine.col = col; _activeSort.mine.dir = 'asc'; }
+        _renderMine();
+      });
+    });
+    document.querySelectorAll('#v26-team-table th[data-sort]').forEach(function(th){
+      if(th.dataset.v26SortWired) return;
+      th.dataset.v26SortWired = '1';
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', function(){
+        const col = th.getAttribute('data-sort');
+        if(_activeSort.team.col === col) _activeSort.team.dir = _activeSort.team.dir === 'asc' ? 'desc' : 'asc';
+        else { _activeSort.team.col = col; _activeSort.team.dir = 'asc'; }
+        _renderTeam();
+      });
+    });
+  }
+
+  // v24.26.8: Deal History modal — shows stage journey for one deal.
+  // Reads from window._stageTransitions if backend has it, else builds a minimal
+  // 2-event view (created → current stage) from the deal record alone.
+  window.bsv26_openDealHistory = function(refId){
+    if(!refId) return;
+    const all = _readEntries();
+    const deal = all.find(function(e){ return String(e.refId) === String(refId); });
+    if(!deal){ return; }
+    // Build event list. Each event: { date, action, detail }.
+    // Source 1: window._stageTransitions (if populated by backend) — preferred
+    // Source 2: deal record alone — minimal "created" + "current stage"
+    let events = [];
+    if(Array.isArray(window._stageTransitions)){
+      const trans = window._stageTransitions.filter(function(t){ return String(t.refId || '') === String(refId); });
+      trans.sort(function(a, b){ return new Date(a.timestamp || 0) - new Date(b.timestamp || 0); });
+      trans.forEach(function(t){
+        events.push({ date: new Date(t.timestamp), action: 'STAGE CHANGED', detail: (t.fromStage || '?') + ' → ' + (t.toStage || '?') + (t.user ? ' · by ' + t.user : ''), notes: t.notes || '' });
+      });
+    }
+    // Always prepend Created event
+    const createdMs = _parseTs(deal);
+    if(createdMs){
+      events.unshift({ date: new Date(createdMs), action: 'CREATED', detail: 'Initial stage: ' + (deal.stage || 'Lead') + (deal.loginName ? ' · by ' + deal.loginName : '') });
+    }
+    // If no transitions and deal stage isn't Lead, add a synthetic note
+    if(events.length <= 1 && deal.stage && deal.stage !== 'Lead'){
+      events.push({ date: new Date(), action: 'CURRENT STAGE', detail: deal.stage + ' (transition history not tracked yet)' });
+    }
+    // Render
+    let body = '';
+    let prevDate = null;
+    events.forEach(function(ev, i){
+      if(prevDate){
+        const days = Math.floor((ev.date.getTime() - prevDate.getTime()) / (1000*60*60*24));
+        if(days > 0){ body += '<div class="v26-history-event-gap">↓ ' + days + ' day' + (days === 1 ? '' : 's') + '</div>'; }
+      }
+      const dateLabel = ev.date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      body += '<div class="v26-history-event">' +
+        '<div class="v26-history-event-date">' + _esc(dateLabel) + '</div>' +
+        '<div class="v26-history-event-action">' + _esc(ev.action) + '</div>' +
+        '<div class="v26-history-event-detail">' + _esc(ev.detail) + '</div>' +
+        (ev.notes ? '<div class="v26-history-event-detail" style="margin-top:3px;font-style:italic;">"' + _esc(ev.notes) + '"</div>' : '') +
+        '</div>';
+      prevDate = ev.date;
+    });
+    // Add NOW marker
+    if(prevDate){
+      const daysSinceLast = Math.floor((Date.now() - prevDate.getTime()) / (1000*60*60*24));
+      if(daysSinceLast > 0){ body += '<div class="v26-history-event-gap">↓ ' + daysSinceLast + ' day' + (daysSinceLast === 1 ? '' : 's') + '</div>'; }
+    }
+    body += '<div class="v26-history-event v26-history-event-now">' +
+      '<div class="v26-history-event-date">Today · ' + new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + '</div>' +
+      '<div class="v26-history-event-action">NOW</div>' +
+      '<div class="v26-history-event-detail">Currently in: ' + _esc(deal.stage || 'Lead') + ' · Outcome: ' + _esc(deal.outcome || 'open') + '</div>' +
+      '</div>';
+
+    // Footer summary
+    const totalAge = createdMs ? Math.floor((Date.now() - createdMs) / (1000*60*60*24)) : 0;
+    const daysInCurrentStage = _daysInCurrentStage(deal);
+    const footerNote = 'Total deal age: ' + totalAge + ' day' + (totalAge === 1 ? '' : 's') +
+      ' · Time in current stage: ' + daysInCurrentStage + ' day' + (daysInCurrentStage === 1 ? '' : 's') +
+      (daysInCurrentStage >= 30 ? ' ⚠' : '');
+
+    // Build the modal
+    const overlay = document.createElement('div');
+    overlay.className = 'v26-history-modal-overlay';
+    overlay.innerHTML =
+      '<div class="v26-history-modal" onclick="event.stopPropagation()">' +
+        '<div class="v26-history-modal-head">' +
+          '<div>' +
+            '<div class="v26-history-modal-title">📜 ' + _esc(deal.project || '(no project name)') + '</div>' +
+            '<div class="v26-history-modal-sub">' + _esc(deal.refId || '') + ' · ' + _esc(deal.enduser || '—') + ' · ' + _formatINR(_readDealValue(deal)) + '</div>' +
+          '</div>' +
+          '<button class="v26-history-modal-close" onclick="this.closest(\'.v26-history-modal-overlay\').remove()">✕</button>' +
+        '</div>' +
+        '<div class="v26-history-modal-body">' + body + '</div>' +
+        '<div class="v26-history-modal-foot">' + _esc(footerNote) + '</div>' +
+      '</div>';
+    overlay.addEventListener('click', function(){ overlay.remove(); });
+    document.body.appendChild(overlay);
+  };
+
+  // ---- INIT ----
+  function bsv26_init(){
+    _setupTabButtonsForUser();
+    _restoreFilterUI();
+    // Show the right pane based on default tab (set by _setupTabButtonsForUser)
+    const paneMine = document.getElementById('v26-pane-mine');
+    const paneTeam = document.getElementById('v26-pane-team');
+    if(paneMine) paneMine.style.display = (_activeTab === 'mine') ? 'block' : 'none';
+    if(paneTeam) paneTeam.style.display = (_activeTab === 'team') ? 'block' : 'none';
+    document.querySelectorAll('.v26-tab').forEach(function(b){
+      b.classList.toggle('v26-tab-active', b.getAttribute('data-v26-tab') === _activeTab);
+    });
+    _wireSortHeaders();
+  }
+  window.bsv26_init = bsv26_init;
+
+  // Auto-init on DOMContentLoaded — and also re-init whenever Dashboard tab is opened
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', bsv26_init);
+  } else {
+    setTimeout(bsv26_init, 0);
+  }
+
+  // Hook into showTab so we always re-init when section becomes visible (sets up sales filter etc)
+  // v25.46 (tvONE port): tvONE uses showView() not showTab(). Hook the right function.
+  const _origShowTab = window.showView;
+  if(typeof _origShowTab === 'function'){
+    window.showView = function(which){
+      const r = _origShowTab.apply(this, arguments);
+      if(which === 'dash'){
+        setTimeout(function(){ try { bsv26_init(); bsv26_renderActiveTab(); } catch(_){} }, 60);
+      }
+      return r;
+    };
+  }
+})();
+
 </script>
 <!-- Silent sync toast indicator -->
 <div class="sync-status" id="syncStatus">
