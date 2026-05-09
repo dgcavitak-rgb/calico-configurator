@@ -4299,37 +4299,58 @@
 .v26-chart-sub { font-size: 11px; font-weight: 500; color: var(--ink-soft); }
 .v26-chart-body { height: 240px; position: relative; }
 
-/* v24.26.10 — Outcome Scorecard (replaces stacked bar) */
+/* v25.47 (tvONE parity with BS v24.26.13) — Outcome Scorecard TECH STYLE polish.
+   - Equal-weight grid (1fr 2fr), sharp 4px corners, JetBrains Mono numerals,
+     softer green (#059669), trophy emoji removed, bracketed labels, dashed zero state. */
 .v26-outcome-grid {
-  display: grid; grid-template-columns: 200px 1fr; gap: 16px;
+  display: grid; grid-template-columns: 1fr 2fr; gap: 12px;
   height: 100%; align-items: stretch;
 }
 @media (max-width: 600px){ .v26-outcome-grid { grid-template-columns: 1fr; } }
 .v26-winrate-hero {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: linear-gradient(180deg, var(--bg, #F8FAFC) 0%, var(--paper-warm) 100%);
-  border-radius: 12px; padding: 14px 10px;
+  background: var(--paper-warm);
+  border-radius: 4px; padding: 14px 12px;
   border: 1px solid var(--line-softer);
   text-align: center;
+  position: relative;
+}
+.v26-winrate-hero::before {
+  content: ''; position: absolute; top: 8px; left: 8px;
+  width: 6px; height: 6px;
+  border-top: 1px solid var(--ink-subtle);
+  border-left: 1px solid var(--ink-subtle);
+  opacity: 0.5;
+}
+.v26-winrate-hero::after {
+  content: ''; position: absolute; bottom: 8px; right: 8px;
+  width: 6px; height: 6px;
+  border-bottom: 1px solid var(--ink-subtle);
+  border-right: 1px solid var(--ink-subtle);
+  opacity: 0.5;
 }
 .v26-winrate-label {
-  font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--ink-soft);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 .v26-winrate-pct {
-  font-size: 42px; font-weight: 800; line-height: 1;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 38px; font-weight: 700; line-height: 1;
   font-variant-numeric: tabular-nums;
-  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
 }
-.v26-winrate-trophy { font-size: 22px; margin-bottom: 4px; opacity: 0.9; }
 .v26-winrate-detail {
-  font-size: 11px; color: var(--ink-soft); font-weight: 500;
-  line-height: 1.35;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 10px; color: var(--ink-subtle); font-weight: 500;
+  line-height: 1.4; letter-spacing: 0.02em;
 }
 .v26-winrate-empty {
-  font-size: 28px; font-weight: 700; color: var(--ink-soft);
-  margin-bottom: 4px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 28px; font-weight: 700; color: var(--ink-subtle);
+  margin-bottom: 6px; letter-spacing: -0.04em;
 }
 .v26-outcome-tiles {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4338,30 +4359,39 @@
 }
 .v26-outcome-tile {
   background: var(--paper); border: 1px solid var(--line-softer);
-  border-left: 4px solid var(--ink-subtle, #94A3B8);
-  border-radius: 8px; padding: 8px 10px;
+  border-left: 3px solid var(--ink-subtle);
+  border-radius: 4px; padding: 10px 12px;
   display: flex; flex-direction: column; justify-content: center;
-  cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  cursor: pointer; transition: border-color 0.12s ease, background 0.12s ease;
   min-height: 0;
 }
-.v26-outcome-tile:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+.v26-outcome-tile:hover { background: var(--paper-warm); }
+.v26-outcome-tile.is-zero {
+  background: transparent;
+  border: 1px dashed var(--line-softer);
+  border-left: 3px dashed var(--ink-subtle);
+  opacity: 0.55; cursor: default;
 }
-.v26-outcome-tile.is-zero { opacity: 0.5; cursor: default; }
-.v26-outcome-tile.is-zero:hover { transform: none; box-shadow: none; }
+.v26-outcome-tile.is-zero:hover { background: transparent; }
 .v26-tile-label {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--ink-soft);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 .v26-tile-count {
-  font-size: 22px; font-weight: 800; color: var(--ink, #0F172A);
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 22px; font-weight: 700; color: var(--ink);
   line-height: 1; font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.v26-outcome-tile.is-zero .v26-tile-count {
+  font-size: 16px; font-weight: 500;
 }
 .v26-tile-meta {
-  font-size: 11px; font-weight: 600; color: var(--ink-soft);
-  margin-top: 3px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 10px; font-weight: 500; color: var(--ink-subtle);
+  margin-top: 4px; letter-spacing: 0.02em;
 }
 
 /* v24.26.12 — Region Zone Tiles (replaces India map; zero CDN dependency).
@@ -4370,13 +4400,12 @@
    top-state sub-line. Click any tile → filter Team Analytics by that zone. */
 .v26-region-zone-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   height: 100%;
   align-items: stretch;
 }
-@media (max-width: 1100px){ .v26-region-zone-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 600px){ .v26-region-zone-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px){ .v26-region-zone-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .v26-region-zone-tile {
   background: var(--paper);
   border: 1px solid var(--line-softer);
@@ -6440,7 +6469,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.46';  // v25.46 — V26 DASHBOARD MODULE PORT (Step 2 of 2 for tvONE v26 port). The full v26 dashboard rebuild from BS v24.26.0–v24.26.12 is now ported to tvONE: My Pipeline + Team Analytics dual-tab UI replaces the legacy Review tab. Brings 18 features across 1800+ lines of CSS+JS+HTML transplant. CSS adaptations: --ink-muted → --ink-soft, --surface → --paper, --surface-2 → --paper-warm, --border-soft → --line-softer, --indigo → --gold (var() system handles light/dark theme flip — tvONE has dark default, light opt-in). JS adaptations: window._centralLog → centralLog (tvONE pattern), showTab() → showView() hook (tvONE pattern), 'dashboard' tab key → 'dash' (tvONE pattern). Dropped: Most Quoted Players chart (BrightSign-specific — uses model + outdoorModel + advancedSelectionsJson which don't apply to tvONE chassis configurations). Stub left in JS module for future tvONE-relevant chart (Output Type mix or Chassis utilization). Deprecated: legacy briefingView (Quarterly/Annual review functions) — container kept as harmless dead code, nav button permanently hidden. Functionality moved to v26 dashboard's Team Analytics inner tab. Inherits: all 17 ported features (KPIs, filters, drill-through, deal history modal, top partners/consultants Option B, region zone tiles, outcome scorecard, weekly trend, time-to-close, sales leaderboard, stuck&slipped, CSV export, dark mode-aware ECharts via _themeColors helper). Pairs with backend v26.11.0 — no backend changes.
+  const TVONE_FRONTEND_VERSION = '25.47';  // v25.47 — REGION + OUTCOME POLISH (parity port from BS v24.26.13). Two changes mirror BS exactly: (1) REGION ZONE TILES — dropped International tile (5→4 tiles: West/North/South/East only). Grid recalibrated 5col→4col, breakpoint 900px. (2) OUTCOME SCORECARD — TECH STYLE polish. JetBrains Mono numerals via CSS, sharp 4px corners, lower-saturation green (#059669), equal-weight grid (1fr 2fr), hero gradient flattened, trophy emoji REMOVED, bracketed monospace labels [ OPEN ] / [ WON ], HUD-style corner tick-marks, dashed zero-state tiles, smaller "0" on zero tiles. CSS vars adapted for tvONE: --paper-warm (was --surface-2), --line-softer (was --border-soft), --ink-soft (was --ink-muted), --ink-subtle. Bonus fix: tile count color now controlled by CSS (theme-aware) not inline style — was hardcoded #0F172A which broke in tvONE light mode. Pairs with backend v26.11.0 — no backend changes.
+// v25.46 — V26 DASHBOARD MODULE PORT (Step 2 of 2 for tvONE v26 port). Full v26 dashboard rebuild from BS v24.26.0–v24.26.12 ported to tvONE: My Pipeline + Team Analytics dual-tab UI replaces the legacy Review tab. CSS adaptations: --ink-muted → --ink-soft, --surface → --paper, --surface-2 → --paper-warm, --border-soft → --line-softer, --indigo → --gold. JS adaptations: window._centralLog → centralLog, showTab() → showView() hook, 'dashboard' → 'dash'. Dropped: Most Quoted Players chart (BrightSign-specific). Deprecated: legacy briefingView.
 // v25.45 — BUG FIX PARITY + V26 DASHBOARD FOUNDATION (Step 1 of 2 for tvONE v26 port). Five changes: (1) CONFIRM-ON-EDIT FIX — port from BS v24.26.7. (2) AUTO-FETCH RACE FIX (2 sites: rehydrate + fresh-login) — port from BS v24.25.8. (3) SALES AUTO-DEFAULT OVERRIDE — port from BS v24.25.8. (4) LIGHT-MODE CSS GAP — added [data-theme="light"] .logo-fallback-text override. (5) ECHARTS CDN LOAD — added echarts@5.4.3 + echarts-gl@2.0.9 CDN scripts as foundation for v25.46 dashboard port.
 // v25.44 — Critical-fixes parity port from BS v24.25.0 → v24.25.6. Pipeline cutoff (Apr 1 2026, 'TVONE_PIPELINE_DATA_START'). Header name fallback fix. Test Mode banner upgraded to diagonal-stripe + flashing emoji + bigger Turn-off button + permanent Profile-tab toggle card with explainer (Super-only). Sales Person auto-default extended to Super users. Notification "Untitled" backfill for legacy entries. Resilience: _safeFetchJson with HTML-not-JSON detection + silent retry on review fetch, dup error suppression in error_log_append. Review filter row 4×2 grid. Region card empty state actionable. Pairs with backend v26.11.0 — no backend changes.
 // v25.43 — features #19 Customer 360 modal (clickable endUser in History) + #18 server-side handoff notifications (bell pulls from new Notifications sheet, click jumps to deal). Pairs with backend v26.11.0.
@@ -17281,8 +17311,8 @@ function _cust360EscCloseTV(e){
       }
     });
     function _esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    // Build tiles in fixed zone order (W, N, S, E, International — matches India geography reading order)
-    const ZONES_ORDER = ['West', 'North', 'South', 'East', 'International'];
+    // v25.47 (tvONE parity with BS v24.26.13): Dropped International — 4 zones only (W/N/S/E).
+    const ZONES_ORDER = ['West', 'North', 'South', 'East'];
     const tiles = ZONES_ORDER.map(function(z){
       const c = byZone[z].c;
       const v = byZone[z].v;
@@ -17336,25 +17366,26 @@ function _cust360EscCloseTV(e){
     if(!total){ dom.innerHTML = '<div style="padding:60px;text-align:center;color:var(--ink-soft);">No deals to chart</div>'; return; }
     const closed = counts.Won + counts.Lost;
     const winRate = closed > 0 ? Math.round((counts.Won / closed) * 100) : null;
-    let winColor = '#94A3B8', trophy = '';
+    // v25.47: Lower-saturation greens + trophy removed (parity with BS v24.26.13).
+    let winColor = '#94A3B8';
     if(winRate !== null){
-      if(winRate >= 80){ winColor = '#10B981'; trophy = '🏆'; }
-      else if(winRate >= 60){ winColor = '#10B981'; }
-      else if(winRate >= 40){ winColor = '#F59E0B'; }
-      else { winColor = '#EF4444'; }
+      if(winRate >= 60){ winColor = '#059669'; }
+      else if(winRate >= 40){ winColor = '#D97706'; }
+      else { winColor = '#DC2626'; }
     }
-    const colors = { Open: '#3B82F6', Won: '#10B981', Lost: '#EF4444', 'On hold': '#F59E0B' };
+    // Desaturated palette
+    const colors = { Open: '#2563EB', Won: '#059669', Lost: '#DC2626', 'On hold': '#D97706' };
     const filterValues = { Open: 'open', Won: 'won', Lost: 'lost', 'On hold': 'on-hold' };
     function _esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    // v25.47: Hero markup without trophy, bracketed monospace label
     const heroHtml = winRate !== null
       ? '<div class="v26-winrate-hero">' +
-          (trophy ? '<div class="v26-winrate-trophy">' + trophy + '</div>' : '') +
-          '<div class="v26-winrate-label">Win Rate</div>' +
+          '<div class="v26-winrate-label">[ Win Rate ]</div>' +
           '<div class="v26-winrate-pct" style="color:' + winColor + '">' + winRate + '%</div>' +
-          '<div class="v26-winrate-detail">' + counts.Won + ' won of ' + closed + ' closed deal' + (closed === 1 ? '' : 's') + '</div>' +
+          '<div class="v26-winrate-detail">' + counts.Won + ' / ' + closed + ' closed deal' + (closed === 1 ? '' : 's') + '</div>' +
         '</div>'
       : '<div class="v26-winrate-hero">' +
-          '<div class="v26-winrate-label">Win Rate</div>' +
+          '<div class="v26-winrate-label">[ Win Rate ]</div>' +
           '<div class="v26-winrate-empty">—</div>' +
           '<div class="v26-winrate-detail">No closed deals yet</div>' +
         '</div>';
@@ -17362,11 +17393,13 @@ function _cust360EscCloseTV(e){
       const c = counts[name], v = vals[name];
       const pct = Math.round((c / total) * 100);
       const isZero = c === 0;
+      // v25.47: Bracketed monospace labels. Tile count color now controlled by CSS (theme-aware)
+      // not inline style — was hardcoded #0F172A which broke in tvONE light mode.
       return '<div class="v26-outcome-tile' + (isZero ? ' is-zero' : '') + '" ' +
              'data-outcome="' + filterValues[name] + '" ' +
              'style="border-left-color:' + colors[name] + '">' +
-             '<div class="v26-tile-label">' + _esc(name) + '</div>' +
-             '<div class="v26-tile-count" style="color:' + (isZero ? '#94A3B8' : '#0F172A') + '">' + c + '</div>' +
+             '<div class="v26-tile-label">[ ' + _esc(name) + ' ]</div>' +
+             '<div class="v26-tile-count">' + c + '</div>' +
              '<div class="v26-tile-meta">' + pct + '% · ' + _shortINR(v) + '</div>' +
            '</div>';
     }
