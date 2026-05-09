@@ -13,6 +13,11 @@
 <!-- v25.29: jsPDF + html2canvas for partner-ready PDF export (parity with BS v24.18.1) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- v25.45: ECharts + echarts-gl loaded for v25.46 dashboard rebuild (foundation).
+     ECharts owns all v26 dashboard charts; echarts-gl powers the 3D India map (with 2D + bar fallbacks).
+     Loaded now in v25.45 so the libraries are in place before the v25.46 v26 module port lands. -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
 <style>
   :root {
     /* ====================================================== */
@@ -2316,6 +2321,9 @@
     font-family: 'Manrope', system-ui, sans-serif; font-weight: 700; font-size: 18px;
     color: #fff; letter-spacing: -0.02em;
   }
+  /* v25.45: Light-mode override — white logo-fallback-text is invisible on the cream header bg.
+     Dark mode (default) keeps the white. Light mode flips to the warm dark ink color. */
+  [data-theme="light"] .logo-fallback-text { color: var(--ink); }
   .brand-logo-wrap.logo-fallback .logo-fallback-text { display: inline; }
   .brand-logo-wrap.logo-fallback img { display: none; }
   .brand:hover .brand-logo-wrap img {
@@ -5886,7 +5894,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.44';  // v25.44 — Critical-fixes parity port from BS v24.25.0 → v24.25.6. Pipeline cutoff (Apr 1 2026, 'TVONE_PIPELINE_DATA_START'). Header name fallback fix. Test Mode banner upgraded to diagonal-stripe + flashing emoji + bigger Turn-off button + permanent Profile-tab toggle card with explainer (Super-only). Sales Person auto-default extended to Super users. Notification "Untitled" backfill for legacy entries. Resilience: _safeFetchJson with HTML-not-JSON detection + silent retry on review fetch, dup error suppression in error_log_append. Review filter row 4×2 grid. Region card empty state actionable. Pairs with backend v26.11.0 — no backend changes.
+  const TVONE_FRONTEND_VERSION = '25.45';  // v25.45 — BUG FIX PARITY + V26 DASHBOARD FOUNDATION (Step 1 of 2 for tvONE v26 port). Five changes: (1) CONFIRM-ON-EDIT FIX — port from BS v24.26.7. confirmBtn DOM is OUTSIDE #recoOutput so it persists across navigations; when user edits a previously-confirmed deal and re-renders, button stayed in stale "Confirmed ✓ disabled" state, blocking re-confirmation. Fix: reset disabled/textContent/classes at top of renderResult. (2) AUTO-FETCH RACE FIX (2 sites: rehydrate + fresh-login) — port from BS v24.25.8. Was silent setTimeout(2000) with empty catch — transient blip during preload left centralLog empty for the rest of session, Dashboard rendered empty until manual refresh. New: try-await with 1 retry after 3s, console markers for visibility ([v25.45] centralLog ready/failed). (3) SALES AUTO-DEFAULT OVERRIDE — port from BS v24.25.8. Two new module-scope flags _salesUserTouchedTV / _presalesUserTouchedTV gate the auto-default conditional. Change listeners wired idempotently on dropdown elements (data-attr guard prevents double-binding across the 3 call sites). resetForm() resets both flags so a fresh form allows auto-default again. (4) LIGHT-MODE CSS GAP — added [data-theme="light"] .logo-fallback-text { color: var(--ink); } so white fallback text isn't invisible on cream header bg when logo PNG fails. .chassis-hero was a false positive in audit — has its own dark gradient bg, white text correct in both themes. (5) ECHARTS CDN LOAD — added echarts@5.4.3 + echarts-gl@2.0.9 CDN scripts as foundation for v25.46 dashboard port. Skipped from BS port: phone field String() coercion (already correct in tvONE rowToUser at line ~6606), window.state lurking bug (not present in tvONE codebase). Pairs with backend v26.11.0 — no backend changes. NEXT (v25.46 — Step 2 of 2): Full v26 dashboard port — replace renderQuarterlyReview + renderAnnualReview with v26 module (My Pipeline + Team Analytics), adapt CSS vars for warm palette, adapt schema fields where tvONE differs from BS.
+// v25.44 — Critical-fixes parity port from BS v24.25.0 → v24.25.6. Pipeline cutoff (Apr 1 2026, 'TVONE_PIPELINE_DATA_START'). Header name fallback fix. Test Mode banner upgraded to diagonal-stripe + flashing emoji + bigger Turn-off button + permanent Profile-tab toggle card with explainer (Super-only). Sales Person auto-default extended to Super users. Notification "Untitled" backfill for legacy entries. Resilience: _safeFetchJson with HTML-not-JSON detection + silent retry on review fetch, dup error suppression in error_log_append. Review filter row 4×2 grid. Region card empty state actionable. Pairs with backend v26.11.0 — no backend changes.
 // v25.43 — features #19 Customer 360 modal (clickable endUser in History) + #18 server-side handoff notifications (bell pulls from new Notifications sheet, click jumps to deal). Pairs with backend v26.11.0.
   // v25.42 — Feature parity bundle with BS v24.22.0
   // v25.41 — drop frontend scope re-filter
@@ -6853,13 +6862,29 @@
 
       try { checkWebhookHealth(); } catch (_) {}
       setTimeout(function () { try { drainPendingQueue(); } catch (_) {} }, 1500);
-      setTimeout(async function () {
-        try {
-          const _r = await fetchLog();
-          _rawCentralLog = _r;
-          centralLog = scopeRowsToUser_(_r);
-        } catch (e) { /* silent */ }
-      }, 2000);
+      // v25.45: Replace silent setTimeout with proper await + 1 retry + console marker.
+      // Race fix port from BS v24.25.8 — without retry, a transient network blip during
+      // rehydrate left centralLog empty for the rest of the session, and Dashboard rendered
+      // empty until manual refresh. Two-step: try once, on fail wait 3s and retry once,
+      // log final outcome to console for visibility.
+      (async function _preloadCentralLogTV(){
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const _r = await fetchLog();
+            _rawCentralLog = _r;
+            centralLog = scopeRowsToUser_(_r);
+            console.log('[v25.45] centralLog ready (rehydrate, attempt ' + attempt + '): ' + (Array.isArray(_r) ? _r.length : 0) + ' entries');
+            return;
+          } catch (e) {
+            if (attempt === 1) {
+              console.warn('[v25.45] centralLog fetch failed on rehydrate, retrying in 3s:', e && e.message ? e.message : e);
+              await new Promise(function(r){ setTimeout(r, 3000); });
+            } else {
+              console.error('[v25.45] centralLog fetch failed on rehydrate (final):', e && e.message ? e.message : e);
+            }
+          }
+        }
+      })();
 
       // v25.35: Profile Gate also runs on rehydrate. Without this, refreshing the page
       // bypasses the gate even if the profile is incomplete.
@@ -7007,10 +7032,26 @@
       checkWebhookHealth();
       // Finalize any deals that didn't complete last time
       setTimeout(drainPendingQueue, 1500);
-      // Pre-load the full dataset in the background for duplicate detection
-      setTimeout(async function() {
-        try { const _r = await fetchLog(); _rawCentralLog = _r; centralLog = scopeRowsToUser_(_r); } catch (e) { /* silent */ }
-      }, 2000);
+      // v25.45: Pre-load full dataset with proper await + 1 retry + console marker.
+      // Race fix port from BS v24.25.8 — see _preloadCentralLogTV in rehydrate path.
+      (async function _preloadCentralLogTV(){
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const _r = await fetchLog();
+            _rawCentralLog = _r;
+            centralLog = scopeRowsToUser_(_r);
+            console.log('[v25.45] centralLog ready (fresh-login, attempt ' + attempt + '): ' + (Array.isArray(_r) ? _r.length : 0) + ' entries');
+            return;
+          } catch (e) {
+            if (attempt === 1) {
+              console.warn('[v25.45] centralLog fetch failed on fresh-login, retrying in 3s:', e && e.message ? e.message : e);
+              await new Promise(function(r){ setTimeout(r, 3000); });
+            } else {
+              console.error('[v25.45] centralLog fetch failed on fresh-login (final):', e && e.message ? e.message : e);
+            }
+          }
+        }
+      })();
     } catch (e) {
       err.textContent = 'Connection issue — please try again.';
       err.classList.add('show');
@@ -8831,6 +8872,19 @@
   // RESULT VIEW
   // =================================================================
   function renderResult(input, reco) {
+    // v25.45: Reset confirm button state at every renderResult call.
+    // confirmBtn is OUTSIDE #recoOutput in the static HTML (line ~4743) so the DOM element
+    // persists across navigations. When user edits a previously-confirmed deal and re-renders,
+    // the button retained its stale "Confirmed ✓ disabled" state, blocking re-confirmation.
+    // Fix port from BS v24.26.7 confirm-on-edit production bug.
+    try {
+      const _confirmBtn = document.getElementById('confirmBtn');
+      if (_confirmBtn) {
+        _confirmBtn.disabled = false;
+        _confirmBtn.textContent = '✓ Confirm Submission';
+        _confirmBtn.classList.remove('confirmed');
+      }
+    } catch(_){ /* defensive — should never throw, but bullet-proofing the entry path */ }
     const m = reco.model;
     let html = '';
 
@@ -11069,6 +11123,12 @@
   // — that would match "Presales" too because the substring 'sale' is in 'presales').
   // Sales eligible: role === 'Sales' OR isSuper.
   // Presales eligible: role === 'Presales' OR isSuper.
+  // v25.45: Track if user has manually touched the salesPerson dropdown. Once touched,
+  // don't auto-default ever again — even if the dropdown re-populates (3 call sites).
+  // Bug class: user manually clears to placeholder → form re-renders → auto-default
+  // overrides their intentional clear. Fix port from BS v24.25.8.
+  let _salesUserTouchedTV = false;
+  let _presalesUserTouchedTV = false;
   async function _populateSalesPresalesDropdownsTV() {
     const salesSel = document.getElementById('f_salesPerson');
     const presalesSel = document.getElementById('f_presalesPerson');
@@ -11125,13 +11185,14 @@
       const isMyRoleSales = /^Sales$/i.test(myRole) || /^BU[\s-]*Head$/i.test(myRole) || currentUser.isSuper === true || /^Super$/i.test(myRole);
       const isMyRolePresales = /^Presales$/i.test(myRole);
 
-      if (!currentSales && isMyRoleSales) {
+      // v25.45: Skip auto-default if user has manually touched the dropdown this session.
+      if (!currentSales && isMyRoleSales && !_salesUserTouchedTV) {
         if (salesSel.querySelector('option[value="' + CSS.escape(myUname) + '"]')) {
           salesSel.value = myUname;
           console.log('[salesPerson auto-default TV] Applied:', myUname, '(role:', myRole + ')');
         }
       }
-      if (!currentPresales && isMyRolePresales) {
+      if (!currentPresales && isMyRolePresales && !_presalesUserTouchedTV) {
         if (presalesSel.querySelector('option[value="' + CSS.escape(myUname) + '"]')) {
           presalesSel.value = myUname;
         }
@@ -11144,6 +11205,18 @@
     }
     if (currentPresales && presalesSel.querySelector('option[value="' + CSS.escape(currentPresales) + '"]')) {
       presalesSel.value = currentPresales;
+    }
+
+    // v25.45: Wire change listeners idempotently (data attribute guards against double-binding
+    // since this function runs at multiple call sites). Once set on user action, the flag stays
+    // true for the session — only resetForm() will clear it.
+    if (!salesSel.dataset.touchListenerWired) {
+      salesSel.addEventListener('change', function(){ _salesUserTouchedTV = true; });
+      salesSel.dataset.touchListenerWired = '1';
+    }
+    if (!presalesSel.dataset.touchListenerWired) {
+      presalesSel.addEventListener('change', function(){ _presalesUserTouchedTV = true; });
+      presalesSel.dataset.touchListenerWired = '1';
     }
   }
 
@@ -11456,6 +11529,10 @@
     window._tvDraftSkipSave = true;
     // v25.35 (#6): clear dirty flag — programmatic reset is not an "unsaved change"
     window._formDirtyTV = false;
+    // v25.45: reset userTouched flags so a fresh form allows auto-default to apply again.
+    // Without this, after one full save cycle the auto-default would never fire again this session.
+    _salesUserTouchedTV = false;
+    _presalesUserTouchedTV = false;
     ['f_project','f_endUser','f_partner','f_consultant','f_city','f_partnerContactName','f_partnerContactPhone','f_partnerContactEmail','f_leadSource','f_outcome','f_inputs','f_inputs4K','f_inputsFHD','f_notes','f_close','f_projectorCount','f_sdiCount','f_dealValueINR','f_outcomeReason','f_outcomeReasonNote','f_stageNote','f_salesPerson','f_presalesPerson'].forEach(function(id) {
       var el = document.getElementById(id);
       if (el) el.value = '';
