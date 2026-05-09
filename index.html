@@ -976,6 +976,86 @@
     text-shadow: 0 2px 20px rgba(212, 175, 55, 0.2);
   }
   .btn-row { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+
+  /* v25.49 — Option B action button row (tvONE flavor with warm gold accent).
+     Parity with BS v24.26.17 styling. Equal-width grid, single accent, only Confirm filled.
+     Existing button.primary/.secondary classes UNTOUCHED — used elsewhere in app. */
+  .action-bar-v2-tv{
+    display:grid;
+    grid-template-columns:repeat(6, minmax(78px, 1fr));
+    gap:8px;
+    margin-top:18px;
+    padding:10px;
+    background:var(--paper-warm);
+    border:1px solid var(--line-softer);
+    border-radius:14px;
+  }
+  .ab2tv-btn{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    background:transparent;
+    color:var(--gold-bright);
+    border:1px solid rgba(212, 175, 55, 0.35);
+    border-radius:10px;
+    padding:10px 6px;
+    min-height:64px;
+    font-family:'Manrope',sans-serif;
+    font-size:11.5px;line-height:1.2;font-weight:600;letter-spacing:0.01em;
+    cursor:pointer;
+    transition:all 140ms;
+    text-align:center;
+  }
+  .ab2tv-btn:hover{
+    background:rgba(212, 175, 55, 0.10);
+    border-color:var(--gold-bright);
+    transform:translateY(-1px);
+  }
+  .ab2tv-btn:active{transform:translateY(0);}
+  .ab2tv-btn:disabled{opacity:0.55;cursor:not-allowed;transform:none;}
+  .ab2tv-btn .ab2tv-ic{ width:20px;height:20px;display:block;flex-shrink:0; }
+  .ab2tv-btn .ab2tv-label{display:block;}
+  .ab2tv-btn.is-back{
+    color:var(--ink-soft);
+    border-color:var(--line-softer);
+  }
+  .ab2tv-btn.is-back:hover{
+    background:var(--paper);
+    border-color:var(--ink-soft);
+    color:var(--ink);
+  }
+  .ab2tv-btn.is-primary{
+    background:var(--gold-bright);
+    color:#0F172A;
+    border-color:var(--gold-bright);
+    box-shadow:0 4px 12px rgba(212, 175, 55, 0.30);
+  }
+  .ab2tv-btn.is-primary:hover{
+    background:#BC9A2C;
+    border-color:#BC9A2C;
+    box-shadow:0 6px 16px rgba(212, 175, 55, 0.40);
+  }
+  .ab2tv-btn.is-primary:disabled{
+    background:rgba(212, 175, 55, 0.5);
+    border-color:rgba(212, 175, 55, 0.5);
+    box-shadow:none;
+  }
+  /* Light-mode override for tvONE (which is dark by default) */
+  [data-theme="light"] .ab2tv-btn.is-primary{
+    color:#0F172A;
+  }
+  /* Mobile: 3-col grid */
+  @media (max-width: 640px){
+    .action-bar-v2-tv{
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      gap:6px;
+      padding:8px;
+    }
+    .ab2tv-btn{
+      min-height:56px;
+      font-size:10.5px;
+      padding:8px 4px;
+    }
+    .ab2tv-btn .ab2tv-ic{ width:18px;height:18px; }
+  }
   button.primary, button.secondary {
     font-family: inherit; font-size: 14.5px; font-weight: 700; padding: 13px 28px;
     border-radius: 10px; border: 1px solid transparent; cursor: pointer;
@@ -5343,15 +5423,51 @@
   <div id="resultView" class="page hidden">
     <h1 class="page-title">Recommendation & BOM</h1>
     <div id="recoOutput"></div>
-    <div class="btn-row">
-      <button class="secondary" onclick="backToEdit()">← Back to Edit</button>
-      <button class="primary" onclick="exportToExcel()">⬇ Download Excel (.xlsx)</button>
-      <!-- v25.29: PDF + WhatsApp + Email modal (parity with BS v24.18.1) -->
-      <button class="primary" onclick="exportQuotePDFTV()" title="Download a partner-ready PDF of this quote">📄 Download PDF</button>
-      <button class="primary" onclick="shareViaWhatsAppTV()" title="Share quote summary via WhatsApp" style="background:#25D366;border-color:#25D366;">📱 WhatsApp</button>
-      <button class="primary" onclick="openEmailModalTV()" title="Email PDF quote to partner with CC to Cavitak">✉ Email to partner</button>
-      <button class="primary danger" onclick="confirmSubmission()" id="confirmBtn">✓ Confirm Submission</button>
-      <button class="secondary" onclick="window.print()">Print</button>
+    <!-- v25.49: Option B action bar — equal-width grid, single gold accent, only Confirm filled.
+         Real brand SVG icons inline (no emoji — render identically across all platforms).
+         confirmBtn ID preserved for existing JS (4 selectors at lines ~7675, 7688, 8246, 9760).
+         Print button moved to a smaller secondary action below. -->
+    <div class="btn-row action-bar-v2-tv">
+      <button class="ab2tv-btn is-back" onclick="backToEdit()" title="Back to edit">
+        <svg class="ab2tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        <span class="ab2tv-label">Back</span>
+      </button>
+      <button class="ab2tv-btn is-primary" id="confirmBtn" onclick="confirmSubmission()" title="Confirm and save submission">
+        <svg class="ab2tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        <span class="ab2tv-label">Confirm</span>
+      </button>
+      <button class="ab2tv-btn" onclick="exportToExcel()" title="Download Excel quote (.xlsx)">
+        <svg class="ab2tv-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <text x="12" y="17" text-anchor="middle" font-size="6" font-weight="700" fill="currentColor" font-family="Arial,sans-serif">XLS</text>
+        </svg>
+        <span class="ab2tv-label">Excel</span>
+      </button>
+      <button class="ab2tv-btn" onclick="exportQuotePDFTV()" title="Download PDF quote">
+        <svg class="ab2tv-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <text x="12" y="17" text-anchor="middle" font-size="6" font-weight="700" fill="currentColor" font-family="Arial,sans-serif">PDF</text>
+        </svg>
+        <span class="ab2tv-label">PDF</span>
+      </button>
+      <button class="ab2tv-btn" onclick="shareViaWhatsAppTV()" title="Share quote via WhatsApp">
+        <svg class="ab2tv-ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.002-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/>
+        </svg>
+        <span class="ab2tv-label">WhatsApp</span>
+      </button>
+      <button class="ab2tv-btn" onclick="openEmailModalTV()" title="Email quote to partner (Cavitak CC'd)">
+        <svg class="ab2tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+        <span class="ab2tv-label">Email</span>
+      </button>
+    </div>
+    <div style="text-align:center; margin-top:12px;">
+      <button class="secondary" onclick="window.print()" style="font-size:12px; padding:6px 16px;">Print</button>
     </div>
   </div>
 
@@ -6523,7 +6639,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.48';  // v25.48 — PASSWORD SHOW/HIDE TOGGLE on login (parity with BS v24.26.16). Standard pattern: 👁 button at right edge of #loginPass. Click to reveal, click again to hide. Warm gold accent color matching tvONE theme. Window-scoped togglePasswordVisibilityTV helper so inline onclick attribute can reach it. Caret position preserved on toggle. Pairs with backend v26.11.0 — no backend changes.
+  const TVONE_FRONTEND_VERSION = '25.49';  // v25.49 — TWO FEATURES BUNDLED (parity port from BS v24.26.17). (1) KEYBOARD SHORTCUTS (laptop/desktop) — Ctrl/Cmd+S → Save (form: _saveDraftTV, result: confirm), Ctrl/Cmd+Enter → Submit (form: #calcBtn, result: confirm), Esc → Close top open modal, / → Focus search (hl_search in History, customerSearch in Directory), ? → Show shortcuts help overlay. Plus discoverability ? button next to version footer. tvONE-specific adaptations: page IDs (formView/resultView/historyView/dashView vs section-form/section-result), search input IDs (hl_search vs history-search-input), submit button (#calcBtn vs action-recommend), help overlay uses gold accent. (2) ACTION BUTTON STYLING (Option B parity) — replaces inconsistent button.primary/.secondary mix on result page with action-bar-v2-tv + ab2tv-btn classes. Outlined gold accent (matches tvONE theme), only Confirm filled. Equal-width 6-col grid with real brand SVG icons (no emoji). Mobile: 3-col grid below 640px. Print button moved below action bar as smaller secondary action. Existing button.primary/.secondary classes UNTOUCHED. Critical: #confirmBtn ID preserved so existing JS at lines 7791/7804/8362/9876 still finds it. Updated 2 confirmBtn manipulation sites (line 8362 confirmSubmission, line 9876 v25.45 reset port) to use .ab2tv-label.textContent instead of btn.textContent (would wipe SVG icon). Pairs with backend v26.11.0 — no backend changes.
+// v25.48 — PASSWORD SHOW/HIDE TOGGLE on login (parity with BS v24.26.16). 👁 button at right edge of #loginPass. Warm gold accent.
 // v25.47 — REGION + OUTCOME POLISH (parity port from BS v24.26.13). Region zones: 5→4 tiles (W/N/S/E). Outcome scorecard tech-style polish.
 // v25.46 — V26 DASHBOARD MODULE PORT (Step 2 of 2 for tvONE v26 port). Full v26 dashboard rebuild from BS v24.26.0–v24.26.12 ported to tvONE: My Pipeline + Team Analytics dual-tab UI replaces the legacy Review tab. CSS adaptations: --ink-muted → --ink-soft, --surface → --paper, --surface-2 → --paper-warm, --border-soft → --line-softer, --indigo → --gold. JS adaptations: window._centralLog → centralLog, showTab() → showView() hook, 'dashboard' → 'dash'. Dropped: Most Quoted Players chart (BrightSign-specific). Deprecated: legacy briefingView.
 // v25.45 — BUG FIX PARITY + V26 DASHBOARD FOUNDATION (Step 1 of 2 for tvONE v26 port). Five changes: (1) CONFIRM-ON-EDIT FIX — port from BS v24.26.7. (2) AUTO-FETCH RACE FIX (2 sites: rehydrate + fresh-login) — port from BS v24.25.8. (3) SALES AUTO-DEFAULT OVERRIDE — port from BS v24.25.8. (4) LIGHT-MODE CSS GAP — added [data-theme="light"] .logo-fallback-text override. (5) ECHARTS CDN LOAD — added echarts@5.4.3 + echarts-gl@2.0.9 CDN scripts as foundation for v25.46 dashboard port.
@@ -7575,6 +7692,221 @@
     } catch(_){}
   };
 
+  /* ================================================================
+   * v25.49 — KEYBOARD SHORTCUTS MODULE (parity port from BS v24.26.17)
+   * ================================================================
+   * Five shortcuts: Ctrl/Cmd+S → Save, Ctrl/Cmd+Enter → Submit, Esc → close modal,
+   * / → focus search, ? → help overlay. Plus discoverability ? button next to footer.
+   * tvONE-specific adaptations:
+   *   - Page IDs: formView (was section-form), resultView (was section-result),
+   *     historyView (was section-log), dashView (was section-dashboard).
+   *   - Search input IDs: hl_search (history), customerSearch (directory).
+   *   - Submit button: #calcBtn (instead of action-recommend / action-generate-boq).
+   *   - Confirm button: #confirmBtn.
+   *   - Theme accent: gold (--gold-bright) instead of indigo.
+   * ================================================================ */
+  (function(){
+    'use strict';
+    const IS_MAC = /Mac|iPad|iPhone/.test(navigator.platform);
+    const META_LABEL = IS_MAC ? '⌘' : 'Ctrl';
+
+    function _isTypingTarget(t){
+      if(!t) return false;
+      const tag = (t.tagName || '').toUpperCase();
+      if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+      if(t.isContentEditable) return true;
+      return false;
+    }
+
+    function _activeView(){
+      // Returns the ID of the visible page (tvONE uses class="page hidden" for inactive pages)
+      const ids = ['formView','resultView','historyView','dashView','teamView',
+                   'directoryView','reviewView','profileView','analyzingView'];
+      for(const id of ids){
+        const el = document.getElementById(id);
+        if(el && !el.classList.contains('hidden') && el.offsetParent !== null) return id;
+      }
+      return null;
+    }
+
+    function _anyModalOpen(){
+      const sels = [
+        '.modal-overlay', '.dir-modal-overlay',
+        '#emailModalTV', '#auditModal', '#forgotPasswordModal',
+        '#customer-detail-modal', '#merge-modal', '#confirm-modal',
+        '#profile-gate-modal-tv', '#shortcuts-help-overlay-tv'
+      ];
+      for(const s of sels){
+        const els = document.querySelectorAll(s);
+        for(const el of els){
+          if(!el) continue;
+          if(el.classList.contains('hidden')) continue;
+          const cs = getComputedStyle(el);
+          if(cs.display !== 'none' && cs.visibility !== 'hidden') return el;
+        }
+      }
+      return null;
+    }
+
+    function _closeTopModal(){
+      const m = _anyModalOpen();
+      if(!m) return false;
+      // Profile gate is non-dismissible
+      if(m.id === 'profile-gate-modal-tv') return false;
+      if(m.classList.contains('modal-overlay') || m.classList.contains('dir-modal-overlay')){
+        m.style.display = 'none';
+      } else {
+        m.classList.add('hidden');
+        m.style.display = 'none';
+      }
+      return true;
+    }
+
+    function _focusContextSearch(){
+      const view = _activeView();
+      let target = null;
+      if(view === 'historyView') target = document.getElementById('hl_search');
+      else if(view === 'directoryView') target = document.getElementById('customerSearch');
+      else if(view === 'dashView'){
+        target = document.querySelector('#dashView input[type="search"], #dashView input[placeholder*="search" i]');
+      }
+      if(!target) target = document.querySelector('input[type="search"]:not([style*="display:none"])');
+      if(target && typeof target.focus === 'function'){
+        target.focus({preventScroll:false});
+        try { target.select(); } catch(_){}
+        return true;
+      }
+      return false;
+    }
+
+    function _doSave(){
+      const view = _activeView();
+      if(view === 'formView'){
+        // tvONE form has its own draft save: _saveDraftTV
+        if(typeof window._saveDraftTV === 'function'){ try { window._saveDraftTV(); } catch(_){} }
+        else if(typeof _saveDraftTV === 'function'){ try { _saveDraftTV(); } catch(_){} }
+        _flashStatus('Draft saved');
+        return true;
+      }
+      if(view === 'resultView'){
+        const btn = document.getElementById('confirmBtn');
+        if(btn && !btn.disabled){ btn.click(); return true; }
+      }
+      return false;
+    }
+
+    function _doSubmit(){
+      const view = _activeView();
+      if(view === 'formView'){
+        const calc = document.getElementById('calcBtn');
+        if(calc && !calc.disabled){ calc.click(); return true; }
+      }
+      if(view === 'resultView'){
+        const btn = document.getElementById('confirmBtn');
+        if(btn && !btn.disabled){ btn.click(); return true; }
+      }
+      return false;
+    }
+
+    function _flashStatus(msg){
+      if(typeof showSync === 'function'){
+        try { showSync(msg, 'success'); return; } catch(_){}
+      }
+      let f = document.getElementById('shortcut-flash-tv');
+      if(!f){
+        f = document.createElement('div');
+        f.id = 'shortcut-flash-tv';
+        f.style.cssText = 'position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#0F172A;color:#fff;padding:8px 16px;border-radius:6px;font-size:13px;font-family:Manrope,sans-serif;z-index:99999;opacity:0;transition:opacity 180ms;pointer-events:none;';
+        document.body.appendChild(f);
+      }
+      f.textContent = msg;
+      f.style.opacity = '1';
+      clearTimeout(f._t);
+      f._t = setTimeout(function(){ f.style.opacity = '0'; }, 1400);
+    }
+
+    function _toggleHelpOverlay(){
+      let ov = document.getElementById('shortcuts-help-overlay-tv');
+      if(ov){ ov.remove(); return; }
+      ov = document.createElement('div');
+      ov.id = 'shortcuts-help-overlay-tv';
+      ov.className = 'modal-overlay';
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);display:flex;align-items:center;justify-content:center;z-index:99998;';
+      ov.innerHTML =
+        '<div style="background:var(--paper);color:var(--ink);border-radius:12px;padding:24px 28px;max-width:460px;width:calc(100% - 40px);box-shadow:0 24px 60px rgba(0,0,0,0.45);font-family:Manrope,sans-serif;border:1px solid var(--line-softer);">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">' +
+            '<div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;color:var(--gold-bright);">Keyboard shortcuts</div>' +
+            '<button type="button" onclick="document.getElementById(\'shortcuts-help-overlay-tv\').remove();" aria-label="Close" style="background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--ink-soft);padding:0;line-height:1;">×</button>' +
+          '</div>' +
+          '<div style="display:grid;grid-template-columns:auto 1fr;gap:10px 18px;font-size:13px;line-height:1.5;">' +
+            '<kbd style="font-family:JetBrains Mono,monospace;background:var(--paper-warm);border:1px solid var(--line-softer);border-radius:4px;padding:2px 8px;font-size:12px;white-space:nowrap;color:var(--gold-bright);">' + META_LABEL + ' + S</kbd><div>Save (draft in form, or confirm on result)</div>' +
+            '<kbd style="font-family:JetBrains Mono,monospace;background:var(--paper-warm);border:1px solid var(--line-softer);border-radius:4px;padding:2px 8px;font-size:12px;white-space:nowrap;color:var(--gold-bright);">' + META_LABEL + ' + Enter</kbd><div>Calculate / Confirm</div>' +
+            '<kbd style="font-family:JetBrains Mono,monospace;background:var(--paper-warm);border:1px solid var(--line-softer);border-radius:4px;padding:2px 8px;font-size:12px;white-space:nowrap;color:var(--gold-bright);">Esc</kbd><div>Close any open modal</div>' +
+            '<kbd style="font-family:JetBrains Mono,monospace;background:var(--paper-warm);border:1px solid var(--line-softer);border-radius:4px;padding:2px 8px;font-size:12px;white-space:nowrap;color:var(--gold-bright);">/</kbd><div>Focus search (in History / Directory / Dashboard)</div>' +
+            '<kbd style="font-family:JetBrains Mono,monospace;background:var(--paper-warm);border:1px solid var(--line-softer);border-radius:4px;padding:2px 8px;font-size:12px;white-space:nowrap;color:var(--gold-bright);">?</kbd><div>Show this help</div>' +
+          '</div>' +
+          '<div style="margin-top:18px;font-size:11px;color:var(--ink-subtle);">Press Esc to close.</div>' +
+        '</div>';
+      ov.addEventListener('click', function(e){ if(e.target === ov) ov.remove(); });
+      document.body.appendChild(ov);
+    }
+    window._shortcutsHelpTV = _toggleHelpOverlay;
+
+    document.addEventListener('keydown', function(e){
+      if(e.isComposing || e.keyCode === 229) return;
+      const isMod = e.metaKey || e.ctrlKey;
+      const k = e.key;
+
+      if(k === 'Escape'){
+        if(_closeTopModal()){ e.preventDefault(); }
+        return;
+      }
+      if(isMod && (k === 's' || k === 'S')){
+        e.preventDefault();
+        _doSave();
+        return;
+      }
+      if(isMod && (k === 'Enter' || k === 'Return')){
+        e.preventDefault();
+        _doSubmit();
+        return;
+      }
+      if(k === '/' && !isMod && !_isTypingTarget(e.target)){
+        if(_anyModalOpen()) return;
+        if(_focusContextSearch()){ e.preventDefault(); }
+        return;
+      }
+      if(k === '?' && !_isTypingTarget(e.target)){
+        e.preventDefault();
+        _toggleHelpOverlay();
+        return;
+      }
+    });
+
+    // Discoverability: small ? button next to version footer (tvONE uses #app-version-footer-tv)
+    function _injectHelpButton(){
+      if(document.getElementById('shortcut-help-btn-tv')) return;
+      const footer = document.getElementById('app-version-footer-tv');
+      if(!footer) return;
+      const btn = document.createElement('button');
+      btn.id = 'shortcut-help-btn-tv';
+      btn.type = 'button';
+      btn.setAttribute('aria-label', 'Keyboard shortcuts');
+      btn.title = 'Keyboard shortcuts (' + META_LABEL + '+S, ' + META_LABEL + '+Enter, /, ?)';
+      btn.textContent = '?';
+      btn.style.cssText = 'position:fixed;bottom:8px;right:64px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line-softer);background:var(--paper);color:var(--ink-soft);font-size:13px;font-weight:700;cursor:pointer;font-family:Manrope,sans-serif;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;opacity:0.5;transition:opacity 120ms;z-index:50;';
+      btn.addEventListener('mouseenter', function(){ btn.style.opacity = '1'; });
+      btn.addEventListener('mouseleave', function(){ btn.style.opacity = '0.5'; });
+      btn.addEventListener('click', _toggleHelpOverlay);
+      document.body.appendChild(btn);
+    }
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', _injectHelpButton);
+    } else {
+      setTimeout(_injectHelpButton, 0);
+    }
+  })();
+
   async function attemptLogin() {
     const u = document.getElementById('loginUser').value.trim().toLowerCase();
     const p = document.getElementById('loginPass').value;
@@ -8030,7 +8362,10 @@
     }
     const btn = document.getElementById('confirmBtn');
     btn.disabled = true;
-    btn.textContent = 'Confirming…';
+    // v25.49: Confirm button now contains SVG + .ab2tv-label span. Update label text only.
+    const _lbl = btn.querySelector('.ab2tv-label');
+    if(_lbl) _lbl.textContent = 'Confirming…';
+    else btn.textContent = 'Confirming…';  // safety fallback
     showSync('Confirming…', 'pending');
     try {
       if (!OFFLINE_MODE && typeof WEB_APP_URL === 'string' && WEB_APP_URL) {
@@ -8050,7 +8385,10 @@
       showSync('Could not confirm — try again', 'error');
     }
     btn.disabled = false;
-    btn.textContent = '✓ Confirm Submission';
+    // v25.49: Reset label, not textContent
+    const _lblReset = btn.querySelector('.ab2tv-label');
+    if(_lblReset) _lblReset.textContent = 'Confirm';
+    else btn.textContent = '✓ Confirm Submission';
     // Clear everything and return to empty input page
     lastResult = null;
     resetForm();
@@ -9545,8 +9883,15 @@
       const _confirmBtn = document.getElementById('confirmBtn');
       if (_confirmBtn) {
         _confirmBtn.disabled = false;
-        _confirmBtn.textContent = '✓ Confirm Submission';
+        // v25.49: Reset label only (preserves SVG inside button)
+        const _lbl = _confirmBtn.querySelector('.ab2tv-label');
+        if(_lbl) _lbl.textContent = 'Confirm';
+        else _confirmBtn.textContent = '✓ Confirm Submission';  // safety fallback
         _confirmBtn.classList.remove('confirmed');
+        // Clear any inline styles applied during confirm-success state (background/border)
+        _confirmBtn.style.background = '';
+        _confirmBtn.style.borderColor = '';
+        _confirmBtn.style.opacity = '';
       }
     } catch(_){ /* defensive — should never throw, but bullet-proofing the entry path */ }
     const m = reco.model;
