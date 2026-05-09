@@ -4199,10 +4199,14 @@
 <!-- APP -->
 <div id="appScreen" class="hidden">
   <!-- v25.35 (#12): Test-mode banner — sticky orange strip when user has test mode on.
-       Submissions made now are flagged isTest=TRUE in col CB and excluded from Dashboard
-       + Review aggregations on the frontend. Toggle in Profile tab. -->
-  <div id="test-mode-banner-tv" style="display:none;background:linear-gradient(90deg,#F59E0B,#D97706);color:#fff;padding:7px 16px;font-size:12.5px;font-weight:600;letter-spacing:0.04em;text-align:center;position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(245,158,11,0.35);">
-    🧪 TEST MODE — submissions made now are flagged <code style="background:rgba(255,255,255,0.2);padding:1px 6px;border-radius:3px;font-family:monospace;">isTest=TRUE</code> and excluded from Dashboard + Review aggregations.
+       v25.44 — Made screaming-obvious. Diagonal stripes + flashing emoji + bigger Turn-off
+       button so owners stop wondering "why is my data missing from analytics" when test
+       mode was left on accidentally. -->
+  <div id="test-mode-banner-tv" style="display:none;background:repeating-linear-gradient(45deg,#F59E0B 0,#F59E0B 12px,#D97706 12px,#D97706 24px);color:#fff;padding:11px 16px;font-size:13.5px;font-weight:700;letter-spacing:0.04em;text-align:center;position:sticky;top:0;z-index:60;box-shadow:0 2px 10px rgba(245,158,11,0.40);border-bottom:2px solid #B45309;">
+    <span style="font-size:16px;animation:tm-flash-tv 1.6s ease-in-out infinite;display:inline-block;">🧪</span>
+    <span style="margin-left:8px;">TEST MODE ACTIVE — every submission is flagged <code style="background:rgba(0,0,0,0.20);padding:2px 8px;border-radius:4px;font-family:monospace;font-size:12px;">isTest=TRUE</code> and HIDDEN from Dashboard + Review analytics.</span>
+    <button onclick="setTestModeTV(false)" style="margin-left:14px;background:#fff;color:#B45309;border:none;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:0.03em;text-transform:uppercase;box-shadow:0 2px 4px rgba(0,0,0,0.20);">Turn off</button>
+    <style>@keyframes tm-flash-tv{0%,100%{opacity:1}50%{opacity:0.5}}</style>
   </div>
   <header class="app-header">
     <!-- Row 1: Brand (left) · User + Controls + Exit (right) -->
@@ -4267,7 +4271,7 @@
     <nav class="header-nav-row">
       <button onclick="startNewConfig()" id="newCfgBtn" class="nav-tab"><span class="nav-tab-ico">＋</span>New Selection</button>
       <button onclick="showView('result')" id="resultBtn" class="nav-tab hidden"><span class="nav-tab-ico">✓</span>Result</button>
-      <button onclick="showView('history')" id="historyBtn" class="nav-tab hidden"><span class="nav-tab-ico">◷</span>History</button>
+      <button onclick="showView('history')" id="historyBtn" class="nav-tab hidden"><span class="nav-tab-ico">◷</span>History<span id="history-tab-badge-tv" class="nav-tab-badge-tv" style="display:none;" title="Deals where you're tagged for handoff">0</span></button>
       <button onclick="showView('dash')" id="logBtn" class="nav-tab hidden"><span class="nav-tab-ico">▦</span>Dashboard</button>
       <button onclick="showView('customers')" id="customersBtn" class="nav-tab hidden"><span class="nav-tab-ico">◉</span>Directory</button>
       <button onclick="showView('briefing')" id="briefingBtn" class="nav-tab hidden"><span class="nav-tab-ico">◈</span>Review</button>
@@ -5301,7 +5305,8 @@
         <span id="review-filters-caret-tv" style="font-size:14px; color:var(--ink-soft); transition:transform 0.18s ease;">▾</span>
       </button>
       <div id="review-filters-panel-tv" style="display:none; padding:14px 16px 16px; border-top:1px solid var(--border-soft);">
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
+        <!-- v25.44 — explicit 4-col grid at desktop, falls to 3/2/1 responsively -->
+        <div class="rftv-grid" style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:14px;">
           <div data-filter-group="leadSource">
             <div class="rftv-label">Source</div>
             <div class="rftv-options" id="rftv-leadSource"></div>
@@ -5331,6 +5336,11 @@
             <div class="rftv-options rftv-options-scroll" id="rftv-consultant"></div>
           </div>
         </div>
+        <style>
+          @media (max-width:1024px){ #review-filters-panel-tv .rftv-grid{grid-template-columns:repeat(3, minmax(0, 1fr));} }
+          @media (max-width:720px){ #review-filters-panel-tv .rftv-grid{grid-template-columns:repeat(2, minmax(0, 1fr));} }
+          @media (max-width:480px){ #review-filters-panel-tv .rftv-grid{grid-template-columns:1fr;} }
+        </style>
         <div id="review-filters-active-tv" style="margin-top:12px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; min-height:0;"></div>
         <div style="margin-top:10px; display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
           <button type="button" class="btn-secondary" onclick="clearAllReviewFiltersTV()" style="font-size:12px; padding:6px 12px;">Clear all</button>
@@ -5498,18 +5508,29 @@
     <h1 class="page-title">My Account</h1>
     <p class="page-sub">View your account, update your contact details, and manage your password.</p>
 
-    <!-- v25.35 (#12): Test mode toggle card. Per-user, localStorage-backed.
+    <!-- v25.35 (#12) / v25.44: Test mode toggle card. Per-user, localStorage-backed.
          When ON, deals submitted are flagged isTest=TRUE in col CB and excluded from
-         Dashboard + Review aggregations. Banner appears at the top of the app. -->
+         Dashboard + Review aggregations. Banner appears at the top of the app.
+         v25.44 — clearer explainer of what test mode is + when to use it. -->
     <div class="card" style="background:#FFFBEB;border:1px solid #FCD34D;">
-      <div class="card-title" style="color:#92400E;">🧪 Test Mode</div>
-      <div style="font-size:14px; color:var(--ink-soft); margin-bottom:14px; line-height:1.6">
-        Submissions made while Test Mode is on are flagged as test data and excluded from your team's analytics. Use this when training, demoing, or experimenting — keep real deals separate from real numbers.
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:11px;letter-spacing:0.10em;text-transform:uppercase;color:#B45309;font-weight:700;">🧪 Test Mode</span>
+        <span id="test-mode-status-pill-tv" style="font-size:12px;font-weight:700;letter-spacing:0.05em;padding:2px 8px;border-radius:999px;background:#F1F5F9;color:#64748B;">OFF</span>
       </div>
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;">
-        <input type="checkbox" id="test-mode-checkbox-tv" onchange="setTestModeTV(this.checked)" style="width:18px;height:18px;cursor:pointer;">
-        <span>Test Mode is <span id="test-mode-label-tv" style="font-weight:700;color:var(--ink-soft);">OFF</span></span>
+      <div style="font-size:13px; color:var(--ink); margin-bottom:8px; line-height:1.5;">
+        <strong>What is Test Mode?</strong> When ON, every deal you save is flagged
+        <code style="background:rgba(0,0,0,0.05);padding:1px 6px;border-radius:3px;font-family:monospace;font-size:11.5px;">isTest=TRUE</code>.
+        Test deals are hidden from Dashboard + Review analytics. They still appear in History (with a 🧪 marker) so you can find and edit them.
+      </div>
+      <div style="font-size:12px; color:var(--ink-soft); margin-bottom:14px; line-height:1.5;">
+        <strong>When to use it:</strong> Practicing a new feature · Training a teammate · Demoing to a client · Recording a screencast.
+        Turn it OFF before submitting real deals.
+      </div>
+      <label style="display:inline-flex;align-items:center;gap:10px;padding:10px 16px;background:#FFF;border:1px solid #FCD34D;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;">
+        <input type="checkbox" id="test-mode-checkbox-tv" onchange="setTestModeTV(this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:#F59E0B;">
+        <span>Enable Test Mode</span>
       </label>
+      <span id="test-mode-label-tv" style="display:none;"></span>
     </div>
 
     <!-- Identity (read-only) -->
@@ -5865,8 +5886,10 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.40';  // v25.40 — Region map remap (4 regions: West/North/South/East). Pairs with backend v26.10.0 BU Head visibility.
-  // v25.39 — Review tab: 7-filter multi-select panel
+  const TVONE_FRONTEND_VERSION = '25.44';  // v25.44 — Critical-fixes parity port from BS v24.25.0 → v24.25.6. Pipeline cutoff (Apr 1 2026, 'TVONE_PIPELINE_DATA_START'). Header name fallback fix. Test Mode banner upgraded to diagonal-stripe + flashing emoji + bigger Turn-off button + permanent Profile-tab toggle card with explainer (Super-only). Sales Person auto-default extended to Super users. Notification "Untitled" backfill for legacy entries. Resilience: _safeFetchJson with HTML-not-JSON detection + silent retry on review fetch, dup error suppression in error_log_append. Review filter row 4×2 grid. Region card empty state actionable. Pairs with backend v26.11.0 — no backend changes.
+// v25.43 — features #19 Customer 360 modal (clickable endUser in History) + #18 server-side handoff notifications (bell pulls from new Notifications sheet, click jumps to deal). Pairs with backend v26.11.0.
+  // v25.42 — Feature parity bundle with BS v24.22.0
+  // v25.41 — drop frontend scope re-filter
   // v25.35 ports BS Session A+B+C items into tvONE:
   //   #3  Sales/Presales handoff (cols CC/CD) + B1 visibility expansion
   //   #4  Profile Gate hardening (watchdog + popstate + body dim + rehydrate)
@@ -5876,6 +5899,36 @@
   //   #17 Stage-aging row tints (yellow >14d / red >30d, open deals only)
   //   #1  Super-only "Send test error summary" button in Team tab
   // Skipped (intentional): stage velocity (frontend-only, deferred); PDF/Excel logo (deferred)
+
+  // v25.44 — Pipeline data cutoff. Pre-cutoff Submissions rows are SAP/billed
+  // legacy data, NOT pipeline. Aggregations across cockpit/Review/Detailed
+  // Analytics filter to post-cutoff only. YoY badges removed for the same
+  // reason — comparing 2025 SAP-billed totals to 2026 pipeline totals is
+  // misleading. When April 2027+ arrives and a full year of post-cutoff data
+  // exists, set TVONE_PIPELINE_DATA_START to null and YoY logic auto-returns.
+  const TVONE_PIPELINE_DATA_START = '2026-04-01';
+  window.TVONE_PIPELINE_DATA_START = TVONE_PIPELINE_DATA_START;
+  // Helper — true if entry's timestamp is on or after cutoff
+  window._entryAfterPipelineCutoffTV = function(e){
+    if(!TVONE_PIPELINE_DATA_START) return true;  // cutoff disabled
+    if(!e) return false;
+    const candidates = [e.timestamp, e.ts, e.created, e.createdAt];
+    let ms = 0;
+    for(let i = 0; i < candidates.length; i++){
+      const v = candidates[i];
+      if(v == null || v === '') continue;
+      const d = (v instanceof Date) ? v : new Date(v);
+      if(!isNaN(d.getTime())){ ms = d.getTime(); break; }
+    }
+    if(ms === 0) return false;
+    return ms >= new Date(TVONE_PIPELINE_DATA_START + 'T00:00:00').getTime();
+  };
+  // Convenience filter — apply to any list
+  window._afterCutoffEntriesTV = function(arr){
+    if(!Array.isArray(arr)) return [];
+    return arr.filter(window._entryAfterPipelineCutoffTV);
+  };
+
   // Stamp version into login footer once DOM is ready (defer-safe)
   try {
     document.addEventListener('DOMContentLoaded', function(){
@@ -6656,7 +6709,18 @@
     }
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appScreen').classList.remove('hidden');
-    document.getElementById('userLabel').textContent = currentUser.name;
+    // v25.44 — Defensive: never let userLabel show em-dash or empty.
+    // Falls back to fullName → username → "User" (a literal "—" coming from
+    // the Sheets row was the BS bug, applies to tvONE same way).
+    (function _setUserLabel(){
+      const el = document.getElementById('userLabel');
+      if(!el) return;
+      let name = String(currentUser.name || currentUser.fullName || '').trim();
+      if(!name || name === '—' || name === '-'){
+        name = String(currentUser.username || '').trim() || 'User';
+      }
+      el.textContent = name;
+    })();
     // v25.28: Wire up draft autosave + show resume banner if a draft exists for this user
     setTimeout(function() {
       try {
@@ -6682,6 +6746,10 @@
     try { _initFormDirtyTrackingTV(); } catch (_) {}
     try { _hardenProfileGateTV(); } catch (_) {}
     try { _fetchAllUsersTV(); } catch (_) {}
+    // v25.43 (#18): pull handoff notifications from server post-login
+    setTimeout(function(){
+      try { if (typeof window.fetchServerNotificationsTV === 'function') window.fetchServerNotificationsTV({force:true}); } catch(_){}
+    }, 800);
     const avatar = document.getElementById('userAvatar');
     if (avatar) avatar.textContent = _initialsFor(currentUser.name);
     if (typeof renderNotifBell === 'function') renderNotifBell();
@@ -6763,6 +6831,10 @@
 
       updateLoginSplash(50, 'Loading your data…');
       _applyTvPostLoginUI();
+      // v25.43 (#18): pull handoff notifications from server post-login
+      setTimeout(function(){
+        try { if (typeof window.fetchServerNotificationsTV === 'function') window.fetchServerNotificationsTV({force:true}); } catch(_){}
+      }, 800);
 
       updateLoginSplash(75, 'Almost there…');
       lastResult = null; sessionLog = [];
@@ -6871,12 +6943,21 @@
         updateLoginSplash(100, 'Ready');
         if (!data.mustChange) hideLoginSplash();
       }, 2100);
-      document.getElementById('userLabel').textContent = currentUser.name;
+      document.getElementById('userLabel').textContent = (function(){
+        // v25.44 — same em-dash defense as primary login path
+        let name = String(currentUser.name || currentUser.fullName || '').trim();
+        if(!name || name === '—' || name === '-') name = String(currentUser.username || '').trim() || 'User';
+        return name;
+      })();
       // Also set avatar initials (e.g. "Dipenkumar Gajjar" → "DG")
       const avatar = document.getElementById('userAvatar');
       if (avatar) avatar.textContent = _initialsFor(currentUser.name);
       // Refresh notification bell for the per-user storage
       if (typeof renderNotifBell === 'function') renderNotifBell();
+      // v25.43 (#18): pull handoff notifications from server post-login
+      setTimeout(function(){
+        try { if (typeof window.fetchServerNotificationsTV === 'function') window.fetchServerNotificationsTV({force:true}); } catch(_){}
+      }, 800);
       const rolePill = document.getElementById('roleLabel');
       const rolInfo = TEAM_ROSTER_LABELS[currentUser.role] || { label: currentUser.role, pill: '' };
       rolePill.textContent = rolInfo.label;
@@ -7982,6 +8063,18 @@
       } else {
         showSync('Deal registered', 'success');
       }
+      // v25.42 (#10) — Won-deal confetti. Skip when we're editing an already-won deal.
+      try {
+        const _outcome = String(submission.outcome || '').toLowerCase();
+        if (_outcome === 'won') {
+          const _wasAlreadyWon = _editingOriginalRow && String(_editingOriginalRow.outcome || '').toLowerCase() === 'won';
+          if (!_wasAlreadyWon && typeof window._fireConfettiTV === 'function') {
+            window._fireConfettiTV(submission);
+          }
+        }
+      } catch(_){}
+      // v25.43 (#18): refresh server notifications after save (catches handoff alerts)
+      try { if (typeof window.fetchServerNotificationsTV === 'function') window.fetchServerNotificationsTV(); } catch(_){}
     } catch (e) {
       // Hold for retry later (only for new deals — edits are not held)
       if (!_editingRefId) {
@@ -8537,14 +8630,199 @@
       syncHideTimer = setTimeout(function() { el.classList.remove('show'); }, 5000);
     }
   }
+
+  /* v25.42 (#10) — Won-deal confetti for tvONE. Identical pattern to BS v24.22.0. */
+  window._fireConfettiTV = function(entry){
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        if (entry && entry.project) showSync('🎉 Won — ' + entry.project + '!', 'success');
+        return;
+      }
+    } catch(_) {}
+    if (!document.getElementById('confetti-style-tv')) {
+      const st = document.createElement('style');
+      st.id = 'confetti-style-tv';
+      st.textContent =
+        '@keyframes confetti-fall-tv { 0% { transform: translateY(-20vh) translateX(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) translateX(var(--drift,0px)) rotate(var(--spin,720deg)); opacity: 0; } }' +
+        '.confetti-host-tv { position: fixed; inset: 0; pointer-events: none; z-index: 99999; overflow: hidden; }' +
+        '.confetti-piece-tv { position: absolute; width: 10px; height: 14px; top: -20vh; border-radius: 2px; animation: confetti-fall-tv var(--dur,2.4s) ease-out forwards; will-change: transform, opacity; }';
+      document.head.appendChild(st);
+    }
+    const host = document.createElement('div');
+    host.className = 'confetti-host-tv';
+    document.body.appendChild(host);
+    // tvONE palette: gold-led, theme-aligned
+    const colors = ['#D4AF37','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#06B6D4','#FCD34D'];
+    const N = 80;
+    for (let i = 0; i < N; i++) {
+      const p = document.createElement('div');
+      p.className = 'confetti-piece-tv';
+      p.style.left = (Math.random() * 100) + 'vw';
+      p.style.background = colors[(Math.random() * colors.length) | 0];
+      p.style.setProperty('--drift', ((Math.random() - 0.5) * 200).toFixed(0) + 'px');
+      p.style.setProperty('--spin', ((Math.random() * 720 + 360) | 0) + 'deg');
+      p.style.setProperty('--dur', (2 + Math.random() * 1.5).toFixed(2) + 's');
+      p.style.animationDelay = (Math.random() * 0.4).toFixed(2) + 's';
+      if (i % 2 === 0) p.style.borderRadius = '50%';
+      host.appendChild(p);
+    }
+    if (entry && entry.project) showSync('🎉 Won — ' + entry.project + '!', 'success');
+    setTimeout(function(){ try { host.remove(); } catch(_){} }, 4500);
+  };
+
+  /* v25.42 (#15) — Tagged-deals badge updater for tvONE. */
+  window._updateTaggedDealsBadgeTV = function(){
+    try {
+      const badge = document.getElementById('history-tab-badge-tv');
+      if (!badge) return;
+      if (!currentUser || !currentUser.username) {
+        badge.style.display = 'none';
+        return;
+      }
+      const me = String(currentUser.username).toLowerCase();
+      const log = Array.isArray(window._rawCentralLog) ? window._rawCentralLog : [];
+      let count = 0;
+      for (let i = 0; i < log.length; i++) {
+        const e = log[i];
+        if (!e) continue;
+        const creator  = String(e.username || '').toLowerCase();
+        const sales    = String(e.salesPerson || '').toLowerCase();
+        const presales = String(e.presalesPerson || '').toLowerCase();
+        if (creator !== me && (sales === me || presales === me)) count++;
+      }
+      if (count > 0) {
+        badge.textContent = String(count);
+        badge.style.display = '';
+      } else {
+        badge.style.display = 'none';
+      }
+    } catch(_) {}
+  };
+
+  /* tvONE nav badge styling — once. */
+  (function _injectTabBadgeCSSTV(){
+    if (document.getElementById('nav-tab-badge-css-tv')) return;
+    const st = document.createElement('style');
+    st.id = 'nav-tab-badge-css-tv';
+    st.textContent =
+      '.nav-tab-badge-tv { display:inline-flex; align-items:center; justify-content:center;' +
+      ' min-width:18px; height:18px; padding:0 5px; margin-left:6px;' +
+      ' background:#EF4444; color:#fff; font-size:11px; font-weight:700;' +
+      ' border-radius:9px; line-height:1; }';
+    document.head.appendChild(st);
+  })();
+
+  /* v25.42 (#20) — Quick-stage menu for tvONE. Mirrors BS pattern:
+     pop a small list of 5 stages, picking one POSTs a stage-only edit, audits, refreshes. */
+  window.openQuickStageMenuTV = function(refId, btn){
+    document.querySelectorAll('.quick-stage-menu-tv').forEach(function(el){ el.remove(); });
+    const log = Array.isArray(window._rawCentralLog) ? window._rawCentralLog : [];
+    const entry = log.find(function(r){ return String(r.refId) === String(refId); });
+    if (!entry) { alert('Entry not found.'); return; }
+    if (!currentUser || !currentUser.username) { alert('Please sign in.'); return; }
+    const STAGES = ['Lead','Opportunity','Proposal','Negotiation','Order'];
+    const currentStage = String(entry.stage || '').trim();
+
+    const menu = document.createElement('div');
+    menu.className = 'quick-stage-menu-tv';
+    menu.innerHTML =
+      '<div class="qs-head-tv">Move to stage…</div>' +
+      STAGES.map(function(s){
+        const isCurrent = s === currentStage;
+        return '<button type="button" class="qs-item-tv' + (isCurrent ? ' qs-current' : '') + '"' +
+               (isCurrent ? ' disabled' : '') +
+               ' data-stage="' + s + '">' + s + (isCurrent ? ' · current' : '') + '</button>';
+      }).join('');
+    document.body.appendChild(menu);
+
+    const r = btn.getBoundingClientRect();
+    menu.style.position = 'fixed';
+    menu.style.top  = Math.min(window.innerHeight - 250, r.bottom + 6) + 'px';
+    menu.style.left = Math.min(window.innerWidth - 200, r.left) + 'px';
+    menu.style.zIndex = '99998';
+
+    menu.querySelectorAll('button.qs-item-tv').forEach(function(b){
+      b.addEventListener('click', async function(){
+        const newStage = b.getAttribute('data-stage');
+        if (!newStage || newStage === currentStage) return;
+        menu.remove();
+        await _commitQuickStageTV(entry, newStage);
+      });
+    });
+
+    const close = function(ev){
+      if (ev && ev.type === 'keydown' && ev.key !== 'Escape') return;
+      if (ev && ev.type === 'click' && menu.contains(ev.target)) return;
+      menu.remove();
+      document.removeEventListener('click', close, true);
+      document.removeEventListener('keydown', close, true);
+    };
+    setTimeout(function(){
+      document.addEventListener('click', close, true);
+      document.addEventListener('keydown', close, true);
+    }, 50);
+  };
+
+  async function _commitQuickStageTV(entry, newStage){
+    const oldStage = String(entry.stage || '');
+    if (oldStage === newStage) return;
+    showSync('Updating stage…');
+    if (!WEB_APP_URL) { showSync('Offline · saved locally only', 'error'); return; }
+    try {
+      const updated = Object.assign({}, entry, { stage: newStage });
+      const body = {
+        action: 'submit',
+        authUsername: currentUser.username,
+        authPasswordHash: _authHash,
+        submission: updated
+      };
+      const resp = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(body)
+      });
+      const data = await resp.json().catch(function(){ return null; });
+      if (!data || data.ok === false) {
+        showSync('Stage update failed' + (data && data.error ? ': ' + data.error : ''), 'error');
+        return;
+      }
+      showSync('Stage → ' + newStage + ' ✓', 'success');
+      // Refresh history
+      try { if (typeof refreshLog === 'function') await refreshLog(); } catch(_){}
+    } catch (err) {
+      showSync('Stage update failed · check connection', 'error');
+      console.warn('quick stage TV:', err);
+    }
+  }
+
+  /* tvONE quick-stage CSS — once. */
+  (function _injectQuickStageCSSTV(){
+    if (document.getElementById('quick-stage-css-tv')) return;
+    const st = document.createElement('style');
+    st.id = 'quick-stage-css-tv';
+    st.textContent =
+      '.quick-stage-menu-tv { background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.15); padding:6px; min-width:180px; }' +
+      '.quick-stage-menu-tv .qs-head-tv { font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-subtle); padding:6px 10px 4px; font-weight:600; }' +
+      '.quick-stage-menu-tv .qs-item-tv { display:block; width:100%; text-align:left; padding:8px 12px; border:none; background:transparent; cursor:pointer; font-size:13px; border-radius:6px; color:var(--ink); font-family:inherit; }' +
+      '.quick-stage-menu-tv .qs-item-tv:hover:not(:disabled) { background:var(--surface-2); color:#D4AF37; }' +
+      '.quick-stage-menu-tv .qs-item-tv.qs-current { color:var(--ink-subtle); font-style:italic; cursor:default; }';
+    document.head.appendChild(st);
+  })();
   async function fetchLog() {
     if (!WEB_APP_URL) return [];
     try {
       const authQs = currentUser && _authHash
         ? '&authUsername=' + encodeURIComponent(currentUser.username) + '&authPasswordHash=' + encodeURIComponent(_authHash)
         : '';
-      const resp = await fetch(WEB_APP_URL + '?action=getlog' + authQs);
-      const data = await resp.json();
+      // v25.44 — _safeFetchJsonTV detects HTML-not-JSON responses (Apps Script
+      // cold start, network blip, sleep/wake) and silently retries once after
+      // 1.5s. Eliminates 90%+ of the FETCH_LOG_FAILED noise from the error log
+      // without hiding genuine outages.
+      const data = await _safeFetchJsonTV(
+        WEB_APP_URL + '?action=getlog' + authQs,
+        { method: 'GET' },
+        { context: 'fetchLog', maxRetries: 1, retryDelayMs: 1500 }
+      );
       return data.log || [];
     } catch (e) { console.error('Fetch log failed:', e); return []; }
   }
@@ -9967,6 +10245,18 @@
   // even if someone else logged it in. Empty-string short-circuit (eX && eX === uname)
   // prevents legacy untagged rows leaking via empty-equals-empty.
   function scopeRowsToUser_(rows) {
+    // v25.41 — Trust backend scoping. Backend (v26.9+) filters log before delivering:
+    // Super/OEM get all rows; BU Head gets own + reports + region; everyone else gets
+    // own + tagged-as-sales/presales. Re-filtering here would strip out regional and
+    // reports-based deals the backend just delivered, silently breaking BU Head
+    // visibility. Authoritative source = server. Frontend's job is just rendering.
+    if (!Array.isArray(rows)) return [];
+    return rows;
+  }
+
+  /* DEPRECATED — kept for any callers that might still reference the strict version.
+     Use scopeRowsToUser_ which trusts backend (preferred). */
+  function scopeRowsToUserStrict_(rows) {
     if (hasFullDataAccess()) return rows;
     if (!currentUser) return [];
     const uname = String(String(currentUser.username || '')).toLowerCase();
@@ -9999,6 +10289,8 @@
     const historyRows = scopeRowsToUser_(rawRows);
     // Keep the raw (unscoped) log accessible for Review + Directory
     _rawCentralLog = rawRows;
+    // v25.42 (#15): refresh tagged-deals badge after every log fetch
+    try { window._updateTaggedDealsBadgeTV && window._updateTaggedDealsBadgeTV(); } catch(_){}
     const scopeNote = hasFullDataAccess()
       ? ''
       : ' · Showing your deals only';
@@ -10212,14 +10504,17 @@
       }
       html += '<td class="col-proj">' + (s.project||'—') + testBadge + aging.badgeHtml + handoffStr + '</td>';
       html += '<td>' + (s.stage ? '<span class="stage-pill ' + stageCls + '">' + s.stage + '</span>' : '—') + '</td>';
-      html += '<td class="td-enduser">' + (s.endUser||'—') + '</td>';
+      html += '<td class="td-enduser">' + (s.endUser ? '<a href="#" onclick="event.preventDefault();event.stopPropagation();openCustomer360TV(\'' + String(s.endUser).replace(/'/g, "\\'") + '\')" style="color:#D4AF37;text-decoration:none;border-bottom:1px dashed #D4AF37;" title="Customer 360">' + s.endUser + '</a>' : '—') + '</td>';
       html += '<td class="td-partner">' + (s.partner||'—') + '</td>';
       if (canEdit) {
         // v25.9.4: Restored simple Edit button for all editable rows.
-        // The v25.11 backend handles the refId-missing case via self-healing headers
-        // + tolerant-match fallback (v25.10) so no frontend hardening is needed.
+        // v25.42 (#20): Quick stage button for non-finalized deals
         if (canEditThisRow) {
-          html += '<td onclick="event.stopPropagation()"><button class="btn-tiny" onclick="startEditingSubmission(\'' + refEsc + '\')" title="Edit this deal">✏ Edit</button></td>';
+          const _outcomeNorm = String(s.outcome || 'open').toLowerCase();
+          const _qsBtn = (_outcomeNorm === 'open')
+            ? '<button class="btn-tiny" onclick="event.stopPropagation();openQuickStageMenuTV(\'' + refEsc + '\', this);" title="Move to next stage" style="margin-right:4px;">⇄</button>'
+            : '';
+          html += '<td onclick="event.stopPropagation()">' + _qsBtn + '<button class="btn-tiny" onclick="startEditingSubmission(\'' + refEsc + '\')" title="Edit this deal">✏ Edit</button></td>';
         } else {
           html += '<td><span style="font-size:11px;color:var(--ink-subtle);font-family:JetBrains Mono,monospace">—</span></td>';
         }
@@ -10685,9 +10980,11 @@
     if (!rows.length) { alert('No entries to export.'); return; }
 
     // Full 64-column schema matching the Submissions sheet — keeps CSV complete for analysis
+    // v25.42 (#9) — Extended with sales/presales/leadSource/outcome/region/isTest
     const cols = [
       'refId','timestamp','timestampLocal','username','userFullName',
-      'project','stage','endUser','partner','consultant','venueName','venueType','city','state','contact',
+      'salesPerson','salesPersonName','presalesPerson','presalesPersonName',
+      'project','stage','endUser','partner','consultant','venueName','venueType','city','state','region','contact',
       'outputType','outputSignal','sdiCount','projectorCount','projectorRes',
       'screens_count',
       'screen1_W','screen1_H','screen2_W','screen2_H','screen3_W','screen3_H','screen4_W','screen4_H','screen5_W','screen5_H',
@@ -10697,12 +10994,29 @@
       'inputs','inputs4K','inputsFHD','signals',
       'recommended_chassis','bom_summary','value_adds',
       'budget','dealValueINR','close','notes',
+      'leadSource','outcome','outcomeReason','outcomeReasonNote','isTest',
       'status','confirmedAt','confirmedBy','editedAt','editedBy'
     ];
+    // Helper: resolve loginName → fullName via _allUsersTV cache (v25.42 #9)
+    const _resolveOwnerNameTV = function(login){
+      if(!login) return '';
+      const u = (window._allUsersTV||[]).find(function(x){
+        return String(x.username||'').toLowerCase() === String(login).toLowerCase();
+      });
+      return u ? (u.fullName || u.username) : login;
+    };
+    const _regionOf = function(state){
+      try { return _stateToRegionTV(state); } catch(_) { return ''; }
+    };
     const csv = [cols.join(',')].concat(
       rows.map(function(r) {
         return cols.map(function(c) {
-          let v = r[c];
+          let v;
+          // Computed columns (resolved names + region)
+          if (c === 'salesPersonName')    v = _resolveOwnerNameTV(r.salesPerson);
+          else if (c === 'presalesPersonName') v = _resolveOwnerNameTV(r.presalesPerson);
+          else if (c === 'region')        v = _regionOf(r.state);
+          else                            v = r[c];
           if (v == null) v = '';
           v = String(v).replace(/"/g, '""');
           return /[,"\n\r]/.test(v) ? '"' + v + '"' : v;
@@ -10801,15 +11115,20 @@
 
     // Smart defaults — only if NO selection yet AND current user has the matching role.
     // Anchored regex to avoid substring trap. BU Head also defaults into Sales.
+    // v25.44 — Super users are now auto-defaulted into salesPerson too. Without
+    // this, Super submissions saved with blank salesPerson (caused by required
+    // validation hole), making deals invisible to the Sales card pivot.
+    // Super can still change the value if helping someone else's deal.
     if (currentUser && currentUser.username) {
       const myUname = String(currentUser.username).toLowerCase();
       const myRole = String(currentUser.role || '').trim();
-      const isMyRoleSales = /^Sales$/i.test(myRole) || /^BU[\s-]*Head$/i.test(myRole);
+      const isMyRoleSales = /^Sales$/i.test(myRole) || /^BU[\s-]*Head$/i.test(myRole) || currentUser.isSuper === true || /^Super$/i.test(myRole);
       const isMyRolePresales = /^Presales$/i.test(myRole);
 
       if (!currentSales && isMyRoleSales) {
         if (salesSel.querySelector('option[value="' + CSS.escape(myUname) + '"]')) {
           salesSel.value = myUname;
+          console.log('[salesPerson auto-default TV] Applied:', myUname, '(role:', myRole + ')');
         }
       }
       if (!currentPresales && isMyRolePresales) {
@@ -10877,15 +11196,37 @@
     const banner = document.getElementById('test-mode-banner-tv');
     if (banner) banner.style.display = window._testModeOnTV ? 'block' : 'none';
     const cb = document.getElementById('test-mode-checkbox-tv');
-    const lbl = document.getElementById('test-mode-label-tv');
+    const lbl = document.getElementById('test-mode-label-tv');  // legacy hidden span — kept for any old code path
     if (cb) cb.checked = !!window._testModeOnTV;
     if (lbl) {
       lbl.textContent = window._testModeOnTV ? 'ON' : 'OFF';
       lbl.style.color = window._testModeOnTV ? '#92400E' : 'var(--ink-soft)';
     }
+    // v25.44 — also update the new status pill on the upgraded Profile card.
+    const pill = document.getElementById('test-mode-status-pill-tv');
+    if (pill) {
+      pill.textContent = window._testModeOnTV ? 'ON' : 'OFF';
+      if (window._testModeOnTV) {
+        pill.style.background = '#FEF3C7';
+        pill.style.color = '#92400E';
+      } else {
+        pill.style.background = '#F1F5F9';
+        pill.style.color = '#64748B';
+      }
+    }
+    if (typeof showSync === 'function') {
+      // Only fire toast on actual user toggle, not on initial banner render.
+      // _renderTestModeBannerTV is called both on init AND from setTestModeTV;
+      // we use a flag in setTestModeTV to differentiate.
+      if (window._testModeJustToggledTV === true) {
+        showSync(window._testModeOnTV ? '🧪 Test mode ON — submissions will be flagged' : 'Test mode OFF', window._testModeOnTV ? 'warn' : 'success');
+        window._testModeJustToggledTV = false;
+      }
+    }
   }
   function setTestModeTV(on) {
     window._testModeOnTV = !!on;
+    window._testModeJustToggledTV = true;  // v25.44 — signals _render to also fire toast
     const key = _testModeKeyTV();
     if (key) {
       try {
@@ -12263,6 +12604,22 @@
   function reportFrontendError_tv(errorCode, errorMessage, stackTrace) {
     try {
       if (!WEB_APP_URL) return;
+      // v25.44 — duplicate-error suppression. Same signature within 60s logs ONCE.
+      // Prevents the error log from flooding with copies of the same Apps Script
+      // cold-start failure on a flaky network. Cache lives on window.
+      try {
+        if(!window._loggedErrorSignaturesTV){ window._loggedErrorSignaturesTV = new Map(); }
+        const cache = window._loggedErrorSignaturesTV;
+        const now = Date.now();
+        for(const [k, v] of cache){ if(v <= now) cache.delete(k); }
+        const signature = String(errorCode || '') + '|' +
+                          String(errorMessage || '').substring(0, 80);
+        if(cache.has(signature)){
+          console.log('[error suppressed — duplicate within 60s]', signature.substring(0, 60));
+          return;
+        }
+        cache.set(signature, now + 60000);
+      } catch(_){ /* fall through if Map not supported */ }
       fetch(WEB_APP_URL, {
         method: 'POST', mode: 'no-cors',  // fire-and-forget; we don't read the response
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -12280,6 +12637,53 @@
     } catch (e) { /* silent — error logger must never throw */ }
   }
   window.reportFrontendError_tv = reportFrontendError_tv;
+
+  /* v25.44 — safer fetch wrapper for tvONE.
+   * Detects HTML-not-JSON responses (Apps Script cold start, network blip,
+   * sleep/wake) and silently retries once after 1.5s before throwing. Thrown
+   * error carries .isHtmlResponse so callers can show a friendly fallback UI
+   * distinguishing transient backend issues from real network outages.
+   * Usage: const data = await _safeFetchJsonTV(url, fetchOpts, { context, maxRetries, retryDelayMs });
+   */
+  async function _safeFetchJsonTV(url, fetchOpts, opts){
+    opts = opts || {};
+    const context = opts.context || 'unknown';
+    const maxRetries = (typeof opts.maxRetries === 'number') ? opts.maxRetries : 1;
+    const retryDelayMs = (typeof opts.retryDelayMs === 'number') ? opts.retryDelayMs : 1500;
+    let lastErr = null;
+    for(let attempt = 0; attempt <= maxRetries; attempt++){
+      try {
+        const resp = await fetch(url, fetchOpts);
+        const txt = await resp.text();
+        const trimmed = (txt || '').trimStart();
+        if(trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.startsWith('<HTML')){
+          const e = new Error('Backend returned HTML instead of JSON (likely Apps Script cold-start, deployment auth issue, or upstream error page). First 100 chars: ' + trimmed.substring(0, 100));
+          e.isHtmlResponse = true;
+          e.responsePreview = trimmed.substring(0, 200);
+          throw e;
+        }
+        try {
+          return JSON.parse(txt);
+        } catch(parseErr){
+          const e = new Error('Backend returned non-JSON response: ' + (parseErr.message || 'parse failed') + '. Preview: ' + trimmed.substring(0, 100));
+          e.isParseError = true;
+          e.responsePreview = trimmed.substring(0, 200);
+          throw e;
+        }
+      } catch(err){
+        lastErr = err;
+        if(!err.isHtmlResponse && !err.isParseError){ err.isNetworkError = true; }
+        if(attempt < maxRetries){
+          console.warn('[_safeFetchJsonTV] attempt ' + (attempt+1) + ' failed for ' + context + ' — retrying in ' + retryDelayMs + 'ms:', err.message);
+          await new Promise(function(r){ setTimeout(r, retryDelayMs); });
+        } else {
+          console.error('[_safeFetchJsonTV] ' + context + ' failed after ' + (maxRetries+1) + ' attempt(s):', err);
+        }
+      }
+    }
+    throw lastErr;
+  }
+  window._safeFetchJsonTV = _safeFetchJsonTV;
 
   async function refreshTeam() {
     const content = document.getElementById('teamContent');
@@ -12534,7 +12938,25 @@
   }
 
   function _loadNotifs_() {
-    try { return JSON.parse(localStorage.getItem(_notifKey_()) || '[]'); }
+    try {
+      const raw = JSON.parse(localStorage.getItem(_notifKey_()) || '[]');
+      // v25.44 — backfill legacy "Untitled" subs (pre-feature-bundle entries
+      // that didn't enforce project name). Cosmetic relabel only — actual deal
+      // record on the sheet is unchanged. Preserves original timestamps so
+      // ordering stays correct.
+      let mutated = false;
+      const fixed = raw.map(function(n){
+        if(n && (n.sub === 'Untitled' || n.sub === 'Untitled deal' || n.sub === 'Untitled · saved to history')){
+          mutated = true;
+          return Object.assign({}, n, {sub: '(deal name not recorded — pre-v25.44)'});
+        }
+        return n;
+      });
+      if(mutated){
+        try { localStorage.setItem(_notifKey_(), JSON.stringify(fixed.slice(0, NOTIF_MAX_ITEMS))); } catch(_){}
+      }
+      return fixed;
+    }
     catch (e) { return []; }
   }
 
@@ -12568,7 +12990,91 @@
     _saveNotifs_(list);
     renderNotifBell();
     renderNotifPanel();
+    // v25.43 (#18): propagate to server so other devices see same read state
+    try { if (typeof window.markAllServerNotificationsReadTV === 'function') window.markAllServerNotificationsReadTV(); } catch(_){}
   }
+
+  /* v25.43 (#18) — Server-side handoff notifications for tvONE.
+     Mirrors BS v24.23.0 logic. Throttled 30s, runs on login + bell open + post-save. */
+  window._lastServerNotifFetchMsTV = 0;
+  window.fetchServerNotificationsTV = async function(opts) {
+    opts = opts || {};
+    if (!currentUser || !currentUser.username) return;
+    if (typeof WEB_APP_URL === 'undefined' || !WEB_APP_URL) return;
+    const now = Date.now();
+    if (!opts.force && (now - window._lastServerNotifFetchMsTV) < 30000) return;
+    window._lastServerNotifFetchMsTV = now;
+    try {
+      const pwHash = (typeof _authHash !== 'undefined' && _authHash)
+        ? _authHash
+        : (window._tvSessionPasswordHash || (currentUser && currentUser.passwordHash) || '');
+      const resp = await fetch(WEB_APP_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({
+          action: 'notifications_list',
+          authUsername: currentUser.username,
+          authPasswordHash: pwHash
+        })
+      });
+      const data = await resp.json();
+      if (!data || !data.ok || !Array.isArray(data.notifications)) return;
+      const localList = _loadNotifs_();
+      const existingIds = {};
+      localList.forEach(function(n) { if (n && n.id) existingIds[n.id] = true; });
+      let added = 0;
+      data.notifications.forEach(function(srv) {
+        if (existingIds[srv.notifId]) {
+          if (srv.readAt) {
+            const idx = localList.findIndex(function(n) { return n.id === srv.notifId; });
+            if (idx >= 0) localList[idx].read = true;
+          }
+          return;
+        }
+        const subBits = [];
+        if (srv.refId) subBits.push(srv.refId);
+        if (srv.creator) subBits.push('from ' + srv.creator);
+        localList.push({
+          id: srv.notifId,
+          title: srv.message || (srv.type === 'sales' ? 'Tagged as Sales' : 'Tagged as Presales'),
+          sub: subBits.join(' · '),
+          type: 'info',
+          ts: srv.ts,
+          read: !!srv.readAt,
+          serverNotif: true,
+          refId: srv.refId
+        });
+        added++;
+      });
+      localList.sort(function(a, b) { return Date.parse(b.ts || 0) - Date.parse(a.ts || 0); });
+      _saveNotifs_(localList);
+      if (added > 0 || data.notifications.some(function(s) { return !!s.readAt; })) {
+        renderNotifBell();
+      }
+    } catch (err) {
+      console.warn('[fetchServerNotificationsTV]', err);
+    }
+  };
+
+  window.markAllServerNotificationsReadTV = async function() {
+    if (!currentUser || !currentUser.username) return;
+    if (typeof WEB_APP_URL === 'undefined' || !WEB_APP_URL) return;
+    try {
+      const pwHash = (typeof _authHash !== 'undefined' && _authHash)
+        ? _authHash
+        : (window._tvSessionPasswordHash || (currentUser && currentUser.passwordHash) || '');
+      fetch(WEB_APP_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({
+          action: 'notifications_mark_read',
+          authUsername: currentUser.username,
+          authPasswordHash: pwHash,
+          markAll: true
+        })
+      }).catch(function() {});
+    } catch(_) {}
+  };
 
   function markNotificationRead(id) {
     const list = _loadNotifs_();
@@ -12602,6 +13108,8 @@
       closeNotifPanel();
       return;
     }
+    // v25.43 (#18): refresh server notifications on bell open (cheap, throttled)
+    try { if (typeof window.fetchServerNotificationsTV === 'function') window.fetchServerNotificationsTV(); } catch(_){}
     // Move panel to body on first open (escapes header's stacking/filter context)
     if (panel.parentNode !== document.body) {
       document.body.appendChild(panel);
@@ -12661,9 +13169,15 @@
     }
     const E = (typeof escapeHtml === 'function') ? escapeHtml : function(s) { return String(s || '').replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
     body.innerHTML = list.map(function(n) {
-      return '<div class="notif-item ' + (n.read ? '' : 'unread') + '" onclick="markNotificationRead(\'' + E(n.id) + '\'); renderNotifPanel();">' +
+      // v25.43 (#18): server-origin notifs (NTF-) jump to History + scroll to refId
+      const isHandoff = n.serverNotif && n.refId;
+      const onclickJS = isHandoff
+        ? "markNotificationRead('" + E(n.id) + "'); closeNotifPanel(); window.openDealByRefIdTV && window.openDealByRefIdTV('" + E(n.refId) + "'); renderNotifPanel();"
+        : "markNotificationRead('" + E(n.id) + "'); renderNotifPanel();";
+      const arrow = isHandoff ? '<span style="float:right;font-size:14px;opacity:0.5;">→</span>' : '';
+      return '<div class="notif-item ' + (n.read ? '' : 'unread') + '" style="cursor:pointer;" onclick="' + onclickJS + '">' +
         '<div class="notif-item-body">' +
-          '<div class="notif-item-title">' + E(n.title) + '</div>' +
+          '<div class="notif-item-title">' + E(n.title) + arrow + '</div>' +
           (n.sub ? '<div class="notif-item-sub">' + E(n.sub) + '</div>' : '') +
           '<div class="notif-item-time">' + _relativeNotifTime_(n.ts) + '</div>' +
         '</div>' +
@@ -12673,6 +13187,34 @@
 
   // Render bell on load + whenever login state changes
   setTimeout(renderNotifBell, 200);
+
+  /* v25.43 (#18) — Open a specific deal in tvONE History tab. Used by handoff
+     notification clickthrough. Switches to History view, then flashes the row. */
+  window.openDealByRefIdTV = function(refId) {
+    if (!refId) return;
+    try {
+      if (typeof showView === 'function') showView('history');
+      // Wait for History to render then find + flash the row
+      setTimeout(function() {
+        // tvONE rows use onclick="openDetailModal('refId')" — find by attribute match
+        const refEsc = String(refId).replace(/'/g, "\\'");
+        const row = document.querySelector('tr[onclick*="openDetailModal(\'' + refEsc + '\')"]');
+        if (!row) {
+          if (typeof showSync === 'function') showSync('Deal not in your visible history', 'error');
+          return;
+        }
+        row.scrollIntoView({ behavior:'smooth', block:'center' });
+        row.style.transition = 'box-shadow 0.4s ease, background 0.4s ease';
+        const orig = row.style.background;
+        row.style.background = 'rgba(212,175,55,0.15)';
+        row.style.boxShadow = '0 0 0 2px #D4AF37';
+        setTimeout(function() {
+          row.style.background = orig;
+          row.style.boxShadow = '';
+        }, 1800);
+      }, 200);
+    } catch (e) { console.warn('[openDealByRefIdTV]', e); }
+  };
 
   // --- Loading overlay ---
   function showLoadingOverlay(msg) {
@@ -14605,6 +15147,10 @@
     const host = document.getElementById('tv-kpi-card-owner');
     if(!host) return;
     if(!log || !log.length){ host.innerHTML = _cardHTML('Pipeline by owner · top 8', null, 'No deals loaded'); return; }
+    // v25.42 (#11) — per-owner stage velocity. Avg days-in-stage across each owner's
+    // open deals. tvONE has no StageTransitions equivalent yet, so falls back to
+    // deal creation timestamp (same source as aging card to stay consistent).
+    const now = Date.now();
     const byOwner = {};
     for(let i=0; i<log.length; i++){
       const r = log[i] || {};
@@ -14612,19 +15158,35 @@
       const s = _normalizeStage(r.stage);
       if(!s) continue;
       const owner = _readOwner(r);
-      if(!byOwner[owner]) byOwner[owner] = {count:0, value:0};
+      if(!byOwner[owner]) byOwner[owner] = {count:0, value:0, totalDays:0, daysCount:0};
       byOwner[owner].count++;
       byOwner[owner].value += _readDealValue(r);
+      const baseMs = _entryCreatedMs(r);
+      if (baseMs) {
+        const days = Math.max(0, Math.floor((now - baseMs) / 86400000));
+        byOwner[owner].totalDays += days;
+        byOwner[owner].daysCount++;
+      }
     }
     const ranked = Object.keys(byOwner).map(function(o){
-      return { owner:o, count:byOwner[o].count, value:byOwner[o].value };
+      const data = byOwner[o];
+      const avgDays = data.daysCount > 0 ? Math.round(data.totalDays / data.daysCount) : null;
+      return { owner:o, count:data.count, value:data.value, avgDays: avgDays };
     }).sort(function(a,b){ return b.value - a.value; }).slice(0, 8);
     if(!ranked.length){ host.innerHTML = _cardHTML('Pipeline by owner · top 8', null, 'No open deals'); return; }
     const maxValue = Math.max.apply(null, ranked.map(function(o){ return o.value; }).concat([1]));
     let body = '';
     ranked.forEach(function(o){
-      body += _barRow(o.owner, o.value, maxValue, o.count + ' · ' + _fmtINR(o.value), '#D4AF37');
+      let velStr = '';
+      if (o.avgDays !== null) {
+        const velColor = o.avgDays <= 30 ? '#10B981' : (o.avgDays <= 60 ? '#F59E0B' : '#E11D48');
+        velStr = ' · <span style="color:' + velColor + '; font-weight:600;">~' + o.avgDays + 'd avg</span>';
+      }
+      body += _barRow(o.owner, o.value, maxValue, o.count + ' · ' + _fmtINR(o.value) + velStr, '#D4AF37');
     });
+    body += '<div style="font-size:11px; color:var(--ink-subtle); margin-top:8px; padding-top:8px; border-top:1px dashed var(--border-soft);">' +
+              'Avg days-in-stage per owner · green ≤30d, amber ≤60d, red &gt;60d' +
+            '</div>';
     host.innerHTML = _cardHTML('Pipeline by owner · top 8', body);
   }
 
@@ -15057,6 +15619,214 @@
 })();
 /* /v25.39 Review Filters */
 
+</script>
+<!-- v25.43 (#19) — Customer 360 modal for tvONE. -->
+<div id="cust360-modal-tv" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:9000;padding:32px 16px;overflow-y:auto;" onclick="closeCustomer360TV(event)">
+  <div id="cust360-card-tv" style="max-width:920px;margin:0 auto;background:var(--surface);border-radius:14px;box-shadow:0 24px 64px rgba(0,0,0,0.4);padding:0;color:var(--ink);" onclick="event.stopPropagation();">
+    <div style="padding:20px 24px;border-bottom:1px solid var(--border-soft);display:flex;align-items:center;gap:14px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-subtle);font-weight:600;">Customer 360</div>
+        <div id="cust360-name-tv" style="font-size:22px;font-weight:600;color:var(--ink);margin-top:2px;line-height:1.2;">—</div>
+      </div>
+      <button onclick="closeCustomer360TV()" style="background:transparent;border:none;font-size:24px;cursor:pointer;color:var(--ink-subtle);line-height:1;padding:4px 8px;" title="Close">×</button>
+    </div>
+    <div id="cust360-kpis-tv" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:18px 24px 0;"></div>
+    <div style="padding:18px 24px;display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+      <div>
+        <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);font-weight:600;margin-bottom:8px;">Stage breakdown · open deals</div>
+        <div id="cust360-stage-bars-tv"></div>
+      </div>
+      <div>
+        <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);font-weight:600;margin-bottom:8px;">Outcome breakdown · all deals</div>
+        <div id="cust360-outcome-bars-tv"></div>
+      </div>
+    </div>
+    <div style="padding:6px 24px 24px;">
+      <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);font-weight:600;margin-bottom:8px;">Deals · most recent first</div>
+      <div id="cust360-deals-tv" style="max-height:340px;overflow-y:auto;border:1px solid var(--border-soft);border-radius:8px;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* v25.43 (#19) — Customer 360 for tvONE. Reads window._rawCentralLog (already
+   backend-scoped per BU Head visibility from v26.10.1). Field names:
+   endUser (camelCase, not enduser), username (not loginName), _allUsersTV (not _allUsers). */
+window.openCustomer360TV = function(customerName){
+  const name = String(customerName || '').trim();
+  if(!name) return;
+  const log = Array.isArray(window._rawCentralLog) ? window._rawCentralLog : [];
+  const target = name.toLowerCase();
+  const deals = log.filter(function(e){
+    return String(e.endUser || '').trim().toLowerCase() === target;
+  }).sort(function(a, b){
+    const ta = a.timestamp ? Date.parse(a.timestamp) : 0;
+    const tb = b.timestamp ? Date.parse(b.timestamp) : 0;
+    return tb - ta;
+  });
+
+  const displayName = deals.length > 0 ? String(deals[0].endUser || name).trim() : name;
+  const modal = document.getElementById('cust360-modal-tv');
+  if(!modal) return;
+  document.getElementById('cust360-name-tv').textContent = displayName;
+
+  if(deals.length === 0){
+    document.getElementById('cust360-kpis-tv').innerHTML = '';
+    document.getElementById('cust360-stage-bars-tv').innerHTML = '<div style="font-size:13px;color:var(--ink-subtle);padding:12px 0;">No deals found for this customer in your visible history.</div>';
+    document.getElementById('cust360-outcome-bars-tv').innerHTML = '';
+    document.getElementById('cust360-deals-tv').innerHTML = '<div style="padding:18px;font-size:13px;color:var(--ink-subtle);text-align:center;">No deals visible.</div>';
+    modal.style.display = 'block';
+    return;
+  }
+
+  const totalDeals = deals.length;
+  let totalValue = 0, openValue = 0, openCount = 0, wonCount = 0, lostCount = 0;
+  const partnerSet = {}, cityList = {};
+  let latestTs = 0;
+  deals.forEach(function(e){
+    const v = parseFloat(e.dealValueINR || e.dealValue || 0) || 0;
+    totalValue += v;
+    const outcome = String(e.outcome || 'open').toLowerCase();
+    if(outcome === 'open'){ openValue += v; openCount++; }
+    if(outcome === 'won'){ wonCount++; }
+    if(outcome === 'lost'){ lostCount++; }
+    if(e.partner) partnerSet[String(e.partner).trim().toLowerCase()] = String(e.partner).trim();
+    if(e.city) cityList[String(e.city).trim()] = true;
+    const t = e.timestamp ? Date.parse(e.timestamp) : 0;
+    if(t > latestTs) latestTs = t;
+  });
+  const partnerCount = Object.keys(partnerSet).length;
+  const cityCountN = Object.keys(cityList).length;
+  const winRate = (wonCount + lostCount) > 0 ? Math.round((wonCount / (wonCount + lostCount)) * 100) : null;
+
+  const _fmt = function(n){ return '₹' + (n || 0).toLocaleString('en-IN'); };
+  const lastActivityStr = latestTs > 0
+    ? new Date(latestTs).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })
+    : '—';
+
+  const _kpiTileTV = function(label, value, sub, color){
+    return '<div style="background:var(--surface-2);border:1px solid var(--border-soft);border-radius:10px;padding:12px;border-left:3px solid ' + color + ';">' +
+      '<div style="font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);font-weight:600;">' + label + '</div>' +
+      '<div style="font-size:18px;font-weight:600;color:var(--ink);margin-top:4px;line-height:1.2;">' + value + '</div>' +
+      '<div style="font-size:11px;color:var(--ink-subtle);margin-top:2px;">' + sub + '</div>' +
+      '</div>';
+  };
+
+  document.getElementById('cust360-kpis-tv').innerHTML = [
+    _kpiTileTV('Total deals', totalDeals, totalDeals + ' deal' + (totalDeals === 1 ? '' : 's'), '#D4AF37'),
+    _kpiTileTV('Pipeline value', _fmt(totalValue), 'Lifetime', '#10B981'),
+    _kpiTileTV('Open deals', openCount + ' · ' + _fmt(openValue), 'Active right now', '#F59E0B'),
+    _kpiTileTV('Last activity', lastActivityStr, partnerCount + ' partner' + (partnerCount === 1 ? '' : 's') + ' · ' + cityCountN + ' citie' + (cityCountN === 1 ? '' : 's'), '#8B5CF6')
+  ].join('');
+
+  const stageOrder = ['Lead','Opportunity','Proposal','Negotiation','Order'];
+  const stageCount = { Lead:0, Opportunity:0, Proposal:0, Negotiation:0, Order:0 };
+  deals.forEach(function(e){
+    if(String(e.outcome || 'open').toLowerCase() !== 'open') return;
+    const s = String(e.stage || '').trim();
+    if(stageCount[s] !== undefined) stageCount[s]++;
+  });
+  const maxStage = Math.max.apply(null, stageOrder.map(function(s){ return stageCount[s]; }).concat([1]));
+  let stageHTML = '';
+  stageOrder.forEach(function(s){
+    const n = stageCount[s];
+    const pct = Math.round((n / maxStage) * 100);
+    stageHTML += '<div style="display:flex;align-items:center;gap:10px;font-size:12px;margin-bottom:6px;">' +
+      '<div style="width:96px;color:var(--ink-soft);">' + s + '</div>' +
+      '<div style="flex:1;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;">' +
+        (n > 0 ? '<div style="height:100%;width:' + pct + '%;background:#D4AF37;border-radius:4px;"></div>' : '') +
+      '</div>' +
+      '<div style="min-width:24px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink);">' + n + '</div>' +
+      '</div>';
+  });
+  if (openCount === 0) {
+    stageHTML = '<div style="font-size:13px;color:var(--ink-subtle);padding:8px 0;">No open deals.</div>';
+  }
+  document.getElementById('cust360-stage-bars-tv').innerHTML = stageHTML;
+
+  const outcomeMap = { open:0, won:0, lost:0, 'on-hold':0 };
+  deals.forEach(function(e){
+    const o = String(e.outcome || 'open').toLowerCase();
+    if(outcomeMap[o] !== undefined) outcomeMap[o]++;
+  });
+  const outcomeColors = { open:'#3B82F6', won:'#10B981', lost:'#EF4444', 'on-hold':'#F59E0B' };
+  const outcomeLabels = { open:'Open', won:'Won', lost:'Lost', 'on-hold':'On hold' };
+  const maxOut = Math.max.apply(null, Object.keys(outcomeMap).map(function(k){ return outcomeMap[k]; }).concat([1]));
+  let outcomeHTML = '';
+  ['open','won','lost','on-hold'].forEach(function(k){
+    const n = outcomeMap[k];
+    const pct = Math.round((n / maxOut) * 100);
+    outcomeHTML += '<div style="display:flex;align-items:center;gap:10px;font-size:12px;margin-bottom:6px;">' +
+      '<div style="width:80px;color:var(--ink-soft);">' + outcomeLabels[k] + '</div>' +
+      '<div style="flex:1;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;">' +
+        (n > 0 ? '<div style="height:100%;width:' + pct + '%;background:' + outcomeColors[k] + ';border-radius:4px;"></div>' : '') +
+      '</div>' +
+      '<div style="min-width:24px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink);">' + n + '</div>' +
+      '</div>';
+  });
+  if (winRate !== null) {
+    outcomeHTML += '<div style="font-size:11px;color:var(--ink-subtle);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border-soft);">' +
+      'Win rate: <b style="color:#10B981;">' + winRate + '%</b> (Won &divide; Closed)</div>';
+  }
+  document.getElementById('cust360-outcome-bars-tv').innerHTML = outcomeHTML;
+
+  const _resolveOwnerNameTV = function(login){
+    if(!login) return '—';
+    const u = (window._allUsersTV || []).find(function(x){
+      return String(x.username || '').toLowerCase() === String(login).toLowerCase();
+    });
+    return u ? (u.fullName || u.username) : login;
+  };
+  const escTV = function(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+  let dealsHTML = '<table style="width:100%;border-collapse:collapse;font-size:12.5px;">';
+  dealsHTML += '<thead><tr style="background:var(--surface-2);text-align:left;">' +
+    '<th style="padding:8px 10px;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);">Date</th>' +
+    '<th style="padding:8px 10px;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);">Project</th>' +
+    '<th style="padding:8px 10px;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);">Stage</th>' +
+    '<th style="padding:8px 10px;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);">Outcome</th>' +
+    '<th style="padding:8px 10px;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);">Sales / Presales</th>' +
+    '<th style="padding:8px 10px;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-subtle);text-align:right;">Value</th>' +
+    '</tr></thead><tbody>';
+  deals.forEach(function(e){
+    const d = e.timestamp ? new Date(e.timestamp) : null;
+    const dateStr = d ? d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'2-digit' }) : '—';
+    const v = parseFloat(e.dealValueINR || e.dealValue || 0) || 0;
+    const outcome = String(e.outcome || 'open').toLowerCase();
+    const outcomeBg = { open:'#1E3A5F', won:'#0E3422', lost:'#3F1414', 'on-hold':'#3B2A0F' }[outcome] || '#1F2937';
+    const outcomeFg = { open:'#93C5FD', won:'#86EFAC', lost:'#FCA5A5', 'on-hold':'#FCD34D' }[outcome] || '#94A3B8';
+    const salesName = _resolveOwnerNameTV(e.salesPerson);
+    const presalesName = _resolveOwnerNameTV(e.presalesPerson);
+    const handoff = (e.salesPerson || e.presalesPerson)
+      ? (e.salesPerson ? '<b>S:</b> ' + escTV(salesName) : '') +
+        (e.salesPerson && e.presalesPerson ? ' &middot; ' : '') +
+        (e.presalesPerson ? '<b>P:</b> ' + escTV(presalesName) : '')
+      : '—';
+    dealsHTML += '<tr style="border-top:1px solid var(--border-soft);">' +
+      '<td style="padding:8px 10px;color:var(--ink-soft);font-family:monospace;white-space:nowrap;">' + escTV(dateStr) + (e.refId ? '<br><span style="font-size:10px;opacity:0.65;">' + escTV(e.refId) + '</span>' : '') + '</td>' +
+      '<td style="padding:8px 10px;"><b>' + escTV(e.project || '—') + '</b><br><span style="font-size:11px;color:var(--ink-subtle);">' + escTV(e.partner || '—') + ' &middot; ' + escTV(e.city || '—') + '</span></td>' +
+      '<td style="padding:8px 10px;color:var(--ink);">' + escTV(e.stage || '—') + '</td>' +
+      '<td style="padding:8px 10px;"><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:700;letter-spacing:0.04em;background:' + outcomeBg + ';color:' + outcomeFg + ';">' + escTV((e.outcome || 'open').toUpperCase()) + '</span></td>' +
+      '<td style="padding:8px 10px;font-size:11.5px;color:var(--ink-soft);">' + handoff + '</td>' +
+      '<td style="padding:8px 10px;text-align:right;font-variant-numeric:tabular-nums;">' + (v > 0 ? _fmt(v) : '—') + '</td>' +
+      '</tr>';
+  });
+  dealsHTML += '</tbody></table>';
+  document.getElementById('cust360-deals-tv').innerHTML = dealsHTML;
+
+  modal.style.display = 'block';
+  document.addEventListener('keydown', _cust360EscCloseTV);
+};
+
+window.closeCustomer360TV = function(ev){
+  if(ev && ev.type === 'click' && ev.target && ev.target.id !== 'cust360-modal-tv') return;
+  const modal = document.getElementById('cust360-modal-tv');
+  if(modal) modal.style.display = 'none';
+  document.removeEventListener('keydown', _cust360EscCloseTV);
+};
+
+function _cust360EscCloseTV(e){
+  if(e.key === 'Escape') closeCustomer360TV();
+}
 </script>
 <!-- Silent sync toast indicator -->
 <div class="sync-status" id="syncStatus">
