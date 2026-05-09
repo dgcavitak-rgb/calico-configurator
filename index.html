@@ -713,6 +713,52 @@
   }
   .login-contact-links .sep { margin: 0 12px; opacity: 0.3; color: var(--gold); }
 
+  /* v25.48 — Password show/hide toggle (tvONE flavor with warm gold accent). */
+  .pwd-toggle-wrap-tv{
+    position:relative;
+    display:block;
+    width:100%;
+  }
+  .pwd-toggle-wrap-tv input{
+    padding-right:42px !important;
+  }
+  .pwd-toggle-btn-tv{
+    position:absolute;
+    top:50%;
+    right:6px;
+    transform:translateY(-50%);
+    width:32px;
+    height:32px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:transparent;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    padding:0;
+    font-size:16px;
+    line-height:1;
+    color:var(--ink-soft);
+    transition:background-color 120ms, color 120ms;
+    user-select:none;
+  }
+  .pwd-toggle-btn-tv:hover{
+    background:rgba(212, 175, 55, 0.12);
+    color:var(--gold-bright);
+  }
+  .pwd-toggle-btn-tv:focus-visible{
+    outline:2px solid var(--gold-bright);
+    outline-offset:1px;
+  }
+  .pwd-toggle-btn-tv.is-revealed{
+    color:var(--gold-bright);
+  }
+  .pwd-toggle-icon-tv{
+    display:inline-block;
+    pointer-events:none;
+  }
+
   /* ===== CARDS — dark jewel glass ===== */
   .card {
     background: linear-gradient(135deg, rgba(18, 24, 26, 0.85) 0%, rgba(14, 19, 16, 0.9) 100%);
@@ -4731,7 +4777,15 @@
     <span class="login-accent"></span>
     <div id="loginError" class="error-msg">Invalid username or password.</div>
     <div class="field"><label>Username</label><input type="text" id="loginUser" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. yourname (lowercase)"></div>
-    <div class="field"><label>Password</label><input type="password" id="loginPass" autocomplete="off" placeholder="••••••••"></div>
+    <div class="field"><label>Password</label>
+      <!-- v25.48: Password show/hide toggle. Click 👁 to reveal so user can verify before signing in. -->
+      <div class="pwd-toggle-wrap-tv">
+        <input type="password" id="loginPass" autocomplete="off" placeholder="••••••••">
+        <button type="button" class="pwd-toggle-btn-tv" id="login-pwd-toggle" aria-label="Show password" onclick="togglePasswordVisibilityTV('loginPass', this)">
+          <span class="pwd-toggle-icon-tv" aria-hidden="true">👁</span>
+        </button>
+      </div>
+    </div>
     <div style="margin-top: 22px;"><button class="primary full" onclick="attemptLogin()">Sign in</button></div>
     <div style="text-align:center; margin-top:14px;">
       <a href="#" onclick="event.preventDefault(); openForgotPasswordModal();" style="font-size:12.5px; color:var(--gold-bright); text-decoration:none; font-weight:600; letter-spacing:0.02em">Forgot password?</a>
@@ -6469,7 +6523,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.47';  // v25.47 — REGION + OUTCOME POLISH (parity port from BS v24.26.13). Two changes mirror BS exactly: (1) REGION ZONE TILES — dropped International tile (5→4 tiles: West/North/South/East only). Grid recalibrated 5col→4col, breakpoint 900px. (2) OUTCOME SCORECARD — TECH STYLE polish. JetBrains Mono numerals via CSS, sharp 4px corners, lower-saturation green (#059669), equal-weight grid (1fr 2fr), hero gradient flattened, trophy emoji REMOVED, bracketed monospace labels [ OPEN ] / [ WON ], HUD-style corner tick-marks, dashed zero-state tiles, smaller "0" on zero tiles. CSS vars adapted for tvONE: --paper-warm (was --surface-2), --line-softer (was --border-soft), --ink-soft (was --ink-muted), --ink-subtle. Bonus fix: tile count color now controlled by CSS (theme-aware) not inline style — was hardcoded #0F172A which broke in tvONE light mode. Pairs with backend v26.11.0 — no backend changes.
+  const TVONE_FRONTEND_VERSION = '25.48';  // v25.48 — PASSWORD SHOW/HIDE TOGGLE on login (parity with BS v24.26.16). Standard pattern: 👁 button at right edge of #loginPass. Click to reveal, click again to hide. Warm gold accent color matching tvONE theme. Window-scoped togglePasswordVisibilityTV helper so inline onclick attribute can reach it. Caret position preserved on toggle. Pairs with backend v26.11.0 — no backend changes.
+// v25.47 — REGION + OUTCOME POLISH (parity port from BS v24.26.13). Region zones: 5→4 tiles (W/N/S/E). Outcome scorecard tech-style polish.
 // v25.46 — V26 DASHBOARD MODULE PORT (Step 2 of 2 for tvONE v26 port). Full v26 dashboard rebuild from BS v24.26.0–v24.26.12 ported to tvONE: My Pipeline + Team Analytics dual-tab UI replaces the legacy Review tab. CSS adaptations: --ink-muted → --ink-soft, --surface → --paper, --surface-2 → --paper-warm, --border-soft → --line-softer, --indigo → --gold. JS adaptations: window._centralLog → centralLog, showTab() → showView() hook, 'dashboard' → 'dash'. Dropped: Most Quoted Players chart (BrightSign-specific). Deprecated: legacy briefingView.
 // v25.45 — BUG FIX PARITY + V26 DASHBOARD FOUNDATION (Step 1 of 2 for tvONE v26 port). Five changes: (1) CONFIRM-ON-EDIT FIX — port from BS v24.26.7. (2) AUTO-FETCH RACE FIX (2 sites: rehydrate + fresh-login) — port from BS v24.25.8. (3) SALES AUTO-DEFAULT OVERRIDE — port from BS v24.25.8. (4) LIGHT-MODE CSS GAP — added [data-theme="light"] .logo-fallback-text override. (5) ECHARTS CDN LOAD — added echarts@5.4.3 + echarts-gl@2.0.9 CDN scripts as foundation for v25.46 dashboard port.
 // v25.44 — Critical-fixes parity port from BS v24.25.0 → v24.25.6. Pipeline cutoff (Apr 1 2026, 'TVONE_PIPELINE_DATA_START'). Header name fallback fix. Test Mode banner upgraded to diagonal-stripe + flashing emoji + bigger Turn-off button + permanent Profile-tab toggle card with explainer (Super-only). Sales Person auto-default extended to Super users. Notification "Untitled" backfill for legacy entries. Resilience: _safeFetchJson with HTML-not-JSON detection + silent retry on review fetch, dup error suppression in error_log_append. Review filter row 4×2 grid. Region card empty state actionable. Pairs with backend v26.11.0 — no backend changes.
@@ -7489,6 +7544,36 @@
       return false;  // keep sessionStorage so a transient network blip doesn't kick user out
     }
   }
+
+  // v25.48: Show/hide password helper for tvONE login. Window-scoped so inline onclick can reach it.
+  // Toggles input.type between 'password' and 'text'. Updates button aria-label + icon.
+  window.togglePasswordVisibilityTV = function(inputId, btn){
+    const inp = document.getElementById(inputId);
+    if(!inp) return;
+    const showing = inp.type === 'text';
+    if(showing){
+      inp.type = 'password';
+      if(btn){
+        btn.setAttribute('aria-label', 'Show password');
+        btn.classList.remove('is-revealed');
+        const ic = btn.querySelector('.pwd-toggle-icon-tv');
+        if(ic) ic.textContent = '👁';
+      }
+    } else {
+      inp.type = 'text';
+      if(btn){
+        btn.setAttribute('aria-label', 'Hide password');
+        btn.classList.add('is-revealed');
+        const ic = btn.querySelector('.pwd-toggle-icon-tv');
+        if(ic) ic.textContent = '👁‍🗨';
+      }
+    }
+    try {
+      const pos = inp.value.length;
+      inp.focus();
+      if(typeof inp.setSelectionRange === 'function') inp.setSelectionRange(pos, pos);
+    } catch(_){}
+  };
 
   async function attemptLogin() {
     const u = document.getElementById('loginUser').value.trim().toLowerCase();
