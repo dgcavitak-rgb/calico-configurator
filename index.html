@@ -4568,6 +4568,112 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
+/* v25.52: Region — stacked bars (case count + ₹ pipeline) below the 4 tiles. Ported from BS v24.26.22+24. */
+.v26-region-stack-wrap { margin-top: 14px; padding: 0 4px; }
+.v26-region-stack-block { margin-bottom: 10px; }
+.v26-region-stack-block:last-child { margin-bottom: 0; }
+.v26-region-stack-caption {
+  font-size: 10px; font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-weight: 600; letter-spacing: 0.08em; color: var(--ink-muted, #64748B);
+  margin-bottom: 5px; text-transform: uppercase;
+}
+.v26-region-stack-bar {
+  display: flex; height: 26px;
+  border-radius: 4px; overflow: hidden;
+  border: 1px solid var(--line-softer, #E5E7EB);
+}
+.v26-region-stack-seg {
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: filter 120ms;
+  min-width: 0;
+}
+.v26-region-stack-seg:hover { filter: brightness(0.92); }
+.v26-region-stack-lbl {
+  color: #fff; font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 10px; font-weight: 600; letter-spacing: -0.01em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.20);
+}
+.v26-region-stack-legend {
+  display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px;
+  font-size: 11.5px;
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  color: var(--ink-muted, #64748B);
+  font-weight: 500;
+}
+.v26-region-stack-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.v26-region-stack-legend-chip { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* v25.52: Outcome winrate radial ring (port from BS v24.26.22) */
+.v26-winrate-ring {
+  display: block;
+  margin: 4px 0 6px;
+}
+.v26-winrate-ring-fg {
+  transition: stroke-dashoffset 800ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.v26-winrate-ring-pct {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 24px; font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.v26-winrate-ring-empty {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 28px; font-weight: 700;
+  fill: var(--ink-subtle, #94A3B8);
+}
+
+/* v25.52: Stage analytics card (port from BS v24.26.21 + v24.26.23 redesign) */
+.v26-sa-list { display: flex; flex-direction: column; gap: 6px; padding: 0 4px; }
+.v26-sa-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 36px 50px;
+  align-items: center; gap: 10px;
+  padding: 8px 12px;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.v26-sa-row:hover { background: var(--surface-2, var(--paper-warm, #F1F5F9)); }
+.v26-sa-stage-name {
+  font-size: 12px; font-weight: 600; color: var(--ink, #0F172A);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.v26-sa-bar-track {
+  height: 14px;
+  background: var(--surface-2, var(--paper-warm, #F1F5F9));
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid var(--line-softer, #E5E7EB);
+}
+.v26-sa-bar-fill {
+  height: 100%;
+  border-radius: 0;
+  transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.v26-sa-stage-count {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 13px; font-weight: 600; color: var(--ink, #0F172A);
+  text-align: right;
+}
+.v26-sa-stage-pct {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-size: 11px; font-weight: 500; color: var(--ink-muted, #64748B);
+  text-align: right;
+}
+.v26-sa-over {
+  display: inline-block;
+  margin-left: 1px;
+  color: var(--ink-subtle, #94A3B8);
+  font-weight: 700;
+}
+.v26-sa-footer {
+  font-size: 10px; color: var(--ink-subtle, #94A3B8);
+  text-align: center; padding: 12px 16px 0;
+  line-height: 1.4;
+}
+
 /* Bottom row (Leaderboard + Stuck) */
 .v26-bottom-row {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5736,6 +5842,8 @@
       <div class="v26-charts-grid">
         <div class="v26-chart-card"><div class="v26-chart-head">Source split <span class="v26-chart-sub">BS-generated vs Cavitak-generated · click slice to filter</span></div><div class="v26-chart-body" id="v26-chart-source"></div></div>
         <div class="v26-chart-card"><div class="v26-chart-head">Stage funnel <span class="v26-chart-sub">₹ + count by stage · click to filter</span></div><div class="v26-chart-body" id="v26-chart-stage"></div></div>
+        <!-- v25.52: Stage analytics card (parity port from BS v24.26.21 + v24.26.23 redesign) -->
+        <div class="v26-chart-card"><div class="v26-chart-head">Stage analytics <span class="v26-chart-sub">conversion % between stages · drop-off detection</span></div><div class="v26-chart-body" id="v26-chart-stage-analytics"></div></div>
         <div class="v26-chart-card"><div class="v26-chart-head">Region · zone breakdown <span class="v26-chart-sub">deals + pipeline by zone · click any zone to filter</span></div><div class="v26-chart-body" id="v26-chart-region"></div></div>
         <div class="v26-chart-card"><div class="v26-chart-head">Outcome scorecard <span class="v26-chart-sub">win rate · pipeline by outcome</span></div><div class="v26-chart-body" id="v26-chart-outcome"></div></div>
         <div class="v26-chart-card"><div class="v26-chart-head">Top partners <span class="v26-chart-sub">Top 10 by # cases</span></div><div class="v26-chart-body" id="v26-chart-partners"></div></div>
@@ -6651,7 +6759,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.51';  // v25.51 — INTERNAL NOTES FIELD per opportunity (parity with BS v24.26.19, with naming difference). Field ID is `f_internalNotes` and payload key is `internalNotes` — NOT `f_notes` because tvONE already has an existing `f_notes` field (line 5420) for "Notes / special requirements" (deployment notes that ARE in exports). The new f_internalNotes is sales-process internal notes that are NOT in Excel/PDF exports. Both fields coexist. Markup: textarea at end of Project Context section, full grid-width span, 2000-char limit, live counter (red >1900). JS plumbing: capture in calculateAndLog payload (line ~8819), backend payload write (line ~8990), restore in 2 prefill paths (populateFormFromRow_ + secondary edit-load), reset in resetForm + counter reset, char counter wired inside _initDraftAutosaveTV (runs on form init). Draft autosave captures it automatically via existing `id.indexOf('f_')` filter. Backend: needs new col on Submissions sheet for `internalNotes` (next backend release v26.11.1) — until then payload travels but is silently dropped by old backend (existing behavior for unknown fields). Audit log write path on tvONE remains an ambiguous gap (per cross-check 2026-05-09) so internalNotes is NOT explicitly audit-logged from frontend. Pairs with backend v26.11.0 (current) or v26.11.1+ (upcoming).
+  const TVONE_FRONTEND_VERSION = '25.52';  // v25.52 — FULL DASHBOARD PARITY PORT from BS v26.20→26.24. Four features ported in one release: (1) STUCK TABLE AGING TINTS (BS v24.26.20) — Status column severity-tiered: slipped close-month always red, ≥30d red, 14-29d amber, <14d neutral. (2) STAGE ANALYTICS CARD (BS v24.26.21 + v24.26.23 redesign) — new chart card after Stage funnel showing horizontal bars per stage with % of Lead. Bar width capped at 100%, ↑ marker for stages exceeding Lead (snapshot oddities). Click row to filter by stage. (3) REGION CARD TWO STACKED BARS (BS v24.26.22 + v24.26.24) — case count distribution + ₹ pipeline distribution as separate horizontal bars below the 4 zone tiles. Helper _buildRegionBar() shared between both. Legend font 11.5px (was 10px in BS v26.22 — bumped in v26.24 per user feedback). (4) OUTCOME RADIAL RING (BS v24.26.22) — Win Rate hero replaced with SVG progress ring (r=48, C=301.6, animated 800ms via stroke-dashoffset). Ring color matches existing winColor logic. Total chart cards on Team Analytics: 10 (was 9). Pairs with backend v26.11.0 — no backend changes.
+// v25.51 — INTERNAL NOTES FIELD per opportunity. Distinct from existing f_notes (deployment notes).
 // v25.50 — WON/LOST CALC-BUTTON LABEL ADAPTER. "Calculate & Log" → "View Quote →" when outcome is Won/Lost.
 // v25.49 — KEYBOARD SHORTCUTS (Ctrl/Cmd+S, Ctrl/Cmd+Enter, Esc, /, ?) + ACTION BUTTON STYLING (Option B parity with BS).
 // v25.48 — PASSWORD SHOW/HIDE TOGGLE on login (parity with BS v24.26.16). 👁 button at right edge of #loginPass. Warm gold accent.
@@ -17611,6 +17720,7 @@ function _cust360EscCloseTV(e){
     }
     _renderChartSource(deals);
     _renderChartStage(deals);
+    _renderChartStageAnalytics(deals);  // v25.52: ported from BS v24.26.21
     _renderChartRegion(deals);
     _renderChartOutcome(deals);
     _renderChartPartners(deals);
@@ -17768,6 +17878,70 @@ function _cust360EscCloseTV(e){
   };
   const _ZONE_COLORS = { West: '#10B981', North: '#F59E0B', South: '#3B82F6', East: '#EF4444', International: '#8B5CF6' };
 
+  /* ────────────────────── Stage analytics — CONVERSION % CARD (v25.52, parity port) ──────────────────────
+   * Ported from BS v24.26.21 + v24.26.23 redesign. One row per stage with horizontal bar, count, % of Lead.
+   * Bar width = (stage count / Lead count) × 100, capped at 100% visually. Stages exceeding Lead get a
+   * small ↑ marker (data-honest but quiet). Single reference point ("% of Lead") replaces from→to chains.
+   * NOTE: Velocity (avg days per transition) is NOT here yet — needs full StageTransitions backend route. */
+  function _renderChartStageAnalytics(deals){
+    const dom = document.getElementById('v26-chart-stage-analytics');
+    if(!dom) return;
+    dom.innerHTML = '';
+    dom.style.height = '300px';
+    dom.style.overflowY = 'auto';
+    dom.style.padding = '14px 4px';
+    const open = deals.filter(function(e){ return String(e.outcome || '').toLowerCase() === 'open'; });
+    const stageData = STAGES_OPEN.map(function(s){
+      const stageDeals = open.filter(function(e){ return e.stage === s; });
+      return { name: s, value: stageDeals.length };
+    });
+    const totalOpen = stageData.reduce(function(t, d){ return t + d.value; }, 0);
+    if(!totalOpen){
+      dom.innerHTML = '<div style="padding:60px;text-align:center;color:var(--ink-muted);">No open deals to analyze</div>';
+      return;
+    }
+    function _esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    const stageColors = { Lead: '#6366F1', Opportunity: '#7C3AED', Proposal: '#A855F7', Negotiation: '#C026D3', Order: '#DB2777' };
+    const leadCount = stageData[0].value;
+
+    const html = ['<div class="v26-sa-list">'];
+    stageData.forEach(function(s){
+      const color = stageColors[s.name] || '#94A3B8';
+      let pct, barWidth, pctLabel, isOver;
+      if(leadCount === 0){
+        pct = null;
+        barWidth = s.value > 0 ? 50 : 0;
+        pctLabel = s.value > 0 ? '—' : '0';
+      } else {
+        pct = Math.round((s.value / leadCount) * 100);
+        isOver = pct > 100;
+        barWidth = isOver ? 100 : pct;
+        pctLabel = pct + '%';
+      }
+      html.push(
+        '<div class="v26-sa-row" data-stage="' + _esc(s.name) + '">' +
+          '<div class="v26-sa-stage-name">' + _esc(s.name) + '</div>' +
+          '<div class="v26-sa-bar-track">' +
+            '<div class="v26-sa-bar-fill" style="width:' + barWidth + '%;background:' + color + ';"></div>' +
+          '</div>' +
+          '<div class="v26-sa-stage-count">' + s.value + '</div>' +
+          '<div class="v26-sa-stage-pct">' + pctLabel + (isOver ? '<span class="v26-sa-over" title="deals entered mid-funnel">↑</span>' : '') + '</div>' +
+        '</div>'
+      );
+    });
+    html.push('</div>');
+    html.push('<div class="v26-sa-footer">% of Lead · click row to filter · velocity coming once history accumulates</div>');
+    dom.innerHTML = html.join('');
+
+    dom.querySelectorAll('.v26-sa-row').forEach(function(row){
+      const stage = row.getAttribute('data-stage');
+      if(!stage) return;
+      row.addEventListener('click', function(){
+        const f = _readFilterState(); f.stage = stage; _saveFilterState(f); _restoreFilterUI(); _renderTeam();
+      });
+    });
+  }
+
   function _renderChartRegion(deals){
     // v24.26.12: Replaced India choropleth (CDN-dependent, repeatedly failed) with zone tiles.
     //   5 tiles in a row: West / North / South / East / International. Each shows count + ₹ + top state.
@@ -17822,6 +17996,56 @@ function _cust360EscCloseTV(e){
            '</div>';
     });
     dom.innerHTML = '<div class="v26-region-zone-grid">' + tiles.join('') + '</div>';
+
+    // v25.52: Port BS v24.26.22 + v24.26.24 — two stacked bars below tiles.
+    //   Top bar: case count distribution (% of total deals per zone).
+    //   Bottom bar: ₹ pipeline value distribution (% of total ₹ per zone).
+    // Together they tell a real story — high count + low ₹ = volume-heavy small deals;
+    // low count + high ₹ = concentrated big deals. Helper avoids code duplication.
+    function _buildRegionBar(caption, valFn, fmtVal){
+      const total = ZONES_ORDER.reduce(function(t, z){ return t + valFn(byZone[z]); }, 0);
+      if(total <= 0) return '';
+      const segments = ZONES_ORDER
+        .map(function(z){ return { zone: z, raw: valFn(byZone[z]), pct: (valFn(byZone[z]) / total) * 100 }; })
+        .filter(function(s){ return s.raw > 0; });
+      const segHtml = segments.map(function(s){
+        const pctRounded = Math.round(s.pct);
+        const showLabel = s.pct >= 18;
+        return '<div class="v26-region-stack-seg" ' +
+               'data-zone="' + _esc(s.zone) + '" ' +
+               'title="' + _esc(s.zone) + ': ' + fmtVal(s.raw) + ' (' + pctRounded + '%)" ' +
+               'style="background:' + _ZONE_COLORS[s.zone] + ';width:' + s.pct + '%;">' +
+               (showLabel ? '<span class="v26-region-stack-lbl">' + pctRounded + '%</span>' : '') +
+               '</div>';
+      }).join('');
+      const legendHtml = ZONES_ORDER.map(function(z){
+        const seg = segments.find(function(s){ return s.zone === z; });
+        const pct = seg ? Math.round(seg.pct) : 0;
+        const dim = seg ? '' : 'opacity:0.35;';
+        return '<span class="v26-region-stack-legend-item" style="' + dim + '">' +
+                 '<span class="v26-region-stack-legend-chip" style="background:' + _ZONE_COLORS[z] + ';"></span>' +
+                 _esc(z.charAt(0)) + ' ' + pct + '%' +
+               '</span>';
+      }).join('');
+      return '<div class="v26-region-stack-block">' +
+               '<div class="v26-region-stack-caption">' + caption + '</div>' +
+               '<div class="v26-region-stack-bar">' + segHtml + '</div>' +
+               '<div class="v26-region-stack-legend">' + legendHtml + '</div>' +
+             '</div>';
+    }
+    const countBarHtml = _buildRegionBar('CASE COUNT DISTRIBUTION', function(b){ return b.c; }, function(n){ return n + (n === 1 ? ' case' : ' cases'); });
+    const valueBarHtml = _buildRegionBar('PIPELINE ₹ DISTRIBUTION', function(b){ return b.v; }, function(v){ return _shortINR(v); });
+    if(countBarHtml || valueBarHtml){
+      dom.insertAdjacentHTML('beforeend', '<div class="v26-region-stack-wrap">' + countBarHtml + valueBarHtml + '</div>');
+      dom.querySelectorAll('.v26-region-stack-seg').forEach(function(seg){
+        seg.addEventListener('click', function(){
+          const zone = seg.getAttribute('data-zone');
+          if(!zone) return;
+          const f = _readFilterState(); f.region = zone; _saveFilterState(f); _restoreFilterUI(); _renderTeam();
+        });
+      });
+    }
+
     // Wire click → filter (skip zero tiles)
     dom.querySelectorAll('.v26-region-zone-tile').forEach(function(t){
       if(t.classList.contains('is-zero')) return;
@@ -17870,16 +18094,29 @@ function _cust360EscCloseTV(e){
     const colors = { Open: '#2563EB', Won: '#059669', Lost: '#DC2626', 'On hold': '#D97706' };
     const filterValues = { Open: 'open', Won: 'won', Lost: 'lost', 'On hold': 'on-hold' };
     function _esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    // v25.47: Hero markup without trophy, bracketed monospace label
+    // v25.52: Port BS v24.26.22 — radial progress ring replaces flat % text.
+    // r=48, circumference = 2π × 48 ≈ 301.6. dashoffset = C × (1 - winRate/100).
+    // Transform rotate(-90 60 60) starts arc at top instead of right.
+    const C = 301.6;
+    const ringDashOffset = winRate !== null ? (C * (1 - winRate / 100)).toFixed(1) : C;
     const heroHtml = winRate !== null
       ? '<div class="v26-winrate-hero">' +
           '<div class="v26-winrate-label">[ Win Rate ]</div>' +
-          '<div class="v26-winrate-pct" style="color:' + winColor + '">' + winRate + '%</div>' +
+          '<svg class="v26-winrate-ring" viewBox="0 0 120 120" width="118" height="118" aria-hidden="true">' +
+            '<circle cx="60" cy="60" r="48" fill="none" stroke="var(--border-soft, #E5E7EB)" stroke-width="6" opacity="0.55"/>' +
+            '<circle cx="60" cy="60" r="48" fill="none" stroke="' + winColor + '" stroke-width="6" stroke-linecap="round" ' +
+              'stroke-dasharray="' + C + '" stroke-dashoffset="' + ringDashOffset + '" ' +
+              'transform="rotate(-90 60 60)" class="v26-winrate-ring-fg"/>' +
+            '<text x="60" y="62" text-anchor="middle" dominant-baseline="middle" class="v26-winrate-ring-pct" fill="' + winColor + '">' + winRate + '%</text>' +
+          '</svg>' +
           '<div class="v26-winrate-detail">' + counts.Won + ' / ' + closed + ' closed deal' + (closed === 1 ? '' : 's') + '</div>' +
         '</div>'
       : '<div class="v26-winrate-hero">' +
           '<div class="v26-winrate-label">[ Win Rate ]</div>' +
-          '<div class="v26-winrate-empty">—</div>' +
+          '<svg class="v26-winrate-ring" viewBox="0 0 120 120" width="118" height="118" aria-hidden="true">' +
+            '<circle cx="60" cy="60" r="48" fill="none" stroke="var(--border-soft, #E5E7EB)" stroke-width="6" opacity="0.55"/>' +
+            '<text x="60" y="62" text-anchor="middle" dominant-baseline="middle" class="v26-winrate-ring-empty">—</text>' +
+          '</svg>' +
           '<div class="v26-winrate-detail">No closed deals yet</div>' +
         '</div>';
     function tile(name){
@@ -18227,6 +18464,18 @@ function _cust360EscCloseTV(e){
       const ym = _parseCloseYM(e.closemonth || e.closeMonth);
       const isSlipped = ym > 0 && ym < curYM;
       const reason = isSlipped ? ('Slipped · was ' + _formatCloseMonth(e.closemonth || e.closeMonth)) : (days + 'd in ' + (e.stage || '—'));
+      // v25.52: Aging tint (lens #5 enhancement, ported from BS v24.26.20). Status was always red.
+      // Now severity-tiered: slipped close-month always red, stage-frozen ≥30d red, 14-29d amber, <14d neutral.
+      let statusStyle;
+      if(isSlipped){
+        statusStyle = 'color:#DC2626;font-weight:700;font-size:11px;';
+      } else if(days >= 30){
+        statusStyle = 'color:#DC2626;font-weight:700;font-size:11px;';
+      } else if(days >= 14){
+        statusStyle = 'color:#D97706;font-weight:600;font-size:11px;';
+      } else {
+        statusStyle = 'color:var(--ink-muted, #64748B);font-weight:500;font-size:11px;';
+      }
       const owner = e.salesPerson || e.loginName || '—';
       let ownerDisplay = owner;
       if(Array.isArray(window._allUsers)){
@@ -18237,7 +18486,7 @@ function _cust360EscCloseTV(e){
         '<td>' + _esc(e.project || '—') + '</td>' +
         '<td><span class="v26-stage-badge v26-stage-' + _esc(String(e.stage || '').toLowerCase()) + '">' + _esc(e.stage || '—') + '</span></td>' +
         '<td class="v26-th-num">' + _shortINR(_readDealValue(e)) + '</td>' +
-        '<td style="color:#DC2626;font-weight:700;font-size:11px;">' + _esc(reason) + '</td>' +
+        '<td style="' + statusStyle + '">' + _esc(reason) + '</td>' +
         '<td>' + _esc(ownerDisplay) + '</td>' +
         '</tr>';
     }).join('');
