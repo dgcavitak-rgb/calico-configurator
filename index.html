@@ -979,11 +979,14 @@
 
   /* v25.49 — Option B action button row (tvONE flavor with warm gold accent).
      Parity with BS v24.26.17 styling. Equal-width grid, single accent, only Confirm filled.
-     Existing button.primary/.secondary classes UNTOUCHED — used elsewhere in app. */
+     Existing button.primary/.secondary classes UNTOUCHED — used elsewhere in app.
+     v25.58 — 6→7 cols (Print folded in as tertiary), width:100% added so the bar spans
+     the full available container width on all viewports. */
   .action-bar-v2-tv{
     display:grid;
-    grid-template-columns:repeat(6, minmax(78px, 1fr));
+    grid-template-columns:repeat(7, minmax(72px, 1fr));
     gap:8px;
+    width:100%;
     margin-top:18px;
     padding:10px;
     background:var(--paper-warm);
@@ -1018,6 +1021,16 @@
     border-color:var(--line-softer);
   }
   .ab2tv-btn.is-back:hover{
+    background:var(--paper);
+    border-color:var(--ink-soft);
+    color:var(--ink);
+  }
+  /* v25.58 — Tertiary action (Print). Same low-emphasis treatment as Back. */
+  .ab2tv-btn.is-tertiary{
+    color:var(--ink-soft);
+    border-color:var(--line-softer);
+  }
+  .ab2tv-btn.is-tertiary:hover{
     background:var(--paper);
     border-color:var(--ink-soft);
     color:var(--ink);
@@ -5632,9 +5645,15 @@
         </svg>
         <span class="ab2tv-label">Email</span>
       </button>
-    </div>
-    <div style="text-align:center; margin-top:12px;">
-      <button class="secondary" onclick="window.print()" style="font-size:12px; padding:6px 16px;">Print</button>
+      <!-- v25.58: Print folded into the action bar as 7th button (was orphaned below). -->
+      <button class="ab2tv-btn is-tertiary" onclick="window.print()" title="Print this page">
+        <svg class="ab2tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 6 2 18 2 18 9"/>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        <span class="ab2tv-label">Print</span>
+      </button>
     </div>
   </div>
 
@@ -6809,7 +6828,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.57';  // v25.57 — Parity ports from BS: (C1) Revisions modal — 📋 button on every editable history row opens a modal showing rolling-3 prior snapshots of that deal. Backend route `revisions_list` introduced in tvONE BE v26.12.0; auto-archive happens server-side on every updatesubmission. (C3) Email templates editor — Super-only "Edit email templates" button in Team tab opens modal where Super can customize quote_send subject + body. Server validates {{vars}} on save against per-template whitelist (clear error message on unknown vars). Reset to default supported. Pairs with backend v26.12.0; both must deploy together.
+  const TVONE_FRONTEND_VERSION = '25.58';  // v25.58 — Action bar polish on quote page. Print was orphaned in a separate row below the 6-button action bar (Back/Confirm/Excel/PDF/WhatsApp/Email), bunched-looking on wide screens. Now: Print folded into the same grid as the 7th button (styled tertiary like Back — gray, low emphasis), grid changed from 6 cols to 7 cols, .action-bar-v2-tv given explicit width:100% so it spans the full container width. New .ab2tv-btn.is-tertiary CSS class mirrors the Back button styling.
+  // v25.57 — Parity ports from BS: (C1) Revisions modal — 📋 button on every editable history row opens a modal showing rolling-3 prior snapshots of that deal. Backend route `revisions_list` introduced in tvONE BE v26.12.0; auto-archive happens server-side on every updatesubmission. (C3) Email templates editor — Super-only "Edit email templates" button in Team tab opens modal where Super can customize quote_send subject + body. Server validates {{vars}} on save against per-template whitelist (clear error message on unknown vars). Reset to default supported. Pairs with backend v26.12.0; both must deploy together.
   const TVONE_EXPECTED_BACKEND_MIN = '26.12.0';  // v25.57 — bumped to require the new revisions_list + email_template_* routes.
   // v25.56 — C6 from parity audit. Renames f_notes label "Notes / special requirements" → "Technical / Deployment notes" in Output Configuration section. The f_notes field key, placeholder, and all backend write paths unchanged — pure label rename.
   // v25.55 — Form polish: (1) Sales Person zero-default for Super users. v25.44 auto-defaulted Super to themselves in the Sales Person dropdown; now Super sees "— Select sales owner —" by default and must consciously pick. Save-time safety net for Sales/BU Head/Super still in place (line ~8982) but no longer fires for Super. (2) Standardized helper-text styles below fields — 5 different inline styles consolidated into one .field-help-tv class. (3) Standardized label sub-text styles — "(optional)" and "· internal only · ..." now use one shared .label-meta class instead of diverging inline styles. Zero JS logic changes outside the Super branch removal in 2 places; all other changes are CSS class hoisting.
