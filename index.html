@@ -6828,7 +6828,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.59';  // v25.59 — CRITICAL BUGFIX: getDashFilters() crashed on every refreshLog() call. The v26 Dashboard rewrite (v25.46) removed the legacy fl_* filter UI from markup but left the JS reading from those IDs. Result: TypeError "Cannot read properties of null (reading 'value')" → entire refreshLog chain aborted → History tab stuck on "Loading..." even though centralLog was correctly populated. Fix: null-safe accessor in getDashFilters (returns empty string when element missing → filterRows_ correctly treats empty as "no filter"). Pre-existing bug — predates v25.57 / v25.58 / v26.12.0; just exposed when there were >1 deals to render.
+  const TVONE_FRONTEND_VERSION = '25.60';  // v25.60 — CRITICAL BUGFIX continuation. v25.59 fixed getDashFilters() null-crash, but the same v25.46-rewrite cleanup miss exists in updateStats() (stat_total/stat_consultants/stat_partners/stat_cities/stat_endusers) and likely throughout the legacy-dashboard chain (renderUserChart, renderStageChart, etc.). Rather than chase each dead DOM read, wrapping applyDashFilters body in defensive try/catch + early-exit if legacy dashboard DOM is absent. This way ANY future dead-DOM access in the legacy-dashboard path can never break applyHistFilters / History tab render again. The v26 dashboard module (My Pipeline / Team Analytics) is unaffected — it uses its own data path through bsv26_renderActiveTab() and reads from centralLog directly.
+  // v25.59 — CRITICAL BUGFIX: getDashFilters() crashed on every refreshLog() call. The v26 Dashboard rewrite (v25.46) removed the legacy fl_* filter UI from markup but left the JS reading from those IDs.
   // v25.58 — Action bar polish on quote page. Print was orphaned in a separate row below the 6-button action bar (Back/Confirm/Excel/PDF/WhatsApp/Email), bunched-looking on wide screens. Now: Print folded into the same grid as the 7th button (styled tertiary like Back — gray, low emphasis), grid changed from 6 cols to 7 cols, .action-bar-v2-tv given explicit width:100% so it spans the full container width. New .ab2tv-btn.is-tertiary CSS class mirrors the Back button styling.
   // v25.57 — Parity ports from BS: (C1) Revisions modal — 📋 button on every editable history row opens a modal showing rolling-3 prior snapshots of that deal. Backend route `revisions_list` introduced in tvONE BE v26.12.0; auto-archive happens server-side on every updatesubmission. (C3) Email templates editor — Super-only "Edit email templates" button in Team tab opens modal where Super can customize quote_send subject + body. Server validates {{vars}} on save against per-template whitelist (clear error message on unknown vars). Reset to default supported. Pairs with backend v26.12.0; both must deploy together.
   const TVONE_EXPECTED_BACKEND_MIN = '26.12.0';  // v25.57 — bumped to require the new revisions_list + email_template_* routes.
@@ -11708,22 +11709,42 @@
   }
 
   function applyDashFilters() {
-    const f = getDashFilters();
-    // Dashboard always shows only the current user's OWN deals — regardless of role
-    let sourceRows = centralLog;
-    if (currentUser) {
-      const uname = String(String(currentUser.username || '')).toLowerCase();
-      sourceRows = (centralLog || []).filter(function(r) {
-        return String(r.username || '').toLowerCase() === uname;
-      });
+    // v25.60 BUGFIX: Defensive guard. The legacy dashboard (pre-v25.46) had filter
+    // dropdowns + stat tiles that no longer exist in the v26 dashboard module. The
+    // legacy code path here (updateStats, renderUserChart, etc.) targets DOM IDs
+    // that were removed but the JS was not. Without this guard, ANY dead-DOM read
+    // anywhere in the chain throws → applyDashFilters crashes → applyHistFilters
+    // never runs → History tab stuck on "Loading...". Two layers:
+    //   1. Early-exit silently if the legacy dashboard DOM markers are absent
+    //   2. try/catch around the whole body so even a missed null still won't break
+    //      downstream refreshLog steps.
+    if (!document.getElementById('stat_total')) {
+      // Legacy dashboard not present — v26 module handles its own renders via
+      // bsv26_renderActiveTab(). Nothing to do here.
+      return;
     }
-    // v25.35 (#12): exclude test-mode rows from Dashboard aggregations by default
-    if (typeof _filterTestDataTV === 'function') {
-      sourceRows = _filterTestDataTV(sourceRows, false);
+    try {
+      const f = getDashFilters();
+      // Dashboard always shows only the current user's OWN deals — regardless of role
+      let sourceRows = centralLog;
+      if (currentUser) {
+        const uname = String(String(currentUser.username || '')).toLowerCase();
+        sourceRows = (centralLog || []).filter(function(r) {
+          return String(r.username || '').toLowerCase() === uname;
+        });
+      }
+      // v25.35 (#12): exclude test-mode rows from Dashboard aggregations by default
+      if (typeof _filterTestDataTV === 'function') {
+        sourceRows = _filterTestDataTV(sourceRows, false);
+      }
+      const filtered = filterRows_(f, sourceRows);
+      updateStats(filtered);
+      updateFilterChips(f, filtered.length, sourceRows.length);
+    } catch (err) {
+      console.warn('[applyDashFilters] legacy dashboard render skipped:', err && err.message ? err.message : err);
+      // Swallow — never let a legacy-dashboard render break refreshLog's downstream
+      // applyHistFilters() / renderPersonalStats() / refreshPendingIndicator() steps.
     }
-    const filtered = filterRows_(f, sourceRows);
-    updateStats(filtered);
-    updateFilterChips(f, filtered.length, sourceRows.length);
   }
 
   function clearDashFilters() {
