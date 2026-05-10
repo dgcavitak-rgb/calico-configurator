@@ -6828,7 +6828,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.58';  // v25.58 — Action bar polish on quote page. Print was orphaned in a separate row below the 6-button action bar (Back/Confirm/Excel/PDF/WhatsApp/Email), bunched-looking on wide screens. Now: Print folded into the same grid as the 7th button (styled tertiary like Back — gray, low emphasis), grid changed from 6 cols to 7 cols, .action-bar-v2-tv given explicit width:100% so it spans the full container width. New .ab2tv-btn.is-tertiary CSS class mirrors the Back button styling.
+  const TVONE_FRONTEND_VERSION = '25.59';  // v25.59 — CRITICAL BUGFIX: getDashFilters() crashed on every refreshLog() call. The v26 Dashboard rewrite (v25.46) removed the legacy fl_* filter UI from markup but left the JS reading from those IDs. Result: TypeError "Cannot read properties of null (reading 'value')" → entire refreshLog chain aborted → History tab stuck on "Loading..." even though centralLog was correctly populated. Fix: null-safe accessor in getDashFilters (returns empty string when element missing → filterRows_ correctly treats empty as "no filter"). Pre-existing bug — predates v25.57 / v25.58 / v26.12.0; just exposed when there were >1 deals to render.
+  // v25.58 — Action bar polish on quote page. Print was orphaned in a separate row below the 6-button action bar (Back/Confirm/Excel/PDF/WhatsApp/Email), bunched-looking on wide screens. Now: Print folded into the same grid as the 7th button (styled tertiary like Back — gray, low emphasis), grid changed from 6 cols to 7 cols, .action-bar-v2-tv given explicit width:100% so it spans the full container width. New .ab2tv-btn.is-tertiary CSS class mirrors the Back button styling.
   // v25.57 — Parity ports from BS: (C1) Revisions modal — 📋 button on every editable history row opens a modal showing rolling-3 prior snapshots of that deal. Backend route `revisions_list` introduced in tvONE BE v26.12.0; auto-archive happens server-side on every updatesubmission. (C3) Email templates editor — Super-only "Edit email templates" button in Team tab opens modal where Super can customize quote_send subject + body. Server validates {{vars}} on save against per-template whitelist (clear error message on unknown vars). Reset to default supported. Pairs with backend v26.12.0; both must deploy together.
   const TVONE_EXPECTED_BACKEND_MIN = '26.12.0';  // v25.57 — bumped to require the new revisions_list + email_template_* routes.
   // v25.56 — C6 from parity audit. Renames f_notes label "Notes / special requirements" → "Technical / Deployment notes" in Output Configuration section. The f_notes field key, placeholder, and all backend write paths unchanged — pure label rename.
@@ -11658,18 +11659,28 @@
   }
 
   // ===== DASHBOARD FILTERS (fl_ prefix) — drive KPIs + charts =====
+  // v25.59 BUGFIX: null-safe DOM reads. The v26 Dashboard rewrite (v25.46) removed
+  // the fl_* filter UI from markup but this function still references those IDs.
+  // Without null-safety, any missing element threw "Cannot read properties of null"
+  // and aborted refreshLog() entirely — wedging History tab on "Loading...".
+  // When elements don't exist the field returns '' which filterRows_ correctly
+  // treats as "no filter" (its `if (f.state && ...)` guard skips empty strings).
   function getDashFilters() {
+    const _v = function(id) {
+      const el = document.getElementById(id);
+      return (el && el.value !== undefined) ? el.value : '';
+    };
     return {
-      dateFrom: document.getElementById('fl_dateFrom').value,
-      dateTo: document.getElementById('fl_dateTo').value,
-      state: document.getElementById('fl_state').value,
-      city: document.getElementById('fl_city').value,
-      user: document.getElementById('fl_user').value,
-      project: document.getElementById('fl_project').value,
-      partner: document.getElementById('fl_partner').value,
-      consultant: document.getElementById('fl_consultant').value,
-      endUser: document.getElementById('fl_endUser').value,
-      model: document.getElementById('fl_model').value
+      dateFrom:   _v('fl_dateFrom'),
+      dateTo:     _v('fl_dateTo'),
+      state:      _v('fl_state'),
+      city:       _v('fl_city'),
+      user:       _v('fl_user'),
+      project:    _v('fl_project'),
+      partner:    _v('fl_partner'),
+      consultant: _v('fl_consultant'),
+      endUser:    _v('fl_endUser'),
+      model:      _v('fl_model')
     };
   }
 
