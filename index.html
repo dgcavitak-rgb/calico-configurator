@@ -6759,7 +6759,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.52';  // v25.52 — FULL DASHBOARD PARITY PORT from BS v26.20→26.24. Four features ported in one release: (1) STUCK TABLE AGING TINTS (BS v24.26.20) — Status column severity-tiered: slipped close-month always red, ≥30d red, 14-29d amber, <14d neutral. (2) STAGE ANALYTICS CARD (BS v24.26.21 + v24.26.23 redesign) — new chart card after Stage funnel showing horizontal bars per stage with % of Lead. Bar width capped at 100%, ↑ marker for stages exceeding Lead (snapshot oddities). Click row to filter by stage. (3) REGION CARD TWO STACKED BARS (BS v24.26.22 + v24.26.24) — case count distribution + ₹ pipeline distribution as separate horizontal bars below the 4 zone tiles. Helper _buildRegionBar() shared between both. Legend font 11.5px (was 10px in BS v26.22 — bumped in v26.24 per user feedback). (4) OUTCOME RADIAL RING (BS v24.26.22) — Win Rate hero replaced with SVG progress ring (r=48, C=301.6, animated 800ms via stroke-dashoffset). Ring color matches existing winColor logic. Total chart cards on Team Analytics: 10 (was 9). Pairs with backend v26.11.0 — no backend changes.
+  const TVONE_FRONTEND_VERSION = '25.53';  // v25.53 — Backend version-check + mismatch banner (Session 1, port from BS v24.26.25). Polls new `version_check` action on login + rehydrate. Compares backend version vs TVONE_EXPECTED_BACKEND_MIN AND own version vs server-returned expectedFrontendMin. Mismatch → renders dismissible amber banner inside #appScreen + logs one row via existing error_log_append (errorCode='VERSION_MISMATCH'). Banner styled to match the existing test-mode-banner-tv pattern (sticky, top of #appScreen). Dismiss persisted in sessionStorage (key tvone-version-banner-dismissed). version_check failure = silent (console warn only). Pairs with backend v26.11.1.
+  const TVONE_EXPECTED_BACKEND_MIN = '26.11.1';  // v25.53 — Minimum backend semver this frontend expects. Backends below this trigger the amber mismatch banner.
 // v25.51 — INTERNAL NOTES FIELD per opportunity. Distinct from existing f_notes (deployment notes).
 // v25.50 — WON/LOST CALC-BUTTON LABEL ADAPTER. "Calculate & Log" → "View Quote →" when outcome is Won/Lost.
 // v25.49 — KEYBOARD SHORTCUTS (Ctrl/Cmd+S, Ctrl/Cmd+Enter, Esc, /, ?) + ACTION BUTTON STYLING (Option B parity with BS).
@@ -7719,6 +7720,10 @@
         try { if (typeof window.fetchServerNotificationsTV === 'function') window.fetchServerNotificationsTV({force:true}); } catch(_){}
       }, 800);
 
+      // v25.53 — Backend version-check on rehydrate. Fire-and-forget; banner renders in #appScreen
+      // if backend is below TVONE_EXPECTED_BACKEND_MIN OR this frontend is below server-required min.
+      try{ if(typeof pingBackendVersion_v2553 === 'function') pingBackendVersion_v2553(); }catch(_){ /* never block rehydrate */ }
+
       updateLoginSplash(75, 'Almost there…');
       lastResult = null; sessionLog = [];
       try { initScreens(); } catch (_) {}
@@ -8087,6 +8092,11 @@
         updateLoginSplash(100, 'Ready');
         if (!data.mustChange) hideLoginSplash();
       }, 2100);
+
+      // v25.53 — Backend version-check on fresh login. Fire-and-forget; banner renders in
+      // #appScreen if backend or frontend version is below expected minimum.
+      try{ if(typeof pingBackendVersion_v2553 === 'function') pingBackendVersion_v2553(); }catch(_){ /* never block login */ }
+
       document.getElementById('userLabel').textContent = (function(){
         // v25.44 — same em-dash defense as primary login path
         let name = String(currentUser.name || currentUser.fullName || '').trim();
@@ -13895,6 +13905,137 @@
     } catch (e) { /* silent — error logger must never throw */ }
   }
   window.reportFrontendError_tv = reportFrontendError_tv;
+
+  /* ============================================================================
+   * v25.53 — Backend version-check + mismatch banner (port from BS v24.26.25)
+   * ============================================================================
+   * Goal: surface backend/frontend version drift as a sticky amber banner so
+   * deploys don't silently mismatch. Same logic as BS, retargeted for tvONE
+   * field names and dark-default theme.
+   *
+   * Note on version normalization: tvONE uses 2-part frontend versions
+   * (e.g. "25.52"). Server returns expectedFrontendMin as 3-part (e.g.
+   * "25.48.0"). _normalizeSemver_v2553 pads "25.52" → [25,52,0] so compare works.
+   * ============================================================================ */
+
+  function _normalizeSemver_v2553(v){
+    const parts = String(v || '0').split('.').map(function(s){
+      const n = parseInt(s, 10);
+      return isNaN(n) ? 0 : n;
+    });
+    while(parts.length < 3) parts.push(0);
+    return parts.slice(0, 3);
+  }
+
+  function _semverGte_v2553(actual, required){
+    const a = _normalizeSemver_v2553(actual);
+    const r = _normalizeSemver_v2553(required);
+    for(let i = 0; i < 3; i++){
+      if(a[i] > r[i]) return true;
+      if(a[i] < r[i]) return false;
+    }
+    return true;
+  }
+
+  function _renderVersionBanner_v2553(kind, currentVer, expectedVer){
+    try{
+      if(sessionStorage.getItem('tvone-version-banner-dismissed') === '1') return;
+    }catch(_){}
+    let msg;
+    if(kind === 'backend_too_old'){
+      msg = '⚠️ Backend version mismatch — running v' + currentVer + ', app expects v' + expectedVer +
+            '+. Ask Super to redeploy backend (Apps Script → Deploy → Manage deployments → New version).';
+    } else {
+      msg = '⚠️ Your browser is running an outdated app — hard-refresh (Ctrl+Shift+R / Cmd+Shift+R) to update from v' +
+            currentVer + ' to latest.';
+    }
+    const root = document.getElementById('appScreen');
+    if(!root) return;
+    const prev = document.getElementById('version-mismatch-banner-tv');
+    if(prev) prev.remove();
+    const banner = document.createElement('div');
+    banner.id = 'version-mismatch-banner-tv';
+    // Dark-theme amber: warm bg, mustard text. Sticky at top of #appScreen, just below
+    // (or stacked with) the test-mode banner. z-index 59 keeps it under test-mode-banner (z=60).
+    banner.style.cssText = 'background:#3b2f0a;color:#fbbf24;padding:10px 16px;font-size:13px;' +
+      'font-weight:600;border-bottom:1px solid #92400E;display:flex;align-items:center;gap:10px;' +
+      'position:sticky;top:0;z-index:59;box-shadow:0 1px 4px rgba(0,0,0,0.30);';
+    // Light-theme override via inline style won't work; emit class for CSS hook
+    banner.className = 'tvone-version-banner';
+    const safeMsg = msg.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    banner.innerHTML = '<span style="flex:1;line-height:1.45;">' + safeMsg + '</span>' +
+      '<button type="button" id="version-banner-dismiss-tv" aria-label="Dismiss" ' +
+      'style="background:transparent;border:none;color:inherit;cursor:pointer;font-size:16px;line-height:1;padding:4px 10px;font-weight:700;">✕</button>';
+    if(root.firstChild) root.insertBefore(banner, root.firstChild);
+    else root.appendChild(banner);
+    const btn = document.getElementById('version-banner-dismiss-tv');
+    if(btn){
+      btn.addEventListener('click', function(){
+        try{ sessionStorage.setItem('tvone-version-banner-dismissed', '1'); }catch(_){}
+        banner.remove();
+      });
+    }
+  }
+
+  async function pingBackendVersion_v2553(){
+    if(!WEB_APP_URL) return;
+    let data;
+    try{
+      const resp = await fetch(WEB_APP_URL, {
+        method:'POST', mode:'cors',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({ action: 'version_check' })
+      });
+      data = await resp.json();
+    }catch(netErr){
+      console.warn('[v25.53] version_check failed — silent (no banner, no log):', netErr && netErr.message ? netErr.message : netErr);
+      return;
+    }
+    if(!data || !data.ok){
+      console.warn('[v25.53] version_check unexpected response:', data);
+      return;
+    }
+    const backendVer  = String(data.backendVersion || '');
+    const expectFrMin = String(data.expectedFrontendMin || '');
+    const backendOk  = backendVer && _semverGte_v2553(backendVer, TVONE_EXPECTED_BACKEND_MIN);
+    const frontendOk = expectFrMin && _semverGte_v2553(TVONE_FRONTEND_VERSION, expectFrMin);
+    if(backendOk && frontendOk){
+      console.log('[v25.53] version_check OK — frontend v' + TVONE_FRONTEND_VERSION + ' / backend v' + backendVer);
+      return;
+    }
+    let kind, currentVer, expectedVer, logMsg;
+    if(!backendOk){
+      kind = 'backend_too_old'; currentVer = backendVer; expectedVer = TVONE_EXPECTED_BACKEND_MIN;
+      logMsg = 'Backend v' + backendVer + ' below expected min v' + TVONE_EXPECTED_BACKEND_MIN +
+               ' (frontend v' + TVONE_FRONTEND_VERSION + ')';
+    } else {
+      kind = 'frontend_too_old'; currentVer = TVONE_FRONTEND_VERSION; expectedVer = expectFrMin;
+      logMsg = 'Frontend v' + TVONE_FRONTEND_VERSION + ' below server-required min v' + expectFrMin +
+               ' (backend v' + backendVer + ')';
+    }
+    try{
+      // Log directly (not via reportFrontendError_tv) because that helper hardcodes
+      // action_context='frontend' — spec requires action_context='mismatch_detected'
+      // so Super can filter the Errors tab cleanly. Fire-and-forget, never throws.
+      fetch(WEB_APP_URL, {
+        method:'POST', mode:'no-cors',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({
+          action: 'error_log_append',
+          user: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.username : '',
+          action_context: 'mismatch_detected',
+          errorCode: 'VERSION_MISMATCH',
+          errorMessage: logMsg,
+          stackTrace: '',
+          userAgent: (typeof navigator !== 'undefined') ? navigator.userAgent : '',
+          appVersion: TVONE_FRONTEND_VERSION
+        })
+      }).catch(function(){ /* swallow */ });
+    }catch(_){}
+    _renderVersionBanner_v2553(kind, currentVer, expectedVer);
+  }
+  window.pingBackendVersion_v2553 = pingBackendVersion_v2553;
+  /* ============================================================================ */
 
   /* v25.44 — safer fetch wrapper for tvONE.
    * Detects HTML-not-JSON responses (Apps Script cold start, network blip,
