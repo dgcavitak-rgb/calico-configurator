@@ -1900,19 +1900,45 @@
   .hidden { display: none !important; }
 
   /* v25.23: BS-ported calendar month picker — gold-accented for tvONE theme */
+  /* v25.54: Color parity fix. Now mirrors standard input styling so the picker
+     button blends with the rest of the form. Dark theme uses dark frosted glass
+     + gold-tinted border (line ~817 input rule). Light theme override below. */
   .cm-picker-tv { position: relative; display: block; }
   .cm-picker-btn-tv {
-    width: 100%; padding: 12px 14px;
-    background: var(--paper-warm);
-    border: 1px solid var(--line-softer);
+    width: 100%; padding: 13px 16px;
+    background-color: rgba(8, 11, 10, 0.6);
+    border: 1px solid rgba(212, 175, 55, 0.2);
     border-radius: 10px;
     color: var(--ink);
-    font-family: 'Manrope', sans-serif; font-size: 14px;
+    backdrop-filter: blur(10px);
+    font-family: inherit; font-size: 14.5px; font-weight: 500;
     cursor: pointer; display: flex; align-items: center;
-    transition: border-color 180ms, background 180ms;
+    transition: all 0.25s var(--ease);
   }
-  .cm-picker-btn-tv:hover { border-color: rgba(212,175,55,0.45); background: rgba(212,175,55,0.04); }
-  .cm-picker-btn-tv:focus { outline: none; border-color: #D4AF37; box-shadow: 0 0 0 3px rgba(212,175,55,0.18); }
+  .cm-picker-btn-tv:hover {
+    border-color: rgba(212, 175, 55, 0.4);
+    background-color: rgba(8, 11, 10, 0.8);
+  }
+  .cm-picker-btn-tv:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18), 0 0 24px rgba(212, 175, 55, 0.12);
+    background-color: rgba(8, 11, 10, 0.9);
+  }
+  /* v25.54: Light theme override — mirror [data-theme="light"] input rule (~line 2644) */
+  [data-theme="light"] .cm-picker-btn-tv {
+    background-color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(176, 141, 40, 0.25);
+  }
+  [data-theme="light"] .cm-picker-btn-tv:hover {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-color: rgba(176, 141, 40, 0.4);
+  }
+  [data-theme="light"] .cm-picker-btn-tv:focus {
+    background-color: #FFFFFF;
+    border-color: #B08D28;
+    box-shadow: 0 0 0 3px rgba(176, 141, 40, 0.18), 0 0 16px rgba(176, 141, 40, 0.12);
+  }
   .cm-picker-value-tv { flex: 1; text-align: left; }
   .cm-picker-value-tv.placeholder { color: var(--ink-soft); }
   /* v25.30: Calendar icon — gold tint to match field focus ring + chip theme */
@@ -6759,7 +6785,7 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.53';  // v25.53 — Backend version-check + mismatch banner (Session 1, port from BS v24.26.25). Polls new `version_check` action on login + rehydrate. Compares backend version vs TVONE_EXPECTED_BACKEND_MIN AND own version vs server-returned expectedFrontendMin. Mismatch → renders dismissible amber banner inside #appScreen + logs one row via existing error_log_append (errorCode='VERSION_MISMATCH'). Banner styled to match the existing test-mode-banner-tv pattern (sticky, top of #appScreen). Dismiss persisted in sessionStorage (key tvone-version-banner-dismissed). version_check failure = silent (console warn only). Pairs with backend v26.11.1.
+  const TVONE_FRONTEND_VERSION = '25.54';  // v25.54 — Month-picker color parity fix. The .cm-picker-btn-tv (Expected Closure picker) used var(--paper-warm) + var(--line-softer), giving it a cream background + faint-gray border that didn't match the rest of the form's white-frosted bg + gold-tinted border in light theme (and dark-frosted bg + gold-tinted border in dark theme). Replaced with rules that mirror the standard input rule (lines ~817 + light theme override at ~2644). Cosmetic only — no JS changes, no backend changes. Pairs with backend v26.11.1.
   const TVONE_EXPECTED_BACKEND_MIN = '26.11.1';  // v25.53 — Minimum backend semver this frontend expects. Backends below this trigger the amber mismatch banner.
 // v25.51 — INTERNAL NOTES FIELD per opportunity. Distinct from existing f_notes (deployment notes).
 // v25.50 — WON/LOST CALC-BUTTON LABEL ADAPTER. "Calculate & Log" → "View Quote →" when outcome is Won/Lost.
