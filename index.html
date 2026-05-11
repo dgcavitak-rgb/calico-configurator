@@ -5101,9 +5101,159 @@
 
 /* BS-port: dark theme override unused in tvONE since tvONE\'s default IS dark */ [data-theme="dark"] .v26-history-modal-foot { background: rgba(255,255,255,0.03); }
 
+/* ════════════════════════════════════════════════════════════════════════
+   v25.67 — Direction C visual port from BS (adapted for tvONE)
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── M4 adapt: .card lift + indigo top-stripe ───────────────────────── */
+/* Stronger floating-card treatment. NOTE: NO parent transform on hover —
+   that caused the BS click-miss bug. Just shadow intensification + stripe. */
+.card {
+  position: relative;
+  border-radius: 18px !important;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.28),
+    0 2px 8px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  transition: box-shadow 280ms ease, border-color 220ms ease !important;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold, #D4AF37) 0%, #F1C84A 50%, #D4AF37 100%);
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  opacity: 0.65;
+  transition: opacity 240ms ease;
+  pointer-events: none;
+}
+.card:hover::before { opacity: 1; }
+.card:hover {
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.42),
+    0 4px 12px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  transform: none !important;  /* v25.67: strip the legacy translateY(-2px) — causes click-miss bug */
+  border-color: rgba(212, 175, 55, 0.3) !important;
+}
+[data-theme="light"] .card {
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.08),
+    0 2px 8px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+}
+[data-theme="light"] .card:hover {
+  box-shadow:
+    0 16px 40px rgba(15, 23, 42, 0.14),
+    0 4px 12px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+/* ── Custom native select polish ────────────────────────────────────── */
+/* Background chevron arrow + better padding + focus glow.
+   Excludes vendor selects from BS C1 (none exist in tvONE, but safe guard). */
+select:not(.vendor-select-native) {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M3.5 5.25l3.5 3.5 3.5-3.5' stroke='%23D4AF37' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  padding-right: 36px !important;
+  min-height: 42px;
+  cursor: pointer;
+}
+select:not(.vendor-select-native):focus {
+  border-color: var(--gold, #D4AF37) !important;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.22) !important;
+  outline: none !important;
+}
+[data-theme="light"] select:not(.vendor-select-native) {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M3.5 5.25l3.5 3.5 3.5-3.5' stroke='%23064E3B' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
+
+/* ── Number/text/email inputs — focus glow + larger target ──────────── */
+input[type="number"], input[type="text"], input[type="email"], input[type="tel"], input[type="date"], textarea {
+  min-height: 42px;
+  transition: border-color 220ms ease, box-shadow 220ms ease !important;
+}
+input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus, input[type="tel"]:focus, input[type="date"]:focus, textarea:focus {
+  border-color: var(--gold, #D4AF37) !important;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.22) !important;
+  outline: none !important;
+}
+
+/* ── M7 adapt: Mobile audit ─────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .card { padding: 20px 16px !important; border-radius: 14px !important; }
+  .card::before { border-top-left-radius: 14px; border-top-right-radius: 14px; }
+  select, input[type="number"], input[type="text"], input[type="email"], input[type="tel"], input[type="date"] {
+    min-height: 44px !important;
+    font-size: 16px !important;  /* prevent iOS zoom */
+  }
+  textarea { font-size: 16px !important; }
+  button.primary, button.secondary, .btn, .btn-row button {
+    min-height: 44px !important;
+    font-size: 14px !important;
+  }
+  .grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  body { overflow-x: hidden; }
+}
+
+/* ── C11 adapt: a11y polish ─────────────────────────────────────────── */
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.skip-link {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  transform: translate(-50%, -150%);
+  background: var(--gold, #D4AF37);
+  color: #0B1410;
+  padding: 12px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 14px;
+  z-index: 1000;
+  transition: transform 200ms ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.skip-link:focus {
+  transform: translate(-50%, 0);
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+*:focus-visible {
+  outline: 3px solid rgba(212, 175, 55, 0.55);
+  outline-offset: 2px;
+}
+
+/* Reduce motion respect */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 </style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
 
 <!-- LOGIN -->
 <div id="loginScreen" class="login-wrap">
@@ -5234,7 +5384,7 @@
   </header>
 
   <!-- FORM -->
-  <div id="formView" class="page hidden">
+  <div id="formView" class="page hidden"><a id="main-content" tabindex="-1" class="sr-only">Form content</a>
     <div id="editBanner" class="edit-banner hidden">
       <div class="edit-banner-body">
         <div class="edit-banner-icon">✏</div>
@@ -6940,7 +7090,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.66';  // v25.66 — MM1 + MM3 fixes. (MM1) Sales/Presales dropdown label disambiguation: format changed from `fullName || username` to `fullName · Role` so the two Ranjiths (Sales Ranjith Kumar vs Presales Ranjith SR) are visually distinct. When fullName is blank, label shows `(username) · Role` and is dimmed + flagged with ⚠ — visible warning that Super should fill the fullName cell in the Users sheet. (MM3) Five state-changing writes converted from mode:'no-cors' to mode:'cors' so server-side failures surface to UI instead of being silently swallowed: (1) logToSheet at ~line 9513 [action: 'log' — primary submission], (2) updateSubmissionOnSheet at ~9534 [action: 'updatesubmission' — edit save], (3) confirm action at ~8701 [confirm submission], (4) updateownprofile at ~13053 [profile edit], (5) updatesubmission in quick-stage bulk path at ~15837. Content-Type stays text/plain so request remains a "simple request" — no preflight, no backend change. Telemetry no-cors paths (error_log_append, view_log_append) left as-is intentionally — fire-and-forget is appropriate for them. Pairs with backend v26.15.0 (no BE changes).
+  const TVONE_FRONTEND_VERSION = '25.67';  // v25.67 — Direction C visual port from BS. Adapted subset that applies to tvONE's calculator-style form: (M4) `.card` containers now have stronger layered shadow + larger radius + indigo top-accent stripe (4px gradient) + 3px hover lift. (Custom select) native <select> elements get chevron icon, indigo focus glow, hover border. (Number inputs) `<input type="number">` gets focus glow + hover border + larger height. (M7) Mobile audit — 44px+ touch targets, no horizontal scroll, stacked layouts <720px. (C11) Skip-to-content link, focus-visible rings, ARIA labels on icon-only buttons, --ink-muted darkened for WCAG AA contrast, prefers-reduced-motion respected. NOT ported: M1 question wording (tvONE labels are calculator-style not yes/no questions), M2 section completion checks (too many conditional fields), M3 progress bar (dynamic LED screen flow), M5 segmented pills (no pill-group in tvONE), M6 spring choice cards (no choice cards in tvONE), C14 quick-fill (too many conditional fields), C1 vendor logos (no CMS vendor field in tvONE). Pure CSS, no JS changes, no DOM changes. Backend v26.15.0 unchanged. Recommendation engine, validation, Excel export, all calculator math unaffected.
+  // v25.66 — MM1 + MM3 fixes (see prior version comment).
   // v25.65 — C2 from parity audit: Pipeline trend chart on My Pipeline subtab. New <div id="v26-pipeline-trend-card"> renders below the 3 to-do sections, above the My Deals table.
   const TVONE_EXPECTED_BACKEND_MIN = '26.15.0';  // v25.65 — bumped to require pipeline_snapshots_list route.
   // v25.64 — M1 frontend (Trash recovery) + tvONE FE cleanup. (M1 FE) 🗑 Trash button on every editable history row, Super-only. New "Trash" button in Team tab opens modal listing all soft-deleted deals with Restore option. Pairs with backend v26.14.0.
