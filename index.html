@@ -2067,6 +2067,78 @@
     font-size: 14px;
   }
 
+  /* v25.64 (M1 FE): per-row Super-only buttons. Hidden by default; refreshTeam()
+     toggles to inline-block when currentUser is Super. Prevents flash-of-visible
+     buttons during initial page render before user-state is available. */
+  .btn-super-only-tv {
+    display: none;
+  }
+
+  /* v25.63 (Beauty-2): outcome pills — consistent visual treatment for deal outcome
+     across History table, Review filtered table, Revisions modal, and any future
+     surface. Was: outcome rendered as plain text in some surfaces, colored badge
+     in others. Now: one class + 4 modifiers covers every surface. */
+  .outcome-pill-tv {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1.5;
+    vertical-align: middle;
+  }
+  .outcome-pill-tv.is-open    { background: rgba(212,175,55,0.10); color: var(--ink-soft); }
+  .outcome-pill-tv.is-won     { background: #D1FAE5; color: #065F46; }
+  .outcome-pill-tv.is-lost    { background: #FEE2E2; color: #B91C1C; }
+  .outcome-pill-tv.is-on-hold { background: #FEF3C7; color: #92400E; }
+  [data-theme="dark"] .outcome-pill-tv.is-won     { background: rgba(16,185,129,0.18); color: #6EE7B7; }
+  [data-theme="dark"] .outcome-pill-tv.is-lost    { background: rgba(220,38,38,0.18);  color: #FCA5A5; }
+  [data-theme="dark"] .outcome-pill-tv.is-on-hold { background: rgba(245,158,11,0.18); color: #FCD34D; }
+
+  /* v25.63 (Beauty-2): card border treatments. Was inconsistent — some cards used
+     border:1px solid var(--line-softer), some used border-left:4px solid #DC2626
+     (the reset-requests "attention" pattern). Now formalized:
+       .card-tv         = standard 1px border, neutral
+       .card-tv.is-warn = 4px-left amber accent for attention items
+       .card-tv.is-info = 4px-left gold accent for informational callouts
+     Existing card styles untouched; new classes are opt-in additions. */
+  .card-tv {
+    background: var(--paper);
+    border: 1px solid var(--line-softer);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .card-tv.is-warn { border-left: 4px solid #DC2626; }
+  .card-tv.is-info { border-left: 4px solid #D4AF37; }
+
+  /* v25.63 (Beauty-2): syncStatus toast animation. Was an instant show/hide which
+     felt jarring; now fades in + slides up over 200ms. Existing JS that toggles
+     the .sync-status element unchanged. */
+  .sync-status {
+    transition: opacity 200ms ease, transform 200ms ease;
+  }
+  .sync-status:not(.visible) {
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+  }
+  .sync-status.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* v25.63 (Beauty-2): focus state on inputs INSIDE the green-tinted Sales/Presales
+     callout (Project Context section) — was the standard gold glow which clashes
+     with the surrounding green border. Now a contextually-correct green glow. */
+  .sales-presales-callout-tv input:focus,
+  .sales-presales-callout-tv select:focus,
+  .sales-presales-callout-tv textarea:focus {
+    border-color: #047857;
+    box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.18);
+  }
+
   /* v25.30: Default chip styling — soft gold tint, neutral but on-theme.
      Was using bare var(--line-softer) which looked alien from gold focus ring on adjacent fields. */
   .closemonth-chip {
@@ -5446,7 +5518,7 @@
         <!-- v25.35 (#3): Sales/Presales handoff. salesPerson REQUIRED, presalesPerson OPTIONAL.
              Both store loginName lowercased. Same-person rule enforced in validation.
              Display label is fullName (resolved from _allUsersTV cache). -->
-        <div class="field" style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:12px;">
+        <div class="field sales-presales-callout-tv" style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:12px;">
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div style="display:flex;flex-direction:column;gap:4px;">
               <label style="font-weight:600;color:#064E3B;font-size:13px;">Sales person <span class="req">*</span><span class="help-icon-tv" data-tip="The sales owner — gets credit and follow-ups for this deal. Required.">?</span></label>
@@ -6155,6 +6227,8 @@
         <button class="primary" onclick="openAddUserModal()">+ Add Team Member</button>
         <button class="secondary" onclick="refreshTeam()">↻ Refresh</button>
         <button class="secondary" onclick="openEmailTemplatesModal_tv()" id="btnEditTemplatesTV" style="display:none;" title="Edit subject and body of system-generated emails (Super only)">📧 Edit Email Templates</button>
+        <button class="secondary" onclick="openBackupsModal_tv()" id="btnBackupsTV" style="display:none;" title="Manage backup snapshots (Super only). Auto-run nightly 02:00 IST. Manual run-now also available.">💾 Backups</button>
+        <button class="secondary" onclick="openTrashModal_tv()" id="btnTrashTV" style="display:none;" title="View and restore soft-deleted deals (Super only)">🗑 Trash</button>
       </div>
     </div>
 
@@ -6853,13 +6927,15 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.62';  // v25.62 — Beauty-1 polish: (1) Action bar Confirm-button SVG stroke-width corrected from 2.2 → 2.0 to match the other 6 buttons (Back/Excel/PDF/WhatsApp/Email/Print). (2) v26 Dashboard KPI tiles — 8 brightly-colored Bootstrap-rainbow gradients (#3B82F6/#10B981/#8B5CF6/etc.) replaced with the tvONE brand palette: dark-forest, gold, slate, warm-amber. Same visual hierarchy preserved (Won is green-accent, Days-to-Close is amber-accent), just toned to match the rest of the app's restrained gold/cream/dark-green aesthetic. (3) New .empty-state-tv utility class consolidates the 4 different empty-state inline styles scattered across Dashboard / History / Review tabs into one consistent treatment. Pure CSS + 1-char SVG fix; zero JS logic changes.
+  const TVONE_FRONTEND_VERSION = '25.64';  // v25.64 — M1 frontend (Trash recovery) + tvONE FE cleanup. (M1 FE) 🗑 Trash button injected on every editable history row, Super-only (gated via display:none for non-Super). Click → confirm prompt → soft-delete via entry_soft_delete → row disappears on next refresh. New "Trash" button in Team tab opens modal listing all soft-deleted deals with Restore + permanent-delete options. (Cleanup) reportFrontendError_tv signature extended from 3-arg to 4-arg (errorCode, errorMessage, stackTrace, actionContext) so callers can supply action_context instead of the hardcoded 'frontend' string. Old 3-arg call sites unchanged (action_context defaults to 'frontend' for backward compat). Pairs with backend v26.14.0; both must deploy together.
+  const TVONE_EXPECTED_BACKEND_MIN = '26.14.0';  // v25.64 — bumped to require the new entry_soft_delete + entry_restore + trash_list routes.
+  // v25.63 — Beauty-2 + M2 frontend UI bundle. (M2 FE) Super-only "💾 Backups" button in Team tab opens management modal. (Beauty-2) Outcome pills CSS class .outcome-pill-tv. Card border consistency. Toast animation 200ms fade+slide. Sales/Presales callout green focus.
+  // v25.62 — Beauty-1 polish: (1) Action bar Confirm-button SVG stroke-width corrected from 2.2 → 2.0. (2) v26 Dashboard KPI tiles palette aligned to tvONE brand. (3) New .empty-state-tv utility class.
   // v25.61 — Third bug from v25.46 dashboard rewrite. The bsv26 module's _getStateUser() reads from state.user (BS naming convention) but tvONE uses currentUser directly with no state wrapper.
   // v25.60 — CRITICAL BUGFIX continuation. v25.59 fixed getDashFilters() null-crash, but the same v25.46-rewrite cleanup miss exists in updateStats() and likely throughout the legacy-dashboard chain. Wrapped applyDashFilters body in defensive try/catch + early-exit if legacy dashboard DOM is absent.
   // v25.59 — CRITICAL BUGFIX: getDashFilters() crashed on every refreshLog() call. The v26 Dashboard rewrite (v25.46) removed the legacy fl_* filter UI from markup but left the JS reading from those IDs.
   // v25.58 — Action bar polish on quote page. Print was orphaned in a separate row below the 6-button action bar (Back/Confirm/Excel/PDF/WhatsApp/Email), bunched-looking on wide screens. Now: Print folded into the same grid as the 7th button (styled tertiary like Back — gray, low emphasis), grid changed from 6 cols to 7 cols, .action-bar-v2-tv given explicit width:100% so it spans the full container width. New .ab2tv-btn.is-tertiary CSS class mirrors the Back button styling.
   // v25.57 — Parity ports from BS: (C1) Revisions modal — 📋 button on every editable history row opens a modal showing rolling-3 prior snapshots of that deal. Backend route `revisions_list` introduced in tvONE BE v26.12.0; auto-archive happens server-side on every updatesubmission. (C3) Email templates editor — Super-only "Edit email templates" button in Team tab opens modal where Super can customize quote_send subject + body. Server validates {{vars}} on save against per-template whitelist (clear error message on unknown vars). Reset to default supported. Pairs with backend v26.12.0; both must deploy together.
-  const TVONE_EXPECTED_BACKEND_MIN = '26.12.0';  // v25.57 — bumped to require the new revisions_list + email_template_* routes.
   // v25.56 — C6 from parity audit. Renames f_notes label "Notes / special requirements" → "Technical / Deployment notes" in Output Configuration section. The f_notes field key, placeholder, and all backend write paths unchanged — pure label rename.
   // v25.55 — Form polish: (1) Sales Person zero-default for Super users. v25.44 auto-defaulted Super to themselves in the Sales Person dropdown; now Super sees "— Select sales owner —" by default and must consciously pick. Save-time safety net for Sales/BU Head/Super still in place (line ~8982) but no longer fires for Super. (2) Standardized helper-text styles below fields — 5 different inline styles consolidated into one .field-help-tv class. (3) Standardized label sub-text styles — "(optional)" and "· internal only · ..." now use one shared .label-meta class instead of diverging inline styles. Zero JS logic changes outside the Super branch removal in 2 places; all other changes are CSS class hoisting.
   // v25.54 — Month-picker color parity fix. The .cm-picker-btn-tv (Expected Closure picker) used var(--paper-warm) + var(--line-softer), giving it a cream background + faint-gray border that didn't match the rest of the form's white-frosted bg + gold-tinted border in light theme (and dark-frosted bg + gold-tinted border in dark theme). Replaced with rules that mirror the standard input rule (lines ~817 + light theme override at ~2644). Cosmetic only — no JS changes, no backend changes.
@@ -11891,7 +11967,7 @@
           const _qsBtn = (_outcomeNorm === 'open')
             ? '<button class="btn-tiny" onclick="event.stopPropagation();openQuickStageMenuTV(\'' + refEsc + '\', this);" title="Move to next stage" style="margin-right:4px;">⇄</button>'
             : '';
-          html += '<td onclick="event.stopPropagation()">' + _qsBtn + '<button class="btn-tiny" onclick="startEditingSubmission(\'' + refEsc + '\')" title="Edit this deal">✏ Edit</button> <button class="btn-tiny" onclick="openRevisionsModal_tv(\'' + refEsc + '\')" title="View past revisions (rolling 3 prior snapshots)" style="margin-left:4px;">📋 Revisions</button></td>';
+          html += '<td onclick="event.stopPropagation()">' + _qsBtn + '<button class="btn-tiny" onclick="startEditingSubmission(\'' + refEsc + '\')" title="Edit this deal">✏ Edit</button> <button class="btn-tiny" onclick="openRevisionsModal_tv(\'' + refEsc + '\')" title="View past revisions (rolling 3 prior snapshots)" style="margin-left:4px;">📋 Revisions</button> <button class="btn-tiny btn-super-only-tv" onclick="softDeleteEntry_tv(\'' + refEsc + '\')" title="Move this deal to Trash (Super only — recoverable from Team tab → Trash)" style="margin-left:4px;color:#B91C1C;">🗑</button></td>';
         } else {
           html += '<td><span style="font-size:11px;color:var(--ink-subtle);font-family:JetBrains Mono,monospace">—</span></td>';
         }
@@ -14007,7 +14083,11 @@
   window.clearErrorLog_tv = clearErrorLog_tv;
 
   // Push a frontend error to the backend log (fire-and-forget, never blocks UI)
-  function reportFrontendError_tv(errorCode, errorMessage, stackTrace) {
+  // v25.64 cleanup: signature extended to 4-arg. 4th arg `actionContext` overrides
+  // the default 'frontend' so callers can supply specific contexts like
+  // 'mismatch_detected' (used by version_check). Old 3-arg call sites unchanged —
+  // actionContext defaults to 'frontend' for backward compatibility.
+  function reportFrontendError_tv(errorCode, errorMessage, stackTrace, actionContext) {
     try {
       if (!WEB_APP_URL) return;
       // v25.44 — duplicate-error suppression. Same signature within 60s logs ONCE.
@@ -14032,7 +14112,7 @@
         body: JSON.stringify({
           action: 'error_log_append',
           user: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.username : '',
-          action_context: 'frontend',
+          action_context: String(actionContext || 'frontend'),
           errorCode: String(errorCode || 'FRONTEND_ERROR'),
           errorMessage: String(errorMessage || ''),
           stackTrace: String(stackTrace || ''),
@@ -14226,11 +14306,22 @@
     const content = document.getElementById('teamContent');
     const countEl = document.getElementById('teamCount');
     // v25.57 (C3): show "Edit Email Templates" button only for Super users
+    // v25.63 (M2 FE): also show "💾 Backups" button for Super only
+    // v25.64 (M1 FE): also show "🗑 Trash" button + per-row trash buttons for Super only
     const _btnTplTV = document.getElementById('btnEditTemplatesTV');
-    if (_btnTplTV) {
-      const _isSuper = currentUser && (currentUser.isSuper === true || String(currentUser.role || '') === 'Super');
-      _btnTplTV.style.display = _isSuper ? 'inline-block' : 'none';
-    }
+    const _btnBkTV = document.getElementById('btnBackupsTV');
+    const _btnTrTV = document.getElementById('btnTrashTV');
+    const _isSuperLocal = currentUser && (currentUser.isSuper === true || String(currentUser.role || '') === 'Super');
+    if (_btnTplTV) _btnTplTV.style.display = _isSuperLocal ? 'inline-block' : 'none';
+    if (_btnBkTV)  _btnBkTV.style.display  = _isSuperLocal ? 'inline-block' : 'none';
+    if (_btnTrTV)  _btnTrTV.style.display  = _isSuperLocal ? 'inline-block' : 'none';
+    // Per-row .btn-super-only-tv buttons (🗑 on every history row) — toggle visibility.
+    // Uses display:none/inline-block to hide for non-Super, keeping HTML markup unchanged.
+    try {
+      document.querySelectorAll('.btn-super-only-tv').forEach(function(b) {
+        b.style.display = _isSuperLocal ? 'inline-block' : 'none';
+      });
+    } catch (_) { /* defensive */ }
     content.innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink-subtle)">Loading team…</div>';
     // Fire-and-forget reset requests panel refresh
     loadResetRequests();
@@ -19090,9 +19181,8 @@ async function openRevisionsModal_tv(refId) {
         : '—';
       const dealVal = fmtINR(r.dealValueINR || 0);
       const oc = String(r.outcome || 'open').toLowerCase();
-      const ocBg = (oc === 'won') ? '#D1FAE5' : (oc === 'lost' ? '#FEE2E2' : (oc === 'on-hold' ? '#FEF3C7' : 'rgba(212,175,55,0.10)'));
-      const ocFg = (oc === 'won') ? '#065F46' : (oc === 'lost' ? '#B91C1C' : (oc === 'on-hold' ? '#92400E' : 'var(--ink-soft)'));
-      const outcomeBadge = '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:0.05em;background:' + ocBg + ';color:' + ocFg + ';margin-left:6px;text-transform:uppercase;">' + escapeHtml(oc) + '</span>';
+      const ocClass = (oc === 'won') ? 'is-won' : (oc === 'lost') ? 'is-lost' : (oc === 'on-hold') ? 'is-on-hold' : 'is-open';
+      const outcomeBadge = ' <span class="outcome-pill-tv ' + ocClass + '">' + escapeHtml(oc) + '</span>';
       return ''
         + '<div style="background:rgba(212,175,55,0.04);border:1px solid rgba(212,175,55,0.20);border-radius:10px;padding:14px;margin-bottom:12px;">'
         +   '<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'
@@ -19281,6 +19371,384 @@ async function resetEmailTemplate_tv(id) {
     if (status) { status.textContent = '✗ Network error'; status.style.color = '#DC2626'; }
   }
 }
+
+
+/* =====================================================================
+   v25.63 (M2 FE) — Backups management modal (Super-only)
+   =====================================================================
+   Lists Backup_YYYY-MM-DD tabs, lets Super manually trigger a backup,
+   restore from any backup (with safety pre-snapshot done server-side),
+   or delete a specific backup. Pairs with backend v26.13.0.
+   Auto-nightly trigger runs server-side at 02:00 IST — that's separate
+   from this UI. ====================================================== */
+async function openBackupsModal_tv() {
+  if (!currentUser || !(currentUser.isSuper === true || currentUser.role === 'Super')) {
+    alert('Backup management is Super-only.');
+    return;
+  }
+  let m = document.getElementById('backups-modal-tv');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'backups-modal-tv';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    m.innerHTML = ''
+      + '<div style="background:var(--paper);color:var(--ink);max-width:760px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid rgba(212,175,55,0.25);border-radius:14px;padding:22px 26px;box-shadow:0 24px 64px rgba(0,0,0,0.4);">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">'
+      +   '<div style="font-size:18px;font-weight:700;letter-spacing:0.02em;">💾 Backups <span style="font-size:11px;font-weight:500;color:var(--ink-soft);margin-left:8px;text-transform:uppercase;letter-spacing:0.06em;">Super only</span></div>'
+      +   '<button onclick="closeBackupsModal_tv()" style="background:transparent;border:none;font-size:22px;color:var(--ink-soft);cursor:pointer;line-height:1;padding:0 4px;" title="Close" aria-label="Close">×</button>'
+      + '</div>'
+      + '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:14px;">Auto-backup runs nightly at 02:00 IST. 30-day retention. Tabs older than 30 days are auto-pruned. Pre-restore safety snapshots are kept separately.</div>'
+      + '<div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">'
+      +   '<button class="primary" onclick="runBackupNow_tv()" id="runBackupBtn_tv" title="Create a backup right now (does not affect the nightly schedule)">⚡ Run backup now</button>'
+      +   '<span id="backups-runstatus-tv" style="font-size:12px;color:var(--ink-soft);"></span>'
+      + '</div>'
+      + '<div id="backups-modal-body-tv" style="font-size:13px;">Loading…</div>'
+      + '<div style="margin-top:18px;display:flex;justify-content:flex-end;">'
+      +   '<button onclick="closeBackupsModal_tv()" class="secondary">Close</button>'
+      + '</div>'
+      + '</div>';
+    document.body.appendChild(m);
+  } else {
+    m.style.display = 'flex';
+  }
+  await refreshBackupsList_tv();
+}
+
+function closeBackupsModal_tv() {
+  const m = document.getElementById('backups-modal-tv');
+  if (m) m.style.display = 'none';
+}
+
+async function refreshBackupsList_tv() {
+  const bodyEl = document.getElementById('backups-modal-body-tv');
+  if (!bodyEl) return;
+  bodyEl.innerHTML = '<div class="empty-state-tv">Loading backups…</div>';
+  try {
+    const resp = await fetch(WEB_APP_URL, {
+      method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'backup_list',
+        authUsername: currentUser.username,
+        authPasswordHash: _authHash
+      })
+    });
+    const data = await resp.json();
+    if (!data.ok) {
+      bodyEl.innerHTML = '<div class="empty-state-tv"><strong>Failed to load</strong>' + escapeHtml(data.error || 'unknown') + '</div>';
+      return;
+    }
+    const backups = data.backups || [];
+    if (!backups.length) {
+      bodyEl.innerHTML = '<div class="empty-state-tv"><strong>No backups yet</strong>First nightly snapshot will run at 02:00 IST, or click "Run backup now" above.</div>';
+      return;
+    }
+    bodyEl.innerHTML = ''
+      + '<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+      +   '<thead><tr style="border-bottom:1px solid var(--line-softer);text-align:left;">'
+      +     '<th style="padding:8px 6px;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;">Backup</th>'
+      +     '<th style="padding:8px 6px;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;text-align:right;">Rows</th>'
+      +     '<th style="padding:8px 6px;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;text-align:right;">Actions</th>'
+      +   '</tr></thead><tbody>'
+      +   backups.map(function(b) {
+          const isSafety = String(b.dateStr || '').indexOf('pre_restore_') === 0;
+          const labelColor = isSafety ? '#92400E' : 'var(--ink)';
+          const labelPrefix = isSafety ? '<span style="font-size:10px;background:rgba(180,83,9,0.15);color:#92400E;padding:1px 6px;border-radius:8px;margin-right:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">safety</span>' : '';
+          return ''
+            + '<tr style="border-bottom:1px solid var(--line-softer);">'
+            +   '<td style="padding:10px 6px;font-family:JetBrains Mono,monospace;font-size:12px;color:' + labelColor + ';">' + labelPrefix + escapeHtml(b.name) + '</td>'
+            +   '<td style="padding:10px 6px;text-align:right;color:var(--ink-soft);">' + b.rowCount + '</td>'
+            +   '<td style="padding:10px 6px;text-align:right;white-space:nowrap;">'
+            +     '<button class="btn-tiny" onclick="restoreBackup_tv(\'' + escapeHtml(b.name) + '\')" style="color:#B45309;">↶ Restore</button>'
+            +     ' <button class="btn-tiny" onclick="deleteBackup_tv(\'' + escapeHtml(b.name) + '\')" style="color:#B91C1C;margin-left:4px;">× Delete</button>'
+            +   '</td>'
+            + '</tr>';
+        }).join('')
+      + '</tbody></table>'
+      + '<div style="font-size:11px;color:var(--ink-soft);margin-top:10px;">' + backups.length + ' backup' + (backups.length === 1 ? '' : 's') + '. Restores create a safety snapshot before swapping.</div>';
+  } catch (err) {
+    console.error('[refreshBackupsList_tv]', err);
+    bodyEl.innerHTML = '<div class="empty-state-tv"><strong>Couldn\'t load backups</strong>Network error — try again later.</div>';
+  }
+}
+
+async function runBackupNow_tv() {
+  const btn = document.getElementById('runBackupBtn_tv');
+  const status = document.getElementById('backups-runstatus-tv');
+  if (btn) { btn.disabled = true; btn.textContent = 'Backing up…'; }
+  if (status) { status.textContent = 'Running…'; status.style.color = 'var(--ink-soft)'; }
+  try {
+    const resp = await fetch(WEB_APP_URL, {
+      method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'backup_run',
+        authUsername: currentUser.username,
+        authPasswordHash: _authHash
+      })
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      if (status) { status.textContent = '✓ ' + (data.backupName || 'Backup created'); status.style.color = '#059669'; }
+      await refreshBackupsList_tv();
+    } else {
+      if (status) { status.textContent = '✗ ' + (data.error || 'failed'); status.style.color = '#DC2626'; }
+    }
+  } catch (err) {
+    console.error('[runBackupNow_tv]', err);
+    if (status) { status.textContent = '✗ Network error'; status.style.color = '#DC2626'; }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⚡ Run backup now'; }
+    setTimeout(function() { if (status) status.textContent = ''; }, 4000);
+  }
+}
+
+async function restoreBackup_tv(backupName) {
+  // Double confirm — restore is destructive (replaces current Submissions sheet)
+  if (!confirm('Restore from "' + backupName + '"?\n\nThis will REPLACE the current Submissions sheet. A safety snapshot of the current state will be created automatically before the swap, so you can restore back if needed.')) return;
+  if (!confirm('Are you sure?\n\nAny deals added or edited since "' + backupName + '" was created will be lost from the active sheet (but preserved in the auto-safety snapshot).')) return;
+  try {
+    const resp = await fetch(WEB_APP_URL, {
+      method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'backup_restore',
+        backupName: backupName,
+        authUsername: currentUser.username,
+        authPasswordHash: _authHash
+      })
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      alert('✓ Restore complete\n\nRestored from: ' + data.restoredFrom + '\nSafety backup of prior state: ' + data.safetyBackup + '\n\nReloading app to pull fresh data…');
+      window.location.reload();
+    } else {
+      alert('✗ Restore failed: ' + (data.error || 'unknown'));
+    }
+  } catch (err) {
+    console.error('[restoreBackup_tv]', err);
+    alert('✗ Network error during restore. Backup was NOT applied.');
+  }
+}
+
+async function deleteBackup_tv(backupName) {
+  if (!confirm('Delete backup "' + backupName + '"?\n\nThis cannot be undone.')) return;
+  try {
+    const resp = await fetch(WEB_APP_URL, {
+      method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'backup_delete',
+        backupName: backupName,
+        authUsername: currentUser.username,
+        authPasswordHash: _authHash
+      })
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      await refreshBackupsList_tv();
+    } else {
+      alert('✗ Delete failed: ' + (data.error || 'unknown'));
+    }
+  } catch (err) {
+    console.error('[deleteBackup_tv]', err);
+    alert('✗ Network error');
+  }
+}
+
+
+/* =====================================================================
+   v25.64 (M1 FE) — Soft-delete + Trash recovery UI (Super-only)
+   =====================================================================
+   Per-row 🗑 button on every editable history row triggers soft-delete via
+   entry_soft_delete. The Trash tab modal lists all soft-deleted deals and
+   lets Super restore any of them. Pairs with backend v26.14.0.
+
+   readSubmissionsRaw_ filters status='deleted' on the backend, so once a
+   deal is soft-deleted the next refresh of History/Dashboard/Review will
+   show it gone. Local centralLog cache also gets the entry removed for
+   immediate feedback without a fetch round-trip. ==================== */
+
+async function softDeleteEntry_tv(refId) {
+  if (!currentUser || !(currentUser.isSuper === true || currentUser.role === 'Super')) {
+    alert('Trash is Super-only.');
+    return;
+  }
+  if (!refId) return;
+  if (!confirm('Move this deal to Trash?\n\nRef ID: ' + refId + '\n\nIt will be hidden from Dashboard/Review/History. You can restore it from Team tab → 🗑 Trash.')) return;
+  try {
+    const resp = await fetch(WEB_APP_URL, {
+      method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'entry_soft_delete',
+        refId: refId,
+        authUsername: currentUser.username,
+        authPasswordHash: _authHash
+      })
+    });
+    const data = await resp.json();
+    if (!data.ok) {
+      alert('✗ Failed: ' + (data.error || 'unknown'));
+      return;
+    }
+    // Immediate local feedback — strip from centralLog so the row disappears
+    // without waiting for the next refresh round-trip.
+    try {
+      if (Array.isArray(centralLog)) {
+        centralLog = centralLog.filter(function(r) { return String(r.refId || '') !== String(refId); });
+        // Re-render History if it's the active surface
+        if (typeof refreshLog === 'function') refreshLog();
+      }
+    } catch (_) { /* defensive */ }
+    // Toast
+    try {
+      const ss = document.getElementById('syncStatus');
+      if (ss) {
+        ss.textContent = '🗑 Moved to Trash';
+        ss.classList.add('visible');
+        setTimeout(function() { if (ss) ss.classList.remove('visible'); }, 2500);
+      }
+    } catch (_) {}
+  } catch (err) {
+    console.error('[softDeleteEntry_tv]', err);
+    alert('✗ Network error');
+  }
+}
+
+async function openTrashModal_tv() {
+  if (!currentUser || !(currentUser.isSuper === true || currentUser.role === 'Super')) {
+    alert('Trash is Super-only.');
+    return;
+  }
+  let m = document.getElementById('trash-modal-tv');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'trash-modal-tv';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    m.innerHTML = ''
+      + '<div style="background:var(--paper);color:var(--ink);max-width:860px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid rgba(212,175,55,0.25);border-radius:14px;padding:22px 26px;box-shadow:0 24px 64px rgba(0,0,0,0.4);">'
+      + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">'
+      +   '<div style="font-size:18px;font-weight:700;letter-spacing:0.02em;">🗑 Trash <span style="font-size:11px;font-weight:500;color:var(--ink-soft);margin-left:8px;text-transform:uppercase;letter-spacing:0.06em;">Super only</span></div>'
+      +   '<button onclick="closeTrashModal_tv()" style="background:transparent;border:none;font-size:22px;color:var(--ink-soft);cursor:pointer;line-height:1;padding:0 4px;" title="Close" aria-label="Close">×</button>'
+      + '</div>'
+      + '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:14px;">Soft-deleted deals. Restore returns the deal to "viewed" status (visible again in all surfaces). All deletes and restores are audit-logged.</div>'
+      + '<div id="trash-modal-body-tv" style="font-size:13px;">Loading…</div>'
+      + '<div style="margin-top:18px;display:flex;justify-content:flex-end;">'
+      +   '<button onclick="closeTrashModal_tv()" class="secondary">Close</button>'
+      + '</div>'
+      + '</div>';
+    document.body.appendChild(m);
+  } else {
+    m.style.display = 'flex';
+  }
+  await refreshTrashList_tv();
+}
+
+function closeTrashModal_tv() {
+  const m = document.getElementById('trash-modal-tv');
+  if (m) m.style.display = 'none';
+}
+
+async function refreshTrashList_tv() {
+  const bodyEl = document.getElementById('trash-modal-body-tv');
+  if (!bodyEl) return;
+  bodyEl.innerHTML = '<div class="empty-state-tv">Loading trash…</div>';
+  try {
+    const resp = await fetch(WEB_APP_URL, {
+      method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'trash_list',
+        authUsername: currentUser.username,
+        authPasswordHash: _authHash
+      })
+    });
+    const data = await resp.json();
+    if (!data.ok) {
+      bodyEl.innerHTML = '<div class="empty-state-tv"><strong>Failed to load</strong>' + escapeHtml(data.error || 'unknown') + '</div>';
+      return;
+    }
+    const entries = data.entries || [];
+    if (!entries.length) {
+      bodyEl.innerHTML = '<div class="empty-state-tv"><strong>Trash is empty</strong>No soft-deleted deals.</div>';
+      return;
+    }
+    bodyEl.innerHTML = ''
+      + '<table style="width:100%;border-collapse:collapse;font-size:12.5px;">'
+      +   '<thead><tr style="border-bottom:1px solid var(--line-softer);text-align:left;">'
+      +     '<th style="padding:8px 6px;font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;">Ref / Project</th>'
+      +     '<th style="padding:8px 6px;font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;">End user</th>'
+      +     '<th style="padding:8px 6px;font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;text-align:right;">Value</th>'
+      +     '<th style="padding:8px 6px;font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;">Owner</th>'
+      +     '<th style="padding:8px 6px;font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;text-align:right;">Actions</th>'
+      +   '</tr></thead><tbody>'
+      +   entries.map(function(e) {
+          const refEsc = escapeHtml(String(e.refId || ''));
+          const projEsc = escapeHtml(String(e.project || '—'));
+          const euEsc = escapeHtml(String(e.endUser || '—'));
+          const ownerEsc = escapeHtml(String(e.userFullName || e.username || '—'));
+          const dealVal = parseFloat(e.dealValueINR) || 0;
+          const dealStr = dealVal > 0
+            ? '₹' + Math.round(dealVal).toLocaleString('en-IN')
+            : '—';
+          return ''
+            + '<tr style="border-bottom:1px solid var(--line-softer);">'
+            +   '<td style="padding:10px 6px;">'
+            +     '<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--ink-soft);">' + refEsc + '</div>'
+            +     '<div style="font-weight:600;color:var(--ink);margin-top:2px;">' + projEsc + '</div>'
+            +   '</td>'
+            +   '<td style="padding:10px 6px;color:var(--ink-soft);">' + euEsc + '</td>'
+            +   '<td style="padding:10px 6px;text-align:right;font-weight:600;color:var(--ink);">' + dealStr + '</td>'
+            +   '<td style="padding:10px 6px;color:var(--ink-soft);font-size:12px;">' + ownerEsc + '</td>'
+            +   '<td style="padding:10px 6px;text-align:right;white-space:nowrap;">'
+            +     '<button class="btn-tiny" onclick="restoreEntry_tv(\'' + refEsc + '\')" style="color:#059669;">↶ Restore</button>'
+            +   '</td>'
+            + '</tr>';
+        }).join('')
+      + '</tbody></table>'
+      + '<div style="font-size:11px;color:var(--ink-soft);margin-top:10px;">' + entries.length + ' deal' + (entries.length === 1 ? '' : 's') + ' in trash. Restored deals return to "viewed" status.</div>';
+  } catch (err) {
+    console.error('[refreshTrashList_tv]', err);
+    bodyEl.innerHTML = '<div class="empty-state-tv"><strong>Couldn\'t load trash</strong>Network error — try again later.</div>';
+  }
+}
+
+async function restoreEntry_tv(refId) {
+  if (!confirm('Restore this deal from Trash?\n\nIt will return to "viewed" status and be visible in Dashboard/Review/History again.')) return;
+  try {
+    const resp = await fetch(WEB_APP_URL, {
+      method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'entry_restore',
+        refId: refId,
+        restoreToStatus: 'viewed',
+        authUsername: currentUser.username,
+        authPasswordHash: _authHash
+      })
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      // Re-fetch trash list (the restored entry disappears from trash)
+      await refreshTrashList_tv();
+      // Also re-fetch centralLog so the restored deal appears in History/Dashboard
+      try {
+        if (typeof fetchAllSubmissionsForUser_tv === 'function') {
+          fetchAllSubmissionsForUser_tv({force: true});
+        }
+      } catch (_) {}
+      // Toast
+      try {
+        const ss = document.getElementById('syncStatus');
+        if (ss) {
+          ss.textContent = '↶ Deal restored';
+          ss.classList.add('visible');
+          setTimeout(function() { if (ss) ss.classList.remove('visible'); }, 2500);
+        }
+      } catch (_) {}
+    } else {
+      alert('✗ Restore failed: ' + (data.error || 'unknown'));
+    }
+  } catch (err) {
+    console.error('[restoreEntry_tv]', err);
+    alert('✗ Network error');
+  }
+}
+
 
 </script>
 <!-- Silent sync toast indicator -->
