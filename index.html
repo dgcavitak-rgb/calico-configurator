@@ -2046,6 +2046,27 @@
     color: var(--ink-soft);
   }
 
+  /* v25.62 (Beauty-1): standardized empty-state messaging across Dashboard/History/Review tabs.
+     Was previously expressed via 4 different inline styles ("No deals yet",
+     "Loading...", "No open deals to chart", etc.). Use this class + an optional
+     emoji/icon prefix for any "nothing here" message. */
+  .empty-state-tv {
+    padding: 32px 24px;
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.55;
+    font-style: italic;
+  }
+  .empty-state-tv strong {
+    display: block;
+    font-style: normal;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+
   /* v25.30: Default chip styling — soft gold tint, neutral but on-theme.
      Was using bare var(--line-softer) which looked alien from gold focus ring on adjacent fields. */
   .closemonth-chip {
@@ -4426,14 +4447,18 @@
 .v26-kpi-label { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700; opacity: 0.92; }
 .v26-kpi-value { font-size: 28px; font-weight: 800; line-height: 1.1; }
 .v26-kpi-sub { font-size: 11px; opacity: 0.85; margin-top: 2px; }
-.v26-kpi-blue { background: linear-gradient(135deg, #3B82F6, #2563EB); }
-.v26-kpi-green { background: linear-gradient(135deg, #10B981, #059669); }
-.v26-kpi-purple { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
-.v26-kpi-indigo { background: linear-gradient(135deg, #6366F1, #4F46E5); }
-.v26-kpi-orange { background: linear-gradient(135deg, #F59E0B, #D97706); }
-.v26-kpi-amber { background: linear-gradient(135deg, #F97316, #EA580C); }
-.v26-kpi-teal { background: linear-gradient(135deg, #14B8A6, #0D9488); }
-.v26-kpi-cyan { background: linear-gradient(135deg, #06B6D4, #0891B2); }
+/* v25.62: KPI tile palette aligned to tvONE brand. Was 8 Bootstrap-default
+   gradients (bright blue/green/purple/orange/teal/cyan); now uses the app's
+   gold-cream-forest aesthetic. Visual hierarchy preserved — green=positive
+   (Won/wins), amber=time-pressure (Days to Close), forest=primary metric. */
+.v26-kpi-blue   { background: linear-gradient(135deg, #064E3B, #047857); }  /* forest — primary KPI */
+.v26-kpi-green  { background: linear-gradient(135deg, #047857, #065F46); }  /* deep green — positive */
+.v26-kpi-purple { background: linear-gradient(135deg, #5B6376, #44495A); }  /* slate-warm */
+.v26-kpi-indigo { background: linear-gradient(135deg, #4B5563, #374151); }  /* slate */
+.v26-kpi-orange { background: linear-gradient(135deg, #B08D28, #8B6914); }  /* tvONE gold-deep */
+.v26-kpi-amber  { background: linear-gradient(135deg, #B45309, #92400E); }  /* warm amber — caution */
+.v26-kpi-teal   { background: linear-gradient(135deg, #475569, #334155); }  /* slate-gray */
+.v26-kpi-cyan   { background: linear-gradient(135deg, #6B7280, #4B5563); }  /* neutral steel */
 
 /* To-do sections (My Pipeline) */
 .v26-todo-wrap {
@@ -5613,7 +5638,7 @@
         <span class="ab2tv-label">Back</span>
       </button>
       <button class="ab2tv-btn is-primary" id="confirmBtn" onclick="confirmSubmission()" title="Confirm and save submission">
-        <svg class="ab2tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg class="ab2tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
         <span class="ab2tv-label">Confirm</span>
       </button>
       <button class="ab2tv-btn" onclick="exportToExcel()" title="Download Excel quote (.xlsx)">
@@ -6828,7 +6853,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.61';  // v25.61 — Third bug from v25.46 dashboard rewrite. The bsv26 module's _getStateUser() reads from state.user (BS naming convention) but tvONE uses currentUser directly with no state wrapper. Result: _getStateUser() returned null → _scopeForUser() returned [] → all KPI tiles, charts, and tables in Team Analytics + My Pipeline showed 0/empty even though centralLog was populated. Fix: extend _getStateUser to also read from window.currentUser. Now both Team Analytics dashboard and My Pipeline subtab populate correctly. (v25.59/60 fixed the legacy-dashboard refreshLog crash; this fix unlocks the v26-dashboard data path.)
+  const TVONE_FRONTEND_VERSION = '25.62';  // v25.62 — Beauty-1 polish: (1) Action bar Confirm-button SVG stroke-width corrected from 2.2 → 2.0 to match the other 6 buttons (Back/Excel/PDF/WhatsApp/Email/Print). (2) v26 Dashboard KPI tiles — 8 brightly-colored Bootstrap-rainbow gradients (#3B82F6/#10B981/#8B5CF6/etc.) replaced with the tvONE brand palette: dark-forest, gold, slate, warm-amber. Same visual hierarchy preserved (Won is green-accent, Days-to-Close is amber-accent), just toned to match the rest of the app's restrained gold/cream/dark-green aesthetic. (3) New .empty-state-tv utility class consolidates the 4 different empty-state inline styles scattered across Dashboard / History / Review tabs into one consistent treatment. Pure CSS + 1-char SVG fix; zero JS logic changes.
+  // v25.61 — Third bug from v25.46 dashboard rewrite. The bsv26 module's _getStateUser() reads from state.user (BS naming convention) but tvONE uses currentUser directly with no state wrapper.
   // v25.60 — CRITICAL BUGFIX continuation. v25.59 fixed getDashFilters() null-crash, but the same v25.46-rewrite cleanup miss exists in updateStats() and likely throughout the legacy-dashboard chain. Wrapped applyDashFilters body in defensive try/catch + early-exit if legacy dashboard DOM is absent.
   // v25.59 — CRITICAL BUGFIX: getDashFilters() crashed on every refreshLog() call. The v26 Dashboard rewrite (v25.46) removed the legacy fl_* filter UI from markup but left the JS reading from those IDs.
   // v25.58 — Action bar polish on quote page. Print was orphaned in a separate row below the 6-button action bar (Back/Confirm/Excel/PDF/WhatsApp/Email), bunched-looking on wide screens. Now: Print folded into the same grid as the 7th button (styled tertiary like Back — gray, low emphasis), grid changed from 6 cols to 7 cols, .action-bar-v2-tv given explicit width:100% so it spans the full container width. New .ab2tv-btn.is-tertiary CSS class mirrors the Back button styling.
