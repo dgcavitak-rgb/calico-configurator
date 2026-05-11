@@ -6940,7 +6940,8 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.65';  // v25.65 — C2 from parity audit: Pipeline trend chart on My Pipeline subtab. New <div id="v26-pipeline-trend-card"> renders below the 3 to-do sections, above the My Deals table. Pulls last 26 weeks of snapshots from backend via pipeline_snapshots_list, renders ECharts line chart with two series (Open Pipeline ₹ + Weighted Pipeline ₹). If fewer than 4 weeks of data exist, shows an explanatory empty state instead of a sparse chart. Auto-renders on My Pipeline tab activation. Pairs with backend v26.15.0.
+  const TVONE_FRONTEND_VERSION = '25.66';  // v25.66 — MM1 + MM3 fixes. (MM1) Sales/Presales dropdown label disambiguation: format changed from `fullName || username` to `fullName · Role` so the two Ranjiths (Sales Ranjith Kumar vs Presales Ranjith SR) are visually distinct. When fullName is blank, label shows `(username) · Role` and is dimmed + flagged with ⚠ — visible warning that Super should fill the fullName cell in the Users sheet. (MM3) Five state-changing writes converted from mode:'no-cors' to mode:'cors' so server-side failures surface to UI instead of being silently swallowed: (1) logToSheet at ~line 9513 [action: 'log' — primary submission], (2) updateSubmissionOnSheet at ~9534 [action: 'updatesubmission' — edit save], (3) confirm action at ~8701 [confirm submission], (4) updateownprofile at ~13053 [profile edit], (5) updatesubmission in quick-stage bulk path at ~15837. Content-Type stays text/plain so request remains a "simple request" — no preflight, no backend change. Telemetry no-cors paths (error_log_append, view_log_append) left as-is intentionally — fire-and-forget is appropriate for them. Pairs with backend v26.15.0 (no BE changes).
+  // v25.65 — C2 from parity audit: Pipeline trend chart on My Pipeline subtab. New <div id="v26-pipeline-trend-card"> renders below the 3 to-do sections, above the My Deals table.
   const TVONE_EXPECTED_BACKEND_MIN = '26.15.0';  // v25.65 — bumped to require pipeline_snapshots_list route.
   // v25.64 — M1 frontend (Trash recovery) + tvONE FE cleanup. (M1 FE) 🗑 Trash button on every editable history row, Super-only. New "Trash" button in Team tab opens modal listing all soft-deleted deals with Restore option. Pairs with backend v26.14.0.
   // v25.63 — Beauty-2 + M2 frontend UI bundle. (M2 FE) Super-only "💾 Backups" button in Team tab opens management modal. (Beauty-2) Outcome pills CSS class .outcome-pill-tv. Card border consistency. Toast animation 200ms fade+slide. Sales/Presales callout green focus.
@@ -8696,12 +8697,23 @@
     showSync('Confirming…', 'pending');
     try {
       if (!OFFLINE_MODE && typeof WEB_APP_URL === 'string' && WEB_APP_URL) {
-        await fetch(WEB_APP_URL, {
+        // v25.66 (MM3): cors mode so server-side rejection (auth, refId not found,
+        // already-confirmed race) surfaces as a real error to user.
+        const _resp = await fetch(WEB_APP_URL, {
           method: 'POST',
-          mode: 'no-cors',
+          mode: 'cors',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'confirm', refId: refId, username: currentUser.username, userFullName: currentUser.name })
+          body: JSON.stringify({ action: 'confirm', refId: refId, username: currentUser.username, userFullName: currentUser.name, authUsername: currentUser.username, authPasswordHash: _authHash || '' })
         });
+        let _confirmData = null;
+        try { _confirmData = await _resp.json(); } catch (_) { /* tolerate missing JSON */ }
+        if (_confirmData && _confirmData.ok === false) {
+          showSync('Could not confirm: ' + (_confirmData.error || 'server rejected'), 'error');
+          btn.disabled = false;
+          const _lbl2 = btn.querySelector('.ab2tv-label');
+          if (_lbl2) _lbl2.textContent = 'Confirm';
+          return;
+        }
         _confirmedRefIds.add(refId);
         lastResult.submission.status = 'confirmed';
         showSync('Deal confirmed', 'success');
@@ -9506,11 +9518,14 @@
 
   async function logToSheet(submission) {
     if (!WEB_APP_URL) throw new Error('No backend URL configured');
-    // v25.17 fix: backend's `action: 'log'` calls requireAuth_(body) which expects
-    // authUsername + authPasswordHash. Without them the save was silently rejected
-    // (mode:'no-cors' hides the rejection from JS). Same pattern as BS v24.12.1.
+    // v25.66 (MM3): switched from mode:'no-cors' to mode:'cors' so we can READ the
+    // backend response. Previously the no-cors response was opaque so any silent
+    // server-side rejection (auth, validation, sheet missing) was invisible to UI
+    // — user saw "Saved ✓" while data was lost. Content-Type stays text/plain so
+    // request remains a "simple request" — no preflight needed.
+    // v25.17: added auth fields. v25.66: now actually returning the response.
     return fetch(WEB_APP_URL, {
-      method: 'POST', mode: 'no-cors',
+      method: 'POST', mode: 'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'log',
@@ -9526,12 +9541,12 @@
   // =================================================================
   async function updateSubmissionOnSheet(submission) {
     if (!WEB_APP_URL) throw new Error('No backend URL configured');
-    // Note: no-cors prevents us from reading a real response, but the request
-    // still reaches the Apps Script which updates the sheet. Downside is we
-    // can't surface server-side errors to the user in detail — matches how
-    // logToSheet already works.
+    // v25.66 (MM3): switched from mode:'no-cors' to mode:'cors' so server-side
+    // rejections (auth, validation, refId not found, locked rows) surface as
+    // proper errors. Previously the response was opaque and any failure was
+    // invisible — user saw "Updated ✓" while the edit was silently lost.
     return fetch(WEB_APP_URL, {
-      method: 'POST', mode: 'no-cors',
+      method: 'POST', mode: 'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'updatesubmission',
@@ -12564,11 +12579,29 @@
     const currentPresales = presalesSel.value;
 
     const buildOpt = function(u) {
-      const label = u.fullName || u.username;
-      const value = String(u.username || '').toLowerCase();
+      // v25.66 (MM1): label includes role to disambiguate same-first-name users
+      // (e.g., Sales Ranjith Kumar vs Presales Ranjith SR). When fullName is
+      // blank in the Users sheet, surface a visible warning so Super knows to fix.
+      const role = String(u.role || '').trim();
+      const roleStr = role ? ' · ' + role : '';
+      const fullName = String(u.fullName || '').trim();
+      const username = String(u.username || '').trim();
+      let label, isWarn = false;
+      if (fullName) {
+        label = fullName + roleStr;
+      } else {
+        // fullName is blank → fall back to username, flag as needing attention
+        label = '⚠ (' + username + ')' + roleStr;
+        isWarn = true;
+      }
+      const value = username.toLowerCase();
       const o = document.createElement('option');
       o.value = value;
       o.textContent = label;
+      if (isWarn) {
+        o.style.color = '#B45309';
+        o.title = 'fullName is missing for "' + username + '" — Super should fill the Users sheet cell.';
+      }
       return o;
     };
 
@@ -15825,6 +15858,8 @@
     if (_bulkSelected.size === 0) return;
     if (!confirm('Change stage of ' + _bulkSelected.size + ' submission(s) to "' + newStage + '"?')) return;
     const refIds = Array.from(_bulkSelected);
+    // v25.66 (MM3): track per-row success/failure so partial failures are reported
+    let okCount = 0, failCount = 0;
     for (let i = 0; i < refIds.length; i++) {
       const row = centralLog.find(function(r) { return String(r.refId) === String(refIds[i]); });
       if (!row) continue;
@@ -15833,8 +15868,10 @@
       if (!isOwner && !currentUser.isSuper) continue;
       const updated = Object.assign({}, row, { stage: newStage });
       try {
-        await fetch(WEB_APP_URL, {
-          method: 'POST', mode: 'no-cors',
+        // v25.66 (MM3): cors mode so we can detect per-row failure instead of
+        // marking all as success and silently losing partial saves.
+        const _resp = await fetch(WEB_APP_URL, {
+          method: 'POST', mode: 'cors',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'updatesubmission',
@@ -15844,10 +15881,18 @@
             submission: updated
           })
         });
-      } catch (e) { /* best-effort */ }
+        let _bulkData = null;
+        try { _bulkData = await _resp.json(); } catch (_) {}
+        if (_bulkData && _bulkData.ok === false) failCount++;
+        else okCount++;
+      } catch (e) { failCount++; }
     }
     clearBulkSelection();
-    showSync('Bulk stage applied — refreshing…', 'success');
+    if (failCount > 0) {
+      showSync(okCount + ' updated, ' + failCount + ' failed — refreshing…', 'error');
+    } else {
+      showSync('Bulk stage applied (' + okCount + ') — refreshing…', 'success');
+    }
     setTimeout(refreshLog, 900);
   }
 
