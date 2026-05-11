@@ -7090,7 +7090,8 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.67';  // v25.67 — Direction C visual port from BS. Adapted subset that applies to tvONE's calculator-style form: (M4) `.card` containers now have stronger layered shadow + larger radius + indigo top-accent stripe (4px gradient) + 3px hover lift. (Custom select) native <select> elements get chevron icon, indigo focus glow, hover border. (Number inputs) `<input type="number">` gets focus glow + hover border + larger height. (M7) Mobile audit — 44px+ touch targets, no horizontal scroll, stacked layouts <720px. (C11) Skip-to-content link, focus-visible rings, ARIA labels on icon-only buttons, --ink-muted darkened for WCAG AA contrast, prefers-reduced-motion respected. NOT ported: M1 question wording (tvONE labels are calculator-style not yes/no questions), M2 section completion checks (too many conditional fields), M3 progress bar (dynamic LED screen flow), M5 segmented pills (no pill-group in tvONE), M6 spring choice cards (no choice cards in tvONE), C14 quick-fill (too many conditional fields), C1 vendor logos (no CMS vendor field in tvONE). Pure CSS, no JS changes, no DOM changes. Backend v26.15.0 unchanged. Recommendation engine, validation, Excel export, all calculator math unaffected.
+  const TVONE_FRONTEND_VERSION = '25.68';  // v25.68 — Sales/Presales dropdown labels simplified (matches BS v24.34.5). v25.66 (MM1) appended `· Role` suffix — per user feedback, role is not required in the label; fullName only. The two Ranjiths are still distinguishable by their actual last initials (Ranjith Kumar vs Ranjith SR). The ⚠ warning for missing fullName preserved (data-integrity signal). NOT changed: the separate 1:1 Briefing Super-only admin tool dropdown (line ~14041) — that retains `fullName (role)` because the role helps Super distinguish submitters when reviewing the team's work.
+  // v25.67 — Direction C visual port from BS.
   // v25.66 — MM1 + MM3 fixes (see prior version comment).
   // v25.65 — C2 from parity audit: Pipeline trend chart on My Pipeline subtab. New <div id="v26-pipeline-trend-card"> renders below the 3 to-do sections, above the My Deals table.
   const TVONE_EXPECTED_BACKEND_MIN = '26.15.0';  // v25.65 — bumped to require pipeline_snapshots_list route.
@@ -12730,19 +12731,17 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
     const currentPresales = presalesSel.value;
 
     const buildOpt = function(u) {
-      // v25.66 (MM1): label includes role to disambiguate same-first-name users
-      // (e.g., Sales Ranjith Kumar vs Presales Ranjith SR). When fullName is
-      // blank in the Users sheet, surface a visible warning so Super knows to fix.
-      const role = String(u.role || '').trim();
-      const roleStr = role ? ' · ' + role : '';
+      // v25.66 (MM1) appended `· Role` to disambiguate same-first-name users.
+      // v25.68 — role suffix removed per user feedback (matches BS v24.34.5).
+      // The ⚠ fallback warning for missing fullName is preserved.
       const fullName = String(u.fullName || '').trim();
       const username = String(u.username || '').trim();
       let label, isWarn = false;
       if (fullName) {
-        label = fullName + roleStr;
+        label = fullName;
       } else {
         // fullName is blank → fall back to username, flag as needing attention
-        label = '⚠ (' + username + ')' + roleStr;
+        label = '⚠ (' + username + ')';
         isWarn = true;
       }
       const value = username.toLowerCase();
