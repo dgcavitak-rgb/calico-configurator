@@ -5892,6 +5892,19 @@
         </div>
       </div>
 
+      <!-- v25.65 (C2): Pipeline trend chart — last 26 weeks of snapshots.
+           Empty state shown when fewer than 4 snapshots exist (snapshots are
+           written weekly Sun 23:00 IST by backend cron). -->
+      <div class="v26-table-wrap" style="margin-top:16px;">
+        <div class="v26-table-head">
+          <span style="font-weight:700;">📈 Pipeline trend</span>
+          <span class="v26-table-counter" id="v26-pipeline-trend-meta">— weeks</span>
+        </div>
+        <div id="v26-pipeline-trend-card" style="padding:16px;min-height:260px;">
+          <div class="empty-state-tv">Loading pipeline trend…</div>
+        </div>
+      </div>
+
       <!-- My deals table -->
       <div class="v26-table-wrap">
         <div class="v26-table-head">
@@ -6927,8 +6940,9 @@
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.64';  // v25.64 — M1 frontend (Trash recovery) + tvONE FE cleanup. (M1 FE) 🗑 Trash button injected on every editable history row, Super-only (gated via display:none for non-Super). Click → confirm prompt → soft-delete via entry_soft_delete → row disappears on next refresh. New "Trash" button in Team tab opens modal listing all soft-deleted deals with Restore + permanent-delete options. (Cleanup) reportFrontendError_tv signature extended from 3-arg to 4-arg (errorCode, errorMessage, stackTrace, actionContext) so callers can supply action_context instead of the hardcoded 'frontend' string. Old 3-arg call sites unchanged (action_context defaults to 'frontend' for backward compat). Pairs with backend v26.14.0; both must deploy together.
-  const TVONE_EXPECTED_BACKEND_MIN = '26.14.0';  // v25.64 — bumped to require the new entry_soft_delete + entry_restore + trash_list routes.
+  const TVONE_FRONTEND_VERSION = '25.65';  // v25.65 — C2 from parity audit: Pipeline trend chart on My Pipeline subtab. New <div id="v26-pipeline-trend-card"> renders below the 3 to-do sections, above the My Deals table. Pulls last 26 weeks of snapshots from backend via pipeline_snapshots_list, renders ECharts line chart with two series (Open Pipeline ₹ + Weighted Pipeline ₹). If fewer than 4 weeks of data exist, shows an explanatory empty state instead of a sparse chart. Auto-renders on My Pipeline tab activation. Pairs with backend v26.15.0.
+  const TVONE_EXPECTED_BACKEND_MIN = '26.15.0';  // v25.65 — bumped to require pipeline_snapshots_list route.
+  // v25.64 — M1 frontend (Trash recovery) + tvONE FE cleanup. (M1 FE) 🗑 Trash button on every editable history row, Super-only. New "Trash" button in Team tab opens modal listing all soft-deleted deals with Restore option. Pairs with backend v26.14.0.
   // v25.63 — Beauty-2 + M2 frontend UI bundle. (M2 FE) Super-only "💾 Backups" button in Team tab opens management modal. (Beauty-2) Outcome pills CSS class .outcome-pill-tv. Card border consistency. Toast animation 200ms fade+slide. Sales/Presales callout green focus.
   // v25.62 — Beauty-1 polish: (1) Action bar Confirm-button SVG stroke-width corrected from 2.2 → 2.0. (2) v26 Dashboard KPI tiles palette aligned to tvONE brand. (3) New .empty-state-tv utility class.
   // v25.61 — Third bug from v25.46 dashboard rewrite. The bsv26 module's _getStateUser() reads from state.user (BS naming convention) but tvONE uses currentUser directly with no state wrapper.
@@ -17943,6 +17957,10 @@ function _cust360EscCloseTV(e){
 
     // Deals table
     _renderMyTable(mine);
+
+    // v25.65 (C2): Pipeline trend chart — pulls last 26 weeks of snapshots from
+    // backend. Fire-and-forget; no need to block the rest of the render on it.
+    try { _renderPipelineTrend_tv(); } catch(err) { console.warn('[pipeline-trend]', err); }
   }
 
   function _renderTodoSection(bodyId, countId, deals){
@@ -19746,6 +19764,171 @@ async function restoreEntry_tv(refId) {
   } catch (err) {
     console.error('[restoreEntry_tv]', err);
     alert('✗ Network error');
+  }
+}
+
+
+/* =====================================================================
+   v25.65 (C2) — Pipeline trend chart (ECharts line, 26 weeks)
+   =====================================================================
+   Renders on My Pipeline subtab below the to-do sections. Pulls last 26
+   weeks of pipeline snapshots from the backend (pipeline_snapshots_list).
+   If fewer than 4 snapshots exist (which will be the case for the first
+   ~4 weeks after setup), shows an explanatory empty state.
+
+   Snapshot semantics from backend:
+     openCount / openValueINR    = current open deals at snapshot time
+     wonCountThisWeek / wonVal   = deals that became Won during the week
+     lostCountThisWeek / lostVal = deals that became Lost during the week
+     weightedPipelineINR         = sum(open dealValue × stage_weight)
+   ===================================================================== */
+let _trendChartInst_tv = null;  // ECharts instance — reused on re-render
+let _trendCache_tv = { ts: 0, data: null };  // 60-sec cache to avoid round-trips
+
+async function _renderPipelineTrend_tv() {
+  const card = document.getElementById('v26-pipeline-trend-card');
+  const meta = document.getElementById('v26-pipeline-trend-meta');
+  if (!card) return;
+
+  // Cache: re-renders within 60s use stored snapshots (chart redraws but no fetch)
+  let snaps = null;
+  const cacheAgeMs = Date.now() - _trendCache_tv.ts;
+  if (cacheAgeMs < 60000 && _trendCache_tv.data) {
+    snaps = _trendCache_tv.data;
+  } else {
+    if (!WEB_APP_URL || !currentUser || !_authHash) {
+      card.innerHTML = '<div class="empty-state-tv">Sign in required to load trend.</div>';
+      return;
+    }
+    try {
+      const resp = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'pipeline_snapshots_list',
+          weeks: 26,
+          authUsername: currentUser.username,
+          authPasswordHash: _authHash
+        })
+      });
+      const data = await resp.json();
+      if (!data.ok) {
+        card.innerHTML = '<div class="empty-state-tv"><strong>Couldn\'t load trend</strong>' + escapeHtml(data.error || 'unknown') + '</div>';
+        return;
+      }
+      snaps = data.snapshots || [];
+      _trendCache_tv = { ts: Date.now(), data: snaps };
+    } catch (err) {
+      console.error('[_renderPipelineTrend_tv]', err);
+      card.innerHTML = '<div class="empty-state-tv"><strong>Couldn\'t load trend</strong>Network error — try again later.</div>';
+      return;
+    }
+  }
+
+  if (meta) meta.textContent = snaps.length + ' week' + (snaps.length === 1 ? '' : 's');
+
+  // Need at least 4 snapshots for a meaningful trend. Show empty state otherwise.
+  if (snaps.length < 4) {
+    card.innerHTML = ''
+      + '<div class="empty-state-tv">'
+      +   '<strong>Trend chart needs at least 4 weeks of data</strong>'
+      +   'Snapshots are auto-captured every Sunday at 23:00 IST. '
+      +   'You have ' + snaps.length + ' snapshot' + (snaps.length === 1 ? '' : 's') + ' so far. '
+      +   'Once 4+ weeks accumulate, the trend will render here.'
+      +   '<div style="font-size:11px;margin-top:10px;opacity:0.7;">Super: to trigger an immediate test snapshot, run <code style="background:rgba(212,175,55,0.10);padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;">_writePipelineSnapshot_tv_()</code> in Apps Script.</div>'
+      + '</div>';
+    return;
+  }
+
+  // Reset card to chart host
+  card.innerHTML = '<div id="v26-pipeline-trend-host" style="width:100%;height:280px;"></div>';
+  const host = document.getElementById('v26-pipeline-trend-host');
+  if (!host || typeof echarts === 'undefined') {
+    card.innerHTML = '<div class="empty-state-tv"><strong>Chart library unavailable</strong>Reload page to retry.</div>';
+    return;
+  }
+
+  if (_trendChartInst_tv) { try { _trendChartInst_tv.dispose(); } catch (_) {} _trendChartInst_tv = null; }
+  _trendChartInst_tv = echarts.init(host, null, { renderer: 'svg' });
+
+  const xLabels = snaps.map(function(s) { return String(s.weekISO || ''); });
+  const openSeries = snaps.map(function(s) { return Math.round((s.openValueINR || 0) / 100000) / 10; });   // ₹ in Cr (1 decimal)
+  const weightedSeries = snaps.map(function(s) { return Math.round((s.weightedPipelineINR || 0) / 100000) / 10; });
+
+  const fmtCr = function(v) { return '₹' + v.toFixed(1) + ' Cr'; };
+
+  _trendChartInst_tv.setOption({
+    grid: { top: 32, right: 24, bottom: 36, left: 56 },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(15,23,42,0.92)',
+      borderColor: 'rgba(212,175,55,0.4)',
+      textStyle: { color: '#fff', fontSize: 12 },
+      formatter: function(params) {
+        if (!params || !params.length) return '';
+        const week = params[0].axisValue;
+        let html = '<div style="font-weight:600;margin-bottom:4px;">' + week + '</div>';
+        params.forEach(function(p) {
+          html += '<div style="font-size:11px;"><span style="color:' + p.color + ';">●</span> ' + p.seriesName + ': <b>' + fmtCr(p.value) + '</b></div>';
+        });
+        return html;
+      }
+    },
+    legend: {
+      data: ['Open Pipeline', 'Weighted Pipeline'],
+      top: 4,
+      textStyle: { color: 'var(--ink-soft, #94A3B8)', fontSize: 11 }
+    },
+    xAxis: {
+      type: 'category',
+      data: xLabels,
+      axisLabel: { fontSize: 10, color: '#94A3B8', interval: Math.max(0, Math.floor(snaps.length / 8)) },
+      axisLine: { lineStyle: { color: 'rgba(148,163,184,0.3)' } }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { fontSize: 10, color: '#94A3B8', formatter: function(v) { return '₹' + v + 'Cr'; } },
+      axisLine: { show: false },
+      splitLine: { lineStyle: { color: 'rgba(148,163,184,0.15)' } }
+    },
+    series: [
+      {
+        name: 'Open Pipeline',
+        type: 'line',
+        data: openSeries,
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 6,
+        lineStyle: { width: 2.5, color: '#D4AF37' },
+        itemStyle: { color: '#D4AF37' },
+        areaStyle: {
+          color: {
+            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(212,175,55,0.25)' },
+              { offset: 1, color: 'rgba(212,175,55,0.02)' }
+            ]
+          }
+        }
+      },
+      {
+        name: 'Weighted Pipeline',
+        type: 'line',
+        data: weightedSeries,
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 5,
+        lineStyle: { width: 2, color: '#10B981', type: 'dashed' },
+        itemStyle: { color: '#10B981' }
+      }
+    ]
+  });
+
+  // Resize on window resize
+  if (!window._trendChartResizeWiredTV) {
+    window._trendChartResizeWiredTV = true;
+    window.addEventListener('resize', function() {
+      if (_trendChartInst_tv) { try { _trendChartInst_tv.resize(); } catch (_) {} }
+    });
   }
 }
 
