@@ -8739,7 +8739,10 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.80.2';  // v25.80.2 — CRITICAL HOTFIX for blank-form-on-login crash after v25.80 deploy. EXACT CRASH SITE (from user's browser console): line 14951 — `document.getElementById('sdiNote').style.display = 'none'` inside resetForm(). Stack trace: HTMLButtonElement.onclick → startNewConfig (:10383) → window.resetForm (v25.74/v25.77/v25.80 wrappers) → resetForm core (:14951) → CRASH on null .style access. ROOT CAUSE: v25.80 Card 02 rebuild REMOVED sdiNote and sdiCountField DOM elements, but resetForm() (called every time user clicks "+ New Selection") still tries to access them. The crash halts form rendering → BLANK FORM. v25.80.1 hotfix patched the legacy change-handler functions but MISSED resetForm itself. FIX: null-guard EVERY DOM access in resetForm core (10 element lookups). Also added defensive null-guards to updateTotals and getProjectorLoad which are called downstream from initScreens → addScreen → updateTotals chain during form init. Each handler now no-ops gracefully if its target element is missing. ALL fixes are surgical — no functional changes, just defensive coding. PRESERVES: all v25.80 functionality (form rebuild, engine fix, compat shims). Tested against the user's exact reproduction (DevTools → console clear → click "+ New Selection"). Pairs with backend v26.15.0.
+  const TVONE_FRONTEND_VERSION = '25.80.3';  // v25.80.3 — HOTFIX for pill toggles not selecting in Card 02/03. SYMPTOM: User clicks FHD pill on Display row → nothing happens (4K stays selected). Same for Projector FHD, Active LED No, Audio In/Out Yes/No pills. ROOT CAUSE: Click handler _selectPillTV(group, value) looks up the hidden select element via _GROUP_TO_SELECT mapping. v25.80 added 5 NEW pill groups (outputDisplayRes, outputProjectorRes, outputActiveLed, inputAudio, outputAudio) but did NOT register them in _GROUP_TO_SELECT — that mapping only knew about 3 legacy groups (outputType, outputSignal, budget). When user clicked a new pill: lookup returned undefined → getElementById(undefined) returned null → `if (!sel) return;` → silent no-op. Hidden select never updated. FIX: Add the 5 missing groups to _GROUP_TO_SELECT. Also extend _syncAllControlsTV() to call _syncOneGroupTV() for the new groups so initial visual state (selected pill highlight) matches hidden select defaults after page load / resetForm / edit-existing-deal. NO functional changes elsewhere. PRESERVES: all v25.80/v25.80.1/v25.80.2 fixes. Pairs with backend v26.15.0.
+  // v25.80.2 — Critical hotfix for blank-form-on-login (resetForm null-pointer crash on line 14951 sdiNote.style).
+  // v25.80.1 — Hotfix for legacy change-handler crashes (onOutputTypeChange / onSignalsChange / onOutputSignalChange / onInputsChange).
+  // v25.80 — Form rebuild (Card 02 + Card 03 per-signal-type) + engine fix (pickInputCards rewrite). Pairs with backend v26.15.0.
   // v25.80.1 — Hotfix for legacy change-handler crashes (onOutputTypeChange/onSignalsChange/onOutputSignalChange/onInputsChange). MISSED the resetForm crash which v25.80.2 fixes.
   // v25.80 — Form rebuild (Card 02 + Card 03 per-signal-type) + engine fix (pickInputCards rewrite). Pairs with backend v26.15.0.
   // v25.80 — Form rebuild (Card 02 + Card 03 per-signal-type) + engine fix (pickInputCards rewrite). Pairs with backend v26.15.0.
@@ -22552,7 +22555,15 @@ async function _renderPipelineTrend_tv() {
   const _GROUP_TO_SELECT = {
     outputType: 'f_outputType',
     outputSignal: 'f_outputSignal',
-    budget: 'f_budget'
+    budget: 'f_budget',
+    // v25.80.3 HOTFIX: register the 5 new pill groups introduced in v25.80.
+    // Without these, _selectPillTV(group,...) couldn't find the hidden select →
+    // silently no-op'd → clicking FHD / No / etc. did nothing.
+    outputDisplayRes:   'f_outputDisplayRes',
+    outputProjectorRes: 'f_outputProjectorRes',
+    outputActiveLed:    'f_outputActiveLed',
+    inputAudio:         'f_inputAudio',
+    outputAudio:        'f_outputAudio'
   };
 
   function _syncOneGroupTV(group, kind) {
@@ -22575,6 +22586,13 @@ async function _renderPipelineTrend_tv() {
       _syncOneGroupTV('outputType', 'choice');
       _syncOneGroupTV('outputSignal', 'pill');
       _syncOneGroupTV('budget', 'pill');
+      // v25.80.3 HOTFIX: also sync the 5 new pill groups so initial visual state
+      // matches hidden select defaults after page load / form reset / edit-existing.
+      _syncOneGroupTV('outputDisplayRes', 'pill');
+      _syncOneGroupTV('outputProjectorRes', 'pill');
+      _syncOneGroupTV('outputActiveLed', 'pill');
+      _syncOneGroupTV('inputAudio', 'pill');
+      _syncOneGroupTV('outputAudio', 'pill');
     } catch (_) {}
   }
   window._syncAllChoiceControlsTV = _syncAllControlsTV;
