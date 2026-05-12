@@ -8739,7 +8739,8 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.80';  // v25.80 — MAJOR REBUILD per user's handwritten Page 1 spec + 10 dry-run scenarios + 17 official tvONE configurator screenshots. PATH Y: form rebuild + engine fix together. CARD 02 REPLACED: was "Output Configuration" (LED/Projector/Mixed choice cards + SDI pill). Now "Input Block of Video Processor" — 7 signal-type rows (HDMI 4K, HDMI FHD, SDI 12G, SDI 3G, HDBaseT, IP Streaming, Audio In Yes/No). Each row: label + qty stepper (or pill for audio). Footer: "Ideally on load, quantity should be Zero." CARD 03 REPLACED: was "LED Screens · Resolution Calculator" (just screensContainer). Now "Output Block of Video Processor" — Display qty + 4K/FHD pill, Projector qty + 4K/FHD pill, Active LED Yes/No (default Yes, reveals existing screensContainer reused), SDI Output qty, Audio Out Yes/No. Footer: "Based on Qty selected, chassis Card to be selected Carefully. 1 audio card handles both inputs and outputs — only one card added." NEW FIELD IDS: f_inputHdmi4kQty/f_inputHdmiFhdQty/f_inputSdi12gQty/f_inputSdi3gQty/f_inputHdbtQty/f_inputIpQty/f_inputAudio + f_outputDisplayQty/f_outputDisplayRes/f_outputProjectorQty/f_outputProjectorRes/f_outputActiveLed/f_outputSdiQty/f_outputAudio. OLD FIELD IDS KEPT as HIDDEN compat shims (f_inputs, f_inputs4K, f_inputsFHD, f_signals, f_outputType, f_outputSignal, f_sdiCount, f_projectorCount, f_projectorRes). _recomputeCompatShimsTV() syncs them on every input change. SUBMIT BUTTON renamed "Calculate & Log" → "Generate BoM →" per user spec. RESULT PAGE BANNER added: "Recommendation logic rebuilt (v25.80): Engine now handles per-signal-type inputs and slot pairing rules per the official tvONE configurator." EDIT-EXISTING-DEAL: silent (no banner) — _reverseShimsTV() makes best-guess from old aggregate fields. ENGINE FIXES (Path Y included): (1) pickInputCards() REWRITTEN — old logic treated all inputs as homogeneous and wrongly allocated HDMI_4K_4IN when HDMI inputs fit native 8. New logic: HDMI fills native first (max 8), only HDMI overflow + non-HDMI signals (SDI/HDBT/IP/Audio) need cards. Slot packing respects HB-only (HDMI_4K_4IN, SDI_12G_4IN, AUDIO is LB-only) + cross-slot pairing rules. Surfaces unfittable cards as "NOT POSSIBLE in single chassis" concern with best-effort partial BoM per user spec. (2) SLOT11_ALLOWED_WHEN_SLOT12['MEDIA_4K_IN'] FIXED — removed SDI_3G_4IN per official configurator screenshot (img 9 of 2nd batch). Previously code allowed it, but tvONE configurator forbids the pair. (3) hdmiPortsNeeded now includes displayPorts (new Display qty field). NO CHANGES TO: backend / Submissions sheet schema, Excel export structure, Card 01 (Project Context), Card 04 (Tech Requirements / Notes), History display, Customer Directory, Edit/Delete/Audit, Stage transitions, v25.79 mobile + dark/light fixes, LED screensContainer logic (addScreen / removeLastScreen), section pill / sparkle / sticky progress bar. PRESERVES: all 14 Card 01 fields, all v25.79 visual styling, draft autosave, edit-existing flow (now via _reverseShimsTV). Pairs with backend v26.15.0. Plan doc: HANDOFF-tvone-v25.80-spec.md. Dry-run scenarios validated: 10 (1U pick, infeasibility flagging, mixed-signal feasibility, boundary 14 HDMI 4K, audio-forces-2U). Truth table source: 17 official tvONE configurator screenshots from user. Build session: 2026-05-12 evening.
+  const TVONE_FRONTEND_VERSION = '25.80.1';  // v25.80.1 — HOTFIX for v25.80 production deploy errors. SYMPTOMS: Error log filled with "Cannot read properties of null (reading 'style')" / "Cannot set properties of null (setting 'textContent')" / "Cannot read properties of null (reading 'value')". User reported login landing on Team page with toast "Something glitched". ROOT CAUSE: When v25.80 rebuilt Card 02 and Card 03 with per-signal-type structure, it REMOVED several DOM elements (projectorCountField, projectorResField, sdiNote, sdiCountField, hdmi4kField, hdmiFhdField) that older legacy change-handler functions (onOutputTypeChange, onSignalsChange, onOutputSignalChange, onInputsChange) still try to access. The hidden compat shim selects (f_outputType, f_outputSignal, f_signals) still fire these handlers programmatically when _recomputeCompatShimsTV writes to .value (or when onchange fires from edit-existing flow). Each crash cascades through any caller in the same execution chain. FIX: Add null guards to 4 functions — onOutputTypeChange, onOutputSignalChange, onSignalsChange, onInputsChange. Each DOM element access wrapped in `if (el)` check. Update calls in catch blocks. NO functional changes — these handlers were never expected to find these elements after v25.80, the null-guard just makes them no-op gracefully. PRESERVES: all v25.80 functionality, engine fixes, compat shims, form rebuild. Pairs with backend v26.15.0.
+  // v25.80 — Form rebuild (Card 02 + Card 03 per-signal-type) + engine fix (pickInputCards rewrite). Pairs with backend v26.15.0.
   // v25.79 — Mobile compatibility hardening for tvONE Form. Augments 640/380px breakpoints. Pairs with backend v26.15.0.
   // v25.78 — Action bar polish + name-suffix cleanup across all visible name displays. ACTION BAR (Card-04 result view 7-button bar Back/Confirm/Excel/PDF/WhatsApp/Email/Print): user reported the WhatsApp button label appearing truncated as "W..." with the native title-tooltip overlapping. Defensive CSS hardening on .ab2tv-btn (overflow:hidden, min-width:0) and .ab2tv-label (nowrap, ellipsis, max-width:100%); base font-size 11.5px → 11px. NAME-SUFFIX CLEANUP: (1) Excel "Issued by" was "fullName (username)" → fullName only. (2) Briefing tool user-picker was "fullName (role)" → fullName only. (3) Form Sales/Presales dropdown fallback was "⚠ (username)" → plain username.
   // v25.77 — Card 04 cleanup + auto-compute total inputs. TWO changes bundled. CHANGE 1 (Commercial subgroup removal): User feedback "remove these field, not required" pointing at the COMMERCIAL subgroup (Budget Tier + Deal Value INR). Visible UI removed entirely from Card 04. Hidden compatibility shim added. CHANGE 2 (Total Inputs auto-compute): User-requested invariant "total No of input port == No of 4K Input required + No of FHD input required". f_inputs is now readonly + auto-derived from f_inputs4K + f_inputsFHD. New JS module tvAutoTotalInputs_v25_77.
@@ -10548,20 +10549,37 @@ body.light .signal-card-footer-tv {
   }
 
   function onOutputTypeChange() {
-    const t = document.getElementById('f_outputType').value;
+    // v25.80.1 HOTFIX: null-guard each DOM access. v25.80 removed projectorCountField,
+    // projectorResField, sdiNote, sdiCountField, hdmi4kField, hdmiFhdField when Card 02/03
+    // were rebuilt with per-signal-type structure. The hidden compat select f_outputType
+    // still fires this change handler when _recomputeCompatShimsTV writes to it → crash.
+    const otEl = document.getElementById('f_outputType');
+    if (!otEl) return;
+    const t = otEl.value;
     const showProj = (t === 'Projector' || t === 'Mixed');
-    document.getElementById('projectorCountField').style.display = showProj ? 'flex' : 'none';
-    document.getElementById('projectorResField').style.display = showProj ? 'flex' : 'none';
-    document.getElementById('ledCard').style.display = (t === 'Projector') ? 'none' : 'block';
-    updateTotals();
+    const projCountField = document.getElementById('projectorCountField');
+    const projResField = document.getElementById('projectorResField');
+    const ledCardEl = document.getElementById('ledCard');
+    if (projCountField) projCountField.style.display = showProj ? 'flex' : 'none';
+    if (projResField) projResField.style.display = showProj ? 'flex' : 'none';
+    if (ledCardEl) ledCardEl.style.display = (t === 'Projector') ? 'none' : 'block';
+    try { updateTotals(); } catch (_) {}
   }
   function onOutputSignalChange() {
-    const v = document.getElementById('f_outputSignal').value;
+    // v25.80.1 HOTFIX: null-guard each DOM access. sdiNote and sdiCountField removed in v25.80.
+    const osEl = document.getElementById('f_outputSignal');
+    if (!osEl) return;
+    const v = osEl.value;
     const isSDI = (v === 'SDI');
-    document.getElementById('sdiNote').style.display = isSDI ? 'block' : 'none';
-    document.getElementById('sdiCountField').style.display = isSDI ? 'flex' : 'none';
-    if (!isSDI) document.getElementById('f_sdiCount').value = '';
-    updateTotals();
+    const sdiNoteEl = document.getElementById('sdiNote');
+    const sdiCountFieldEl = document.getElementById('sdiCountField');
+    if (sdiNoteEl) sdiNoteEl.style.display = isSDI ? 'block' : 'none';
+    if (sdiCountFieldEl) sdiCountFieldEl.style.display = isSDI ? 'flex' : 'none';
+    if (!isSDI) {
+      const sdcEl = document.getElementById('f_sdiCount');
+      if (sdcEl) sdcEl.value = '';
+    }
+    try { updateTotals(); } catch (_) {}
   }
 
   // =================================================================
@@ -10662,17 +10680,29 @@ body.light .signal-card-footer-tv {
   }
 
   function onSignalsChange() {
-    const v = document.getElementById('f_signals').value;
+    // v25.80.1 HOTFIX: null-guard each DOM access. hdmi4kField and hdmiFhdField were
+    // removed in v25.80 when Card 02 (Tech Requirements input pair) was replaced.
+    const sigEl = document.getElementById('f_signals');
+    if (!sigEl) return;
+    const v = sigEl.value;
     const hasHDMI = v.indexOf('HDMI') === 0 || v === 'MIXED';
-    document.getElementById('hdmi4kField').style.display = hasHDMI ? 'flex' : 'none';
-    document.getElementById('hdmiFhdField').style.display = hasHDMI ? 'flex' : 'none';
-    onInputsChange();
+    const h4 = document.getElementById('hdmi4kField');
+    const hF = document.getElementById('hdmiFhdField');
+    if (h4) h4.style.display = hasHDMI ? 'flex' : 'none';
+    if (hF) hF.style.display = hasHDMI ? 'flex' : 'none';
+    try { onInputsChange(); } catch (_) {}
   }
   function onInputsChange() {
-    const tot = parseInt(document.getElementById('f_inputs').value) || 0;
-    const in4K = parseInt(document.getElementById('f_inputs4K').value) || 0;
-    const inFHD = parseInt(document.getElementById('f_inputsFHD').value) || 0;
+    // v25.80.1 HOTFIX: defensive null guards on all DOM lookups
+    const inEl = document.getElementById('f_inputs');
+    const in4kEl = document.getElementById('f_inputs4K');
+    const inFhdEl = document.getElementById('f_inputsFHD');
+    if (!inEl || !in4kEl || !inFhdEl) return;
+    const tot = parseInt(inEl.value) || 0;
+    const in4K = parseInt(in4kEl.value) || 0;
+    const inFHD = parseInt(inFhdEl.value) || 0;
     const warn = document.getElementById('inputsWarn');
+    if (!warn) return;  // inputsWarn was kept in v25.80 in Card 04, but defensive guard anyway
     const sum = in4K + inFHD;
     if (!tot || (!in4K && !inFHD)) { warn.style.display = 'none'; return; }
     if (sum > tot) {
