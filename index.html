@@ -5250,10 +5250,446 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
   }
 }
 
+/* ──────────────────────────────────────────────────────────────────
+   v25.69 — Direction C MUST-HAVE completion (MH1-MH5)
+   Adapted from BS v24.30.x / v24.31.x / v24.32.x / v24.33.x.
+   tvONE uses .card + .card-title (not .form-section + .section-num).
+   These styles attach to .form-section-tv (= .card with data-section attr).
+   ────────────────────────────────────────────────────────────────── */
+
+/* MH1: Section number badge inside card-title.
+   Default = muted slate pill. Flips to gold when complete. */
+.section-num-tv {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  margin-right: 10px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #475569, #334155);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
+}
+[data-theme="dark"] .section-num-tv {
+  background: linear-gradient(135deg, #64748B, #475569);
+}
+/* MH1: When section complete, num pill → gold + check, card gets gold accent stripe */
+.form-section-tv[data-section-complete="true"] .section-num-tv {
+  background: linear-gradient(135deg, #064E3B, #047857);
+  color: transparent;
+  position: relative;
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(4,120,87,0.30);
+}
+.form-section-tv[data-section-complete="true"] .section-num-tv::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: 'Manrope', sans-serif;
+  letter-spacing: 0;
+  animation: tv-check-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes tv-check-pop {
+  0%   { transform: scale(0) rotate(-90deg); opacity: 0; }
+  60%  { transform: scale(1.25) rotate(8deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+/* MH1: When complete, add subtle green tint to entire card title text */
+.form-section-tv[data-section-complete="true"] > .card-title {
+  color: #047857;
+}
+[data-theme="dark"] .form-section-tv[data-section-complete="true"] > .card-title {
+  color: #10B981;
+}
+/* MH1: Complete-status pill at right of card-title (subtle, optional reinforcement) */
+.form-section-tv[data-section-complete="true"] > .card-title::after {
+  content: 'COMPLETE';
+  display: inline-block;
+  margin-left: auto;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(4, 120, 87, 0.12);
+  color: #047857;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  font-family: 'Manrope', sans-serif;
+  text-transform: uppercase;
+  animation: tv-fade-in 0.45s ease-out;
+}
+[data-theme="dark"] .form-section-tv[data-section-complete="true"] > .card-title::after {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34D399;
+}
+@keyframes tv-fade-in { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: translateY(0); } }
+/* Card-title flex layout so the COMPLETE pill aligns right */
+.form-section-tv > .card-title {
+  display: flex !important;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* MH1: Completed card gets a soft gold left accent stripe (consistent with v25.67 Direction C visuals) */
+.form-section-tv[data-section-complete="true"] {
+  position: relative;
+  border-color: rgba(212, 175, 55, 0.35);
+}
+.form-section-tv[data-section-complete="true"]::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #D4AF37, #047857);
+  border-radius: 12px 0 0 12px;
+  pointer-events: none;
+}
+
+/* CH2 (also used by MH2): Celebration pulse when section JUST completed */
+.form-section-tv.just-completed {
+  animation: tv-card-celebrate 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes tv-card-celebrate {
+  0%   { transform: scale(1); box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+  30%  { transform: scale(1.012); box-shadow: 0 8px 28px rgba(4,120,87,0.22); }
+  100% { transform: scale(1); box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+}
+
+/* MH2 (M3): Top sticky progress indicator */
+.guided-progress-wrap-tv {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--border-soft, #E5E7EB);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 0 0 18px 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: background 0.3s, border-color 0.3s;
+}
+[data-theme="dark"] .guided-progress-wrap-tv {
+  background: var(--surface, #141937);
+  border-color: rgba(148,163,184,0.18);
+}
+.guided-progress-wrap-tv .guided-progress-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.guided-progress-wrap-tv .guided-progress-label { color: var(--ink-soft, #475569); }
+.guided-progress-wrap-tv .guided-progress-percent {
+  color: #064E3B;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-weight: 700;
+  font-size: 13px;
+}
+[data-theme="dark"] .guided-progress-wrap-tv .guided-progress-percent { color: #D4AF37; }
+.guided-progress-wrap-tv .guided-progress-track {
+  height: 6px;
+  background: rgba(148,163,184,0.15);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.guided-progress-wrap-tv .guided-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #064E3B 0%, #047857 50%, #D4AF37 100%);
+  border-radius: 999px;
+  width: 0%;
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+.guided-progress-wrap-tv.is-complete .guided-progress-fill {
+  background: linear-gradient(90deg, #047857, #10B981, #D4AF37);
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.45);
+}
+.guided-progress-wrap-tv.is-complete .guided-progress-percent { color: #D4AF37; }
+
+/* MH3 (M6): Spring physics on card focus/hover (kept subtle for tvONE's calculator style — no lift, just a soft accent glow) */
+.form-section-tv {
+  transition: box-shadow 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              border-color 0.25s ease-out;
+}
+.form-section-tv:focus-within:not([data-section-complete="true"]) {
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow: 0 4px 18px rgba(212, 175, 55, 0.16);
+}
+
+/* MH3 sparkle effect — small dot bursts on section completion */
+.tv-sparkle {
+  position: absolute;
+  width: 6px; height: 6px;
+  background: radial-gradient(circle, #D4AF37 0%, rgba(212,175,55,0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: tv-sparkle-fly 0.8s ease-out forwards;
+  z-index: 100;
+}
+@keyframes tv-sparkle-fly {
+  0%   { opacity: 1; transform: translate(0, 0) scale(0); }
+  20%  { opacity: 1; transform: translate(var(--dx, 0), var(--dy, 0)) scale(1.4); }
+  100% { opacity: 0; transform: translate(calc(var(--dx, 0) * 1.5), calc(var(--dy, 0) * 1.5)) scale(0.6); }
+}
+
+/* MH5 (C8): Validation hint — small green dot on filled required fields */
+.field[data-field-filled="true"] > label .req {
+  color: #10B981;
+  transition: color 0.25s ease-out;
+}
+.field[data-field-filled="true"] > label .req::after {
+  content: '✓';
+  display: inline-block;
+  margin-left: 3px;
+  color: #10B981;
+  font-size: 11px;
+  font-weight: 800;
+}
+/* hide the original asterisk text when filled (we replace it with ✓) */
+.field[data-field-filled="true"] > label .req { font-size: 0; }
+.field[data-field-filled="true"] > label .req::after { font-size: 13px; }
+
+/* MH4 (C11): Visually hidden helper (used by aria-live region & skip link fallback) */
+.sr-only-tv {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   v25.70 — Direction C CAN-HAVE port (CH1, CH3)
+   CH1: Number stepper wrapping native number inputs (5 inputs).
+   CH3 CSS for Quarterly Target Card lives further down in JS render fn.
+   ────────────────────────────────────────────────────────────────── */
+
+/* CH1: Number stepper (adapted from BS .qty-stepper) */
+.qty-stepper-tv {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border-strong, #CBD5E1);
+  border-radius: 10px;
+  background: var(--surface, #FFFFFF);
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color 150ms, box-shadow 150ms;
+  width: 100%;
+}
+.qty-stepper-tv:focus-within {
+  border-color: #D4AF37;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18);
+}
+.qty-step-btn-tv {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: 'Manrope', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink-soft, #475569);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 120ms, color 120ms, transform 80ms;
+  padding: 0;
+}
+.qty-step-btn-tv:hover {
+  background: rgba(212, 175, 55, 0.10);
+  color: #B08D28;
+}
+.qty-step-btn-tv:active {
+  background: rgba(212, 175, 55, 0.20);
+  transform: scale(0.92);
+}
+.qty-step-btn-tv:focus-visible {
+  outline: none;
+  background: rgba(212, 175, 55, 0.14);
+  color: #B08D28;
+}
+.qty-step-btn-tv:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: transparent;
+}
+.qty-step-minus-tv { border-right: 1px solid var(--border-soft, #E2E8F0); }
+.qty-step-plus-tv  { border-left:  1px solid var(--border-soft, #E2E8F0); }
+.qty-stepper-tv > input[type="number"] {
+  flex: 1;
+  min-width: 0;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 8px 4px !important;
+  background: transparent !important;
+  text-align: center;
+  height: 38px;
+  line-height: 1;
+  -moz-appearance: textfield;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: none !important;
+}
+.qty-stepper-tv > input[type="number"]::-webkit-outer-spin-button,
+.qty-stepper-tv > input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.qty-stepper-tv > input[type="number"]:focus {
+  outline: none;
+  box-shadow: none !important;
+}
+[data-theme="dark"] .qty-stepper-tv {
+  background: rgba(15, 23, 42, 0.55);
+  border-color: rgba(148, 163, 184, 0.28);
+}
+[data-theme="dark"] .qty-step-btn-tv { color: #CBD5E1; }
+[data-theme="dark"] .qty-step-btn-tv:hover { background: rgba(212, 175, 55, 0.14); color: #FFD466; }
+[data-theme="dark"] .qty-step-minus-tv { border-right-color: rgba(148, 163, 184, 0.20); }
+[data-theme="dark"] .qty-step-plus-tv  { border-left-color:  rgba(148, 163, 184, 0.20); }
+/* Mobile — bigger tap targets (WCAG 2.2: 44×44 minimum) */
+@media (max-width: 640px) {
+  .qty-step-btn-tv { width: 44px; height: 44px; font-size: 20px; }
+  .qty-stepper-tv > input[type="number"] { height: 44px; font-size: 15px; }
+}
+
+/* CH3: Quarterly Target settings card on Team tab (Super-only) */
+#qt-settings-card-tv {
+  margin-top: 16px;
+  padding: 18px 20px;
+  border: 1px solid var(--border-soft, #E5E7EB);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.05), var(--surface, #FFFFFF));
+  position: relative;
+}
+[data-theme="dark"] #qt-settings-card-tv {
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.07), rgba(15, 23, 42, 0.6));
+  border-color: rgba(148, 163, 184, 0.20);
+}
+#qt-settings-card-tv .qt-label-tv {
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: #B08D28;
+  font-weight: 700;
+}
+[data-theme="dark"] #qt-settings-card-tv .qt-label-tv { color: #D4AF37; }
+#qt-settings-card-tv .qt-status-badge-tv {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+#qt-settings-card-tv .qt-status-set-tv {
+  background: rgba(212, 175, 55, 0.18);
+  color: #B08D28;
+}
+#qt-settings-card-tv .qt-status-unset-tv {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--ink-soft, #64748B);
+}
+[data-theme="dark"] #qt-settings-card-tv .qt-status-set-tv { background: rgba(212, 175, 55, 0.24); color: #FFD466; }
+#qt-settings-card-tv code {
+  background: var(--surface-2, #F1F5F9);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+}
+[data-theme="dark"] #qt-settings-card-tv code { background: rgba(148, 163, 184, 0.12); color: #E5E7EB; }
+#qt-settings-card-tv input#qt-target-input-tv {
+  width: 100%;
+  padding: 9px 12px !important;
+  border: 1px solid var(--border-strong, #CBD5E1);
+  border-radius: 8px !important;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+}
+#qt-settings-card-tv .qt-save-btn-tv {
+  background: #064E3B;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  height: 39px;
+}
+#qt-settings-card-tv .qt-clear-btn-tv {
+  background: transparent;
+  color: #DC2626;
+  border: 1px solid #FCA5A5;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  height: 39px;
+}
+
+/* CH3: 9th KPI tile — target progress (also accessible by id on team panel) */
+.v26-kpi-target-tv {
+  position: relative;
+  overflow: hidden;
+}
+.v26-kpi-target-tv .v26-kpi-target-bar-tv {
+  position: absolute;
+  left: 0; bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #047857, #D4AF37);
+  border-radius: 0;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Reduce motion respect */
+@media (prefers-reduced-motion: reduce) {
+  .form-section-tv.just-completed,
+  .form-section-tv[data-section-complete="true"] .section-num-tv,
+  .form-section-tv[data-section-complete="true"] .section-num-tv::after,
+  .form-section-tv[data-section-complete="true"] > .card-title::after,
+  .tv-sparkle,
+  .guided-progress-wrap-tv .guided-progress-fill {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 </style>
 </head>
 <body>
 <a href="#main-content" class="skip-link">Skip to main content</a>
+<!-- v25.69 (MH4 C11): screen-reader live region for completion announcements -->
+<div id="a11y-live-region-tv" aria-live="polite" aria-atomic="true" class="sr-only-tv" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;"></div>
 
 <!-- LOGIN -->
 <div id="loginScreen" class="login-wrap">
@@ -5410,8 +5846,17 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
     <h1 class="page-title">CALICO PRO Configuration</h1>
     <p class="page-sub">Engineered to <strong>size the right CALICO PRO chassis</strong> for your project — from single-screen LED walls to mixed multi-display installations. Enter your requirements and get a <strong>validated BOM</strong> instantly.</p>
 
-    <div class="card">
-      <div class="card-title">Project Context</div>
+    <!-- v25.69 (MH2 M3): Top sticky progress indicator -->
+    <div id="guided-progress-bar-tv" class="guided-progress-wrap-tv" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Form completion progress">
+      <div class="guided-progress-top">
+        <span class="guided-progress-label"><span id="guided-progress-count-tv">0</span> of <span id="guided-progress-total-tv">4</span> sections complete</span>
+        <span class="guided-progress-percent" id="guided-progress-percent-tv">0%</span>
+      </div>
+      <div class="guided-progress-track"><div class="guided-progress-fill" id="guided-progress-fill-tv" style="width:0%"></div></div>
+    </div>
+
+    <div class="card form-section-tv" data-section="01" data-section-title="Project Context">
+      <div class="card-title"><span class="section-num-tv">01</span>Project Context</div>
       <div class="grid">
         <div class="field"><label>Project Name <span class="req">*</span></label><input id="f_project" type="text" placeholder="e.g. Lobby LED Wall — City" oninput="checkDuplicateProject_tv()"></div>
         <!-- v25.22: Soft duplicate-project warning banner. Shown live while typing. -->
@@ -5747,8 +6192,8 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-title">Output Configuration</div>
+    <div class="card form-section-tv" data-section="02" data-section-title="Output Configuration">
+      <div class="card-title"><span class="section-num-tv">02</span>Output Configuration</div>
       <div class="grid">
         <div class="field"><label>Output type <span class="req">*</span></label>
           <select id="f_outputType" onchange="onOutputTypeChange()">
@@ -5781,8 +6226,8 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
       </div>
     </div>
 
-    <div class="card" id="ledCard">
-      <div class="card-title">LED Screens · Resolution Calculator</div>
+    <div class="card form-section-tv" id="ledCard" data-section="03" data-section-title="LED Screens">
+      <div class="card-title"><span class="section-num-tv">03</span>LED Screens · Resolution Calculator</div>
       <div class="helper" style="margin-bottom:14px">Enter each screen's pixel resolution. Use the mm calculator below if only physical dimensions are known.</div>
       <div id="screensContainer"></div>
       <div class="btn-row" style="margin-top:6px">
@@ -5797,8 +6242,8 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-title">Technical Requirements</div>
+    <div class="card form-section-tv" data-section="04" data-section-title="Technical Requirements">
+      <div class="card-title"><span class="section-num-tv">04</span>Technical Requirements</div>
       <div class="grid">
         <div class="field"><label>Total video sources / inputs needed <span class="req">*</span></label>
           <input id="f_inputs" type="number" min="1" max="32" placeholder="e.g. 6" oninput="onInputsChange()">
@@ -6164,6 +6609,8 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
         <div class="v26-kpi v26-kpi-cyan"><div class="v26-kpi-label">Active Consultants</div><div class="v26-kpi-value" id="v26-team-kpi-consultants">—</div><div class="v26-kpi-sub">in open pipeline</div></div>
         <div class="v26-kpi v26-kpi-amber"><div class="v26-kpi-label">End-customers</div><div class="v26-kpi-value" id="v26-team-kpi-customers">—</div><div class="v26-kpi-sub">unique in pipeline</div></div>
         <div class="v26-kpi v26-kpi-orange"><div class="v26-kpi-label">Days to Q Close</div><div class="v26-kpi-value" id="v26-team-kpi-qclose">—</div><div class="v26-kpi-sub" id="v26-team-kpi-qclose-sub">—</div></div>
+        <!-- v25.70 (CH3): 9th KPI tile — Target progress. Hidden by default; shown when localStorage.tvone-cockpit-target-quarterly is set. -->
+        <div class="v26-kpi v26-kpi-target-tv" id="v26-team-kpi-target-wrap" style="display:none;background:linear-gradient(135deg,rgba(212,175,55,0.10),rgba(4,120,87,0.05));"><div class="v26-kpi-label">Target Progress</div><div class="v26-kpi-value" id="v26-team-kpi-target">—</div><div class="v26-kpi-sub" id="v26-team-kpi-target-sub">— of target</div><div class="v26-kpi-target-bar-tv" id="v26-team-kpi-target-bar" style="width:0%"></div></div>
       </div>
 
       <!-- 8 charts in 4 rows of 2 -->
@@ -6394,6 +6841,9 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
         <button class="secondary" onclick="openTrashModal_tv()" id="btnTrashTV" style="display:none;" title="View and restore soft-deleted deals (Super only)">🗑 Trash</button>
       </div>
     </div>
+
+    <!-- v25.70 (CH3): Quarterly Target settings host (Super-only; rendered by _renderQuarterlyTargetCardTV) -->
+    <div id="qt-settings-card-host-tv"></div>
 
     <!-- v25.22: Error log panel (Super-only diagnostics) -->
     <div class="card" id="errorLogCard" style="border-left:4px solid #7F1D1D;margin-top:18px">
@@ -7090,7 +7540,9 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.68';  // v25.68 — Sales/Presales dropdown labels simplified (matches BS v24.34.5). v25.66 (MM1) appended `· Role` suffix — per user feedback, role is not required in the label; fullName only. The two Ranjiths are still distinguishable by their actual last initials (Ranjith Kumar vs Ranjith SR). The ⚠ warning for missing fullName preserved (data-integrity signal). NOT changed: the separate 1:1 Briefing Super-only admin tool dropdown (line ~14041) — that retains `fullName (role)` because the role helps Super distinguish submitters when reviewing the team's work.
+  const TVONE_FRONTEND_VERSION = '25.70';  // v25.70 — Direction C CAN-HAVE bundle (CH1, CH3) ported from BS. CH1 (C3 Number stepper): 5 form number inputs (f_sdiCount, f_projectorCount, f_inputs, f_inputs4K, f_inputsFHD) are JS-wrapped at runtime in a .qty-stepper-tv div with −/+ buttons that respect each input's min/max/step attrs. Buttons disable at the bounds. Fire input + change events so existing handlers (updateTotals, onInputsChange) still run. Skipped f_dealValueINR (step=1000 makes a stepper awkward UX — users type ₹4500000 directly). 44×44 mobile tap targets per WCAG 2.2. CH2 (C5 Animated section transitions) was already shipped in v25.69 via the .just-completed celebration pulse — no incremental work needed. CH3 (Quarterly Target): Super-only settings card injected into Team tab between Roster and Error Log, accepts ₹ values with K/L/Cr suffix parsing (5Cr · 75L · 500K · 50000000). Persisted to localStorage key 'tvone-cockpit-target-quarterly'. New 9th KPI tile "Target Progress" appears in Team Analytics when target is set — shows pct + bar (gradient gold→emerald). The KPI tile reads won-this-quarter from the rendered #v26-team-kpi-won textContent (parsed back to a number via _parseShortINR_TV) rather than recomputing from raw data, because tvONE's centralLog is module-local (not on window) and accessing it from an IIFE would require an invasive port. Acceptable trade-off: the won-this-quarter value is already authoritative there. Hooks into showView, bsv26_switchTab with bounded polling (12 tries × 250ms = ~3s) to handle async data load. CH4 (Stage funnel) was dropped from scope after verification — tvONE already shipped the full ECharts funnel + sidebar legend in v25.52. Pairs with backend v26.15.0 — no backend changes.
+  // v25.69 — Direction C MUST-HAVE port from BS (MH1-MH5). Parity audit completed against BS v24.34.9: stage funnel, run-rate badge (CH3), tender specs, pricing, custom BOQ, vendor dropdown, XC OS, budget slider all marked N/A or already at parity. This bundle ports the form-completion UX. MH1 (M2): Section completion check-marks — green ✓ pill overlays the 01/02/03/04 section-num badge when all required fields in that card are filled. Card gets gold-tinted left stripe + "COMPLETE" pill at top-right. MH2 (M3): Top sticky progress indicator — "X of Y sections complete · NN%" with gradient fill bar, sticky to viewport top so it stays visible while scrolling through the form. Honors prefers-reduced-motion. MH3 (M6): Spring physics + sparkle — section pills bounce-pop into ✓ state, sparkle burst (8 gold dots fly out radially) on the moment a section flips to complete. Subtle hover/focus-within accent on cards (no lift — keeps daily-use rhythm). MH4 (C11): Accessibility audit — aria-required on all required form inputs, group role + aria-labelledby on each form-section card, role=main on formView, sr-only aria-live=polite region announces section-complete events to screen readers, ARIA progressbar wired with valuenow + dynamic aria-label. MH5 (C8): Validation hints — required field asterisks (.req) flip to green ✓ when the field is filled (live, no save needed). data-field-filled attribute set on .field for downstream styling. Section-completion check runs on every form input/change event (debounced 120ms for input, 30ms for change). LED card visibility (ledCard hides for Projector output) is respected — hidden sections don't count toward totals or get skipped during auto-scroll. Wraps showView and onOutputTypeChange to refresh completion state on view nav and output-type change. Pairs with backend v26.15.0 — no backend changes.
+  // v25.68 — Sales/Presales dropdown labels simplified (matches BS v24.34.5). v25.66 (MM1) appended `· Role` suffix — per user feedback, role is not required in the label; fullName only. The two Ranjiths are still distinguishable by their actual last initials (Ranjith Kumar vs Ranjith SR). The ⚠ warning for missing fullName preserved (data-integrity signal). NOT changed: the separate 1:1 Briefing Super-only admin tool dropdown (line ~14041) — that retains `fullName (role)` because the role helps Super distinguish submitters when reviewing the team's work.
   // v25.67 — Direction C visual port from BS.
   // v25.66 — MM1 + MM3 fixes (see prior version comment).
   // v25.65 — C2 from parity audit: Pipeline trend chart on My Pipeline subtab. New <div id="v26-pipeline-trend-card"> renders below the 3 to-do sections, above the My Deals table.
@@ -20127,6 +20579,592 @@ async function _renderPipelineTrend_tv() {
   }
 }
 
+
+// ══════════════════════════════════════════════════════════════════════
+// v25.69 — Direction C MUST-HAVE module (MH1-MH5)
+// Ports BS v24.30.x M2/M3, v24.31.x C5, v24.32.x C8, v24.33.x C11 to tvONE.
+// tvONE form has 4 .card.form-section-tv blocks with native <select> + number
+// inputs (not BS's choice-card/pill grids). Validation logic is generic — it
+// scans each section for fields marked .req and checks whether their inputs
+// have a truthy value. Card 3 (LED) is conditional: only counted when visible.
+// ══════════════════════════════════════════════════════════════════════
+(function tvDirectionC_v25_69() {
+  'use strict';
+
+  // ── MH5 (C8): Per-field filled detection ────────────────────────────
+  function _isFieldFilledTV(field) {
+    if (!field) return false;
+    // Check all inputs in this field — pass if at least one is non-empty
+    const inputs = field.querySelectorAll('input, select, textarea');
+    for (let i = 0; i < inputs.length; i++) {
+      const el = inputs[i];
+      // Skip hidden helper inputs
+      if (el.type === 'hidden') continue;
+      // Skip disabled
+      if (el.disabled) continue;
+      const v = String(el.value || '').trim();
+      if (v !== '' && v !== '0') return true;
+      // For number inputs, 0 IS a valid value if min allows it. But for required
+      // numeric counts (inputs, projectors) 0 means "not filled". Treat 0 as unfilled.
+    }
+    return false;
+  }
+
+  function _refreshFieldFilledStatesTV() {
+    const fields = document.querySelectorAll('#formView .field');
+    fields.forEach(function(f) {
+      const isReq = !!f.querySelector('label .req');
+      if (!isReq) return;
+      if (_isFieldFilledTV(f)) f.setAttribute('data-field-filled', 'true');
+      else f.removeAttribute('data-field-filled');
+    });
+  }
+
+  // ── MH1 (M2): Per-section completion detection ──────────────────────
+  function _isSectionCompleteTV(section) {
+    if (!section) return false;
+    const fields = section.querySelectorAll('.field');
+    for (let i = 0; i < fields.length; i++) {
+      const f = fields[i];
+      if (!f.querySelector('label .req')) continue;  // not required
+      // Skip if field is hidden (display:none / offsetParent null)
+      if (f.offsetParent === null) continue;
+      if (!_isFieldFilledTV(f)) return false;
+    }
+    return true;
+  }
+
+  // ── MH3 (M6): Sparkle burst on completion ───────────────────────────
+  function _burstSparklesTV(section) {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const rect = section.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = 22;  // near top of card (where the section num pill is)
+    const n = 8;
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i) / n + (Math.random() * 0.6 - 0.3);
+      const dist = 32 + Math.random() * 28;
+      const sp = document.createElement('span');
+      sp.className = 'tv-sparkle';
+      sp.style.left = cx + 'px';
+      sp.style.top = cy + 'px';
+      sp.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+      sp.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+      // Ensure section has position context
+      const cs = window.getComputedStyle(section);
+      if (cs.position === 'static') section.style.position = 'relative';
+      section.appendChild(sp);
+      setTimeout(function() { try { sp.remove(); } catch (_) {} }, 900);
+    }
+  }
+
+  // ── MH2 (M3): Top progress + MH1 application + CH2 celebration ──────
+  let _userScrolledRecentlyTV = false;
+  let _userScrollTimerTV = null;
+  function _scrollToNextIncompleteSectionTV(fromSection) {
+    if (_userScrolledRecentlyTV) return;
+    const sections = Array.from(document.querySelectorAll('#formView .form-section-tv[data-section]'));
+    const idx = sections.indexOf(fromSection);
+    if (idx === -1) return;
+    for (let i = idx + 1; i < sections.length; i++) {
+      const sec = sections[i];
+      if (sec.offsetParent === null) continue;  // hidden (e.g. ledCard for projectors)
+      if (sec.getAttribute('data-section-complete') === 'true') continue;
+      const rect = sec.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      const topVisible = rect.top >= 80 && rect.top < vh * 0.4;
+      if (topVisible) return;
+      const targetTop = window.scrollY + rect.top - 100;
+      try { window.scrollTo({ top: targetTop, behavior: 'smooth' }); } catch (_) {}
+      return;
+    }
+  }
+
+  function _refreshSectionCompletionTV() {
+    const sections = document.querySelectorAll('#formView .form-section-tv[data-section]');
+    if (!sections.length) return;
+    let completeCount = 0;
+    let totalCount = 0;
+    try { _refreshFieldFilledStatesTV(); } catch (_) {}
+    const justCompleted = [];
+    sections.forEach(function(sec) {
+      const isVisible = sec.offsetParent !== null;
+      if (!isVisible) return;  // don't count hidden sections in totals
+      totalCount++;
+      const wasComplete = sec.getAttribute('data-section-complete') === 'true';
+      const complete = _isSectionCompleteTV(sec);
+      if (complete) {
+        sec.setAttribute('data-section-complete', 'true');
+        completeCount++;
+        if (!wasComplete) justCompleted.push(sec);
+      } else {
+        sec.removeAttribute('data-section-complete');
+      }
+    });
+    // CH2: Celebration pulse + MH3 sparkle on flip
+    justCompleted.forEach(function(sec) {
+      sec.classList.add('just-completed');
+      setTimeout(function() { sec.classList.remove('just-completed'); }, 1000);
+      try { _burstSparklesTV(sec); } catch (_) {}
+    });
+    if (justCompleted.length > 0) {
+      try { _scrollToNextIncompleteSectionTV(justCompleted[justCompleted.length - 1]); } catch (_) {}
+    }
+    // MH2: Top progress bar
+    const bar = document.getElementById('guided-progress-bar-tv');
+    if (bar) {
+      const countEl = document.getElementById('guided-progress-count-tv');
+      const totalEl = document.getElementById('guided-progress-total-tv');
+      const fillEl  = document.getElementById('guided-progress-fill-tv');
+      const pctEl   = document.getElementById('guided-progress-percent-tv');
+      if (countEl) countEl.textContent = String(completeCount);
+      if (totalEl) totalEl.textContent = String(totalCount);
+      const pct = totalCount > 0 ? Math.round((completeCount / totalCount) * 100) : 0;
+      if (fillEl) fillEl.style.width = pct + '%';
+      if (pctEl) pctEl.textContent = pct + '%';
+      if (pct === 100 && totalCount > 0) bar.classList.add('is-complete');
+      else bar.classList.remove('is-complete');
+      // MH4 (C11): ARIA progressbar
+      bar.setAttribute('aria-valuenow', String(pct));
+      bar.setAttribute('aria-label', completeCount + ' of ' + totalCount + ' form sections complete (' + pct + ' percent)');
+    }
+    // MH4 (C11): announce completion via live region
+    if (justCompleted.length > 0) {
+      const live = document.getElementById('a11y-live-region-tv');
+      if (live) {
+        const last = justCompleted[justCompleted.length - 1];
+        const title = last.getAttribute('data-section-title') || ('Section ' + last.getAttribute('data-section'));
+        live.textContent = 'Section complete: ' + title + '. ' + completeCount + ' of ' + totalCount + ' done.';
+      }
+    }
+  }
+  window._refreshSectionCompletionTV = _refreshSectionCompletionTV;
+
+  // ── User scroll detection to avoid yanking ──────────────────────────
+  document.addEventListener('scroll', function() {
+    _userScrolledRecentlyTV = true;
+    clearTimeout(_userScrollTimerTV);
+    _userScrollTimerTV = setTimeout(function() { _userScrolledRecentlyTV = false; }, 1500);
+  }, { passive: true });
+
+  // ── Wire change listeners ───────────────────────────────────────────
+  function _wireFormFieldListenersTV() {
+    const form = document.getElementById('formView');
+    if (!form) return;
+    // input event (covers typing in text/number/textarea + change in selects via separate listener)
+    form.addEventListener('input', function(e) {
+      const tgt = e.target;
+      if (!tgt) return;
+      if (tgt.matches && (tgt.matches('input') || tgt.matches('textarea'))) {
+        // small delay to batch rapid typing
+        clearTimeout(window._tvSectionRefreshTimer);
+        window._tvSectionRefreshTimer = setTimeout(function() {
+          try { _refreshSectionCompletionTV(); } catch (_) {}
+        }, 120);
+      }
+    });
+    form.addEventListener('change', function(e) {
+      const tgt = e.target;
+      if (!tgt) return;
+      if (tgt.matches && (tgt.matches('select') || tgt.matches('input'))) {
+        setTimeout(function() { try { _refreshSectionCompletionTV(); } catch (_) {} }, 30);
+      }
+    });
+  }
+
+  // ── MH4 (C11): Accessibility audit ──────────────────────────────────
+  function _applyA11yEnhancementsTV() {
+    // Required-field aria-required + label association
+    document.querySelectorAll('#formView .field').forEach(function(f) {
+      const req = f.querySelector('label .req');
+      if (!req) return;
+      const inputs = f.querySelectorAll('input, select, textarea');
+      inputs.forEach(function(el) {
+        if (!el.hasAttribute('aria-required')) el.setAttribute('aria-required', 'true');
+      });
+    });
+    // Section landmark role + aria-labelledby (link to card-title)
+    document.querySelectorAll('#formView .form-section-tv[data-section]').forEach(function(sec) {
+      if (!sec.hasAttribute('role')) sec.setAttribute('role', 'group');
+      const title = sec.querySelector('.card-title');
+      if (title && !title.id) {
+        title.id = 'section-title-tv-' + sec.getAttribute('data-section');
+      }
+      if (title && title.id && !sec.hasAttribute('aria-labelledby')) {
+        sec.setAttribute('aria-labelledby', title.id);
+      }
+    });
+    // formView gets a main role so the skip-link target is meaningful
+    const fv = document.getElementById('formView');
+    if (fv && !fv.hasAttribute('role')) fv.setAttribute('role', 'main');
+  }
+
+  // ── Bootstrap: initial pass on DOM ready + when form view becomes visible ──
+  function _initTV() {
+    try { _applyA11yEnhancementsTV(); } catch (_) {}
+    try { _wireFormFieldListenersTV(); } catch (_) {}
+    try { _refreshSectionCompletionTV(); } catch (_) {}
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _initTV);
+  } else {
+    _initTV();
+  }
+
+  // Hook into showView('form') so completion refreshes when user navigates back
+  if (typeof window.showView === 'function' && !window._tvDirectionC_showViewWrapped) {
+    window._tvDirectionC_showViewWrapped = true;
+    const _origShowView = window.showView;
+    window.showView = function(v) {
+      const r = _origShowView.apply(this, arguments);
+      if (v === 'form') {
+        setTimeout(function() { try { _refreshSectionCompletionTV(); } catch (_) {} }, 80);
+      }
+      return r;
+    };
+  }
+  // Also refresh when LED card visibility toggles (onOutputTypeChange already wired)
+  if (typeof window.onOutputTypeChange === 'function' && !window._tvDirectionC_oOTCWrapped) {
+    window._tvDirectionC_oOTCWrapped = true;
+    const _origOOTC = window.onOutputTypeChange;
+    window.onOutputTypeChange = function() {
+      const r = _origOOTC.apply(this, arguments);
+      setTimeout(function() { try { _refreshSectionCompletionTV(); } catch (_) {} }, 40);
+      return r;
+    };
+  }
+})();
+// ══════════════════════════════════════════════════════════════════════
+// v25.70 — Direction C CAN-HAVE module (CH1, CH3)
+// CH1: Number stepper — JS-wrap the 5 form number inputs (sdiCount,
+//      projectorCount, inputs, inputs4K, inputsFHD) with −/+ buttons.
+//      Skip dealValueINR (step=1000, awkward stepper UX).
+// CH3: Quarterly Target Card (Super-only Team tab) + 9th KPI tile on
+//      Team Analytics showing target progress when set.
+//      localStorage key: tvone-cockpit-target-quarterly. No backend.
+// CH2 (animated section transitions) is already shipped via v25.69 — the
+//      .just-completed celebration pulse covers the M5/C5 spec scope.
+// ══════════════════════════════════════════════════════════════════════
+(function tvDirectionC_v25_70() {
+  'use strict';
+
+  // ── CH1: Number stepper wrapping ────────────────────────────────────
+  const _STEPPER_INPUT_IDS = ['f_sdiCount', 'f_projectorCount', 'f_inputs', 'f_inputs4K', 'f_inputsFHD'];
+
+  function _wireQtyStepperTV(inputId) {
+    const inp = document.getElementById(inputId);
+    if (!inp) return;
+    // Already wired? bail.
+    if (inp.parentNode && inp.parentNode.classList && inp.parentNode.classList.contains('qty-stepper-tv')) return;
+    const parent = inp.parentNode;
+    if (!parent) return;
+    // Read constraints from input attrs
+    const min = inp.hasAttribute('min') ? parseInt(inp.getAttribute('min'), 10) : null;
+    const max = inp.hasAttribute('max') ? parseInt(inp.getAttribute('max'), 10) : null;
+    const step = inp.hasAttribute('step') ? parseFloat(inp.getAttribute('step')) : 1;
+    // Build wrapper
+    const wrap = document.createElement('div');
+    wrap.className = 'qty-stepper-tv';
+    const btnMinus = document.createElement('button');
+    btnMinus.type = 'button';
+    btnMinus.className = 'qty-step-btn-tv qty-step-minus-tv';
+    btnMinus.setAttribute('aria-label', 'Decrease ' + inputId);
+    btnMinus.setAttribute('tabindex', '-1');  // input itself stays focusable; buttons supplement
+    btnMinus.textContent = '−';
+    const btnPlus = document.createElement('button');
+    btnPlus.type = 'button';
+    btnPlus.className = 'qty-step-btn-tv qty-step-plus-tv';
+    btnPlus.setAttribute('aria-label', 'Increase ' + inputId);
+    btnPlus.setAttribute('tabindex', '-1');
+    btnPlus.textContent = '+';
+    // Replace input with wrap[btnMinus, input, btnPlus]
+    parent.insertBefore(wrap, inp);
+    wrap.appendChild(btnMinus);
+    wrap.appendChild(inp);
+    wrap.appendChild(btnPlus);
+
+    function _applyDelta(delta) {
+      const raw = String(inp.value || '').trim();
+      let cur = parseFloat(raw);
+      if (!isFinite(cur)) {
+        // empty → start from min if min defined, else 0
+        cur = (min != null && isFinite(min)) ? min - delta : 0;
+      }
+      let next = cur + (delta * step);
+      if (min != null && isFinite(min) && next < min) next = min;
+      if (max != null && isFinite(max) && next > max) next = max;
+      // Round to avoid float jitter (only if step is integer-ish)
+      if (Math.abs(step - Math.round(step)) < 1e-9) next = Math.round(next);
+      if (String(next) === String(inp.value)) return;
+      inp.value = String(next);
+      // Fire input + change so existing handlers (updateTotals/onInputsChange) run
+      try { inp.dispatchEvent(new Event('input',  { bubbles: true })); } catch (_) {}
+      try { inp.dispatchEvent(new Event('change', { bubbles: true })); } catch (_) {}
+    }
+    btnMinus.addEventListener('click', function(e) { e.preventDefault(); _applyDelta(-1); });
+    btnPlus.addEventListener('click',  function(e) { e.preventDefault(); _applyDelta(+1); });
+    // Update disabled state on input changes
+    function _updateBtnState() {
+      const cur = parseFloat(String(inp.value || '').trim());
+      btnMinus.disabled = isFinite(cur) && min != null && cur <= min;
+      btnPlus.disabled  = isFinite(cur) && max != null && cur >= max;
+    }
+    inp.addEventListener('input', _updateBtnState);
+    inp.addEventListener('change', _updateBtnState);
+    _updateBtnState();
+  }
+
+  function _initSteppersTV() {
+    _STEPPER_INPUT_IDS.forEach(_wireQtyStepperTV);
+  }
+  window._initSteppersTV = _initSteppersTV;
+
+  // ── CH3: Quarterly Target Card + run-rate tile ──────────────────────
+  const _QT_KEY_TV = 'tvone-cockpit-target-quarterly';
+
+  function _qtFmtINR(n) {
+    if (!isFinite(n) || n <= 0) return '—';
+    if (n >= 10000000) return '₹' + (n / 10000000).toFixed(2).replace(/\.?0+$/, '') + ' Cr';
+    if (n >= 100000)   return '₹' + (n / 100000).toFixed(2).replace(/\.?0+$/, '') + ' L';
+    if (n >= 1000)     return '₹' + (n / 1000).toFixed(1).replace(/\.0$/, '') + ' K';
+    return '₹' + Math.round(n).toLocaleString('en-IN');
+  }
+
+  function _parseTargetInputTV(raw) {
+    const s = String(raw || '').trim();
+    if (!s) return null;
+    let cleaned = s.replace(/[₹,\s]/g, '');
+    const m = cleaned.match(/^([\d.]+)\s*(cr|crore|crores|l|lac|lacs|lakh|lakhs|k|thousand)?$/i);
+    if (!m) {
+      const n = parseFloat(cleaned);
+      return isFinite(n) && n > 0 ? n : false;
+    }
+    const num = parseFloat(m[1]);
+    if (!isFinite(num) || num <= 0) return false;
+    const suffix = (m[2] || '').toLowerCase();
+    if (/^cr/.test(suffix)) return num * 10000000;
+    if (/^l|lac|lakh/.test(suffix)) return num * 100000;
+    if (/^k|thousand/.test(suffix)) return num * 1000;
+    return num;
+  }
+
+  function _readQuarterlyTargetTV() {
+    try {
+      const raw = localStorage.getItem(_QT_KEY_TV);
+      if (!raw) return 0;
+      const n = parseFloat(raw);
+      return isFinite(n) && n > 0 ? n : 0;
+    } catch (_) { return 0; }
+  }
+  window._readQuarterlyTargetTV = _readQuarterlyTargetTV;
+
+  function _renderQuarterlyTargetCardTV() {
+    const host = document.getElementById('qt-settings-card-host-tv');
+    if (!host) return;
+    // Super-only — hide for non-Super
+    if (!(typeof currentUser !== 'undefined' && currentUser && currentUser.isSuper)) {
+      host.innerHTML = '';
+      return;
+    }
+    const current = _readQuarterlyTargetTV();
+    const isSet = current > 0;
+    const fmt = _qtFmtINR;
+    // Use innerHTML rebuild — cheap and reliable
+    host.innerHTML =
+      '<div id="qt-settings-card-tv">' +
+        '<div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">' +
+          '<div style="flex:1;min-width:240px;">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+              '<span class="qt-label-tv">🎯 Quarterly Target</span>' +
+              '<span class="qt-status-badge-tv ' + (isSet ? 'qt-status-set-tv' : 'qt-status-unset-tv') + '">' +
+                (isSet ? 'SET · ' + fmt(current) : 'NOT SET') +
+              '</span>' +
+            '</div>' +
+            '<div style="font-size:13px;color:var(--ink,#0F172A);margin-bottom:8px;line-height:1.5;">' +
+              '<strong>What is this?</strong> The ₹ target the Dashboard cockpit uses to compute the <em>Target Progress</em> KPI — % of target you have closed (Won) this quarter. ' +
+              'Without a target set, the KPI tile is hidden.' +
+            '</div>' +
+            '<div style="font-size:12px;color:var(--ink-soft,#64748B);line-height:1.5;margin-bottom:14px;">' +
+              'Examples: <code>5Cr</code> · <code>75L</code> · <code>500K</code> · <code>50000000</code>' +
+            '</div>' +
+            '<div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">' +
+              '<div style="flex:1;min-width:160px;">' +
+                '<label style="display:block;font-size:11px;font-weight:600;color:var(--ink-soft,#64748B);margin-bottom:5px;letter-spacing:0.04em;text-transform:uppercase;">Target ₹</label>' +
+                '<input type="text" id="qt-target-input-tv" value="' + (isSet ? fmt(current).replace('₹', '').replace(/\s/g, '').trim() : '') + '" placeholder="e.g. 5Cr" autocomplete="off">' +
+                '<div id="qt-preview-tv" style="font-size:11.5px;color:var(--ink-subtle,#94A3B8);margin-top:4px;height:14px;"></div>' +
+              '</div>' +
+              '<button type="button" class="qt-save-btn-tv" onclick="saveQuarterlyTargetTV()">Save target</button>' +
+              (isSet ? '<button type="button" class="qt-clear-btn-tv" onclick="clearQuarterlyTargetTV()">Clear</button>' : '') +
+            '</div>' +
+            '<div id="qt-status-msg-tv" style="font-size:12px;margin-top:10px;min-height:14px;"></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    // Live preview as user types
+    const inp = document.getElementById('qt-target-input-tv');
+    const preview = document.getElementById('qt-preview-tv');
+    if (inp && preview) {
+      const updatePreview = function() {
+        const v = _parseTargetInputTV(inp.value);
+        if (v == null) { preview.textContent = ''; preview.style.color = ''; return; }
+        if (v === false) { preview.textContent = '✗ Invalid format — try 5Cr or 50000000'; preview.style.color = '#DC2626'; return; }
+        preview.textContent = '= ' + fmt(v);
+        preview.style.color = 'var(--ink-soft,#64748B)';
+      };
+      inp.addEventListener('input', updatePreview);
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); window.saveQuarterlyTargetTV(); }
+      });
+    }
+  }
+  window._renderQuarterlyTargetCardTV = _renderQuarterlyTargetCardTV;
+
+  window.saveQuarterlyTargetTV = function() {
+    const inp = document.getElementById('qt-target-input-tv');
+    const msg = document.getElementById('qt-status-msg-tv');
+    if (!inp) return;
+    const v = _parseTargetInputTV(inp.value);
+    if (v == null) {
+      if (msg) { msg.textContent = 'Enter a target value above or click Clear to remove.'; msg.style.color = '#94A3B8'; }
+      return;
+    }
+    if (v === false) {
+      if (msg) { msg.textContent = '✗ Invalid format. Examples: 5Cr · 75L · 500K · 50000000'; msg.style.color = '#DC2626'; }
+      return;
+    }
+    try { localStorage.setItem(_QT_KEY_TV, String(v)); } catch (_) {
+      if (msg) { msg.textContent = '✗ Could not save — localStorage unavailable.'; msg.style.color = '#DC2626'; }
+      return;
+    }
+    if (msg) { msg.textContent = '✓ Saved. Target Progress tile refreshing…'; msg.style.color = '#059669'; }
+    // Re-render Team Analytics so the 9th KPI tile picks up the change
+    try { if (typeof _renderTeam === 'function') _renderTeam(); } catch (_) {}
+    // Re-render the card itself so the status badge + Clear button update
+    setTimeout(function() {
+      try { _renderQuarterlyTargetCardTV(); } catch (_) {}
+    }, 700);
+  };
+
+  window.clearQuarterlyTargetTV = function() {
+    if (!confirm('Clear the quarterly target?\n\nThe Target Progress KPI tile will be hidden until you set a new target.')) return;
+    try { localStorage.removeItem(_QT_KEY_TV); } catch (_) {}
+    try { if (typeof _renderTeam === 'function') _renderTeam(); } catch (_) {}
+    _renderQuarterlyTargetCardTV();
+  };
+
+  // ── CH3: Update the 9th KPI tile (call after _renderTeam fills others) ──
+  // NOTE: tvONE's centralLog is module-local (not on window), so we cannot
+  // recompute Won-this-quarter from raw data. Instead we read the formatted
+  // value already rendered in #v26-team-kpi-won (which itself shows
+  // _shortINR(wonThisQ) — confirmed at the _renderTeam definition).
+  // Format examples: "₹2.5 Cr", "₹50 L", "₹500 K", "₹15000", "—".
+  function _parseShortINR_TV(s) {
+    if (!s) return 0;
+    const txt = String(s).trim();
+    if (!txt || txt === '—') return 0;
+    // Strip ₹ and commas
+    const cleaned = txt.replace(/[₹,\s]/g, '');
+    const m = cleaned.match(/^([\d.]+)(cr|crore|crores|l|lac|lakh|lakhs|k|thousand)?$/i);
+    if (!m) {
+      const n = parseFloat(cleaned);
+      return isFinite(n) ? n : 0;
+    }
+    const num = parseFloat(m[1]);
+    if (!isFinite(num)) return 0;
+    const suf = (m[2] || '').toLowerCase();
+    if (/^cr/.test(suf)) return num * 10000000;
+    if (/^l|lac|lakh/.test(suf)) return num * 100000;
+    if (/^k|thousand/.test(suf)) return num * 1000;
+    return num;
+  }
+
+  function _updateTargetKPITileTV() {
+    const wrap = document.getElementById('v26-team-kpi-target-wrap');
+    if (!wrap) return;
+    const target = _readQuarterlyTargetTV();
+    if (target <= 0) {
+      wrap.style.display = 'none';
+      return;
+    }
+    // Read formatted won-this-quarter from the existing tile
+    const wonTile = document.getElementById('v26-team-kpi-won');
+    const wonValRaw = wonTile ? _parseShortINR_TV(wonTile.textContent) : 0;
+
+    const pct = target > 0 ? Math.round((wonValRaw / target) * 100) : 0;
+    const valEl = document.getElementById('v26-team-kpi-target');
+    const subEl = document.getElementById('v26-team-kpi-target-sub');
+    const barEl = document.getElementById('v26-team-kpi-target-bar');
+    if (valEl) valEl.textContent = pct + '%';
+    if (subEl) subEl.textContent = _qtFmtINR(wonValRaw) + ' of ' + _qtFmtINR(target);
+    if (barEl) barEl.style.width = Math.min(100, pct) + '%';
+    wrap.style.display = '';
+  }
+  window._updateTargetKPITileTV = _updateTargetKPITileTV;
+
+  // Hook into showView and the v26 tab-switch so the QT card + 9th tile refresh ──
+  if (typeof window.showView === 'function' && !window._tvDirectionCv2570_showViewWrapped) {
+    window._tvDirectionCv2570_showViewWrapped = true;
+    const _origShowViewV70 = window.showView;
+    window.showView = function(v) {
+      const r = _origShowViewV70.apply(this, arguments);
+      if (v === 'team') {
+        setTimeout(function() { try { _renderQuarterlyTargetCardTV(); } catch (_) {} }, 60);
+      }
+      if (v === 'dash') {
+        // The Won tile renders asynchronously after data loads — poll briefly
+        let tries = 0;
+        const poll = function() {
+          tries++;
+          const wonTile = document.getElementById('v26-team-kpi-won');
+          if (wonTile && wonTile.textContent && wonTile.textContent.trim() !== '—') {
+            _updateTargetKPITileTV();
+            return;
+          }
+          if (tries < 12) setTimeout(poll, 250);  // up to ~3s
+        };
+        setTimeout(poll, 200);
+      }
+      return r;
+    };
+  }
+  // Hook into bsv26_switchTab so switching mine ↔ team also refreshes the tile
+  if (typeof window.bsv26_switchTab === 'function' && !window._tvDirectionCv2570_switchTabWrapped) {
+    window._tvDirectionCv2570_switchTabWrapped = true;
+    const _origSwitchTab = window.bsv26_switchTab;
+    window.bsv26_switchTab = function(which) {
+      const r = _origSwitchTab.apply(this, arguments);
+      if (which === 'team') {
+        // Won tile fills asynchronously; poll briefly
+        let tries = 0;
+        const poll = function() {
+          tries++;
+          const wonTile = document.getElementById('v26-team-kpi-won');
+          if (wonTile && wonTile.textContent && wonTile.textContent.trim() !== '—') {
+            _updateTargetKPITileTV();
+            return;
+          }
+          if (tries < 12) setTimeout(poll, 250);
+        };
+        setTimeout(poll, 150);
+      }
+      return r;
+    };
+  }
+
+  // ── Bootstrap ───────────────────────────────────────────────────────
+  function _initV70() {
+    try { _initSteppersTV(); } catch (_) {}
+    try { _renderQuarterlyTargetCardTV(); } catch (_) {}
+    try { _updateTargetKPITileTV(); } catch (_) {}
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _initV70);
+  } else {
+    // Defer slightly so the v25.69 module finishes wiring first
+    setTimeout(_initV70, 50);
+  }
+})();
+// ══════════════════════════════════════════════════════════════════════
 
 </script>
 <!-- Silent sync toast indicator -->
