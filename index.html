@@ -6447,6 +6447,198 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
   }
 }
 
+/* ============================================================================
+ * v25.80 — Signal-row layout for Card 02 (Input Block) + Card 03 (Output Block)
+ * Each row: label · qty stepper · resolution pill (or note/helper).
+ * Mobile (≤480px): stacks label on top, qty + res below as wrapped pair.
+ * ============================================================================ */
+.signal-row-grid-tv {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+.signal-row-tv {
+  display: grid;
+  grid-template-columns: 140px minmax(160px, auto) 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 8px;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+html[data-theme="light"] .signal-row-tv,
+:root.light .signal-row-tv,
+body.light .signal-row-tv {
+  background: rgba(15, 23, 42, 0.03);
+  border-color: rgba(15, 23, 42, 0.10);
+}
+.signal-row-tv:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+html[data-theme="light"] .signal-row-tv:hover,
+:root.light .signal-row-tv:hover,
+body.light .signal-row-tv:hover {
+  background: rgba(15, 23, 42, 0.05);
+  border-color: rgba(15, 23, 42, 0.16);
+}
+.signal-row-label-tv {
+  font-family: var(--mono-tv, ui-monospace, "SF Mono", Menlo, monospace);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft, #E5E7EB);
+}
+html[data-theme="light"] .signal-row-label-tv,
+:root.light .signal-row-label-tv,
+body.light .signal-row-label-tv {
+  color: var(--ink, #0F172A);
+}
+.signal-row-qty-tv,
+.signal-row-res-tv {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.signal-row-note-tv {
+  font-size: 11.5px;
+  color: var(--ink-subtle, #9CA3AF);
+  font-style: italic;
+}
+.signal-row-note-helper-tv {
+  font-style: normal;
+  opacity: 0.85;
+}
+.qty-stepper-tv {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+}
+html[data-theme="light"] .qty-stepper-tv,
+:root.light .qty-stepper-tv,
+body.light .qty-stepper-tv {
+  border-color: rgba(15, 23, 42, 0.18);
+  background: rgba(255, 255, 255, 0.95);
+}
+.qty-stepper-tv button {
+  width: 38px;
+  height: 38px;
+  background: transparent;
+  border: 0;
+  color: var(--ink-soft, #E5E7EB);
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+html[data-theme="light"] .qty-stepper-tv button,
+:root.light .qty-stepper-tv button,
+body.light .qty-stepper-tv button {
+  color: var(--ink, #0F172A);
+}
+.qty-stepper-tv button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="light"] .qty-stepper-tv button:hover,
+:root.light .qty-stepper-tv button:hover,
+body.light .qty-stepper-tv button:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+.qty-stepper-tv button:active {
+  background: rgba(255, 255, 255, 0.14);
+}
+.qty-stepper-tv input {
+  width: 56px;
+  height: 38px;
+  background: transparent;
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: inherit;
+  -moz-appearance: textfield;
+}
+html[data-theme="light"] .qty-stepper-tv input,
+:root.light .qty-stepper-tv input,
+body.light .qty-stepper-tv input {
+  border-left-color: rgba(15, 23, 42, 0.12);
+  border-right-color: rgba(15, 23, 42, 0.12);
+}
+.qty-stepper-tv input::-webkit-inner-spin-button,
+.qty-stepper-tv input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.qty-stepper-tv input:focus {
+  outline: 2px solid var(--gold, #FCD34D);
+  outline-offset: -2px;
+}
+
+.signal-card-footer-tv {
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: rgba(252, 211, 77, 0.08);
+  border: 1px solid rgba(252, 211, 77, 0.20);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft, #E5E7EB);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+html[data-theme="light"] .signal-card-footer-tv,
+:root.light .signal-card-footer-tv,
+body.light .signal-card-footer-tv {
+  background: rgba(252, 211, 77, 0.16);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #4B3209;
+}
+.signal-card-footer-icon-tv {
+  font-size: 14px;
+  color: var(--gold, #FCD34D);
+  font-weight: 600;
+  flex-shrink: 0;
+  line-height: 1.3;
+}
+
+/* Mobile compactness for signal rows */
+@media (max-width: 600px) {
+  .signal-row-tv {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .signal-row-label-tv {
+    font-size: 13px;
+  }
+  .signal-row-qty-tv,
+  .signal-row-res-tv {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .qty-stepper-tv button {
+    width: 44px;
+    height: 44px;
+  }
+  .qty-stepper-tv input {
+    width: 64px;
+    height: 44px;
+    font-size: 16px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -6958,126 +7150,271 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
       </div>
     </div>
 
-    <div class="card form-section-tv" data-section="02" data-section-title="Output Configuration">
+    <!-- v25.80: Card 02 REPLACED per user's handwritten spec + 10 dry-run scenarios.
+         Was "Output Configuration" (output type choice cards + SDI pill).
+         Now "Input Block of Video Processor" — 7 signal-type rows (HDMI 4K, HDMI FHD,
+         SDI 12G, SDI 3G, HDBaseT, IP Streaming, Audio In needed?).
+         Old field IDs (f_outputType, f_outputSignal, f_sdiCount, f_projectorCount,
+         f_projectorRes) MOVED to Card 03. The engine still reads f_inputs, f_inputs4K,
+         f_inputsFHD, f_signals via _recomputeCompatShimsTV() defined in the JS module
+         below. Per-signal-type field IDs are NEW (f_inputHdmi4kQty etc.). -->
+    <div class="card form-section-tv" data-section="02" data-section-title="Input Block of Video Processor">
       <div class="section-head-tv">
         <div class="section-num-tv">02</div>
         <div class="section-head-text-tv">
-          <div class="section-title-tv">Output Configuration</div>
-          <div class="section-sub-tv">How will video reach the displays?</div>
+          <div class="section-title-tv">Input Block of Video Processor</div>
+          <div class="section-sub-tv">Add quantities for each signal type the processor receives. Defaults to 0 — fill only what's needed.</div>
         </div>
       </div>
 
-      <!-- v25.74: Output type as visual choice cards (replaces dropdown). Hidden select retained for compatibility with onOutputTypeChange, edit flow, and submit. -->
-      <!-- v25.75: Renamed "LED" → "Active LED Videowall" per user. All 3 emoji icons replaced with unified SVG icons (currentColor-stroked, scale with text). -->
-      <!-- v25.76: Icon set refreshed per user pick (C, B, B). LED = 3×3 separate tiles (modular); Projector = front-facing with prominent lens; Mixed = LED on top + projector below. -->
-      <div class="field" style="margin-bottom:18px"><label>Output type <span class="req">*</span></label>
-        <div class="choice-card-grid-tv" role="radiogroup" aria-label="Output type">
-          <button type="button" class="choice-card-tv" data-choice-group="outputType" data-value="LED" onclick="_selectChoiceTV('outputType','LED')" aria-pressed="false">
-            <div class="choice-card-icon-tv">
-              <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="2" y="3" width="7" height="6" rx="0.6"/>
-                <rect x="10.5" y="3" width="7" height="6" rx="0.6"/>
-                <rect x="19" y="3" width="7" height="6" rx="0.6"/>
-                <rect x="2" y="11" width="7" height="6" rx="0.6"/>
-                <rect x="10.5" y="11" width="7" height="6" rx="0.6"/>
-                <rect x="19" y="11" width="7" height="6" rx="0.6"/>
-                <rect x="2" y="19" width="7" height="6" rx="0.6"/>
-                <rect x="10.5" y="19" width="7" height="6" rx="0.6"/>
-                <rect x="19" y="19" width="7" height="6" rx="0.6"/>
-              </svg>
+      <div class="signal-row-grid-tv">
+        <!-- HDMI 4K -->
+        <div class="signal-row-tv">
+          <div class="signal-row-label-tv">HDMI 4K</div>
+          <div class="signal-row-qty-tv">
+            <div class="qty-stepper-tv">
+              <button type="button" aria-label="Decrease HDMI 4K input qty" onclick="_stepInputQtyTV('f_inputHdmi4kQty', -1)">−</button>
+              <input id="f_inputHdmi4kQty" type="number" min="0" max="32" value="0" inputmode="numeric" oninput="_recomputeCompatShimsTV()">
+              <button type="button" aria-label="Increase HDMI 4K input qty" onclick="_stepInputQtyTV('f_inputHdmi4kQty', +1)">+</button>
             </div>
-            <div class="choice-card-title-tv">Active LED Videowall</div>
-            <div class="choice-card-sub-tv">Direct-view LED panels</div>
-          </button>
-          <button type="button" class="choice-card-tv" data-choice-group="outputType" data-value="Projector" onclick="_selectChoiceTV('outputType','Projector')" aria-pressed="false">
-            <div class="choice-card-icon-tv">
-              <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="4" y="7" width="20" height="14" rx="1.8"/>
-                <circle cx="14" cy="14" r="4"/>
-                <circle cx="14" cy="14" r="1.5" fill="currentColor"/>
-                <rect x="20" y="10" width="2.5" height="1.8" rx="0.3" fill="currentColor"/>
-                <line x1="6" y1="25" x2="8" y2="25"/>
-                <line x1="20" y1="25" x2="22" y2="25"/>
-              </svg>
-            </div>
-            <div class="choice-card-title-tv">Projector</div>
-            <div class="choice-card-sub-tv">One or more projectors</div>
-          </button>
-          <button type="button" class="choice-card-tv" data-choice-group="outputType" data-value="Mixed" onclick="_selectChoiceTV('outputType','Mixed')" aria-pressed="false">
-            <div class="choice-card-icon-tv">
-              <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="3" y="3" width="22" height="11" rx="1"/>
-                <line x1="10.33" y1="3" x2="10.33" y2="14"/>
-                <line x1="17.66" y1="3" x2="17.66" y2="14"/>
-                <line x1="3" y1="8.5" x2="25" y2="8.5"/>
-                <rect x="9" y="18" width="7" height="6" rx="0.8"/>
-                <circle cx="12.5" cy="21" r="1.3"/>
-                <path d="M16 18.5 L20 17 L20 25 L16 23.5 Z"/>
-              </svg>
-            </div>
-            <div class="choice-card-title-tv">Mixed</div>
-            <div class="choice-card-sub-tv">LED + Projector together</div>
-          </button>
+          </div>
+          <div class="signal-row-note-tv signal-row-note-helper-tv">3840×2160 cameras / sources</div>
         </div>
-        <select id="f_outputType" onchange="onOutputTypeChange()" style="display:none" aria-hidden="true">
-          <option value="LED">Active LED Videowall</option>
-          <option value="Projector">Projector (count only)</option>
-          <option value="Mixed">Mixed (LED + Projector)</option>
-        </select>
+
+        <!-- HDMI FHD -->
+        <div class="signal-row-tv">
+          <div class="signal-row-label-tv">HDMI FHD</div>
+          <div class="signal-row-qty-tv">
+            <div class="qty-stepper-tv">
+              <button type="button" aria-label="Decrease HDMI FHD input qty" onclick="_stepInputQtyTV('f_inputHdmiFhdQty', -1)">−</button>
+              <input id="f_inputHdmiFhdQty" type="number" min="0" max="32" value="0" inputmode="numeric" oninput="_recomputeCompatShimsTV()">
+              <button type="button" aria-label="Increase HDMI FHD input qty" onclick="_stepInputQtyTV('f_inputHdmiFhdQty', +1)">+</button>
+            </div>
+          </div>
+          <div class="signal-row-note-tv signal-row-note-helper-tv">1920×1080 cameras / sources</div>
+        </div>
+
+        <!-- SDI 12G -->
+        <div class="signal-row-tv">
+          <div class="signal-row-label-tv">SDI 12G</div>
+          <div class="signal-row-qty-tv">
+            <div class="qty-stepper-tv">
+              <button type="button" aria-label="Decrease SDI 12G input qty" onclick="_stepInputQtyTV('f_inputSdi12gQty', -1)">−</button>
+              <input id="f_inputSdi12gQty" type="number" min="0" max="32" value="0" inputmode="numeric" oninput="_recomputeCompatShimsTV()">
+              <button type="button" aria-label="Increase SDI 12G input qty" onclick="_stepInputQtyTV('f_inputSdi12gQty', +1)">+</button>
+            </div>
+          </div>
+          <div class="signal-row-note-tv signal-row-note-helper-tv">12 Gbps SDI (4K)</div>
+        </div>
+
+        <!-- SDI 3G -->
+        <div class="signal-row-tv">
+          <div class="signal-row-label-tv">SDI 3G</div>
+          <div class="signal-row-qty-tv">
+            <div class="qty-stepper-tv">
+              <button type="button" aria-label="Decrease SDI 3G input qty" onclick="_stepInputQtyTV('f_inputSdi3gQty', -1)">−</button>
+              <input id="f_inputSdi3gQty" type="number" min="0" max="32" value="0" inputmode="numeric" oninput="_recomputeCompatShimsTV()">
+              <button type="button" aria-label="Increase SDI 3G input qty" onclick="_stepInputQtyTV('f_inputSdi3gQty', +1)">+</button>
+            </div>
+          </div>
+          <div class="signal-row-note-tv signal-row-note-helper-tv">3 Gbps SDI (FHD)</div>
+        </div>
+
+        <!-- HDBaseT -->
+        <div class="signal-row-tv">
+          <div class="signal-row-label-tv">HDBaseT</div>
+          <div class="signal-row-qty-tv">
+            <div class="qty-stepper-tv">
+              <button type="button" aria-label="Decrease HDBaseT input qty" onclick="_stepInputQtyTV('f_inputHdbtQty', -1)">−</button>
+              <input id="f_inputHdbtQty" type="number" min="0" max="32" value="0" inputmode="numeric" oninput="_recomputeCompatShimsTV()">
+              <button type="button" aria-label="Increase HDBaseT input qty" onclick="_stepInputQtyTV('f_inputHdbtQty', +1)">+</button>
+            </div>
+          </div>
+          <div class="signal-row-note-tv signal-row-note-helper-tv">CAT cable extenders</div>
+        </div>
+
+        <!-- IP Streaming -->
+        <div class="signal-row-tv">
+          <div class="signal-row-label-tv">IP Streaming</div>
+          <div class="signal-row-qty-tv">
+            <div class="qty-stepper-tv">
+              <button type="button" aria-label="Decrease IP Streaming input qty" onclick="_stepInputQtyTV('f_inputIpQty', -1)">−</button>
+              <input id="f_inputIpQty" type="number" min="0" max="32" value="0" inputmode="numeric" oninput="_recomputeCompatShimsTV()">
+              <button type="button" aria-label="Increase IP Streaming input qty" onclick="_stepInputQtyTV('f_inputIpQty', +1)">+</button>
+            </div>
+          </div>
+          <div class="signal-row-note-tv signal-row-note-helper-tv">Network video → maps to MEDIA card</div>
+        </div>
+
+        <!-- Audio In Yes/No -->
+        <div class="signal-row-tv">
+          <div class="signal-row-label-tv">Audio In needed?</div>
+          <div class="signal-row-qty-tv">
+            <div class="pill-group-tv" role="radiogroup" aria-label="Audio input needed">
+              <button type="button" class="pill-tv" data-pill-group="inputAudio" data-value="no" onclick="_selectPillTV('inputAudio','no'); _recomputeCompatShimsTV();" aria-pressed="true">No</button>
+              <button type="button" class="pill-tv selected" data-pill-group="inputAudio" data-value="yes" onclick="_selectPillTV('inputAudio','yes'); _recomputeCompatShimsTV();" aria-pressed="false">Yes</button>
+            </div>
+            <select id="f_inputAudio" style="display:none" aria-hidden="true" tabindex="-1">
+              <option value="no" selected>No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+          <div class="signal-row-note-tv signal-row-note-helper-tv">1 audio card = 2 in + 4 out</div>
+        </div>
       </div>
 
-      <!-- v25.74: SDI need as pill toggle (replaces dropdown). Hidden select retained. -->
-      <!-- v25.76: Label reworded from "Need SDI output?" to conversational "Does your project require any SDI signal output?" per user. -->
-      <div class="field" style="margin-bottom:18px"><label>Does your project require any SDI signal output?</label>
-        <div class="pill-group-tv" role="radiogroup" aria-label="SDI output needed">
-          <button type="button" class="pill-tv" data-pill-group="outputSignal" data-value="HDMI" onclick="_selectPillTV('outputSignal','HDMI')" aria-pressed="false">No — HDMI only</button>
-          <button type="button" class="pill-tv" data-pill-group="outputSignal" data-value="SDI" onclick="_selectPillTV('outputSignal','SDI')" aria-pressed="false">Yes — SDI needed</button>
-        </div>
-        <select id="f_outputSignal" onchange="onOutputSignalChange()" style="display:none" aria-hidden="true">
-          <option value="HDMI">No — HDMI only</option>
-          <option value="SDI">Yes — SDI required (broadcast / medical)</option>
-        </select>
-        <div class="helper" id="sdiNote" style="display:none; color:var(--warn); margin-top:8px"><b>SDI path:</b> C7-PRO-2200 + SDI_12G 4-OUT card. Max 4 SDI ports per chassis. Native 4 HDMI outputs remain available.</div>
-      </div>
-
-      <!-- Conditional follow-up fields (unchanged) -->
-      <div class="spec-grid-tv two-col-tv">
-        <div class="field" id="sdiCountField" style="display:none"><label>SDI outputs needed <span class="req">*</span></label>
-          <input id="f_sdiCount" type="number" min="1" max="4" placeholder="e.g. 2" oninput="updateTotals()">
-          <div class="helper">Max 4 SDI ports (from SDI_12G 4-OUT card).</div>
-        </div>
-        <div class="field" id="projectorCountField" style="display:none"><label>Number of projectors <span class="req">*</span></label>
-          <input id="f_projectorCount" type="number" min="1" max="20" placeholder="e.g. 3" oninput="updateTotals()">
-          <div class="helper">Each projector uses 1 output port. If more than 1, edge blend is assumed.</div>
-        </div>
-        <div class="field" id="projectorResField" style="display:none"><label>Projector resolution <span class="req">*</span></label>
-          <select id="f_projectorRes" onchange="updateTotals()">
-            <option value="4K">4K (3840×2160)</option>
-            <option value="FHD">FHD (1920×1080)</option>
-          </select>
-        </div>
+      <div class="signal-card-footer-tv">
+        <span class="signal-card-footer-icon-tv">ⓘ</span>
+        Ideally on load, quantity should be Zero. Add only what the project needs.
       </div>
     </div>
 
-    <div class="card form-section-tv" id="ledCard" data-section="03" data-section-title="LED Screens">
+    <!-- v25.80: Card 03 REPLACED per user's handwritten spec.
+         Was "LED Screens · Resolution Calculator" (just screensContainer).
+         Now "Output Block of Video Processor" — Display, Projector, Active LED (with screens),
+         SDI Output, Audio Out. The LED screen container is REUSED (Active LED Yes reveals it).
+         Old output field IDs (f_outputType, f_outputSignal, f_sdiCount, f_projectorCount,
+         f_projectorRes) now live HIDDEN below — populated by _recomputeCompatShimsTV() from
+         the new visible fields above. -->
+    <div class="card form-section-tv" id="ledCard" data-section="03" data-section-title="Output Block of Video Processor">
       <div class="section-head-tv">
         <div class="section-num-tv">03</div>
         <div class="section-head-text-tv">
-          <div class="section-title-tv">LED Screens · Resolution Calculator</div>
-          <div class="section-sub-tv">Enter each screen's pixel resolution. Use the mm calculator below if only physical dimensions are known.</div>
+          <div class="section-title-tv">Output Block of Video Processor</div>
+          <div class="section-sub-tv">Displays, projectors, LED screens, SDI outputs, and audio.</div>
         </div>
       </div>
-      <div id="screensContainer"></div>
-      <div class="btn-row" style="margin-top:6px">
-        <button class="secondary" onclick="addScreen()">+ Add Screen</button>
-        <button class="btn-tiny" onclick="removeLastScreen()">Remove Last Screen</button>
+
+      <div class="signal-row-grid-tv">
+        <!-- Display -->
+        <div class="signal-row-tv">
+          <div class="signal-row-label-tv">Display</div>
+          <div class="signal-row-qty-tv">
+            <div class="qty-stepper-tv">
+              <button type="button" aria-label="Decrease Display qty" onclick="_stepInputQtyTV('f_outputDisplayQty', -1)">−</button>
+              <input id="f_outputDisplayQty" type="number" min="0" max="32" value="0" inputmode="numeric" oninput="_recomputeCompatShimsTV()">
+              <button type="button" aria-label="Increase Display qty" onclick="_stepInputQtyTV('f_outputDisplayQty', +1)">+</button>
+            </div>
+          </div>
+          <div class="signal-row-res-tv">
+            <div class="pill-group-tv" role="radiogroup" aria-label="Display resolution">
+              <button type="button" class="pill-tv selected" data-pill-group="outputDisplayRes" data-value="4K" onclick="_selectPillTV('outputDisplayRes','4K'); _recomputeCompatShimsTV();" aria-pressed="true">4K</button>
+              <button type="button" class="pill-tv" data-pill-group="outputDisplayRes" data-value="FHD" onclick="_selectPillTV('outputDisplayRes','FHD'); _recomputeCompatShimsTV();" aria-pressed="false">FHD</button>
+            </div>
+            <select id="f_outputDisplayRes" style="display:none" aria-hidden="true" tabindex="-1">
+              <option value="4K" selected>4K</option>
+              <option value="FHD">FHD</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Projector -->
+        <div class="signal-row-tv">
+          <div class="signal-row-label-tv">Projector</div>
+          <div class="signal-row-qty-tv">
+            <div class="qty-stepper-tv">
+              <button type="button" aria-label="Decrease Projector qty" onclick="_stepInputQtyTV('f_outputProjectorQty', -1)">−</button>
+              <input id="f_outputProjectorQty" type="number" min="0" max="32" value="0" inputmode="numeric" oninput="_recomputeCompatShimsTV()">
+              <button type="button" aria-label="Increase Projector qty" onclick="_stepInputQtyTV('f_outputProjectorQty', +1)">+</button>
+            </div>
+          </div>
+          <div class="signal-row-res-tv">
+            <div class="pill-group-tv" role="radiogroup" aria-label="Projector resolution">
+              <button type="button" class="pill-tv selected" data-pill-group="outputProjectorRes" data-value="4K" onclick="_selectPillTV('outputProjectorRes','4K'); _recomputeCompatShimsTV();" aria-pressed="true">4K</button>
+              <button type="button" class="pill-tv" data-pill-group="outputProjectorRes" data-value="FHD" onclick="_selectPillTV('outputProjectorRes','FHD'); _recomputeCompatShimsTV();" aria-pressed="false">FHD</button>
+            </div>
+            <select id="f_outputProjectorRes" style="display:none" aria-hidden="true" tabindex="-1">
+              <option value="4K" selected>4K</option>
+              <option value="FHD">FHD</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Active LED (default Yes) -->
+        <div class="signal-row-tv">
+          <div class="signal-row-label-tv">Active LED</div>
+          <div class="signal-row-qty-tv">
+            <div class="pill-group-tv" role="radiogroup" aria-label="Active LED needed">
+              <button type="button" class="pill-tv" data-pill-group="outputActiveLed" data-value="no" onclick="_selectPillTV('outputActiveLed','no'); _onActiveLedToggleTV(); _recomputeCompatShimsTV();" aria-pressed="false">No</button>
+              <button type="button" class="pill-tv selected" data-pill-group="outputActiveLed" data-value="yes" onclick="_selectPillTV('outputActiveLed','yes'); _onActiveLedToggleTV(); _recomputeCompatShimsTV();" aria-pressed="true">Yes</button>
+            </div>
+            <select id="f_outputActiveLed" style="display:none" aria-hidden="true" tabindex="-1">
+              <option value="no">No</option>
+              <option value="yes" selected>Yes</option>
+            </select>
+          </div>
+          <div class="signal-row-note-tv signal-row-note-helper-tv">If Yes, add LED screens below</div>
+        </div>
       </div>
-      <div class="totals-strip">
-        <div><div class="k">LED Pixels</div><div class="v" id="tot_pixels">—</div></div>
-        <div><div class="k">LED Output Ports</div><div class="v" id="tot_led_ports">—</div></div>
-        <div><div class="k">Projector Ports</div><div class="v" id="tot_proj_ports">—</div></div>
-        <div><div class="k">Total Ports Needed</div><div class="v" id="tot_ports" style="color:#FFE5A0">—</div></div>
+
+      <!-- LED screens wrapper — revealed only when Active LED = Yes -->
+      <div id="ledScreensWrap" style="margin-top:18px;">
+        <div id="screensContainer"></div>
+        <div class="btn-row" style="margin-top:6px">
+          <button class="secondary" onclick="addScreen()">+ Add Screen</button>
+          <button class="btn-tiny" onclick="removeLastScreen()">Remove Last Screen</button>
+        </div>
+        <div class="totals-strip">
+          <div><div class="k">LED Pixels</div><div class="v" id="tot_pixels">—</div></div>
+          <div><div class="k">LED Output Ports</div><div class="v" id="tot_led_ports">—</div></div>
+          <div><div class="k">Projector Ports</div><div class="v" id="tot_proj_ports">—</div></div>
+          <div><div class="k">Total Ports Needed</div><div class="v" id="tot_ports" style="color:#FFE5A0">—</div></div>
+        </div>
       </div>
+
+      <div class="signal-row-grid-tv" style="margin-top:18px;">
+        <!-- SDI Output -->
+        <div class="signal-row-tv">
+          <div class="signal-row-label-tv">SDI Output</div>
+          <div class="signal-row-qty-tv">
+            <div class="qty-stepper-tv">
+              <button type="button" aria-label="Decrease SDI Output qty" onclick="_stepInputQtyTV('f_outputSdiQty', -1)">−</button>
+              <input id="f_outputSdiQty" type="number" min="0" max="4" value="0" inputmode="numeric" oninput="_recomputeCompatShimsTV()">
+              <button type="button" aria-label="Increase SDI Output qty" onclick="_stepInputQtyTV('f_outputSdiQty', +1)">+</button>
+            </div>
+          </div>
+          <div class="signal-row-note-tv signal-row-note-helper-tv">Max 4 (SDI 12G 4-OUT card)</div>
+        </div>
+
+        <!-- Audio Out Yes/No -->
+        <div class="signal-row-tv">
+          <div class="signal-row-label-tv">Audio Out needed?</div>
+          <div class="signal-row-qty-tv">
+            <div class="pill-group-tv" role="radiogroup" aria-label="Audio output needed">
+              <button type="button" class="pill-tv selected" data-pill-group="outputAudio" data-value="no" onclick="_selectPillTV('outputAudio','no'); _recomputeCompatShimsTV();" aria-pressed="true">No</button>
+              <button type="button" class="pill-tv" data-pill-group="outputAudio" data-value="yes" onclick="_selectPillTV('outputAudio','yes'); _recomputeCompatShimsTV();" aria-pressed="false">Yes</button>
+            </div>
+            <select id="f_outputAudio" style="display:none" aria-hidden="true" tabindex="-1">
+              <option value="no" selected>No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+          <div class="signal-row-note-tv signal-row-note-helper-tv">Same card as Audio In</div>
+        </div>
+      </div>
+
+      <div class="signal-card-footer-tv">
+        <span class="signal-card-footer-icon-tv">ⓘ</span>
+        Based on Qty selected, chassis Card to be selected Carefully. 1 audio card handles both inputs and outputs — only one card added regardless.
+      </div>
+
+      <!-- v25.80: HIDDEN COMPAT SHIMS — engine reads these old field IDs.
+           _recomputeCompatShimsTV() in JS module below syncs them from new visible fields. -->
+      <select id="f_outputType" onchange="onOutputTypeChange()" style="display:none" aria-hidden="true" tabindex="-1">
+        <option value="LED">Active LED Videowall</option>
+        <option value="Projector">Projector (count only)</option>
+        <option value="Mixed">Mixed (LED + Projector)</option>
+      </select>
+      <select id="f_outputSignal" onchange="onOutputSignalChange()" style="display:none" aria-hidden="true" tabindex="-1">
+        <option value="HDMI" selected>HDMI</option>
+        <option value="SDI">SDI</option>
+      </select>
+      <input id="f_sdiCount" type="hidden" value="0" aria-hidden="true">
+      <input id="f_projectorCount" type="hidden" value="0" aria-hidden="true">
+      <select id="f_projectorRes" style="display:none" aria-hidden="true" tabindex="-1">
+        <option value="4K" selected>4K (3840×2160)</option>
+        <option value="FHD">FHD (1920×1080)</option>
+      </select>
     </div>
 
     <div class="card form-section-tv" data-section="04" data-section-title="Technical Requirements">
@@ -7142,7 +7479,7 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
       <div id="formError" class="error-msg" style="margin-top: 14px;"></div>
       <div id="formInfo" class="info-msg" style="margin-top: 14px;"></div>
       <div class="btn-row">
-        <button class="primary" onclick="calculateAndLog()" id="calcBtn">Calculate & Log</button>
+        <button class="primary" onclick="calculateAndLog()" id="calcBtn">Generate BoM →</button>
         <button class="secondary" onclick="resetForm()">Reset</button>
       </div>
     </div>
@@ -7151,6 +7488,11 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
   <!-- RESULT -->
   <div id="resultView" class="page hidden">
     <h1 class="page-title">Recommendation & BOM</h1>
+    <!-- v25.80: Banner explains the rebuilt per-signal-type recommendation engine. -->
+    <div class="v25-80-engine-banner-tv" style="background:rgba(245,158,11,0.10); border:1px solid rgba(245,158,11,0.35); border-radius:8px; padding:12px 16px; margin:12px 0 20px; font-size:13px; line-height:1.5; color:var(--ink-soft,#E5E7EB);">
+      <strong style="color:#FCD34D;">ⓘ Recommendation logic rebuilt (v25.80):</strong>
+      Engine now handles per-signal-type inputs (HDMI 4K/FHD, SDI 12G/3G, HDBaseT, IP, Audio) and slot pairing rules per the official tvONE configurator. If a chassis or card seems off, contact Dipenkumar.
+    </div>
     <div id="recoOutput"></div>
     <!-- v25.49: Option B action bar — equal-width grid, single gold accent, only Confirm filled.
          Real brand SVG icons inline (no emoji — render identically across all platforms).
@@ -8397,7 +8739,8 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.79';  // v25.79 — Mobile compatibility hardening for tvONE Form (cards 01-04 + Calculate button). Scope: Android + iPhone standard widths (360-430px viewport) plus narrow phone (≤380px, folded Z Fold). Augments existing 640/380px breakpoints — does not replace them. CHANGES: (1) Help-icon tooltips now fire on tap via :focus + :active selectors (was :hover only — non-functional on touch). Bigger 22×22 tap target on touch devices. (2) Section-num pill shrinks 38→32→28px progressively to keep card titles legible. (3) Field labels allow wrap when req-asterisk + help-icon + label-meta + auto-badge exceed line. (4) Auto-calc Total Inputs readonly field shrinks to 17px, "auto" badge to 9px. (5) Primary Calculate button: full-width, min-52px tall, column-reverse so it's on top above Reset. (6) LED screen-block calc-readout wraps cleanly. (7) Choice cards: 28→24px icons on narrow screens, 12-14px padding. (8) Pill-group: 4-pill Budget Tier was previously wrapping awkwardly with flex — now 2×2 grid for clean stack. (9) Qty stepper: 48×48 −/+ buttons (was 44×44). (10) iOS zoom-on-focus prevention: all form inputs ≥16px font-size on mobile. (11) Page padding: 40px→16px→14px at progressively narrower widths to claim more space for content. (12) Save Draft resume banner stacks vertically with full-width Resume button. (13) Sales/Presales callout collapses to single column. Backend unchanged. Pairs with backend v26.15.0. NOTE: DARK/LIGHT theme audit performed alongside this ship — see THEME-AUDIT-tvone-v25.78.md for the 5 prioritized findings (Save Draft banner, Sales/Presales callout, Outcome Reason field, Profile Gate readonly, Total Ports color). User has not yet confirmed which to fix; theme fixes will go in v25.80 if approved.
+  const TVONE_FRONTEND_VERSION = '25.80';  // v25.80 — MAJOR REBUILD per user's handwritten Page 1 spec + 10 dry-run scenarios + 17 official tvONE configurator screenshots. PATH Y: form rebuild + engine fix together. CARD 02 REPLACED: was "Output Configuration" (LED/Projector/Mixed choice cards + SDI pill). Now "Input Block of Video Processor" — 7 signal-type rows (HDMI 4K, HDMI FHD, SDI 12G, SDI 3G, HDBaseT, IP Streaming, Audio In Yes/No). Each row: label + qty stepper (or pill for audio). Footer: "Ideally on load, quantity should be Zero." CARD 03 REPLACED: was "LED Screens · Resolution Calculator" (just screensContainer). Now "Output Block of Video Processor" — Display qty + 4K/FHD pill, Projector qty + 4K/FHD pill, Active LED Yes/No (default Yes, reveals existing screensContainer reused), SDI Output qty, Audio Out Yes/No. Footer: "Based on Qty selected, chassis Card to be selected Carefully. 1 audio card handles both inputs and outputs — only one card added." NEW FIELD IDS: f_inputHdmi4kQty/f_inputHdmiFhdQty/f_inputSdi12gQty/f_inputSdi3gQty/f_inputHdbtQty/f_inputIpQty/f_inputAudio + f_outputDisplayQty/f_outputDisplayRes/f_outputProjectorQty/f_outputProjectorRes/f_outputActiveLed/f_outputSdiQty/f_outputAudio. OLD FIELD IDS KEPT as HIDDEN compat shims (f_inputs, f_inputs4K, f_inputsFHD, f_signals, f_outputType, f_outputSignal, f_sdiCount, f_projectorCount, f_projectorRes). _recomputeCompatShimsTV() syncs them on every input change. SUBMIT BUTTON renamed "Calculate & Log" → "Generate BoM →" per user spec. RESULT PAGE BANNER added: "Recommendation logic rebuilt (v25.80): Engine now handles per-signal-type inputs and slot pairing rules per the official tvONE configurator." EDIT-EXISTING-DEAL: silent (no banner) — _reverseShimsTV() makes best-guess from old aggregate fields. ENGINE FIXES (Path Y included): (1) pickInputCards() REWRITTEN — old logic treated all inputs as homogeneous and wrongly allocated HDMI_4K_4IN when HDMI inputs fit native 8. New logic: HDMI fills native first (max 8), only HDMI overflow + non-HDMI signals (SDI/HDBT/IP/Audio) need cards. Slot packing respects HB-only (HDMI_4K_4IN, SDI_12G_4IN, AUDIO is LB-only) + cross-slot pairing rules. Surfaces unfittable cards as "NOT POSSIBLE in single chassis" concern with best-effort partial BoM per user spec. (2) SLOT11_ALLOWED_WHEN_SLOT12['MEDIA_4K_IN'] FIXED — removed SDI_3G_4IN per official configurator screenshot (img 9 of 2nd batch). Previously code allowed it, but tvONE configurator forbids the pair. (3) hdmiPortsNeeded now includes displayPorts (new Display qty field). NO CHANGES TO: backend / Submissions sheet schema, Excel export structure, Card 01 (Project Context), Card 04 (Tech Requirements / Notes), History display, Customer Directory, Edit/Delete/Audit, Stage transitions, v25.79 mobile + dark/light fixes, LED screensContainer logic (addScreen / removeLastScreen), section pill / sparkle / sticky progress bar. PRESERVES: all 14 Card 01 fields, all v25.79 visual styling, draft autosave, edit-existing flow (now via _reverseShimsTV). Pairs with backend v26.15.0. Plan doc: HANDOFF-tvone-v25.80-spec.md. Dry-run scenarios validated: 10 (1U pick, infeasibility flagging, mixed-signal feasibility, boundary 14 HDMI 4K, audio-forces-2U). Truth table source: 17 official tvONE configurator screenshots from user. Build session: 2026-05-12 evening.
+  // v25.79 — Mobile compatibility hardening for tvONE Form. Augments 640/380px breakpoints. Pairs with backend v26.15.0.
   // v25.78 — Action bar polish + name-suffix cleanup across all visible name displays. ACTION BAR (Card-04 result view 7-button bar Back/Confirm/Excel/PDF/WhatsApp/Email/Print): user reported the WhatsApp button label appearing truncated as "W..." with the native title-tooltip overlapping. Defensive CSS hardening on .ab2tv-btn (overflow:hidden, min-width:0) and .ab2tv-label (nowrap, ellipsis, max-width:100%); base font-size 11.5px → 11px. NAME-SUFFIX CLEANUP: (1) Excel "Issued by" was "fullName (username)" → fullName only. (2) Briefing tool user-picker was "fullName (role)" → fullName only. (3) Form Sales/Presales dropdown fallback was "⚠ (username)" → plain username.
   // v25.77 — Card 04 cleanup + auto-compute total inputs. TWO changes bundled. CHANGE 1 (Commercial subgroup removal): User feedback "remove these field, not required" pointing at the COMMERCIAL subgroup (Budget Tier + Deal Value INR). Visible UI removed entirely from Card 04. Hidden compatibility shim added. CHANGE 2 (Total Inputs auto-compute): User-requested invariant "total No of input port == No of 4K Input required + No of FHD input required". f_inputs is now readonly + auto-derived from f_inputs4K + f_inputsFHD. New JS module tvAutoTotalInputs_v25_77.
   // v25.76 — Icon set + SDI question refinements. (1) ICON SET REFRESH (user picked C/B/B from 3×3 preview): LED Videowall → Option C (9 separate tile rectangles in 3×3 grid, modular look — closest to real LED tile panels). Projector → Option B (front-facing body with prominent lens circle + lens dot + air intake detail). Mixed → Option B (vertical stack: big 3-cell LED panel on top + small projector + light cone on bottom). All SVGs use currentColor stroke so they pick up the choice-card-icon-tv color (muted grey at rest, bronze on hover, emerald when selected). (2) SDI QUESTION REWORDED: Label "Need SDI output?" → "Does your project require any SDI signal output?" (conversational question-style phrasing matches BS Direction C subtitle pattern). Pill button labels unchanged (No — HDMI only / Yes — SDI needed). aria-label on the pill-group-tv unchanged ("SDI output needed"). All schema, IDs, and handlers preserved. Backend unchanged. Pairs with backend v26.15.0.
@@ -8601,7 +8944,7 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
     'HDBASET_2IN':   ['HDBASET_2IN','HDMI_4K_2IN','MEDIA_4K_IN','AUDIO_2IN_4OUT'],
     'SDI_12G_4IN':   ['HDMI_4K_2IN','HDMI_2K_4IN','HDBASET_2IN','SDI_3G_4IN','MEDIA_4K_IN','AUDIO_2IN_4OUT'],
     'SDI_3G_4IN':    ['AUDIO_2IN_4OUT'],
-    'MEDIA_4K_IN':   ['HDMI_4K_2IN','HDBASET_2IN','SDI_3G_4IN','MEDIA_4K_IN','AUDIO_2IN_4OUT']
+    'MEDIA_4K_IN':   ['HDMI_4K_2IN','HDBASET_2IN','MEDIA_4K_IN','AUDIO_2IN_4OUT']  // v25.80 FIX: removed SDI_3G_4IN per official tvONE configurator
   };
   const PORT_CAPACITY_4K60 = 3840 * 2160; // 8,294,400
 
@@ -10392,56 +10735,140 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
   }
 
   function pickInputCards(extraInputsNeeded, input) {
-    // Up to TWO input slots (11 = LB, 12 = HB). Need to pick cards honoring slot constraints.
-    if (extraInputsNeeded <= 0) return [];
-    const picks = [];
-    let remaining4K = Math.max(0, (input.inputs4K || 0) - 0); // any extra 4K inputs not met by native
-    let remainingFHD = Math.max(0, (input.inputsFHD || 0) - 0);
-    let remainingOther = extraInputsNeeded - remaining4K - remainingFHD;
-    if (remainingOther < 0) remainingOther = 0;
-    const signals = input.signals || 'HDMI';
-    const needSDI = signals.indexOf('SDI') >= 0;
-    const needHDBT = signals.indexOf('HDBT') >= 0;
+    // v25.80 REWRITE: Old logic treated all inputs as homogeneous (HDMI_4K_4IN got picked
+    // whenever inputs4K > 0, regardless of whether those 4K inputs were HDMI native-fittable).
+    // Caught in dry-run scenario 3: HDMI 4K=4 + HDMI FHD=2 + SDI 3G=3 + IP=1 should pick
+    // SDI 3G + MEDIA cards (HDMI fits native 8). Old logic wrongly picked HDMI_4K_4IN.
+    //
+    // CORRECTED ALGORITHM:
+    //   1. HDMI inputs (4K + FHD) fill native ports first (max 8 on 2U).
+    //   2. HDMI overflow (>8) needs HDMI expansion cards.
+    //   3. SDI / HDBaseT / IP / Audio ALWAYS need cards (native is HDMI-only).
+    //   4. Pack into 2 slots (Slot 12 HB + Slot 11 LB) respecting slot + pairing constraints.
+    //
+    // Source of per-signal-type breakdown: window._tvInputBreakdownV2580 (set by
+    // _recomputeCompatShimsTV in v25.80 form module). Falls back to old aggregate logic
+    // if breakdown missing (e.g. very old deals before this version's _reverseShimsTV ran).
+    if (extraInputsNeeded <= 0 && !(window._tvInputBreakdownV2580 && window._tvInputBreakdownV2580.audioNeeded)) return [];
 
-    // Start by trying to allocate 4K HDMI inputs using HDMI_4K_4IN (HB slot) first, then HDMI_4K_2IN
-    let slot12 = null, slot11 = null;
-    let added = 0;
+    const bd = window._tvInputBreakdownV2580 || null;
 
-    if (remaining4K > 0) {
-      if (remaining4K >= 4) { slot12 = 'HDMI_4K_4IN'; added += 4; remaining4K -= 4; }
-      else if (remaining4K >= 2) { slot12 = 'HDMI_4K_2IN'; added += 2; remaining4K -= 2; }
-      else { slot12 = 'HDMI_4K_2IN'; added += 2; remaining4K = 0; }
-    } else if (remainingFHD > 0) {
-      slot12 = 'HDMI_2K_4IN'; added += 4; remainingFHD = Math.max(0, remainingFHD - 4);
-    } else if (needSDI && remainingOther > 0) {
-      slot12 = 'SDI_12G_4IN'; added += 4; remainingOther = Math.max(0, remainingOther - 4);
-    } else if (needHDBT && remainingOther > 0) {
-      slot12 = 'HDBASET_2IN'; added += 2; remainingOther = Math.max(0, remainingOther - 2);
-    } else if (remainingOther > 0) {
-      slot12 = 'HDMI_4K_2IN'; added += 2; remainingOther = Math.max(0, remainingOther - 2);
-    }
+    // Build a "cards needed" list from per-signal breakdown, or fall back to old logic
+    let cardsNeeded = []; // array of { sku, minPorts, hbOnly, lbOnly }
 
-    // Now pick Slot 11, respecting cross-slot pairing rules
-    const stillNeeded = extraInputsNeeded - added;
-    if (stillNeeded > 0) {
-      const allowed = SLOT11_ALLOWED_WHEN_SLOT12[slot12 || 'empty'] || [];
-      // Prefer matching type
-      const tryOrder = [];
-      if (remaining4K > 0) tryOrder.push('HDMI_4K_2IN');
-      if (remainingFHD > 0) tryOrder.push('HDMI_2K_4IN');
-      if (needSDI && remainingOther > 0) tryOrder.push('SDI_3G_4IN');
-      if (needHDBT && remainingOther > 0) tryOrder.push('HDBASET_2IN');
-      if (remainingOther > 0) tryOrder.push('HDMI_4K_2IN', 'HDMI_2K_4IN');
-      for (const candidate of tryOrder) {
-        if (allowed.indexOf(candidate) >= 0) {
-          slot11 = candidate;
-          break;
+    if (bd) {
+      // ─── Per-signal-type path (v25.80 native) ───
+      const hdmiTotal = (bd.hdmi4k || 0) + (bd.hdmiFhd || 0);
+      const NATIVE_HDMI = 8; // 2U has 8 native 4K-capable HDMI inputs
+      const hdmiOverflow = Math.max(0, hdmiTotal - NATIVE_HDMI);
+
+      // HDMI overflow → 4K cards (since native is 4K-capable, 4K cards are most flexible)
+      if (hdmiOverflow > 0) {
+        let remaining = hdmiOverflow;
+        if (remaining >= 4) {
+          cardsNeeded.push({ key: 'HDMI_4K_4IN', ports: 4, hbOnly: true });
+          remaining -= 4;
         }
+        while (remaining > 0) {
+          cardsNeeded.push({ key: 'HDMI_4K_2IN', ports: 2, hbOnly: false });
+          remaining -= 2;
+        }
+      }
+      // SDI 12G inputs → SDI_12G_4IN cards (HB-only, max 4 ports per card)
+      if ((bd.sdi12g || 0) > 0) {
+        let r = bd.sdi12g;
+        while (r > 0) { cardsNeeded.push({ key: 'SDI_12G_4IN', ports: 4, hbOnly: true }); r -= 4; }
+      }
+      // SDI 3G inputs → SDI_3G_4IN cards (either slot)
+      if ((bd.sdi3g || 0) > 0) {
+        let r = bd.sdi3g;
+        while (r > 0) { cardsNeeded.push({ key: 'SDI_3G_4IN', ports: 4, hbOnly: false }); r -= 4; }
+      }
+      // HDBaseT → HDBASET_2IN
+      if ((bd.hdbt || 0) > 0) {
+        let r = bd.hdbt;
+        while (r > 0) { cardsNeeded.push({ key: 'HDBASET_2IN', ports: 2, hbOnly: false }); r -= 2; }
+      }
+      // IP → MEDIA_4K_IN (1 port each)
+      if ((bd.ip || 0) > 0) {
+        let r = bd.ip;
+        while (r > 0) { cardsNeeded.push({ key: 'MEDIA_4K_IN', ports: 1, hbOnly: false }); r -= 1; }
+      }
+      // Audio → AUDIO_2IN_4OUT (LB only, 1 card max)
+      if (bd.audioNeeded) {
+        cardsNeeded.push({ key: 'AUDIO_2IN_4OUT', ports: 2, hbOnly: false, lbOnly: true });
+      }
+    } else {
+      // ─── Legacy aggregate-only path (fallback for very old deals) ───
+      let remaining4K = Math.max(0, input.inputs4K || 0);
+      let remainingFHD = Math.max(0, input.inputsFHD || 0);
+      let remainingOther = Math.max(0, extraInputsNeeded - remaining4K - remainingFHD);
+      const signals = input.signals || 'HDMI';
+      const needSDI = signals.indexOf('SDI') >= 0;
+      const needHDBT = signals.indexOf('HDBT') >= 0;
+      if (remaining4K > 0) {
+        if (remaining4K >= 4) { cardsNeeded.push({ key: 'HDMI_4K_4IN', ports: 4, hbOnly: true }); remaining4K -= 4; }
+        if (remaining4K > 0) { cardsNeeded.push({ key: 'HDMI_4K_2IN', ports: 2, hbOnly: false }); remaining4K = Math.max(0, remaining4K - 2); }
+      }
+      if (remainingFHD > 0) {
+        cardsNeeded.push({ key: 'HDMI_2K_4IN', ports: 4, hbOnly: false }); remainingFHD = Math.max(0, remainingFHD - 4);
+      }
+      if (needSDI && remainingOther > 0) {
+        cardsNeeded.push({ key: 'SDI_3G_4IN', ports: 4, hbOnly: false }); remainingOther = Math.max(0, remainingOther - 4);
+      }
+      if (needHDBT && remainingOther > 0) {
+        cardsNeeded.push({ key: 'HDBASET_2IN', ports: 2, hbOnly: false }); remainingOther = Math.max(0, remainingOther - 2);
       }
     }
 
-    if (slot12) picks.push({ card: INPUT_CARDS[slot12], qty: 1, slot: 'HB (Slot 12)' });
-    if (slot11) picks.push({ card: INPUT_CARDS[slot11], qty: 1, slot: 'LB (Slot 11)' });
+    if (cardsNeeded.length === 0) return [];
+
+    // ─── Pack into 2 slots (Slot 12 = HB, Slot 11 = LB) ───
+    // Greedy: HB-only and LB-only cards first (no choice), then flexible cards.
+    let slot12Key = null, slot11Key = null;
+
+    // Place HB-only cards first
+    for (let i = 0; i < cardsNeeded.length; i++) {
+      const c = cardsNeeded[i];
+      if (c.hbOnly && !slot12Key) { slot12Key = c.key; c._placed = true; break; }
+    }
+    // Place LB-only cards (audio)
+    for (let i = 0; i < cardsNeeded.length; i++) {
+      const c = cardsNeeded[i];
+      if (c.lbOnly && !c._placed && !slot11Key) { slot11Key = c.key; c._placed = true; break; }
+    }
+    // Place flexible cards into remaining slots, respecting pairing
+    const remaining = cardsNeeded.filter(function(c) { return !c._placed; });
+    for (let i = 0; i < remaining.length; i++) {
+      const c = remaining[i];
+      if (!slot12Key) {
+        // Try Slot 12 first (everything except LB-only fits here)
+        slot12Key = c.key;
+        c._placed = true;
+      } else if (!slot11Key) {
+        // Check pairing rule
+        const allowedInSlot11 = SLOT11_ALLOWED_WHEN_SLOT12[slot12Key] || [];
+        if (allowedInSlot11.indexOf(c.key) >= 0) {
+          slot11Key = c.key;
+          c._placed = true;
+        }
+        // If not allowed by pairing, leave _placed false → will be flagged unfittable below
+      }
+    }
+
+    const picks = [];
+    const unfittable = [];
+    if (slot12Key) picks.push({ card: INPUT_CARDS[slot12Key], qty: 1, slot: 'HB (Slot 12)' });
+    if (slot11Key) picks.push({ card: INPUT_CARDS[slot11Key], qty: 1, slot: 'LB (Slot 11)' });
+    cardsNeeded.forEach(function(c) {
+      if (!c._placed) unfittable.push(c);
+    });
+    if (unfittable.length > 0) {
+      // Surface as a concern via window flag — caller (recommend) reads this
+      window._v2580_unfittableCards = unfittable.map(function(c) { return c.key; });
+    } else {
+      window._v2580_unfittableCards = [];
+    }
     return picks;
   }
 
@@ -10456,7 +10883,10 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
     // Separate HDMI and SDI output accounting
     const userWantsSDI = (input.outputSignal === 'SDI');
     const sdiPortsNeeded = userWantsSDI ? (input.sdiCount || 0) : 0;
-    const hdmiPortsNeeded = ledPorts + projPorts;
+    // v25.80: Display qty (new field in Card 03) is added to HDMI port needs.
+    // Each Display = 1 HDMI output port regardless of resolution (4K or FHD downsamples on native 4K-capable port).
+    const displayPorts = (window._tvInputBreakdownV2580 && window._tvInputBreakdownV2580.displayQty) || 0;
+    const hdmiPortsNeeded = ledPorts + projPorts + displayPorts;
     const portsNeeded = hdmiPortsNeeded + sdiPortsNeeded;
     const inputsNeeded = input.inputs;
 
@@ -10536,21 +10966,29 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
       // HDMI ≤ 4 with no SDI → no output card, already handled (chassis only)
 
       // INPUT CARD SELECTION
+      // v25.80: Also pick cards when audio is needed OR per-signal breakdown has non-HDMI signals,
+      // even if inputsNeeded ≤ native 8 (since non-HDMI ALWAYS needs cards).
       const extraIn = Math.max(0, inputsNeeded - model.inputs);
-      if (extraIn > 0) {
+      const _bd = window._tvInputBreakdownV2580 || null;
+      const _audioNeeded = _bd && _bd.audioNeeded;
+      const _hasNonHdmi = _bd && ((_bd.sdi12g || 0) + (_bd.sdi3g || 0) + (_bd.hdbt || 0) + (_bd.ip || 0) > 0);
+      const _shouldPickCards = extraIn > 0 || _audioNeeded || _hasNonHdmi;
+      if (_shouldPickCards) {
         const inputCards = pickInputCards(extraIn, input);
         inputCards.forEach(ic => {
           bom.push({
             sku: ic.card.sku, description: ic.card.desc, qty: ic.qty,
-            notes: 'Input expansion — adds ' + (ic.qty * ic.card.ports) + ' × ' + ic.card.resolution + ' ' + ic.card.signal + ' port(s)'
+            notes: 'Input expansion — adds ' + (ic.qty * ic.card.ports) + ' × ' + ic.card.resolution + ' ' + ic.card.signal + ' port(s) [' + ic.slot + ']'
           });
         });
         if (inputCards.length > 0) {
-          const totalAdded = inputCards.reduce((a, ic) => a + (ic.qty * ic.card.ports), 0);
-          reasons.push(extraIn + ' extra input(s) → ' + inputCards.map(ic => ic.qty + '× ' + ic.card.sku).join(' + ') + ' (adds ' + totalAdded + ' ports)');
-          if (totalAdded < extraIn) {
-            concerns.push('Input cards add ' + totalAdded + ' port(s) but ' + extraIn + ' needed. Single chassis cannot cover this input count — multi-unit scenario may be required.');
-          }
+          reasons.push(inputCards.map(ic => ic.qty + '× ' + ic.card.sku + ' ' + ic.slot).join(' + '));
+        }
+        // v25.80: Surface unfittable cards as concerns
+        const _unfit = window._v2580_unfittableCards || [];
+        if (_unfit.length > 0) {
+          outputCardInfeasible = true;
+          concerns.push('⚠ NOT POSSIBLE in single chassis — ' + _unfit.length + ' card(s) cannot fit in remaining slots: ' + _unfit.join(', ') + '. Slot constraints (HB-only, LB-only, or cross-slot pairing rules) prevent fit. Multi-chassis scenario required.');
         }
       } else if (inputsNeeded > 0 && inputsNeeded <= model.inputs && (input.inputsFHD || 0) > 0) {
         // VALUE-ADD: Inputs fit within native 8 (no card needed) AND user asked for FHD inputs.
@@ -22287,6 +22725,281 @@ async function _renderPipelineTrend_tv() {
     document.addEventListener('DOMContentLoaded', _initV77);
   } else {
     setTimeout(_initV77, 110);  // defer past v25.69, v25.70, v25.74 init
+  }
+})();
+// ══════════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════════
+// v25.80 — Per-signal-type input/output form module
+// Adds:
+//   _stepInputQtyTV(id, delta) — qty stepper handler
+//   _onActiveLedToggleTV() — show/hide LED screens container
+//   _recomputeCompatShimsTV() — keep OLD field IDs in sync with NEW visible fields
+//   _reverseShimsTV() — for edit-existing-deal flow (silent best-guess)
+// ══════════════════════════════════════════════════════════════════════
+(function _tvOneV2580Module() {
+  'use strict';
+
+  // ───── qty stepper handler ─────────────────────────────────────────
+  window._stepInputQtyTV = function(id, delta) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const cur = parseInt(el.value || '0', 10) || 0;
+    const max = parseInt(el.max || '32', 10) || 32;
+    const min = parseInt(el.min || '0', 10) || 0;
+    const next = Math.max(min, Math.min(max, cur + delta));
+    el.value = String(next);
+    // Fire input event so any listeners (including _recomputeCompatShimsTV) react
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  // ───── Active LED toggle: show/hide screens container ──────────────
+  window._onActiveLedToggleTV = function() {
+    const sel = document.getElementById('f_outputActiveLed');
+    const wrap = document.getElementById('ledScreensWrap');
+    if (!sel || !wrap) return;
+    if (sel.value === 'yes') {
+      wrap.style.display = '';
+    } else {
+      wrap.style.display = 'none';
+    }
+  };
+
+  // ───── _recomputeCompatShimsTV — the heart of v25.80 ───────────────
+  // Reads NEW visible per-signal-type fields, writes OLD aggregate field IDs
+  // that the engine (buildRecommendation / recommend / pickInputCards) reads.
+  function _recomputeCompatShimsTV() {
+    // Read new visible inputs
+    const hdmi4k    = parseInt((document.getElementById('f_inputHdmi4kQty')   || {}).value || '0', 10) || 0;
+    const hdmiFhd   = parseInt((document.getElementById('f_inputHdmiFhdQty')  || {}).value || '0', 10) || 0;
+    const sdi12g    = parseInt((document.getElementById('f_inputSdi12gQty')   || {}).value || '0', 10) || 0;
+    const sdi3g     = parseInt((document.getElementById('f_inputSdi3gQty')    || {}).value || '0', 10) || 0;
+    const hdbt      = parseInt((document.getElementById('f_inputHdbtQty')     || {}).value || '0', 10) || 0;
+    const ip        = parseInt((document.getElementById('f_inputIpQty')       || {}).value || '0', 10) || 0;
+    const audioIn   = ((document.getElementById('f_inputAudio')    || {}).value === 'yes');
+
+    // Read new visible outputs
+    const dispQty   = parseInt((document.getElementById('f_outputDisplayQty')   || {}).value || '0', 10) || 0;
+    const dispRes   = (document.getElementById('f_outputDisplayRes')            || {}).value || '4K';
+    const projQty   = parseInt((document.getElementById('f_outputProjectorQty') || {}).value || '0', 10) || 0;
+    const projRes   = (document.getElementById('f_outputProjectorRes')          || {}).value || '4K';
+    const activeLed = ((document.getElementById('f_outputActiveLed')            || {}).value === 'yes');
+    const sdiOut    = parseInt((document.getElementById('f_outputSdiQty')       || {}).value || '0', 10) || 0;
+    const audioOut  = ((document.getElementById('f_outputAudio')   || {}).value === 'yes');
+
+    // ─── INPUTS aggregate (engine reads f_inputs, f_inputs4K, f_inputsFHD, f_signals) ───
+    const totalInputs = hdmi4k + hdmiFhd + sdi12g + sdi3g + hdbt + ip; // audio is separate (own card)
+    // Map per-signal to 4K/FHD aggregates: SDI 12G + HDBT count as 4K-class; SDI 3G as FHD-class.
+    // IP per user decision = NO BUCKET (not added to 4K or FHD totals; only adds to f_inputs).
+    const inputs4K = hdmi4k + sdi12g + hdbt;
+    const inputsFHD = hdmiFhd + sdi3g;
+    // Derive signals string for engine's pickInputCards logic
+    let signals = 'HDMI';
+    const hasHdmi = (hdmi4k + hdmiFhd) > 0;
+    const hasSdi  = (sdi12g + sdi3g) > 0;
+    const hasHdbt = hdbt > 0;
+    const hasIp   = ip > 0;
+    const nonHdmiCount = (hasSdi ? 1 : 0) + (hasHdbt ? 1 : 0) + (hasIp ? 1 : 0);
+    if (nonHdmiCount === 0 && hasHdmi) signals = 'HDMI';
+    else if (hasHdmi && hasSdi && !hasHdbt && !hasIp) signals = 'HDMI_SDI';
+    else if (hasHdmi && !hasSdi && hasHdbt && !hasIp) signals = 'HDMI_HDBT';
+    else if (hasHdmi && !hasSdi && !hasHdbt && hasIp) signals = 'HDMI_IP';
+    else if (nonHdmiCount > 1 || (!hasHdmi && nonHdmiCount > 0)) signals = 'MIXED';
+
+    // Write to hidden compat shims (engine reads these)
+    const inEl    = document.getElementById('f_inputs');
+    const in4kEl  = document.getElementById('f_inputs4K');
+    const inFhdEl = document.getElementById('f_inputsFHD');
+    const sigEl   = document.getElementById('f_signals');
+    if (inEl)    inEl.value    = String(totalInputs);
+    if (in4kEl)  in4kEl.value  = String(inputs4K);
+    if (inFhdEl) inFhdEl.value = String(inputsFHD);
+    if (sigEl)   sigEl.value   = signals;
+
+    // ─── OUTPUTS aggregate (engine reads f_outputType, f_outputSignal, f_sdiCount, f_projectorCount, f_projectorRes) ───
+    // Old output type enum: LED, Projector, Mixed
+    let outputType = 'LED';
+    if (activeLed && projQty > 0) outputType = 'Mixed';
+    else if (activeLed) outputType = 'LED';
+    else if (projQty > 0) outputType = 'Projector';
+    else outputType = 'LED'; // default when nothing — display-only would still pass through engine via LED path
+
+    const outputSignal = sdiOut > 0 ? 'SDI' : 'HDMI';
+
+    const otEl = document.getElementById('f_outputType');
+    const osEl = document.getElementById('f_outputSignal');
+    const sdcEl = document.getElementById('f_sdiCount');
+    const pcEl = document.getElementById('f_projectorCount');
+    const prEl = document.getElementById('f_projectorRes');
+    if (otEl) otEl.value = outputType;
+    if (osEl) osEl.value = outputSignal;
+    if (sdcEl) sdcEl.value = String(sdiOut);
+    if (pcEl) pcEl.value = String(projQty);
+    if (prEl) prEl.value = projRes;
+
+    // ─── Extra v25.80 fields stored on a global object the engine can read ───
+    // (engine fix in this same release uses these for accurate per-signal-type math)
+    window._tvInputBreakdownV2580 = {
+      hdmi4k: hdmi4k,
+      hdmiFhd: hdmiFhd,
+      sdi12g: sdi12g,
+      sdi3g: sdi3g,
+      hdbt: hdbt,
+      ip: ip,
+      audioIn: audioIn,
+      // outputs
+      displayQty: dispQty,
+      displayRes: dispRes,
+      projectorQty: projQty,
+      projectorRes: projRes,
+      activeLed: activeLed,
+      sdiOutQty: sdiOut,
+      audioOut: audioOut,
+      audioNeeded: audioIn || audioOut
+    };
+
+    // Trigger engine totals recompute (existing function in v25.79)
+    try { if (typeof window.updateTotals === 'function') window.updateTotals(); } catch (_) {}
+  }
+  window._recomputeCompatShimsTV = _recomputeCompatShimsTV;
+
+  // ───── _reverseShimsTV — for edit-existing-deal flow ───────────────
+  // When populateFormFromRow_ loads an old deal, only old aggregate fields get filled.
+  // This reverses the math approximately to fill the new visible per-signal-type fields.
+  function _reverseShimsTV() {
+    const inputs4K  = parseInt((document.getElementById('f_inputs4K')  || {}).value || '0', 10) || 0;
+    const inputsFHD = parseInt((document.getElementById('f_inputsFHD') || {}).value || '0', 10) || 0;
+    const signals   = (document.getElementById('f_signals') || {}).value || 'HDMI';
+    const outputType  = (document.getElementById('f_outputType')  || {}).value || 'LED';
+    const outputSignal= (document.getElementById('f_outputSignal')|| {}).value || 'HDMI';
+    const sdiCount    = parseInt((document.getElementById('f_sdiCount')      || {}).value || '0', 10) || 0;
+    const projCount   = parseInt((document.getElementById('f_projectorCount')|| {}).value || '0', 10) || 0;
+    const projRes     = (document.getElementById('f_projectorRes')|| {}).value || '4K';
+
+    // Reverse INPUT shims — best guess
+    const setIf = function(id, val) { const el = document.getElementById(id); if (el) el.value = String(val); };
+    // Default: assume all 4K = HDMI 4K and all FHD = HDMI FHD when signals=HDMI
+    let hdmi4k = inputs4K, hdmiFhd = inputsFHD, sdi12g = 0, sdi3g = 0, hdbt = 0, ip = 0;
+    if (signals === 'HDMI_SDI') {
+      // Split 4K bucket between HDMI 4K and SDI 12G; FHD between HDMI FHD and SDI 3G
+      // Best guess: half-half if both present (no further data)
+      sdi12g = Math.floor(inputs4K / 2);
+      hdmi4k = inputs4K - sdi12g;
+      sdi3g  = Math.floor(inputsFHD / 2);
+      hdmiFhd = inputsFHD - sdi3g;
+    } else if (signals === 'HDMI_HDBT') {
+      hdbt = Math.floor(inputs4K / 2);
+      hdmi4k = inputs4K - hdbt;
+      hdmiFhd = inputsFHD;
+    } else if (signals === 'HDMI_IP') {
+      ip = Math.floor(inputs4K / 4); // IP rare, conservative split
+      hdmi4k = inputs4K - ip;
+      hdmiFhd = inputsFHD;
+    } else if (signals === 'MIXED') {
+      // Distribute roughly evenly across non-HDMI signal types
+      const k = Math.floor(inputs4K / 4);
+      sdi12g = k; hdbt = k;
+      hdmi4k = inputs4K - 2 * k;
+      const f = Math.floor(inputsFHD / 2);
+      sdi3g = f;
+      hdmiFhd = inputsFHD - f;
+    }
+    // Else 'HDMI' — leave defaults
+
+    setIf('f_inputHdmi4kQty', hdmi4k);
+    setIf('f_inputHdmiFhdQty', hdmiFhd);
+    setIf('f_inputSdi12gQty', sdi12g);
+    setIf('f_inputSdi3gQty', sdi3g);
+    setIf('f_inputHdbtQty', hdbt);
+    setIf('f_inputIpQty', ip);
+
+    // Reverse OUTPUT shims
+    setIf('f_outputProjectorQty', projCount);
+    setIf('f_outputProjectorRes', projRes);
+    setIf('f_outputSdiQty', sdiCount);
+    // Display qty isn't recoverable from old data — leave at 0
+    setIf('f_outputDisplayQty', 0);
+    // Active LED: yes if outputType is LED or Mixed
+    const ledEl = document.getElementById('f_outputActiveLed');
+    if (ledEl) ledEl.value = (outputType === 'LED' || outputType === 'Mixed') ? 'yes' : 'no';
+    // Audio fields default to no for legacy deals (not stored before v25.80)
+
+    // Sync pill visuals with new select values
+    try {
+      ['outputDisplayRes', 'outputProjectorRes', 'outputActiveLed', 'inputAudio', 'outputAudio'].forEach(function(g) {
+        const el = document.getElementById('f_' + g.charAt(0).toUpperCase() + g.slice(1)) || document.getElementById('f_' + g);
+        if (!el) return;
+        if (typeof window._selectPillTV === 'function') {
+          window._selectPillTV(g, el.value);
+        }
+      });
+    } catch (_) {}
+
+    // Show/hide LED screens based on Active LED
+    try { _onActiveLedToggleTV(); } catch (_) {}
+    // Reflect compat shims with the new field values too (idempotent)
+    try { _recomputeCompatShimsTV(); } catch (_) {}
+  }
+  window._reverseShimsTV = _reverseShimsTV;
+
+  // ───── Init: run once after DOM ready + after other v25.x modules ──
+  function _init2580() {
+    // Initial compat shim compute (sets all hidden engine fields from defaults)
+    try { _recomputeCompatShimsTV(); } catch (_) {}
+    // Initial Active LED visibility (default Yes → screens visible)
+    try { _onActiveLedToggleTV(); } catch (_) {}
+  }
+
+  // Wrap resetForm so new fields go back to 0 + compat shims recompute
+  function _wrap2580() {
+    if (typeof window.resetForm === 'function' && !window._v2580_resetWrapped) {
+      window._v2580_resetWrapped = true;
+      const _origReset = window.resetForm;
+      window.resetForm = function() {
+        const r = _origReset.apply(this, arguments);
+        // Zero all new fields
+        ['f_inputHdmi4kQty','f_inputHdmiFhdQty','f_inputSdi12gQty','f_inputSdi3gQty',
+         'f_inputHdbtQty','f_inputIpQty','f_outputDisplayQty','f_outputProjectorQty','f_outputSdiQty'].forEach(function(id) {
+          const el = document.getElementById(id);
+          if (el) el.value = '0';
+        });
+        // Reset pill groups to defaults
+        try {
+          if (typeof window._selectPillTV === 'function') {
+            window._selectPillTV('inputAudio', 'no');
+            window._selectPillTV('outputAudio', 'no');
+            window._selectPillTV('outputActiveLed', 'yes');
+            window._selectPillTV('outputDisplayRes', '4K');
+            window._selectPillTV('outputProjectorRes', '4K');
+          }
+        } catch (_) {}
+        setTimeout(function() {
+          try { _recomputeCompatShimsTV(); } catch (_) {}
+          try { _onActiveLedToggleTV(); } catch (_) {}
+        }, 0);
+        return r;
+      };
+    }
+    // Wrap populateFormFromRow_ to call _reverseShimsTV after population (silent — no banner per user)
+    if (typeof window.populateFormFromRow_ === 'function' && !window._v2580_popWrapped) {
+      window._v2580_popWrapped = true;
+      const _origPop = window.populateFormFromRow_;
+      window.populateFormFromRow_ = function() {
+        const r = _origPop.apply(this, arguments);
+        setTimeout(function() {
+          try { _reverseShimsTV(); } catch (_) {}
+        }, 60);
+        return r;
+      };
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() { _wrap2580(); _init2580(); }, 130); // defer past v25.74/v25.77 inits
+    });
+  } else {
+    setTimeout(function() { _wrap2580(); _init2580(); }, 130);
   }
 })();
 // ══════════════════════════════════════════════════════════════════════
