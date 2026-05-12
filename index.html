@@ -5537,6 +5537,20 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
   line-height: 1.3;
   letter-spacing: -0.025em;
 }
+/* BS .section-sub ported — descriptive subtitle under section-title.
+   Added in v25.73 for Cards 02/03/04. Card 01 has no subtitle (matches BS section 01). */
+.section-sub-tv {
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-subtle, #94A3B8);
+  margin-top: 3px;
+  line-height: 1.45;
+  max-width: 640px;  /* keep subtitles readable; don't stretch to full card width */
+}
+[data-theme="dark"] .section-sub-tv {
+  color: var(--ink-subtle, #94A3B8);
+}
 
 /* BS .spec-grid ported. Same column behavior as tvONE's existing .grid
    (1fr 1fr two-col) but with BS-style spacious gaps (18px row × 24px col). */
@@ -6323,8 +6337,14 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
     </div>
 
     <div class="card form-section-tv" data-section="02" data-section-title="Output Configuration">
-      <div class="card-title"><span class="section-num-tv">02</span>Output Configuration</div>
-      <div class="grid">
+      <div class="section-head-tv">
+        <div class="section-num-tv">02</div>
+        <div class="section-head-text-tv">
+          <div class="section-title-tv">Output Configuration</div>
+          <div class="section-sub-tv">How will video reach the displays?</div>
+        </div>
+      </div>
+      <div class="spec-grid-tv two-col-tv">
         <div class="field"><label>Output type <span class="req">*</span></label>
           <select id="f_outputType" onchange="onOutputTypeChange()">
             <option value="LED">LED (direct-view)</option>
@@ -6357,8 +6377,13 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
     </div>
 
     <div class="card form-section-tv" id="ledCard" data-section="03" data-section-title="LED Screens">
-      <div class="card-title"><span class="section-num-tv">03</span>LED Screens · Resolution Calculator</div>
-      <div class="helper" style="margin-bottom:14px">Enter each screen's pixel resolution. Use the mm calculator below if only physical dimensions are known.</div>
+      <div class="section-head-tv">
+        <div class="section-num-tv">03</div>
+        <div class="section-head-text-tv">
+          <div class="section-title-tv">LED Screens · Resolution Calculator</div>
+          <div class="section-sub-tv">Enter each screen's pixel resolution. Use the mm calculator below if only physical dimensions are known.</div>
+        </div>
+      </div>
       <div id="screensContainer"></div>
       <div class="btn-row" style="margin-top:6px">
         <button class="secondary" onclick="addScreen()">+ Add Screen</button>
@@ -6373,8 +6398,14 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
     </div>
 
     <div class="card form-section-tv" data-section="04" data-section-title="Technical Requirements">
-      <div class="card-title"><span class="section-num-tv">04</span>Technical Requirements</div>
-      <div class="grid">
+      <div class="section-head-tv">
+        <div class="section-num-tv">04</div>
+        <div class="section-head-text-tv">
+          <div class="section-title-tv">Technical Requirements</div>
+          <div class="section-sub-tv">Video sources, signal preferences, and budget — used to size the chassis.</div>
+        </div>
+      </div>
+      <div class="spec-grid-tv two-col-tv">
         <div class="field"><label>Total video sources / inputs needed <span class="req">*</span></label>
           <input id="f_inputs" type="number" min="1" max="32" placeholder="e.g. 6" oninput="onInputsChange()">
           <div class="helper">Any video source — HDMI, SDI, HDBaseT, IP. 1200 max 6; 2200 max 8 native.</div>
@@ -7670,7 +7701,8 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.72';  // v25.72 — Project Context card visual port from BS. User-requested: "use same as BS has" for the Project Context section. Scope strictly limited to Card 1 (Project Context). Other form cards untouched. CHANGES: (1) HTML restructure of Card 1 header — replaced `<div class="card-title"><span class="section-num-tv">01</span>Project Context</div>` with BS-style pattern: `<div class="section-head-tv"><div class="section-num-tv">01</div><div class="section-head-text-tv"><div class="section-title-tv">Project Context</div></div></div>`. (2) HTML restructure of field grid — replaced `<div class="grid">` with `<div class="spec-grid-tv two-col-tv">` (BS naming convention). (3) CSS — ported BS's .section-head (flex, 16px gap), .section-num (38×38 vs prior 28×28 — bigger, more prominent), .section-title (24px serif, isolated class), .spec-grid (responsive auto-fit with .two-col-tv variant), and BS's spacious grid gaps (18px row × 24px col vs prior 16px). (4) Branding adapt — kept tvONE's slate→ink gradient on the section-num pill (BS uses indigo gradient — tvONE's palette is gold/emerald/slate so indigo would clash). When section completes, pill flips to a gold→emerald gradient with bigger ✓ overlay (22px vs prior 16px), more vibrant than v25.69's emerald-only state. (5) Field IDs and schema unchanged — Submissions sheet column names same, edit-existing-deal flow works unchanged. (6) v25.69 MH1 completion logic continues to function — _isSectionCompleteTV walks .field children inside the card same as before, data-section attribute preserved, data-section-complete state still fires. (7) Mobile responsive — section-head stacks pill above title at <640px, spec-grid collapses to single column. (8) Cards 02/03/04 (Output Configuration, LED Screens, Technical Requirements) still use the old .card-title + .grid pattern — they'll be ported separately if user requests. NO backend changes. Pairs with backend v26.15.0.
+  const TVONE_FRONTEND_VERSION = '25.73';  // v25.73 — BS section-head port extended to Cards 02, 03, 04 (Output Configuration, LED Screens, Technical Requirements). Completes the form-section visual makeover started in v25.72 for Card 01. ALL FOUR form cards now use the same BS-style pattern: section-head-tv wrapper with 38×38 section-num-tv pill + 24px serif section-title-tv + optional 13px section-sub-tv subtitle. CHANGES: (1) Card 02 (Output Configuration) — added section-sub copy "How will video reach the displays?"; grid changed from .grid to .spec-grid-tv.two-col-tv for BS-level breathing room. (2) Card 03 (LED Screens) — the helper text "Enter each screen's pixel resolution. Use the mm calculator below if only physical dimensions are known." that previously lived in a separate .helper div is now MOVED INSIDE the section-head as section-sub-tv. Tighter visual grouping with the title, matches BS pattern. No .spec-grid change needed (Card 03 doesn't use a grid — it has a screensContainer + btn-row + totals-strip). (3) Card 04 (Technical Requirements) — added section-sub copy "Video sources, signal preferences, and budget — used to size the chassis."; grid changed to .spec-grid-tv.two-col-tv. (4) NEW CSS: .section-sub-tv (13px Manrope, ink-subtle color, 3px margin-top under title, 640px max-width for readability). All v25.69 MH features (completion check, top progress, sparkle, a11y, validation hints), v25.70 CH features (number stepper, Quarterly Target card, 9th KPI tile), v25.71 hotfix (field-error chevron fix), and v25.72 Card 01 port preserved. NO backend changes. Pairs with backend v26.15.0.
+  // v25.72 — Project Context card visual port from BS. User-requested: "use same as BS has" for the Project Context section. Scope strictly limited to Card 1 (Project Context). Other form cards untouched. CHANGES: (1) HTML restructure of Card 1 header — replaced `<div class="card-title"><span class="section-num-tv">01</span>Project Context</div>` with BS-style pattern: `<div class="section-head-tv"><div class="section-num-tv">01</div><div class="section-head-text-tv"><div class="section-title-tv">Project Context</div></div></div>`. (2) HTML restructure of field grid — replaced `<div class="grid">` with `<div class="spec-grid-tv two-col-tv">` (BS naming convention). (3) CSS — ported BS's .section-head (flex, 16px gap), .section-num (38×38 vs prior 28×28 — bigger, more prominent), .section-title (24px serif, isolated class), .spec-grid (responsive auto-fit with .two-col-tv variant), and BS's spacious grid gaps (18px row × 24px col vs prior 16px). (4) Branding adapt — kept tvONE's slate→ink gradient on the section-num pill (BS uses indigo gradient — tvONE's palette is gold/emerald/slate so indigo would clash). When section completes, pill flips to a gold→emerald gradient with bigger ✓ overlay (22px vs prior 16px), more vibrant than v25.69's emerald-only state. (5) Field IDs and schema unchanged — Submissions sheet column names same, edit-existing-deal flow works unchanged. (6) v25.69 MH1 completion logic continues to function — _isSectionCompleteTV walks .field children inside the card same as before, data-section attribute preserved, data-section-complete state still fires. (7) Mobile responsive — section-head stacks pill above title at <640px, spec-grid collapses to single column. (8) Cards 02/03/04 (Output Configuration, LED Screens, Technical Requirements) still use the old .card-title + .grid pattern — they'll be ported separately if user requests. NO backend changes. Pairs with backend v26.15.0.
   // v25.71 — Hotfix: pre-existing tvONE light-theme CSS cascade bug fixed. Root cause: the .field-error rule at line ~2820 used `background: #FEF2F2 !important;` (shorthand) which expands to ALL background-* longhand properties with !important — including `background-image: none !important` and `background-repeat: repeat !important`. This collided with the `select:not(.vendor-select-native) { background-image: url(chevron) !important; background-repeat: no-repeat !important; }` rule at line ~5156, plus the `[data-theme="light"] select:not(.vendor-select-native) { background-image: url(chevron) !important; }` rule at line ~5175. Both groups had specificity (0,2,1) but the later rule (line 5175) won on source order — RESTORING the chevron image. Meanwhile the !important shorthand at 2820 still won on `background-repeat: repeat` due to its (0,2,1) specificity vs the parent's (0,1,1), so the chevron tiled. SYMPTOM: empty-form Calculate triggers .field-error class on all required selects → tiled gold chevrons across full select width instead of single chevron on right edge. FIX: one-line change — `background: #FEF2F2 !important` → `background-color: #FEF2F2 !important` (longhand). Now .field-error sets ONLY the pink-red background color and leaves background-image + background-repeat alone, so the chevron rules continue to apply correctly. SURFACED: Dipenkumar tested v25.70 MH5 validation hints by clicking Calculate on an empty form for the first time. Bug was latent in tvONE for many versions (verified present in v25.68 baseline). NOT a regression introduced by v25.69/v25.70. Pairs with backend v26.15.0 — no backend changes.
   // v25.70 — Direction C CAN-HAVE bundle (CH1, CH3) ported from BS. CH1 (C3 Number stepper): 5 form number inputs (f_sdiCount, f_projectorCount, f_inputs, f_inputs4K, f_inputsFHD) are JS-wrapped at runtime in a .qty-stepper-tv div with −/+ buttons that respect each input's min/max/step attrs. Buttons disable at the bounds. Fire input + change events so existing handlers (updateTotals, onInputsChange) still run. Skipped f_dealValueINR (step=1000 makes a stepper awkward UX — users type ₹4500000 directly). 44×44 mobile tap targets per WCAG 2.2. CH2 (C5 Animated section transitions) was already shipped in v25.69 via the .just-completed celebration pulse — no incremental work needed. CH3 (Quarterly Target): Super-only settings card injected into Team tab between Roster and Error Log, accepts ₹ values with K/L/Cr suffix parsing (5Cr · 75L · 500K · 50000000). Persisted to localStorage key 'tvone-cockpit-target-quarterly'. New 9th KPI tile "Target Progress" appears in Team Analytics when target is set — shows pct + bar (gradient gold→emerald). The KPI tile reads won-this-quarter from the rendered #v26-team-kpi-won textContent (parsed back to a number via _parseShortINR_TV) rather than recomputing from raw data, because tvONE's centralLog is module-local (not on window) and accessing it from an IIFE would require an invasive port. Acceptable trade-off: the won-this-quarter value is already authoritative there. Hooks into showView, bsv26_switchTab with bounded polling (12 tries × 250ms = ~3s) to handle async data load. CH4 (Stage funnel) was dropped from scope after verification — tvONE already shipped the full ECharts funnel + sidebar legend in v25.52. Pairs with backend v26.15.0 — no backend changes.
   // v25.69 — Direction C MUST-HAVE port from BS (MH1-MH5). Parity audit completed against BS v24.34.9: stage funnel, run-rate badge (CH3), tender specs, pricing, custom BOQ, vendor dropdown, XC OS, budget slider all marked N/A or already at parity. This bundle ports the form-completion UX. MH1 (M2): Section completion check-marks — green ✓ pill overlays the 01/02/03/04 section-num badge when all required fields in that card are filled. Card gets gold-tinted left stripe + "COMPLETE" pill at top-right. MH2 (M3): Top sticky progress indicator — "X of Y sections complete · NN%" with gradient fill bar, sticky to viewport top so it stays visible while scrolling through the form. Honors prefers-reduced-motion. MH3 (M6): Spring physics + sparkle — section pills bounce-pop into ✓ state, sparkle burst (8 gold dots fly out radially) on the moment a section flips to complete. Subtle hover/focus-within accent on cards (no lift — keeps daily-use rhythm). MH4 (C11): Accessibility audit — aria-required on all required form inputs, group role + aria-labelledby on each form-section card, role=main on formView, sr-only aria-live=polite region announces section-complete events to screen readers, ARIA progressbar wired with valuenow + dynamic aria-label. MH5 (C8): Validation hints — required field asterisks (.req) flip to green ✓ when the field is filled (live, no save needed). data-field-filled attribute set on .field for downstream styling. Section-completion check runs on every form input/change event (debounced 120ms for input, 30ms for change). LED card visibility (ledCard hides for Projector output) is respected — hidden sections don't count toward totals or get skipped during auto-scroll. Wraps showView and onOutputTypeChange to refresh completion state on view nav and output-type change. Pairs with backend v26.15.0 — no backend changes.
