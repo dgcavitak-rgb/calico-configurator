@@ -8739,7 +8739,9 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.80.1';  // v25.80.1 — HOTFIX for v25.80 production deploy errors. SYMPTOMS: Error log filled with "Cannot read properties of null (reading 'style')" / "Cannot set properties of null (setting 'textContent')" / "Cannot read properties of null (reading 'value')". User reported login landing on Team page with toast "Something glitched". ROOT CAUSE: When v25.80 rebuilt Card 02 and Card 03 with per-signal-type structure, it REMOVED several DOM elements (projectorCountField, projectorResField, sdiNote, sdiCountField, hdmi4kField, hdmiFhdField) that older legacy change-handler functions (onOutputTypeChange, onSignalsChange, onOutputSignalChange, onInputsChange) still try to access. The hidden compat shim selects (f_outputType, f_outputSignal, f_signals) still fire these handlers programmatically when _recomputeCompatShimsTV writes to .value (or when onchange fires from edit-existing flow). Each crash cascades through any caller in the same execution chain. FIX: Add null guards to 4 functions — onOutputTypeChange, onOutputSignalChange, onSignalsChange, onInputsChange. Each DOM element access wrapped in `if (el)` check. Update calls in catch blocks. NO functional changes — these handlers were never expected to find these elements after v25.80, the null-guard just makes them no-op gracefully. PRESERVES: all v25.80 functionality, engine fixes, compat shims, form rebuild. Pairs with backend v26.15.0.
+  const TVONE_FRONTEND_VERSION = '25.80.2';  // v25.80.2 — CRITICAL HOTFIX for blank-form-on-login crash after v25.80 deploy. EXACT CRASH SITE (from user's browser console): line 14951 — `document.getElementById('sdiNote').style.display = 'none'` inside resetForm(). Stack trace: HTMLButtonElement.onclick → startNewConfig (:10383) → window.resetForm (v25.74/v25.77/v25.80 wrappers) → resetForm core (:14951) → CRASH on null .style access. ROOT CAUSE: v25.80 Card 02 rebuild REMOVED sdiNote and sdiCountField DOM elements, but resetForm() (called every time user clicks "+ New Selection") still tries to access them. The crash halts form rendering → BLANK FORM. v25.80.1 hotfix patched the legacy change-handler functions but MISSED resetForm itself. FIX: null-guard EVERY DOM access in resetForm core (10 element lookups). Also added defensive null-guards to updateTotals and getProjectorLoad which are called downstream from initScreens → addScreen → updateTotals chain during form init. Each handler now no-ops gracefully if its target element is missing. ALL fixes are surgical — no functional changes, just defensive coding. PRESERVES: all v25.80 functionality (form rebuild, engine fix, compat shims). Tested against the user's exact reproduction (DevTools → console clear → click "+ New Selection"). Pairs with backend v26.15.0.
+  // v25.80.1 — Hotfix for legacy change-handler crashes (onOutputTypeChange/onSignalsChange/onOutputSignalChange/onInputsChange). MISSED the resetForm crash which v25.80.2 fixes.
+  // v25.80 — Form rebuild (Card 02 + Card 03 per-signal-type) + engine fix (pickInputCards rewrite). Pairs with backend v26.15.0.
   // v25.80 — Form rebuild (Card 02 + Card 03 per-signal-type) + engine fix (pickInputCards rewrite). Pairs with backend v26.15.0.
   // v25.79 — Mobile compatibility hardening for tvONE Form. Augments 640/380px breakpoints. Pairs with backend v26.15.0.
   // v25.78 — Action bar polish + name-suffix cleanup across all visible name displays. ACTION BAR (Card-04 result view 7-button bar Back/Confirm/Excel/PDF/WhatsApp/Email/Print): user reported the WhatsApp button label appearing truncated as "W..." with the native title-tooltip overlapping. Defensive CSS hardening on .ab2tv-btn (overflow:hidden, min-width:0) and .ab2tv-label (nowrap, ellipsis, max-width:100%); base font-size 11.5px → 11px. NAME-SUFFIX CLEANUP: (1) Excel "Issued by" was "fullName (username)" → fullName only. (2) Briefing tool user-picker was "fullName (role)" → fullName only. (3) Form Sales/Presales dropdown fallback was "⚠ (username)" → plain username.
@@ -10717,26 +10719,43 @@ body.light .signal-card-footer-tv {
   }
   function getProjectorLoad() {
     // Projector ports = count (1 port per projector, regardless of 4K/FHD)
-    const t = document.getElementById('f_outputType').value;
+    // v25.80.2: null-guard all DOM accesses
+    const otEl = document.getElementById('f_outputType');
+    if (!otEl) return { count: 0, resolution: null, ports: 0 };
+    const t = otEl.value;
     if (t !== 'Projector' && t !== 'Mixed') return { count: 0, resolution: null, ports: 0 };
-    const count = parseInt(document.getElementById('f_projectorCount').value) || 0;
-    const res = document.getElementById('f_projectorRes').value;
+    const pcEl = document.getElementById('f_projectorCount');
+    const prEl = document.getElementById('f_projectorRes');
+    const count = pcEl ? (parseInt(pcEl.value) || 0) : 0;
+    const res = prEl ? prEl.value : '4K';
     return { count: count, resolution: res, ports: count };
   }
   function updateTotals() {
-    const screens = collectScreens();
-    const ledTotalPixels = screens.reduce((a, s) => a + s.pixels, 0);
-    // Per-screen port math: ceiling each screen, then sum
-    const ledPorts = screens.reduce((a, s) => a + s.ports, 0);
-    const proj = getProjectorLoad();
-    const hdmiPorts = ledPorts + proj.ports;
-    const sdiRequired = document.getElementById('f_outputSignal').value === 'SDI';
-    const sdiPorts = sdiRequired ? (parseInt(document.getElementById('f_sdiCount').value) || 0) : 0;
+    // v25.80.2 HOTFIX: full null-guards. updateTotals runs from initScreens which fires
+    // during form init. Any null DOM access here would halt form rendering.
+    try {
+      const screens = collectScreens();
+      const ledTotalPixels = screens.reduce((a, s) => a + s.pixels, 0);
+      const ledPorts = screens.reduce((a, s) => a + s.ports, 0);
+      let projPorts = 0;
+      try { const p = getProjectorLoad(); if (p) projPorts = p.ports || 0; } catch (_) {}
+      const hdmiPorts = ledPorts + projPorts;
+      const osEl = document.getElementById('f_outputSignal');
+      const sdiRequired = !!(osEl && osEl.value === 'SDI');
+      const sdcEl = document.getElementById('f_sdiCount');
+      const sdiPorts = sdiRequired ? (parseInt((sdcEl && sdcEl.value) || '0', 10) || 0) : 0;
 
-    document.getElementById('tot_pixels').textContent = ledTotalPixels ? (ledTotalPixels/1e6).toFixed(2) + ' M' : '—';
-    document.getElementById('tot_led_ports').textContent = ledPorts || '—';
-    document.getElementById('tot_proj_ports').textContent = proj.ports || '—';
-    document.getElementById('tot_ports').textContent = sdiPorts > 0 ? hdmiPorts + ' HDMI + ' + sdiPorts + ' SDI' : hdmiPorts || '—';
+      const tpEl = document.getElementById('tot_pixels');
+      const tlEl = document.getElementById('tot_led_ports');
+      const tpoEl = document.getElementById('tot_proj_ports');
+      const ttEl = document.getElementById('tot_ports');
+      if (tpEl) tpEl.textContent = ledTotalPixels ? (ledTotalPixels/1e6).toFixed(2) + ' M' : '—';
+      if (tlEl) tlEl.textContent = ledPorts || '—';
+      if (tpoEl) tpoEl.textContent = projPorts || '—';
+      if (ttEl) ttEl.textContent = sdiPorts > 0 ? hdmiPorts + ' HDMI + ' + sdiPorts + ' SDI' : (hdmiPorts || '—');
+    } catch (e) {
+      console.warn('[v25.80.2] updateTotals deferred:', e && e.message);
+    }
   }
 
   // =================================================================
@@ -14946,19 +14965,26 @@ body.light .signal-card-footer-tv {
       if (typeof updateCloseMonthDisplay_tv === 'function') updateCloseMonthDisplay_tv();
       document.querySelectorAll('.closemonth-chip').forEach(function(c) { c.classList.remove('active'); });
     } catch (e) { /* picker not loaded yet — fine */ }
-    document.getElementById('f_outputType').value = 'LED';
-    document.getElementById('f_outputSignal').value = 'HDMI';
-    document.getElementById('sdiNote').style.display = 'none';
-    document.getElementById('sdiCountField').style.display = 'none';
-    document.getElementById('f_projectorRes').value = '4K';
-    document.getElementById('f_signals').value = 'HDMI';
-    document.getElementById('f_budget').value = 'mid';
-    onOutputTypeChange();
-    onSignalsChange();
-    initScreens();
-    document.getElementById('formError').classList.remove('show');
-    document.getElementById('formInfo').classList.remove('show');
-    document.getElementById('inputsWarn').style.display = 'none';
+    // v25.80.2 HOTFIX: null-guards on all resetForm DOM accesses.
+    // v25.80 removed sdiNote, sdiCountField when Card 02 was rebuilt with per-signal-type
+    // structure. resetForm() (called from startNewConfig on "+ New Selection" click)
+    // still tries to access them → null pointer → form rendering halts → BLANK FORM.
+    // Console trace from production deploy confirmed line 14951 (sdiNote.style.display)
+    // as the exact crash site. Stack: HTMLButtonElement.onclick → startNewConfig →
+    // resetForm → crash on line 14951.
+    const ot = document.getElementById('f_outputType'); if (ot) ot.value = 'LED';
+    const os = document.getElementById('f_outputSignal'); if (os) os.value = 'HDMI';
+    const sn = document.getElementById('sdiNote'); if (sn) sn.style.display = 'none';
+    const scf = document.getElementById('sdiCountField'); if (scf) scf.style.display = 'none';
+    const pr = document.getElementById('f_projectorRes'); if (pr) pr.value = '4K';
+    const sigs = document.getElementById('f_signals'); if (sigs) sigs.value = 'HDMI';
+    const bud = document.getElementById('f_budget'); if (bud) bud.value = 'mid';
+    try { onOutputTypeChange(); } catch (_) {}
+    try { onSignalsChange(); } catch (_) {}
+    try { initScreens(); } catch (_) {}
+    const fe = document.getElementById('formError'); if (fe) fe.classList.remove('show');
+    const fi = document.getElementById('formInfo'); if (fi) fi.classList.remove('show');
+    const iw = document.getElementById('inputsWarn'); if (iw) iw.style.display = 'none';
     // Clear any lingering red-border error states
     document.querySelectorAll('.field-error').forEach(function(n) { n.classList.remove('field-error'); });
     window.scrollTo({ top: 0, behavior: 'smooth' });
