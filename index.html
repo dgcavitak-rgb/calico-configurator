@@ -5825,6 +5825,52 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
   gap: 10px;
 }
 
+/* ===== v25.77: Auto-calculated readonly field (Total Inputs) ===== */
+.auto-calc-badge-tv {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  background: rgba(212, 175, 55, 0.14);
+  color: #B08D28;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+  font-family: 'Manrope', sans-serif;
+}
+[data-theme="dark"] .auto-calc-badge-tv {
+  background: rgba(212, 175, 55, 0.20);
+  color: #FFD466;
+}
+/* Total Inputs: read-only computed display.
+   Looks distinct from editable inputs — subtle gold tint, no caret, no hover lift. */
+#f_inputs[readonly] {
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.05), rgba(212, 175, 55, 0.02)) !important;
+  color: var(--ink, #0F172A) !important;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  font-size: 16px !important;
+  cursor: not-allowed !important;
+  -moz-appearance: textfield;
+}
+#f_inputs[readonly]::-webkit-outer-spin-button,
+#f_inputs[readonly]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+#f_inputs[readonly]:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15) !important;
+  border-color: rgba(212, 175, 55, 0.35) !important;
+}
+[data-theme="dark"] #f_inputs[readonly] {
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.08), rgba(15, 23, 42, 0.55)) !important;
+  color: var(--ink, #E5E7EB) !important;
+}
+
 /* BS .spec-grid ported. Same column behavior as tvONE's existing .grid
    (1fr 1fr two-col) but with BS-style spacious gaps (18px row × 24px col). */
 .spec-grid-tv {
@@ -6744,9 +6790,9 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
       <div class="field-subgroup-tv">
         <div class="field-subgroup-head-tv">Video Inputs</div>
         <div class="spec-grid-tv two-col-tv">
-          <div class="field"><label>Total video sources / inputs needed <span class="req">*</span></label>
-            <input id="f_inputs" type="number" min="1" max="32" placeholder="e.g. 6" oninput="onInputsChange()">
-            <div class="helper">Any video source — HDMI, SDI, HDBaseT, IP. 1200 max 6; 2200 max 8 native.</div>
+          <div class="field"><label>Total video sources / inputs needed <span class="req">*</span><span class="auto-calc-badge-tv" title="Sum of HDMI 4K + HDMI FHD entered below">auto</span></label>
+            <input id="f_inputs" type="number" min="1" max="32" placeholder="0" readonly tabindex="-1" oninput="onInputsChange()">
+            <div class="helper">Auto-calculated as <b>HDMI 4K + HDMI FHD</b>. 1200 supports max 6; 2200 supports max 8 native.</div>
           </div>
           <div class="field"><label>Primary signal types <span class="req">*</span></label>
             <select id="f_signals" onchange="onSignalsChange()">
@@ -6766,30 +6812,22 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
         </div>
       </div>
 
-      <div class="field-subgroup-tv">
-        <div class="field-subgroup-head-tv">Commercial</div>
-        <div class="spec-grid-tv two-col-tv">
-          <!-- v25.74: Budget tier as pill toggle (replaces dropdown). Hidden select retained. -->
-          <div class="field"><label>Budget tier</label>
-            <div class="pill-group-tv" role="radiogroup" aria-label="Budget tier">
-              <button type="button" class="pill-tv" data-pill-group="budget" data-value="entry" onclick="_selectPillTV('budget','entry')" aria-pressed="false">Entry</button>
-              <button type="button" class="pill-tv" data-pill-group="budget" data-value="mid" onclick="_selectPillTV('budget','mid')" aria-pressed="false">Mid</button>
-              <button type="button" class="pill-tv" data-pill-group="budget" data-value="premium" onclick="_selectPillTV('budget','premium')" aria-pressed="false">Premium</button>
-              <button type="button" class="pill-tv" data-pill-group="budget" data-value="open" onclick="_selectPillTV('budget','open')" aria-pressed="false">Open</button>
-            </div>
-            <select id="f_budget" style="display:none" aria-hidden="true">
-              <option value="entry">Entry</option>
-              <option value="mid" selected>Mid</option>
-              <option value="premium">Premium</option>
-              <option value="open">Open / Not a constraint</option>
-            </select>
-          </div>
-          <div class="field"><label>Deal Value (INR)<span style="font-size:10.5px;color:var(--ink-subtle);font-weight:400;margin-left:6px">estimated</span></label>
-            <input id="f_dealValueINR" type="number" min="0" step="1000" placeholder="e.g. 4500000" oninput="onDealValueChange()">
-            <div id="dealValueReadout" style="font-size:11.5px;color:var(--gold-bright);font-family:'JetBrains Mono',monospace;margin-top:4px;height:14px"></div>
-          </div>
-        </div>
-      </div>
+      <!-- v25.77: COMMERCIAL subgroup REMOVED from visible UI per user — "remove these field, not required".
+           Hidden compatibility shim retained below for backward-compat:
+           - f_budget defaults to 'open' (no chassis constraint) for new deals
+           - f_dealValueINR stays in DOM as a hidden input so populateFormFromRow_, submit, and
+             dashboard pipeline-value reads don't throw on missing element.
+           Existing deals' saved budget tier + deal value remain in the Submissions sheet but
+           are no longer surfaced or editable in the form. New deals submit budget=open,
+           dealValueINR=blank (0). To restore the visible UI, revert this patch and the
+           v25.74 Budget Tier pill conversion in the same block. -->
+      <select id="f_budget" style="display:none" aria-hidden="true" tabindex="-1">
+        <option value="entry">Entry</option>
+        <option value="mid">Mid</option>
+        <option value="premium">Premium</option>
+        <option value="open" selected>Open / Not a constraint</option>
+      </select>
+      <input id="f_dealValueINR" type="hidden" value="" aria-hidden="true">
 
       <div class="field-subgroup-tv">
         <div class="field-subgroup-head-tv">Notes</div>
@@ -8056,7 +8094,8 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.76';  // v25.76 — Icon set + SDI question refinements. (1) ICON SET REFRESH (user picked C/B/B from 3×3 preview): LED Videowall → Option C (9 separate tile rectangles in 3×3 grid, modular look — closest to real LED tile panels). Projector → Option B (front-facing body with prominent lens circle + lens dot + air intake detail). Mixed → Option B (vertical stack: big 3-cell LED panel on top + small projector + light cone on bottom). All SVGs use currentColor stroke so they pick up the choice-card-icon-tv color (muted grey at rest, bronze on hover, emerald when selected). (2) SDI QUESTION REWORDED: Label "Need SDI output?" → "Does your project require any SDI signal output?" (conversational question-style phrasing matches BS Direction C subtitle pattern). Pill button labels unchanged (No — HDMI only / Yes — SDI needed). aria-label on the pill-group-tv unchanged ("SDI output needed"). All schema, IDs, and handlers preserved. Backend unchanged. Pairs with backend v26.15.0.
+  const TVONE_FRONTEND_VERSION = '25.77';  // v25.77 — Card 04 cleanup + auto-compute total inputs. TWO changes bundled. CHANGE 1 (Commercial subgroup removal): User feedback "remove these field, not required" pointing at the COMMERCIAL subgroup (Budget Tier + Deal Value INR). Visible UI removed entirely from Card 04. Hidden compatibility shim added: <select id="f_budget"> defaults to "open" (no chassis constraint); <input id="f_dealValueINR" type="hidden" value=""> stays in DOM. Rationale for keeping shim: recommend() reads f_budget.value, submitForm reads f_dealValueINR.value, populateFormFromRow_ sets values via setVal('f_budget', …) — removing the elements would crash all three. With the shim: new deals submit budget=open and dealValueINR=0; existing deals' saved values remain in Submissions sheet but are no longer surfaced/editable in the form (open-existing populates the hidden elements silently). Dashboard pipeline-value sums + Quarterly Target progress will no longer see new deal contributions (since dealValueINR=0). User accepted these tradeoffs ("not required"). CHANGE 2 (Total Inputs auto-compute): User-requested invariant "total No of input port == No of 4K Input required + No of FHD input required". f_inputs is now readonly + auto-derived from f_inputs4K + f_inputsFHD. Removed f_inputs from v25.70 _STEPPER_INPUT_IDS (no longer needs −/+ buttons). New CSS: subtle gold-tinted background, mono-font 16px bold centered display, "auto" badge inline with the label. New JS module tvAutoTotalInputs_v25_77: _recomputeTotalInputsTV() sums the parsed integers and sets f_inputs.value, dispatching input+change events so onInputsChange() validation still runs. Wraps resetForm + populateFormFromRow_ + showView for re-sync after programmatic changes. onInputsChange validation logic untouched (sum will always equal total, so warn box stays hidden — clean). Backend unchanged. Pairs with backend v26.15.0.
+  // v25.76 — Icon set + SDI question refinements. (1) ICON SET REFRESH (user picked C/B/B from 3×3 preview): LED Videowall → Option C (9 separate tile rectangles in 3×3 grid, modular look — closest to real LED tile panels). Projector → Option B (front-facing body with prominent lens circle + lens dot + air intake detail). Mixed → Option B (vertical stack: big 3-cell LED panel on top + small projector + light cone on bottom). All SVGs use currentColor stroke so they pick up the choice-card-icon-tv color (muted grey at rest, bronze on hover, emerald when selected). (2) SDI QUESTION REWORDED: Label "Need SDI output?" → "Does your project require any SDI signal output?" (conversational question-style phrasing matches BS Direction C subtitle pattern). Pill button labels unchanged (No — HDMI only / Yes — SDI needed). aria-label on the pill-group-tv unchanged ("SDI output needed"). All schema, IDs, and handlers preserved. Backend unchanged. Pairs with backend v26.15.0.
   // v25.75 — Output type choice card refinements. (1) LED choice card renamed: title "LED" → "Active LED Videowall" (user-requested). Subtitle adjusted from "Direct-view LED screens" to "Direct-view LED panels" for consistency with the new title. Hidden select option text also updated to "Active LED Videowall" — value="LED" PRESERVED (data unchanged, recommendation engine still works). (2) All 3 output-type choice card icons converted from emoji to unified SVG icons (currentColor stroke, 32×32, scale with font). RATIONALE: mixed emoji + SVG looked broken; cross-platform emoji rendering inconsistent (🟥 looked different on Mac vs Windows vs Android). New icons: LED Videowall = 4×3 grid panel with monitor stand (recognizable as a videowall); Projector = lens + light cone projecting right; Mixed = small videowall top-left + small projector bottom-right combined. (3) Choice-card-icon-tv CSS rebuilt — default ink-soft stroke, hovers to bronze with subtle scale, selected state strokes emerald. Dark theme variant included. All existing functionality preserved: f_outputType value="LED"/"Projector"/"Mixed" unchanged, onOutputTypeChange handler untouched, edit-existing-deal flow works, submission unchanged. Pairs with backend v26.15.0.
   // v25.74 — Cards 02/03/04 visual overhaul (user-requested "complete makeover & you suggest"). CARD 02 (Output Configuration): (1) Output Type dropdown converted to 3 visual choice cards (LED · Projector · Mixed) with emoji icons + short descriptions. Selected state shows gold-emerald gradient border + animated ✓ badge top-right. Keyboard nav (arrow keys cycle within group, Enter/Space activates) for accessibility. Hidden <select id="f_outputType"> retained for compatibility with onOutputTypeChange handler, edit-existing-deal flow (populateFormFromRow_ sets select.value), and submit flow. (2) "Need SDI Output?" dropdown converted to 2-pill toggle (No · HDMI only / Yes · SDI needed). Hidden select retained. (3) Conditional fields (sdiCountField, projectorCountField, projectorResField) unchanged in position — appear in spec-grid below the new choice/pill controls when their trigger conditions met. CARD 03 (LED Screens): Pure visual polish on the .screen-block sub-cards — added gold-emerald left stripe accent, focus-within glow on the whole block, polished header layout, pill-style calc-readout pill (px count + port count) in gold tint. NO LOGIC CHANGES — addScreen/removeLastScreen/updateReadout/updateTotals all untouched. CARD 04 (Technical Requirements): (1) Fields split into 3 visual subgroups with .field-subgroup-tv headings: "Video Inputs" (total inputs + primary signal + HDMI 4K + HDMI FHD), "Commercial" (budget tier + deal value), "Notes" (technical/deployment notes textarea full-width). Subgroup headings styled as bronze uppercase with a fading underline divider for visual hierarchy. (2) Budget Tier dropdown converted to 4-pill toggle (Entry · Mid · Premium · Open). Hidden select retained. Primary Signal Types kept as dropdown (8+ combos — pills would clutter). NEW JS MODULE: _selectChoiceTV(group, value) and _selectPillTV(group, value) — both set hidden select.value, fire change event (triggers existing handlers), and update visual selected state. _syncAllChoiceControlsTV() reads hidden selects and syncs visuals — wraps window.resetForm + window.populateFormFromRow_ + window.showView so visuals stay in sync after programmatic .value changes (edit-existing flow). Backend unchanged. All field IDs (f_outputType, f_outputSignal, f_signals, f_inputs, f_inputs4K, f_inputsFHD, f_budget, f_dealValueINR, f_notes, f_sdiCount, f_projectorCount, f_projectorRes) preserved. v25.69-v25.73 features all preserved (section completion, top progress, sparkle, a11y, validation hints, number steppers, Quarterly Target, BS section-head pattern). Pairs with backend v26.15.0.
   // v25.73 — BS section-head port extended to Cards 02, 03, 04 (Output Configuration, LED Screens, Technical Requirements). Completes the form-section visual makeover started in v25.72 for Card 01. ALL FOUR form cards now use the same BS-style pattern: section-head-tv wrapper with 38×38 section-num-tv pill + 24px serif section-title-tv + optional 13px section-sub-tv subtitle. CHANGES: (1) Card 02 (Output Configuration) — added section-sub copy "How will video reach the displays?"; grid changed from .grid to .spec-grid-tv.two-col-tv for BS-level breathing room. (2) Card 03 (LED Screens) — the helper text "Enter each screen's pixel resolution. Use the mm calculator below if only physical dimensions are known." that previously lived in a separate .helper div is now MOVED INSIDE the section-head as section-sub-tv. Tighter visual grouping with the title, matches BS pattern. No .spec-grid change needed (Card 03 doesn't use a grid — it has a screensContainer + btn-row + totals-strip). (3) Card 04 (Technical Requirements) — added section-sub copy "Video sources, signal preferences, and budget — used to size the chassis."; grid changed to .spec-grid-tv.two-col-tv. (4) NEW CSS: .section-sub-tv (13px Manrope, ink-subtle color, 3px margin-top under title, 640px max-width for readability). All v25.69 MH features (completion check, top progress, sparkle, a11y, validation hints), v25.70 CH features (number stepper, Quarterly Target card, 9th KPI tile), v25.71 hotfix (field-error chevron fix), and v25.72 Card 01 port preserved. NO backend changes. Pairs with backend v26.15.0.
@@ -21371,7 +21410,7 @@ async function _renderPipelineTrend_tv() {
   'use strict';
 
   // ── CH1: Number stepper wrapping ────────────────────────────────────
-  const _STEPPER_INPUT_IDS = ['f_sdiCount', 'f_projectorCount', 'f_inputs', 'f_inputs4K', 'f_inputsFHD'];
+  const _STEPPER_INPUT_IDS = ['f_sdiCount', 'f_projectorCount', 'f_inputs4K', 'f_inputsFHD'];  // v25.77: removed 'f_inputs' — now auto-computed from 4K + FHD
 
   function _wireQtyStepperTV(inputId) {
     const inp = document.getElementById(inputId);
@@ -21841,6 +21880,105 @@ async function _renderPipelineTrend_tv() {
   } else {
     // Defer so v25.70 module wires first (showView wrapping order matters)
     setTimeout(_initV74, 80);
+  }
+})();
+// ══════════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════════
+// v25.77 — Total Inputs auto-compute module
+// User-requested: Total video sources = HDMI 4K + HDMI FHD (always).
+// f_inputs is now READONLY (set in HTML) — derived from f_inputs4K + f_inputsFHD.
+// Listeners on the two breakdown inputs fire a recompute that:
+//   1. Sums the parsed integers
+//   2. Sets f_inputs.value to the sum (or '' when both are empty)
+//   3. Dispatches input + change events on f_inputs so onInputsChange() runs
+//      and downstream validation (warn box) updates
+// Sync runs once on init + on every form reset + after edit-existing populates.
+// ══════════════════════════════════════════════════════════════════════
+(function tvAutoTotalInputs_v25_77() {
+  'use strict';
+
+  function _recomputeTotalInputsTV() {
+    const a = document.getElementById('f_inputs4K');
+    const b = document.getElementById('f_inputsFHD');
+    const t = document.getElementById('f_inputs');
+    if (!t) return;
+    const rawA = a ? String(a.value || '').trim() : '';
+    const rawB = b ? String(b.value || '').trim() : '';
+    const inA = parseInt(rawA, 10);
+    const inB = parseInt(rawB, 10);
+    const validA = !isNaN(inA) && inA >= 0;
+    const validB = !isNaN(inB) && inB >= 0;
+    let nextVal;
+    if (!validA && !validB) {
+      nextVal = '';  // both empty → blank total
+    } else {
+      nextVal = String((validA ? inA : 0) + (validB ? inB : 0));
+    }
+    if (String(t.value) === nextVal) return;
+    t.value = nextVal;
+    // Fire events so existing handlers run (onInputsChange validates the sum)
+    try { t.dispatchEvent(new Event('input', { bubbles: true })); } catch (_) {}
+    try { t.dispatchEvent(new Event('change', { bubbles: true })); } catch (_) {}
+  }
+  window._recomputeTotalInputsTV = _recomputeTotalInputsTV;
+
+  function _initAutoTotalTV() {
+    const a = document.getElementById('f_inputs4K');
+    const b = document.getElementById('f_inputsFHD');
+    if (a && !a.dataset.tvAutoTotalWired) {
+      a.dataset.tvAutoTotalWired = '1';
+      a.addEventListener('input', _recomputeTotalInputsTV);
+      a.addEventListener('change', _recomputeTotalInputsTV);
+    }
+    if (b && !b.dataset.tvAutoTotalWired) {
+      b.dataset.tvAutoTotalWired = '1';
+      b.addEventListener('input', _recomputeTotalInputsTV);
+      b.addEventListener('change', _recomputeTotalInputsTV);
+    }
+    // Initial sync (handles page-load + edit-existing pre-populated 4K/FHD values)
+    _recomputeTotalInputsTV();
+  }
+
+  // Wrap resetForm + populateFormFromRow_ + showView for re-sync after programmatic changes
+  function _wrapForAutoTotalSync() {
+    if (typeof window.resetForm === 'function' && !window._tvAutoTotalv2577_resetWrapped) {
+      window._tvAutoTotalv2577_resetWrapped = true;
+      const _origReset = window.resetForm;
+      window.resetForm = function() {
+        const r = _origReset.apply(this, arguments);
+        setTimeout(_recomputeTotalInputsTV, 5);
+        return r;
+      };
+    }
+    if (typeof window.populateFormFromRow_ === 'function' && !window._tvAutoTotalv2577_populateWrapped) {
+      window._tvAutoTotalv2577_populateWrapped = true;
+      const _origPop = window.populateFormFromRow_;
+      window.populateFormFromRow_ = function() {
+        const r = _origPop.apply(this, arguments);
+        setTimeout(_recomputeTotalInputsTV, 5);
+        return r;
+      };
+    }
+    if (typeof window.showView === 'function' && !window._tvAutoTotalv2577_showViewWrapped) {
+      window._tvAutoTotalv2577_showViewWrapped = true;
+      const _origSV = window.showView;
+      window.showView = function(v) {
+        const r = _origSV.apply(this, arguments);
+        if (v === 'form') setTimeout(_recomputeTotalInputsTV, 50);
+        return r;
+      };
+    }
+  }
+
+  function _initV77() {
+    try { _initAutoTotalTV(); } catch (_) {}
+    try { _wrapForAutoTotalSync(); } catch (_) {}
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _initV77);
+  } else {
+    setTimeout(_initV77, 110);  // defer past v25.69, v25.70, v25.74 init
   }
 })();
 // ══════════════════════════════════════════════════════════════════════
