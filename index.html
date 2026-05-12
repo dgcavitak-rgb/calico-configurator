@@ -7263,10 +7263,7 @@ body.light .signal-card-footer-tv {
         </div>
       </div>
 
-      <div class="signal-card-footer-tv">
-        <span class="signal-card-footer-icon-tv">ⓘ</span>
-        Ideally on load, quantity should be Zero. Add only what the project needs.
-      </div>
+      <!-- v25.80.5: Card 02 footer removed per user spec. -->
     </div>
 
     <!-- v25.80: Card 03 REPLACED per user's handwritten spec.
@@ -7393,10 +7390,7 @@ body.light .signal-card-footer-tv {
         </div>
       </div>
 
-      <div class="signal-card-footer-tv">
-        <span class="signal-card-footer-icon-tv">ⓘ</span>
-        Based on Qty selected, chassis Card to be selected Carefully. 1 audio card handles both inputs and outputs — only one card added regardless.
-      </div>
+      <!-- v25.80.5: Card 03 footer removed per user spec. -->
 
       <!-- v25.80: HIDDEN COMPAT SHIMS — engine reads these old field IDs.
            _recomputeCompatShimsTV() in JS module below syncs them from new visible fields. -->
@@ -7415,73 +7409,44 @@ body.light .signal-card-footer-tv {
         <option value="4K" selected>4K (3840×2160)</option>
         <option value="FHD">FHD (1920×1080)</option>
       </select>
+
+      <!-- v25.80.4: Action buttons + error/info displays moved here from old Card 04.
+           Card 04 (Technical Requirements) was removed entirely per user spec — those fields
+           were duplicates of Card 02's per-signal-type inputs. Notes textarea is preserved
+           as a hidden input below (engine still reads f_notes in submit payload). -->
+      <div id="inputsWarn" class="warn-box" style="display:none; margin-top:18px"></div>
+      <div id="formError" class="error-msg" style="margin-top: 14px;"></div>
+      <div id="formInfo" class="info-msg" style="margin-top: 14px;"></div>
+      <div class="btn-row" style="margin-top:18px">
+        <button class="primary" onclick="calculateAndLog()" id="calcBtn">Generate BoM →</button>
+        <button class="secondary" onclick="resetForm()">Reset</button>
+      </div>
     </div>
 
-    <div class="card form-section-tv" data-section="04" data-section-title="Technical Requirements">
-      <div class="section-head-tv">
-        <div class="section-num-tv">04</div>
-        <div class="section-head-text-tv">
-          <div class="section-title-tv">Technical Requirements</div>
-          <div class="section-sub-tv">Video sources, signal preferences, and budget — used to size the chassis.</div>
-        </div>
-      </div>
-
-      <!-- v25.74: Three visual subgroups within the card. -->
-      <div class="field-subgroup-tv">
-        <div class="field-subgroup-head-tv">Video Inputs</div>
-        <div class="spec-grid-tv two-col-tv">
-          <div class="field"><label>Total video sources / inputs needed <span class="req">*</span><span class="auto-calc-badge-tv" title="Sum of HDMI 4K + HDMI FHD entered below">auto</span></label>
-            <input id="f_inputs" type="number" min="1" max="32" placeholder="0" readonly tabindex="-1" oninput="onInputsChange()">
-            <div class="helper">Auto-calculated as <b>HDMI 4K + HDMI FHD</b>. 1200 supports max 6; 2200 supports max 8 native.</div>
-          </div>
-          <div class="field"><label>Primary signal types <span class="req">*</span></label>
-            <select id="f_signals" onchange="onSignalsChange()">
-              <option value="HDMI">HDMI only</option>
-              <option value="HDMI_SDI">HDMI + SDI</option>
-              <option value="HDMI_HDBT">HDMI + HDBaseT</option>
-              <option value="HDMI_IP">HDMI + IP streaming</option>
-              <option value="MIXED">Multiple types</option>
-            </select>
-          </div>
-          <div class="field" id="hdmi4kField"><label>HDMI Inputs @ 4K</label>
-            <input id="f_inputs4K" type="number" min="0" placeholder="e.g. 2" oninput="onInputsChange()">
-          </div>
-          <div class="field" id="hdmiFhdField"><label>HDMI Inputs @ FHD</label>
-            <input id="f_inputsFHD" type="number" min="0" placeholder="e.g. 4" oninput="onInputsChange()">
-          </div>
-        </div>
-      </div>
-
-      <!-- v25.77: COMMERCIAL subgroup REMOVED from visible UI per user — "remove these field, not required".
-           Hidden compatibility shim retained below for backward-compat:
-           - f_budget defaults to 'open' (no chassis constraint) for new deals
-           - f_dealValueINR stays in DOM as a hidden input so populateFormFromRow_, submit, and
-             dashboard pipeline-value reads don't throw on missing element.
-           Existing deals' saved budget tier + deal value remain in the Submissions sheet but
-           are no longer surfaced or editable in the form. New deals submit budget=open,
-           dealValueINR=blank (0). To restore the visible UI, revert this patch and the
-           v25.74 Budget Tier pill conversion in the same block. -->
-      <select id="f_budget" style="display:none" aria-hidden="true" tabindex="-1">
+    <!-- v25.80.4: Card 04 (Technical Requirements) DELETED per user spec.
+         Old fields (Total inputs, Signal types, HDMI 4K, HDMI FHD) were duplicates of Card 02's
+         per-signal-type rows now. Notes textarea + Budget + DealValue kept as HIDDEN compat
+         inputs below so engine + submit payload + edit-existing-deal flow keep working without
+         field-missing crashes. _recomputeCompatShimsTV() continues to populate f_inputs etc. -->
+    <div id="card04CompatShim" style="display:none" aria-hidden="true">
+      <input id="f_inputs" type="hidden" value="0">
+      <input id="f_inputs4K" type="hidden" value="0">
+      <input id="f_inputsFHD" type="hidden" value="0">
+      <select id="f_signals">
+        <option value="HDMI" selected>HDMI only</option>
+        <option value="HDMI_SDI">HDMI + SDI</option>
+        <option value="HDMI_HDBT">HDMI + HDBaseT</option>
+        <option value="HDMI_IP">HDMI + IP streaming</option>
+        <option value="MIXED">Multiple types</option>
+      </select>
+      <select id="f_budget">
         <option value="entry">Entry</option>
         <option value="mid">Mid</option>
         <option value="premium">Premium</option>
         <option value="open" selected>Open / Not a constraint</option>
       </select>
-      <input id="f_dealValueINR" type="hidden" value="" aria-hidden="true">
-
-      <div class="field-subgroup-tv">
-        <div class="field-subgroup-head-tv">Notes</div>
-        <div class="field full"><label>Technical / Deployment notes</label>
-          <textarea id="f_notes" placeholder="HDR requirements, layout details, reference installs, 8K sources, audio handling, etc."></textarea>
-        </div>
-      </div>
-      <div id="inputsWarn" class="warn-box" style="display:none; margin-top:10px"></div>
-      <div id="formError" class="error-msg" style="margin-top: 14px;"></div>
-      <div id="formInfo" class="info-msg" style="margin-top: 14px;"></div>
-      <div class="btn-row">
-        <button class="primary" onclick="calculateAndLog()" id="calcBtn">Generate BoM →</button>
-        <button class="secondary" onclick="resetForm()">Reset</button>
-      </div>
+      <input id="f_dealValueINR" type="hidden" value="">
+      <textarea id="f_notes" placeholder="HDR requirements, layout details, reference installs, 8K sources, audio handling, etc."></textarea>
     </div>
   </div>
 
@@ -8739,7 +8704,16 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.80.3';  // v25.80.3 — HOTFIX for pill toggles not selecting in Card 02/03. SYMPTOM: User clicks FHD pill on Display row → nothing happens (4K stays selected). Same for Projector FHD, Active LED No, Audio In/Out Yes/No pills. ROOT CAUSE: Click handler _selectPillTV(group, value) looks up the hidden select element via _GROUP_TO_SELECT mapping. v25.80 added 5 NEW pill groups (outputDisplayRes, outputProjectorRes, outputActiveLed, inputAudio, outputAudio) but did NOT register them in _GROUP_TO_SELECT — that mapping only knew about 3 legacy groups (outputType, outputSignal, budget). When user clicked a new pill: lookup returned undefined → getElementById(undefined) returned null → `if (!sel) return;` → silent no-op. Hidden select never updated. FIX: Add the 5 missing groups to _GROUP_TO_SELECT. Also extend _syncAllControlsTV() to call _syncOneGroupTV() for the new groups so initial visual state (selected pill highlight) matches hidden select defaults after page load / resetForm / edit-existing-deal. NO functional changes elsewhere. PRESERVES: all v25.80/v25.80.1/v25.80.2 fixes. Pairs with backend v26.15.0.
+  const TVONE_FRONTEND_VERSION = '25.80.5';  // v25.80.5 — Tiny cleanup per user feedback. Both Card 02 and Card 03 footer notes removed: (a) Card 02 footer "Ideally on load, quantity should be Zero. Add only what the project needs." removed. (b) Card 03 footer "Based on Qty selected, chassis Card to be selected Carefully. 1 audio card handles both inputs and outputs — only one card added regardless." removed. User said both not required. NO functional changes. Form is now even cleaner — Card 02 ends right after the Audio In row; Card 03 ends right after the Audio Out row before the action buttons. PRESERVES: all v25.80/v25.80.1/v25.80.2/v25.80.3/v25.80.4 fixes. Pairs with backend v26.15.0.
+  // v25.80.4 — Card 04 (Tech Reqs) removed entirely. Buttons moved to Card 03.
+  // v25.80.3 — Hotfix: register new pill groups in _GROUP_TO_SELECT.
+  // v25.80.2 — Critical hotfix for blank-form (resetForm null-pointer).
+  // v25.80.1 — Hotfix for legacy change-handler crashes.
+  // v25.80 — Form rebuild + engine fix.
+  // v25.80.3 — Hotfix: register new pill groups in _GROUP_TO_SELECT so FHD/No/Yes toggles actually work.
+  // v25.80.2 — Critical hotfix for blank-form-on-login (resetForm null-pointer crash on line 14951 sdiNote.style).
+  // v25.80.1 — Hotfix for legacy change-handler crashes.
+  // v25.80 — Form rebuild + engine fix. Pairs with backend v26.15.0.
   // v25.80.2 — Critical hotfix for blank-form-on-login (resetForm null-pointer crash on line 14951 sdiNote.style).
   // v25.80.1 — Hotfix for legacy change-handler crashes (onOutputTypeChange / onSignalsChange / onOutputSignalChange / onInputsChange).
   // v25.80 — Form rebuild (Card 02 + Card 03 per-signal-type) + engine fix (pickInputCards rewrite). Pairs with backend v26.15.0.
