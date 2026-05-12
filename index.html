@@ -1002,10 +1002,13 @@
     padding:10px 6px;
     min-height:64px;
     font-family:'Manrope',sans-serif;
-    font-size:11.5px;line-height:1.2;font-weight:600;letter-spacing:0.01em;
+    font-size:11px;line-height:1.2;font-weight:600;letter-spacing:0.01em;
     cursor:pointer;
     transition:all 140ms;
     text-align:center;
+    /* v25.78: prevent layout overflow so a long label ("WhatsApp") never gets clipped by tooltip or pushed out */
+    overflow:hidden;
+    min-width:0;
   }
   .ab2tv-btn:hover{
     background:rgba(212, 175, 55, 0.10);
@@ -1015,7 +1018,14 @@
   .ab2tv-btn:active{transform:translateY(0);}
   .ab2tv-btn:disabled{opacity:0.55;cursor:not-allowed;transform:none;}
   .ab2tv-btn .ab2tv-ic{ width:20px;height:20px;display:block;flex-shrink:0; }
-  .ab2tv-btn .ab2tv-label{display:block;}
+  .ab2tv-btn .ab2tv-label{
+    display:block;
+    /* v25.78: keep label on one line, ellipsis on overflow rather than breaking layout */
+    max-width:100%;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
   .ab2tv-btn.is-back{
     color:var(--ink-soft);
     border-color:var(--line-softer);
@@ -8094,7 +8104,8 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.77';  // v25.77 — Card 04 cleanup + auto-compute total inputs. TWO changes bundled. CHANGE 1 (Commercial subgroup removal): User feedback "remove these field, not required" pointing at the COMMERCIAL subgroup (Budget Tier + Deal Value INR). Visible UI removed entirely from Card 04. Hidden compatibility shim added: <select id="f_budget"> defaults to "open" (no chassis constraint); <input id="f_dealValueINR" type="hidden" value=""> stays in DOM. Rationale for keeping shim: recommend() reads f_budget.value, submitForm reads f_dealValueINR.value, populateFormFromRow_ sets values via setVal('f_budget', …) — removing the elements would crash all three. With the shim: new deals submit budget=open and dealValueINR=0; existing deals' saved values remain in Submissions sheet but are no longer surfaced/editable in the form (open-existing populates the hidden elements silently). Dashboard pipeline-value sums + Quarterly Target progress will no longer see new deal contributions (since dealValueINR=0). User accepted these tradeoffs ("not required"). CHANGE 2 (Total Inputs auto-compute): User-requested invariant "total No of input port == No of 4K Input required + No of FHD input required". f_inputs is now readonly + auto-derived from f_inputs4K + f_inputsFHD. Removed f_inputs from v25.70 _STEPPER_INPUT_IDS (no longer needs −/+ buttons). New CSS: subtle gold-tinted background, mono-font 16px bold centered display, "auto" badge inline with the label. New JS module tvAutoTotalInputs_v25_77: _recomputeTotalInputsTV() sums the parsed integers and sets f_inputs.value, dispatching input+change events so onInputsChange() validation still runs. Wraps resetForm + populateFormFromRow_ + showView for re-sync after programmatic changes. onInputsChange validation logic untouched (sum will always equal total, so warn box stays hidden — clean). Backend unchanged. Pairs with backend v26.15.0.
+  const TVONE_FRONTEND_VERSION = '25.78';  // v25.78 — Action bar polish + name-suffix cleanup across all visible name displays. ACTION BAR (Card-04 result view 7-button bar Back/Confirm/Excel/PDF/WhatsApp/Email/Print): user reported the WhatsApp button label appearing truncated as "W..." with the native title-tooltip overlapping. Defensive CSS hardening: .ab2tv-btn now has overflow:hidden + min-width:0 so flex math doesn't push labels out of the column; .ab2tv-label gets white-space:nowrap + overflow:hidden + text-overflow:ellipsis + max-width:100% so any long label gracefully truncates with "…" instead of breaking layout; base font-size reduced 11.5px → 11px to give "WhatsApp" extra room at all viewport widths. Mobile breakpoint (≤640px) already had its own font/padding override — untouched. NAME-SUFFIX CLEANUP (per user "names of sales & Presales are not coming as full name no suufix required"): (1) Excel quote sheet "Issued by" row — was "fullName (username)", now fullName only. (2) Briefing tool team-member picker (Super-only at line ~15055) — was "fullName (role)", now fullName only. The v25.68 note had explicitly kept that suffix for role-disambiguation; v25.78 reverses that decision per fresh user feedback. (3) Form Sales/Presales dropdown fallback when fullName is missing in Users sheet — was "⚠ (username)" with warning prefix, now just username plainly (no ⚠, no parens). The o.title hover-hint + bronze styling still flags the data gap for Super, but the visible dropdown text stays clean. All other name displays already used plain fullName (form dropdowns, _resolveOwnerNameTV, _resolveUserNameTV, WhatsApp message, email body, PDF generator) — no changes needed. Backend unchanged. Pairs with backend v26.15.0.
+  // v25.77 — Card 04 cleanup + auto-compute total inputs. TWO changes bundled. CHANGE 1 (Commercial subgroup removal): User feedback "remove these field, not required" pointing at the COMMERCIAL subgroup (Budget Tier + Deal Value INR). Visible UI removed entirely from Card 04. Hidden compatibility shim added. CHANGE 2 (Total Inputs auto-compute): User-requested invariant "total No of input port == No of 4K Input required + No of FHD input required". f_inputs is now readonly + auto-derived from f_inputs4K + f_inputsFHD. New JS module tvAutoTotalInputs_v25_77.
   // v25.76 — Icon set + SDI question refinements. (1) ICON SET REFRESH (user picked C/B/B from 3×3 preview): LED Videowall → Option C (9 separate tile rectangles in 3×3 grid, modular look — closest to real LED tile panels). Projector → Option B (front-facing body with prominent lens circle + lens dot + air intake detail). Mixed → Option B (vertical stack: big 3-cell LED panel on top + small projector + light cone on bottom). All SVGs use currentColor stroke so they pick up the choice-card-icon-tv color (muted grey at rest, bronze on hover, emerald when selected). (2) SDI QUESTION REWORDED: Label "Need SDI output?" → "Does your project require any SDI signal output?" (conversational question-style phrasing matches BS Direction C subtitle pattern). Pill button labels unchanged (No — HDMI only / Yes — SDI needed). aria-label on the pill-group-tv unchanged ("SDI output needed"). All schema, IDs, and handlers preserved. Backend unchanged. Pairs with backend v26.15.0.
   // v25.75 — Output type choice card refinements. (1) LED choice card renamed: title "LED" → "Active LED Videowall" (user-requested). Subtitle adjusted from "Direct-view LED screens" to "Direct-view LED panels" for consistency with the new title. Hidden select option text also updated to "Active LED Videowall" — value="LED" PRESERVED (data unchanged, recommendation engine still works). (2) All 3 output-type choice card icons converted from emoji to unified SVG icons (currentColor stroke, 32×32, scale with font). RATIONALE: mixed emoji + SVG looked broken; cross-platform emoji rendering inconsistent (🟥 looked different on Mac vs Windows vs Android). New icons: LED Videowall = 4×3 grid panel with monitor stand (recognizable as a videowall); Projector = lens + light cone projecting right; Mixed = small videowall top-left + small projector bottom-right combined. (3) Choice-card-icon-tv CSS rebuilt — default ink-soft stroke, hovers to bronze with subtle scale, selected state strokes emerald. Dark theme variant included. All existing functionality preserved: f_outputType value="LED"/"Projector"/"Mixed" unchanged, onOutputTypeChange handler untouched, edit-existing-deal flow works, submission unchanged. Pairs with backend v26.15.0.
   // v25.74 — Cards 02/03/04 visual overhaul (user-requested "complete makeover & you suggest"). CARD 02 (Output Configuration): (1) Output Type dropdown converted to 3 visual choice cards (LED · Projector · Mixed) with emoji icons + short descriptions. Selected state shows gold-emerald gradient border + animated ✓ badge top-right. Keyboard nav (arrow keys cycle within group, Enter/Space activates) for accessibility. Hidden <select id="f_outputType"> retained for compatibility with onOutputTypeChange handler, edit-existing-deal flow (populateFormFromRow_ sets select.value), and submit flow. (2) "Need SDI Output?" dropdown converted to 2-pill toggle (No · HDMI only / Yes · SDI needed). Hidden select retained. (3) Conditional fields (sdiCountField, projectorCountField, projectorResField) unchanged in position — appear in spec-grid below the new choice/pill controls when their trigger conditions met. CARD 03 (LED Screens): Pure visual polish on the .screen-block sub-cards — added gold-emerald left stripe accent, focus-within glow on the whole block, polished header layout, pill-style calc-readout pill (px count + port count) in gold tint. NO LOGIC CHANGES — addScreen/removeLastScreen/updateReadout/updateTotals all untouched. CARD 04 (Technical Requirements): (1) Fields split into 3 visual subgroups with .field-subgroup-tv headings: "Video Inputs" (total inputs + primary signal + HDMI 4K + HDMI FHD), "Commercial" (budget tier + deal value), "Notes" (technical/deployment notes textarea full-width). Subgroup headings styled as bronze uppercase with a fading underline divider for visual hierarchy. (2) Budget Tier dropdown converted to 4-pill toggle (Entry · Mid · Premium · Open). Hidden select retained. Primary Signal Types kept as dropdown (8+ combos — pills would clutter). NEW JS MODULE: _selectChoiceTV(group, value) and _selectPillTV(group, value) — both set hidden select.value, fire change event (triggers existing handlers), and update visual selected state. _syncAllChoiceControlsTV() reads hidden selects and syncs visuals — wraps window.resetForm + window.populateFormFromRow_ + window.showView so visuals stay in sync after programmatic .value changes (edit-existing flow). Backend unchanged. All field IDs (f_outputType, f_outputSignal, f_signals, f_inputs, f_inputs4K, f_inputsFHD, f_budget, f_dealValueINR, f_notes, f_sdiCount, f_projectorCount, f_projectorRes) preserved. v25.69-v25.73 features all preserved (section completion, top progress, sparkle, a11y, validation hints, number steppers, Quarterly Target, BS section-head pattern). Pairs with backend v26.15.0.
@@ -12692,7 +12703,7 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
 
     ws2Section('DOCUMENT TRAIL');
     ws2Pair('Quote No.', quoteNo);
-    ws2Pair('Issued by', currentUser.name + ' (' + currentUser.username + ')');
+    ws2Pair('Issued by', currentUser.name || currentUser.fullName || '—');  // v25.78: removed " (username)" suffix per user — fullName only
     ws2Pair('Generated at', now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
 
     // =================================================================
@@ -13746,15 +13757,18 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
     const buildOpt = function(u) {
       // v25.66 (MM1) appended `· Role` to disambiguate same-first-name users.
       // v25.68 — role suffix removed per user feedback (matches BS v24.34.5).
-      // The ⚠ fallback warning for missing fullName is preserved.
+      // v25.78 — fallback simplified per user "no suffix required". When fullName is
+      // missing, just show the username plainly (no ⚠ prefix, no parens). The o.title
+      // hover-hint still flags it for Super so the data gap is discoverable, but the
+      // visible dropdown text stays clean.
       const fullName = String(u.fullName || '').trim();
       const username = String(u.username || '').trim();
       let label, isWarn = false;
       if (fullName) {
         label = fullName;
       } else {
-        // fullName is blank → fall back to username, flag as needing attention
-        label = '⚠ (' + username + ')';
+        // fullName is blank → fall back to username (plain, no decoration)
+        label = username;
         isWarn = true;
       }
       const value = username.toLowerCase();
@@ -15052,7 +15066,7 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
             if (String(u.username).toLowerCase() === String(currentUser.username).toLowerCase()) return;
             const opt = document.createElement('option');
             opt.value = u.username;
-            opt.textContent = u.fullName + ' (' + u.role + ')';
+            opt.textContent = u.fullName || u.username;  // v25.78: dropped " (role)" suffix per user — fullName only (or username fallback if fullName missing)
             userSel.appendChild(opt);
           });
         }
