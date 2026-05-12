@@ -8704,7 +8704,13 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.80.5';  // v25.80.5 — Tiny cleanup per user feedback. Both Card 02 and Card 03 footer notes removed: (a) Card 02 footer "Ideally on load, quantity should be Zero. Add only what the project needs." removed. (b) Card 03 footer "Based on Qty selected, chassis Card to be selected Carefully. 1 audio card handles both inputs and outputs — only one card added regardless." removed. User said both not required. NO functional changes. Form is now even cleaner — Card 02 ends right after the Audio In row; Card 03 ends right after the Audio Out row before the action buttons. PRESERVES: all v25.80/v25.80.1/v25.80.2/v25.80.3/v25.80.4 fixes. Pairs with backend v26.15.0.
+  const TVONE_FRONTEND_VERSION = '25.80.6';  // v25.80.6 — Final hotfix for v25.80 form. SYMPTOM: User reported 2 orphan "− +" rows visible at bottom of Card 03, between "Audio Out needed?" and the Generate BoM button. Rows had no labels, no IDs visible. ROOT CAUSE: v25.70 introduced _wireQtyStepperTV() which auto-wraps inputs listed in _STEPPER_INPUT_IDS into qty-stepper-tv divs at page load. The list contained ['f_sdiCount', 'f_projectorCount', 'f_inputs4K', 'f_inputsFHD']. After v25.80 form rebuild, these IDs became HIDDEN compat inputs (type="hidden" or inside display:none wrapper). But _wireQtyStepperTV happily wrapped them anyway — and the wrapper's BUTTONS (− +) rendered visibly even though the inner input was hidden. f_inputs4K and f_inputsFHD were saved by being inside #card04CompatShim's display:none parent; f_sdiCount and f_projectorCount were Card 03 siblings with no hiding wrapper → became visible orphan rows. CONSOLE DIAGNOSTIC from user confirmed: 2 unaccounted-for "DIV.qty-stepper-tv" between Audio Out row and Generate BoM button. FIX: Empty the _STEPPER_INPUT_IDS array. All current visible qty-steppers (in Card 02 + Card 03 v25.80 form) are already wrapped inline in HTML — they don't need _wireQtyStepperTV anymore. Hidden compat inputs should NEVER be auto-wrapped. NO functional changes — pure UI cleanup. PRESERVES: all v25.80/v25.80.1/.2/.3/.4/.5 fixes. Pairs with backend v26.15.0.
+  // v25.80.5 — Removed Card 02 + Card 03 footer notes.
+  // v25.80.4 — Card 04 (Tech Reqs) removed entirely.
+  // v25.80.3 — Pill toggles registered in _GROUP_TO_SELECT.
+  // v25.80.2 — Critical hotfix for blank-form-on-login (resetForm null-pointer).
+  // v25.80.1 — Legacy change-handler crash guards.
+  // v25.80 — Form rebuild + engine fix.
   // v25.80.4 — Card 04 (Tech Reqs) removed entirely. Buttons moved to Card 03.
   // v25.80.3 — Hotfix: register new pill groups in _GROUP_TO_SELECT.
   // v25.80.2 — Critical hotfix for blank-form (resetForm null-pointer).
@@ -22189,7 +22195,12 @@ async function _renderPipelineTrend_tv() {
   'use strict';
 
   // ── CH1: Number stepper wrapping ────────────────────────────────────
-  const _STEPPER_INPUT_IDS = ['f_sdiCount', 'f_projectorCount', 'f_inputs4K', 'f_inputsFHD'];  // v25.77: removed 'f_inputs' — now auto-computed from 4K + FHD
+  // v25.80.6: Empty list — all old form inputs are now either visible per-signal-type rows
+  // (already wrapped in qty-stepper-tv inline in HTML) or hidden compat shims (must NOT be
+  // wrapped — wrapping a type="hidden" input still renders the wrapper's buttons, creating
+  // the orphan "− +" rows users saw in v25.80.5). Specifically removed: f_sdiCount,
+  // f_projectorCount, f_inputs4K, f_inputsFHD — all hidden compat inputs in v25.80+.
+  const _STEPPER_INPUT_IDS = [];
 
   function _wireQtyStepperTV(inputId) {
     const inp = document.getElementById(inputId);
