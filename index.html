@@ -7282,11 +7282,11 @@ body.light .signal-card-footer-tv {
          a Calico/Corio sub-radio. For Phase 2, picking Video Processor
          routes straight to existing CALICO flow.
          ============================================================ -->
-    <div class="card form-section-tv" data-section="01b" data-section-title="Requirement" id="requirementCard">
+    <div class="card form-section-tv" data-section="01b" data-section-title="Solution Type" data-progress-skip="true" id="requirementCard">
       <div class="section-head-tv">
         <div class="section-num-tv">02</div>
         <div class="section-head-text-tv">
-          <div class="section-title-tv">Requirement</div>
+          <div class="section-title-tv">Solution Type</div>
           <div class="section-sub-tv">What are you configuring for this project? Multi Viewer for monitor-wall / multi-source preview; Video Processor for video-wall scaling and processing.</div>
         </div>
       </div>
@@ -9139,7 +9139,10 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.97.1';  // v25.97.1 — HOTFIX. (1) Removed 2 orphan </div> tags between Card 01 and Requirement card that prematurely closed formView wrapper — caused login-page leak + alignment offset. (2) Generate BoM button RELOCATED to a unified action row AFTER the Signal Extension card (was inside MV wizard + Card 03 = appeared BEFORE SX panel, broken flow). (3) HDBaseT extender + HDMI Splitter sub-wizards now follow the SAME "+ Add to BOM" cart pattern as AOC — each configure → preview → click Add → row in cart → form resets. Allows multiple HDBaseT configs and mixed splitter models per project. (4) Switching Requirement from Multi Viewer to Video Processor now auto-collapses the Signal Extension panel and resets the Yes/No radio. Backend stays at v26.18.0.
+  const TVONE_FRONTEND_VERSION = '25.97.3';  // v25.97.3 — HOTFIX. Multi Viewer save path now navigates to the Result page (was a Phase 2 hangover: MV save just showed an inline "Saved ✓" badge on the form, never called showView('result') so the page didn't change). Now calls renderResult(input, lastResult.reco) + showView('result') matching CALICO behavior. Has try/catch fallback to inline indicator if renderResult chokes on the MV reco shape. Backend stays at v26.18.0.
+  // v25.97.2 — Solution Type rename. data-progress-skip removes spurious green tick + decorative ::before "patch" between cards.
+  // v25.97.1 — Orphan </div> structural fix. Generate BoM relocated to end of form. HDBaseT + Splitter cart pattern. SX auto-collapse on mode switch.
+  // v25.97.1 — Hotfix. Removed 2 orphan </div> tags. Generate BoM moved to end of form. HDBaseT + Splitter cart pattern. SX auto-collapse on mode switch.
   // v25.97 — Phase 2.5 complete. Excel ProjectLines enumeration · Dashboard Family Mix · HDMI 1080p output.
   // v25.96 — Phase 2.5 polish. Edit-existing repopulates MV + SX wizards. History Family column with color badges.
   // v25.95 — Phase 3 (Signal Extension wizard live). HDBaseT + HDMI Splitter + AOC sub-wizards. CALICO mode also writes ProjectLines.
@@ -12471,18 +12474,31 @@ body.light .signal-card-footer-tv {
       sessionLog.unshift(submission);
 
       if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
-      // Show a minimal MV result inline (re-using preview area on the form for now)
-      const previewEl = document.getElementById('mvPreview');
-      if (previewEl) {
-        const tag = document.getElementById('mvPreviewTag');
-        if (tag) { tag.textContent = 'Saved \u2713'; tag.style.background = '#16A34A'; }
+
+      // v25.97.3 FIX — render the Result page and navigate to it (was missing — page didn't change after save)
+      try {
+        if (typeof renderResult === 'function') {
+          renderResult(input, lastResult.reco);
+        }
+        if (typeof showView === 'function') {
+          showView('result');
+        } else {
+          // Fallback if showView is unavailable for some reason
+          const formView = document.getElementById('formView');
+          const resultView = document.getElementById('resultView');
+          if (formView) formView.classList.add('hidden');
+          if (resultView) resultView.classList.remove('hidden');
+        }
+        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(_) {}
+      } catch (renderErr) {
+        console.error('[v25.97.3] renderResult or showView threw for MV save:', renderErr);
+        // Graceful fallback: keep the inline "Saved" indicator
+        if (info) {
+          info.innerHTML = '<strong>Saved.</strong> Ref: <code>' + _escMv(refId) + '</code> \u00b7 Chassis: <code>' + _escMv(chassisSku) + '</code> \u00b7 ' + mvRes.bom.length + ' line item(s) in ProjectLines. <em>(Result page render failed — open History to view this deal.)</em>';
+          info.classList.add('show');
+        }
+        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(_) {}
       }
-      if (info) {
-        info.innerHTML = '<strong>Saved.</strong> Ref: <code>' + _escMv(refId) + '</code> \u00b7 Chassis: <code>' + _escMv(chassisSku) + '</code> \u00b7 ' + mvRes.bom.length + ' line item(s) in ProjectLines.';
-        info.classList.add('show');
-      }
-      // Scroll to top for the success banner
-      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(_) {}
     } catch (e) {
       if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
       if (err) {
@@ -23604,7 +23620,7 @@ async function _renderPipelineTrend_tv() {
   let _userScrollTimerTV = null;
   function _scrollToNextIncompleteSectionTV(fromSection) {
     if (_userScrolledRecentlyTV) return;
-    const sections = Array.from(document.querySelectorAll('#formView .form-section-tv[data-section]'));
+    const sections = Array.from(document.querySelectorAll('#formView .form-section-tv[data-section]:not([data-progress-skip="true"])'));
     const idx = sections.indexOf(fromSection);
     if (idx === -1) return;
     for (let i = idx + 1; i < sections.length; i++) {
@@ -23622,7 +23638,8 @@ async function _renderPipelineTrend_tv() {
   }
 
   function _refreshSectionCompletionTV() {
-    const sections = document.querySelectorAll('#formView .form-section-tv[data-section]');
+    // v25.97.2 — exclude sections marked data-progress-skip="true" (Solution Type card has no required fields, would auto-complete and show spurious green tick + decorative ::before "patch")
+    const sections = document.querySelectorAll('#formView .form-section-tv[data-section]:not([data-progress-skip="true"])');
     if (!sections.length) return;
     let completeCount = 0;
     let totalCount = 0;
