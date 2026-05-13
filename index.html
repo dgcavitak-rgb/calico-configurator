@@ -9139,7 +9139,9 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.97.3';  // v25.97.3 — HOTFIX. Multi Viewer save path now navigates to the Result page (was a Phase 2 hangover: MV save just showed an inline "Saved ✓" badge on the form, never called showView('result') so the page didn't change). Now calls renderResult(input, lastResult.reco) + showView('result') matching CALICO behavior. Has try/catch fallback to inline indicator if renderResult chokes on the MV reco shape. Backend stays at v26.18.0.
+  const TVONE_FRONTEND_VERSION = '25.97.4';  // v25.97.4 — HOTFIX (2 issues). (1) MV save now actually renders a Result page. Root cause was CALICO's renderResult() being shape-incompatible with MV's reco — it expects reco.model.model, reco.totalPixelsProcessed, input.screens.length, reco.concerns, etc. all of which are missing in MV mode → renderResult threw, try/catch in v25.97.3 fell back to inline indicator on the form so page appeared not to change. FIX: new _mvRenderResult() that handles MV's reco shape with chassis hero, requirements summary, BOM table (including Signal Extension companion items), and project summary. renderResult() now branches to it via `if (reco.mvMode) return _mvRenderResult(...)`. (2) Card 03 (ledCard / Output Block) progressive disclosure — in VP mode it's now hidden until Card 02 has at least one input counter > 0 OR Audio In = Yes. Re-hides if user drops everything to 0. Implemented via _updateLedCardVisibility() called on Card 02 input/change events + after _onRequirementChange in VP mode. Backend stays at v26.18.0.
+  // v25.97.3 — MV navigation: renderResult + showView('result') added to MV save path.
+  // v25.97.2 — Solution Type rename + data-progress-skip.
   // v25.97.2 — Solution Type rename. data-progress-skip removes spurious green tick + decorative ::before "patch" between cards.
   // v25.97.1 — Orphan </div> structural fix. Generate BoM relocated to end of form. HDBaseT + Splitter cart pattern. SX auto-collapse on mode switch.
   // v25.97.1 — Hotfix. Removed 2 orphan </div> tags. Generate BoM moved to end of form. HDBaseT + Splitter cart pattern. SX auto-collapse on mode switch.
@@ -12195,6 +12197,10 @@ body.light .signal-card-footer-tv {
       const els = document.querySelectorAll(calicoCardSelectors[i]);
       for (let j = 0; j < els.length; j++) { els[j].style.display = window._mvMode ? 'none' : ''; }
     }
+    // v25.97.4 — In VP mode, Card 03 (ledCard) starts hidden and only appears when Card 02 has some input filled.
+    if (!window._mvMode) {
+      if (typeof _updateLedCardVisibility === 'function') _updateLedCardVisibility();
+    }
     // v25.97.1 FIX #4 — collapse Signal Extension panel + reset MV ext radio when mode changes
     const sxCard = document.getElementById('signalExtensionCard');
     const sxBody = document.getElementById('sxBody');
@@ -12212,6 +12218,50 @@ body.light .signal-card-footer-tv {
 
   function _onVpFamilyChange() {
     // Phase 2: Calico active, Corio greyed. No-op for now — placeholder for Phase 4.
+  }
+
+  // v25.97.4 — Progressive disclosure: Card 03 (LED screens / Output block) is hidden
+  // in VP mode until Card 02 has at least one input filled. When user drops all inputs
+  // back to 0, Card 03 re-hides.
+  function _updateLedCardVisibility() {
+    // Only act in VP mode — in MV mode, _onRequirementChange already hides Card 03.
+    if (window._mvMode) return;
+    const ledCard = document.getElementById('ledCard');
+    if (!ledCard) return;
+    const inputIds = ['f_inputHdmi4kQty', 'f_inputHdmiFhdQty', 'f_inputSdi12gQty', 'f_inputSdi3gQty', 'f_inputHdbtQty', 'f_inputIpQty'];
+    let hasInput = false;
+    for (let i = 0; i < inputIds.length; i++) {
+      const el = document.getElementById(inputIds[i]);
+      if (el && Number(el.value) > 0) { hasInput = true; break; }
+    }
+    // Audio In (Yes/No) is also a meaningful Card 02 selection
+    if (!hasInput) {
+      const audio = document.getElementById('f_inputAudio');
+      if (audio && String(audio.value).toLowerCase() === 'yes') hasInput = true;
+    }
+    ledCard.style.display = hasInput ? '' : 'none';
+  }
+  window._updateLedCardVisibility = _updateLedCardVisibility;
+
+  // Wire event listeners on all Card 02 input fields on initial bootstrap
+  function _wireLedCardTriggersTV() {
+    const inputIds = ['f_inputHdmi4kQty', 'f_inputHdmiFhdQty', 'f_inputSdi12gQty', 'f_inputSdi3gQty', 'f_inputHdbtQty', 'f_inputIpQty', 'f_inputAudio'];
+    for (let i = 0; i < inputIds.length; i++) {
+      const el = document.getElementById(inputIds[i]);
+      if (el && !el.__ledCardTracker) {
+        el.addEventListener('input', _updateLedCardVisibility);
+        el.addEventListener('change', _updateLedCardVisibility);
+        el.__ledCardTracker = true;
+      }
+    }
+    // Initial state — hide Card 03 if nothing in Card 02 yet
+    _updateLedCardVisibility();
+  }
+  // Try once on script load (DOM may not be ready); also fire on DOMContentLoaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _wireLedCardTriggersTV);
+  } else {
+    setTimeout(_wireLedCardTriggersTV, 0);
   }
 
   function _onMvInputSignalChange() {
@@ -13722,7 +13772,109 @@ body.light .signal-card-footer-tv {
   // =================================================================
   // RESULT VIEW
   // =================================================================
+  // ============================================================
+  // v25.97.4 — Multi Viewer result renderer
+  // ============================================================
+  // Renders an MV-specific Result page panel into #recoOutput. Mirrors the visual
+  // language of CALICO's renderResult but uses MV's reco shape:
+  //   reco = { chassis: 'MWP-...', bom: [{sku,description,qty,inputSignal,outputSignal,inputCount,family,category},...], mvMode: true, mvType: 'fixed'|'mto' }
+  // Also reads window._sxCollectAllLines() so Signal Extension items appear in the same BOM table.
+  function _mvRenderResult(input, reco) {
+    // Reset confirm button state — same defensive guard as renderResult
+    try {
+      const cb = document.getElementById('confirmBtn');
+      if (cb) {
+        cb.disabled = false;
+        const lbl = cb.querySelector('.ab2tv-label');
+        if (lbl) lbl.textContent = 'Confirm';
+        cb.classList.remove('confirmed');
+        cb.style.background = ''; cb.style.borderColor = ''; cb.style.opacity = '';
+      }
+    } catch(_) {}
+
+    const chassisSku = (reco.chassis || (reco.bom && reco.bom[0] && reco.bom[0].sku) || '—');
+    const isMto = (reco.mvType === 'mto');
+    const verdict = isMto ? 'CORIOview MWP-MTO · Custom configured build' : 'CORIOview fixed chassis';
+    const subtitle = isMto ? 'Made-to-Order · custom input/output card combination' : 'Single-chassis fixed configuration';
+
+    // Helper for the small KPI cells
+    function specCell(k, v) {
+      return '<div class="spec-cell"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>';
+    }
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+    }
+
+    let html = '';
+
+    // ---- Card 1: Recommended chassis (hero) ----
+    html += '<div class="card reco-card">';
+    html += '<div class="card-title">Recommended Chassis</div>';
+    html += '<div class="chassis-hero">';
+    html += '<div class="chassis-hero-glow chassis-hero-glow-a"></div>';
+    html += '<div class="chassis-hero-glow chassis-hero-glow-b"></div>';
+    html += '<div class="chassis-hero-content">';
+    html += '<span class="chassis-pill">' + (isMto ? 'MTO Build' : 'Recommended') + '</span>';
+    html += '<div class="chassis-model">' + esc(chassisSku) + '</div>';
+    html += '<div class="chassis-verdict">' + esc(verdict) + '</div>';
+    html += '<div class="chassis-tagline">Multi Viewer · CORIOview</div>';
+    html += '<div class="chassis-spec">' + esc(subtitle) + '</div>';
+    html += '</div></div></div>';
+
+    // ---- Card 2: Requirements Summary ----
+    // Pull input/output signal info from first bom line (CORIOview chassis line carries it)
+    const firstBom = (reco.bom && reco.bom[0]) || {};
+    const inputSig = firstBom.inputSignal || '—';
+    const inputCnt = firstBom.inputCount || 0;
+    const outputSig = firstBom.outputSignal || '—';
+    html += '<div class="card">';
+    html += '<div class="card-title">Requirements Summary</div>';
+    html += '<div class="reco-specs">';
+    html += specCell('Input signal', esc(inputSig));
+    html += specCell('Input count', esc(String(inputCnt)));
+    html += specCell('Output signal', esc(outputSig));
+    html += specCell('Build type', isMto ? 'MTO (custom)' : 'Fixed chassis');
+    html += '</div></div>';
+
+    // ---- Card 3: Bill of Materials ----
+    // Include MV chassis/cards + any Signal Extension items collected from the cart
+    const sxLines = (typeof window._sxCollectAllLines === 'function') ? window._sxCollectAllLines() : [];
+    html += '<div class="card">';
+    html += '<div class="card-title">Bill of Materials</div>';
+    html += '<table class="bom-table"><thead><tr><th>SKU</th><th>Description</th><th>Qty</th></tr></thead><tbody>';
+    (reco.bom || []).forEach(function(b) {
+      html += '<tr><td>' + esc(b.sku) + '</td><td>' + esc(b.description) + '</td><td class="qty">' + esc(String(b.qty)) + '</td></tr>';
+    });
+    if (sxLines.length) {
+      html += '<tr><td colspan="3" style="background:#F8FAFC;font-weight:600;font-size:12px;color:#475569;padding:8px 12px;letter-spacing:.4px;text-transform:uppercase;">Signal Extension · companion items</td></tr>';
+      sxLines.forEach(function(b) {
+        html += '<tr><td>' + esc(b.sku) + '</td><td>' + esc(b.description) + '</td><td class="qty">' + esc(String(b.qty)) + '</td></tr>';
+      });
+    }
+    html += '</tbody></table>';
+    html += '</div>';
+
+    // ---- Card 4: Project Summary ----
+    html += '<div class="card">';
+    html += '<div class="card-title">Project Summary</div>';
+    html += '<div class="reco-specs">';
+    html += specCell('Project', esc(input.project || '—'));
+    html += specCell('End-user', esc(input.endUser || '—'));
+    html += specCell('Partner', esc(input.partner || '—'));
+    html += specCell('Submitted by', esc(currentUser ? (currentUser.name || currentUser.fullName || currentUser.username) : '—'));
+    html += '</div></div>';
+
+    const out = document.getElementById('recoOutput');
+    if (out) out.innerHTML = html;
+  }
+
   function renderResult(input, reco) {
+    // v25.97.4 — MV reco has a different shape than CALICO. Branch out early to a dedicated renderer.
+    // MV reco: { chassis: 'MWP-...', bom: [...], mvMode: true, mvType: 'fixed'|'mto' }
+    // CALICO reco: { chassis, model: {...}, hdmiPortsNeeded, sdiPortsNeeded, totalPixelsProcessed, hasCards, concerns, valueAdds, ... }
+    if (reco && reco.mvMode) {
+      return _mvRenderResult(input, reco);
+    }
     // v25.45: Reset confirm button state at every renderResult call.
     // confirmBtn is OUTSIDE #recoOutput in the static HTML (line ~4743) so the DOM element
     // persists across navigations. When user edits a previously-confirmed deal and re-renders,
