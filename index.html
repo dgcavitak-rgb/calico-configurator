@@ -8704,7 +8704,14 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.80.6';  // v25.80.6 — Final hotfix for v25.80 form. SYMPTOM: User reported 2 orphan "− +" rows visible at bottom of Card 03, between "Audio Out needed?" and the Generate BoM button. Rows had no labels, no IDs visible. ROOT CAUSE: v25.70 introduced _wireQtyStepperTV() which auto-wraps inputs listed in _STEPPER_INPUT_IDS into qty-stepper-tv divs at page load. The list contained ['f_sdiCount', 'f_projectorCount', 'f_inputs4K', 'f_inputsFHD']. After v25.80 form rebuild, these IDs became HIDDEN compat inputs (type="hidden" or inside display:none wrapper). But _wireQtyStepperTV happily wrapped them anyway — and the wrapper's BUTTONS (− +) rendered visibly even though the inner input was hidden. f_inputs4K and f_inputsFHD were saved by being inside #card04CompatShim's display:none parent; f_sdiCount and f_projectorCount were Card 03 siblings with no hiding wrapper → became visible orphan rows. CONSOLE DIAGNOSTIC from user confirmed: 2 unaccounted-for "DIV.qty-stepper-tv" between Audio Out row and Generate BoM button. FIX: Empty the _STEPPER_INPUT_IDS array. All current visible qty-steppers (in Card 02 + Card 03 v25.80 form) are already wrapped inline in HTML — they don't need _wireQtyStepperTV anymore. Hidden compat inputs should NEVER be auto-wrapped. NO functional changes — pure UI cleanup. PRESERVES: all v25.80/v25.80.1/.2/.3/.4/.5 fixes. Pairs with backend v26.15.0.
+  const TVONE_FRONTEND_VERSION = '25.82';  // v25.82 — DEAD-CODE CLEANUP. No behavior change. Removed: (1) _STEPPER_INPUT_IDS empty array + _wireQtyStepperTV function + _initSteppersTV function + window._initSteppersTV exposure (~70 lines) — per v25.80.6 comment the array was already empty; _initSteppersTV.forEach looped over nothing, so the 60-line wiring function never executed. (2) _initSteppersTV() call removed from _initV70 bootstrap. (3) _tvC2aFetchAggregate (~25 lines) — sole frontend caller of sales_history_aggregate action; orphan since the C2a SAP/Actuals UI was retired (mirrors BS v24.38.0 fetchAggregate cleanup). (4) Stale "Chart.js instance store" comment on _v26Charts corrected to "ECharts instance store" (tvONE has zero Chart.js usage; uses ECharts exclusively). Pairs with backend v26.16.0 which drops handleSalesHistoryAggregate_, handleSalesHistoryList_, handleSalesHistoryClear_, handlePlanOfActionUpdate_, handleStageVelocityAggregate_ (no frontend callers). Sales History IMPORT path is preserved (handleSalesHistoryImport_ + ?action=getlog/listusers/health/getaudit GET endpoints are all live).
+  // v25.80.6 — Removed orphan qty-stepper wrap for hidden compat inputs.
+  // v25.80.5 — Removed Card 02 + Card 03 footer notes.
+  // v25.80.4 — Card 04 (Tech Reqs) removed entirely.
+  // v25.80.3 — Pill toggles registered in _GROUP_TO_SELECT.
+  // v25.80.2 — Critical hotfix for blank-form-on-login.
+  // v25.80.1 — Legacy change-handler crash guards.
+  // v25.80 — Form rebuild + engine fix.
   // v25.80.5 — Removed Card 02 + Card 03 footer notes.
   // v25.80.4 — Card 04 (Tech Reqs) removed entirely.
   // v25.80.3 — Pill toggles registered in _GROUP_TO_SELECT.
@@ -12483,17 +12490,16 @@ body.light .signal-card-footer-tv {
     const cityState = (input.city || '—') + (input.state ? ', ' + input.state : '');
 
     // Project context — left/right columns
+    // v25.81: Trimmed to 5 fields per user spec. Removed: Consultant, Stage, Expected Close
+    // (Sales/Presales now in footer block below).
     const ctxLeft = [
       ['Project', input.project || '—'],
       ['End-user', input.endUser || '—'],
-      ['Partner / SI', input.partner || '—'],
-      ['Consultant', input.consultant || '—']
+      ['Venue', venueLabel]
     ];
     const ctxRight = [
-      ['Venue', venueLabel],
       ['Location', cityState],
-      ['Stage', input.stage || '—'],
-      ['Expected Close', input.close || '—']
+      ['Partner / SI', input.partner || '—']
     ];
     const ctxRowsHtml = function(col) {
       return col.map(function(pair) {
@@ -12516,6 +12522,39 @@ body.light .signal-card-footer-tv {
           ('<ul style="margin:0;padding-left:18px;font-size:10.5px;color:#475569;line-height:1.5;">' +
             reco.reasons.slice(0, 5).map(function(r) { return '<li style="margin-bottom:4px;">' + _escapeHtmlTV(r) + '</li>'; }).join('') +
           '</ul>') : '') +
+      '</div>'
+    ) : '';
+
+    // v25.81: SALESPERSON + conditional PRESALES footer blocks for PDF.
+    // Pulls from input.salesPerson / input.presalesPerson (deal-attached, not currentUser).
+    // Per user spec: salesperson always shown, presales conditional.
+    const _findUserTV = function(loginName){
+      if(!loginName) return null;
+      try {
+        const list = Array.isArray(window._allUsersTV) ? window._allUsersTV : [];
+        const x = list.find(function(u){ return String(u.loginName||'').toLowerCase() === String(loginName).toLowerCase(); });
+        if(x) return { fullName: x.fullName || loginName, role: x.professionalTitle || x.role || '—', phone: x.phone || '—', email: x.email || '—' };
+      } catch(_){}
+      return { fullName: loginName, role: '—', phone: '—', email: '—' };
+    };
+    const _spU = _findUserTV(input.salesPerson);
+    const _ppU = input.presalesPerson ? _findUserTV(input.presalesPerson) : null;
+    const _spFooterHtmlTV = _spU ? (
+      '<div style="font-size:11px;font-weight:700;color:#064E3B;letter-spacing:0.5px;margin-bottom:6px;">SALESPERSON CONTACT</div>' +
+      '<div style="font-size:10px;color:#0F172A;line-height:1.7;">' +
+        '<div><span style="color:#64748B;font-weight:600;width:54px;display:inline-block;">Name:</span> ' + _escapeHtmlTV(_spU.fullName) + '</div>' +
+        '<div><span style="color:#64748B;font-weight:600;width:54px;display:inline-block;">Role:</span> ' + _escapeHtmlTV(_spU.role) + '</div>' +
+        '<div><span style="color:#64748B;font-weight:600;width:54px;display:inline-block;">Phone:</span> ' + _escapeHtmlTV(_spU.phone) + '</div>' +
+        '<div><span style="color:#64748B;font-weight:600;width:54px;display:inline-block;">Email:</span> ' + _escapeHtmlTV(_spU.email) + '</div>' +
+      '</div>'
+    ) : '';
+    const _ppFooterHtmlTV = _ppU ? (
+      '<div style="font-size:11px;font-weight:700;color:#064E3B;letter-spacing:0.5px;margin:14px 0 6px;padding-top:8px;border-top:1px dashed #E2E8F0;">PRESALES CONTACT</div>' +
+      '<div style="font-size:10px;color:#0F172A;line-height:1.7;">' +
+        '<div><span style="color:#64748B;font-weight:600;width:54px;display:inline-block;">Name:</span> ' + _escapeHtmlTV(_ppU.fullName) + '</div>' +
+        '<div><span style="color:#64748B;font-weight:600;width:54px;display:inline-block;">Role:</span> ' + _escapeHtmlTV(_ppU.role) + '</div>' +
+        '<div><span style="color:#64748B;font-weight:600;width:54px;display:inline-block;">Phone:</span> ' + _escapeHtmlTV(_ppU.phone) + '</div>' +
+        '<div><span style="color:#64748B;font-weight:600;width:54px;display:inline-block;">Email:</span> ' + _escapeHtmlTV(_ppU.email) + '</div>' +
       '</div>'
     ) : '';
 
@@ -12573,15 +12612,12 @@ body.light .signal-card-footer-tv {
           '</div>' +
         '</div>' +
 
-        // Footer (v25.32: uses professionalTitle, not internal role)
+        // Footer
+        // v25.81: Replaced state.user-based footer with deal salesperson + conditional presales blocks
+        // (defined as variables before printHtml chain — see _spFooterHtmlTV / _ppFooterHtmlTV above).
         '<div style="border-top:1px solid #E2E8F0;padding:14px 32px 18px;font-family:\'Helvetica Neue\',Arial,sans-serif;">' +
-          '<div style="font-size:10px;color:#475569;font-weight:600;">' +
-            _escapeHtmlTV(u.fullName || u.name || 'Cavitak Marketing') +
-            (u.professionalTitle ? ' · ' + _escapeHtmlTV(u.professionalTitle) : '') +
-            (u.phone ? ' · ' + _escapeHtmlTV(u.phone) : '') +
-            (u.email ? ' · ' + _escapeHtmlTV(u.email) : '') +
-          '</div>' +
-          '<div style="font-size:9px;color:#94A3B8;margin-top:6px;line-height:1.5;">' +
+          _spFooterHtmlTV + _ppFooterHtmlTV +
+          '<div style="font-size:9px;color:#94A3B8;margin-top:14px;line-height:1.5;padding-top:8px;border-top:1px dashed #E2E8F0;">' +
             'This document is for internal reference and customer discussion. Final BOM subject to confirmation, current stock position, and pricing at time of order.' +
           '</div>' +
           '<div style="font-size:9px;color:#94A3B8;margin-top:4px;text-align:right;">' +
@@ -12940,19 +12976,20 @@ body.light .signal-card-footer-tv {
     r++;
 
     // 4 rows of data
+    // v25.81: Trimmed to 5 fields per user spec (Project, End-user, Venue, Location, Partner/SI).
+    // Removed: Consultant, Partner Contact (Name/Mobile/Email), Project Stage.
+    // Sales/Presales person moved to footer block.
     const quotedToPairs = [
       ['Partner / SI', input.partner || '—'],
       ['End-user / Client', input.endUser || '—'],
-      ['Consultant', input.consultant || '—'],
-      ['Partner Contact — Name',  input.partnerContactName  || '—'],
-      ['Partner Contact — Mobile', input.partnerContactPhone || '—'],
-      ['Partner Contact — Email',  input.partnerContactEmail || '—']
+      ['', ''],
+      ['', '']
     ];
     const projPairs = [
       ['Project Name', input.project || '—'],
       ['Venue', input.venueName || input.venueType || '—'],
       ['Location', [input.city, input.state].filter(Boolean).join(', ') || '—'],
-      ['Project Stage', input.stage || '—']
+      ['', '']
     ];
     for (let i = 0; i < 4; i++) {
       const rowNum = r + i;
@@ -13204,54 +13241,69 @@ body.light .signal-card-footer-tv {
     r++;
 
     // --- CONTACT FOOTER ---
-    // v25.33: Use logged-in user's identity + Dipenkumar as escalation strip for non-Super
-    const _ueu = currentUser || {};
-    const _ueuName = String(_ueu.fullName || _ueu.name || '').trim() || 'Cavitak Marketing';
-    const _ueuTitle = String(_ueu.professionalTitle || '').trim() || 'Cavitak Marketing';
-    const _ueuEmail = String(_ueu.email || '').trim() || 'dipen.g@cavitak.com';
-    const _ueuPhone = String(_ueu.phone || '').trim() || '+91 8160 756 906';
-    const _ueuIsSuper = _ueu.role === 'Super' ||
-                       (typeof SUPER_LOGIN_NAMES !== 'undefined' &&
-                        SUPER_LOGIN_NAMES.indexOf(String(_ueu.username || '').toLowerCase()) >= 0);
+    // v25.81: Replaced currentUser-based contact footer with deal salesperson + conditional presales blocks.
+    // Per user spec: "Sales Person footer must required both app & both format" + "if presale not selected then dont fill".
+    const _findUserXL = function(loginName){
+      if(!loginName) return null;
+      try {
+        const list = Array.isArray(window._allUsersTV) ? window._allUsersTV : [];
+        const x = list.find(function(u){ return String(u.loginName||'').toLowerCase() === String(loginName).toLowerCase(); });
+        if(x) return { fullName: x.fullName || loginName, role: x.professionalTitle || x.role || '—', phone: x.phone || '—', email: x.email || '—' };
+      } catch(_){}
+      return { fullName: loginName, role: '—', phone: '—', email: '—' };
+    };
+    const _spXL = _findUserXL(input.salesPerson);
+    const _ppXL = input.presalesPerson ? _findUserXL(input.presalesPerson) : null;
 
-    ws1.mergeCells('A' + r + ':G' + r);
-    const contactHdr = ws1.getCell('A' + r);
-    contactHdr.value = 'FOR PRICING & QUOTATION QUERIES';
-    contactHdr.font = xlFont({ size: 9, bold: true, color: { argb: XL_WHITE } });
-    contactHdr.fill = xlFill(XL_FOREST_DARK);
-    contactHdr.alignment = { vertical: 'middle', indent: 1 };
-    ws1.getRow(r).height = 20;
-    r++;
-
-    ws1.mergeCells('A' + r + ':G' + r);
-    ws1.getCell('A' + r).value = _ueuName + ' · ' + _ueuTitle + ' · Cavitak Marketing';
-    ws1.getCell('A' + r).font = xlFont({ size: 12, bold: true, color: { argb: XL_FOREST_DARK } });
-    ws1.getCell('A' + r).alignment = { vertical: 'middle', indent: 1 };
-    ws1.getCell('A' + r).fill = xlFill(XL_CREAM);
-    ws1.getRow(r).height = 22;
-    r++;
-
-    ws1.mergeCells('A' + r + ':G' + r);
-    ws1.getCell('A' + r).value = 'Email: ' + _ueuEmail + ' · Phone: ' + _ueuPhone;
-    ws1.getCell('A' + r).font = xlFont({ size: 11, color: { argb: XL_CAVITAK_RED } });
-    ws1.getCell('A' + r).alignment = { vertical: 'middle', indent: 1 };
-    ws1.getCell('A' + r).fill = xlFill(XL_CREAM);
-    ws1.getRow(r).height = 20;
-    r++;
-
-    // v25.33: Escalation strip — only for non-Super users (avoids "escalate to yourself")
-    if (!_ueuIsSuper) {
+    if(_spXL){
       ws1.mergeCells('A' + r + ':G' + r);
-      ws1.getCell('A' + r).value = 'For pricing escalation: Dipenkumar Gajjar · National Product Manager · dipen.g@cavitak.com · +91 8160 756 906';
-      ws1.getCell('A' + r).font = xlFont({ size: 10, italic: true, color: { argb: XL_INK_SOFT } });
-      ws1.getCell('A' + r).alignment = { vertical: 'middle', indent: 1 };
-      ws1.getCell('A' + r).fill = xlFill(XL_CREAM);
-      ws1.getRow(r).height = 18;
+      const spHdr = ws1.getCell('A' + r);
+      spHdr.value = 'SALESPERSON CONTACT';
+      spHdr.font = xlFont({ size: 9, bold: true, color: { argb: XL_WHITE } });
+      spHdr.fill = xlFill(XL_FOREST_DARK);
+      spHdr.alignment = { vertical: 'middle', indent: 1 };
+      ws1.getRow(r).height = 20;
       r++;
+
+      [['Name', _spXL.fullName], ['Role', _spXL.role], ['Phone', _spXL.phone], ['Email', _spXL.email]].forEach(function(pair){
+        ws1.getCell('A' + r).value = pair[0];
+        ws1.getCell('A' + r).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT } });
+        ws1.getCell('A' + r).alignment = { vertical: 'middle', indent: 1 };
+        ws1.mergeCells('B' + r + ':G' + r);
+        ws1.getCell('B' + r).value = pair[1];
+        ws1.getCell('B' + r).font = xlFont({ size: 11, bold: true });
+        ws1.getCell('B' + r).alignment = { vertical: 'middle' };
+        ws1.getRow(r).height = 18;
+        r++;
+      });
+    }
+
+    if(_ppXL){
+      ws1.getRow(r).height = 8; r++;  // spacer
+      ws1.mergeCells('A' + r + ':G' + r);
+      const ppHdr = ws1.getCell('A' + r);
+      ppHdr.value = 'PRESALES CONTACT';
+      ppHdr.font = xlFont({ size: 9, bold: true, color: { argb: XL_WHITE } });
+      ppHdr.fill = xlFill(XL_FOREST_DARK);
+      ppHdr.alignment = { vertical: 'middle', indent: 1 };
+      ws1.getRow(r).height = 20;
+      r++;
+
+      [['Name', _ppXL.fullName], ['Role', _ppXL.role], ['Phone', _ppXL.phone], ['Email', _ppXL.email]].forEach(function(pair){
+        ws1.getCell('A' + r).value = pair[0];
+        ws1.getCell('A' + r).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT } });
+        ws1.getCell('A' + r).alignment = { vertical: 'middle', indent: 1 };
+        ws1.mergeCells('B' + r + ':G' + r);
+        ws1.getCell('B' + r).value = pair[1];
+        ws1.getCell('B' + r).font = xlFont({ size: 11, bold: true });
+        ws1.getCell('B' + r).alignment = { vertical: 'middle' };
+        ws1.getRow(r).height = 18;
+        r++;
+      });
     }
 
     ws1.mergeCells('A' + r + ':G' + r);
-    ws1.getCell('A' + r).value = 'Issued by: ' + _ueuName + ' · Cavitak Marketing Pvt Ltd';
+    ws1.getCell('A' + r).value = 'Cavitak Marketing Pvt Ltd · Authorized tvONE partner · India';
     ws1.getCell('A' + r).font = xlFont({ size: 9, italic: true, color: { argb: XL_INK_SOFT } });
     ws1.getCell('A' + r).alignment = { horizontal: 'right', vertical: 'middle' };
     r++;
@@ -13310,14 +13362,13 @@ body.light .signal-card-footer-tv {
     ws2.getRow(2).height = 20;
 
     ws2Section('PROJECT CONTEXT');
+    // v25.81: Trimmed to 5 fields per user spec. Removed Consultant, Stage, Expected Close
+    // (Sales/Presales now in footer block at bottom of sheet).
     ws2Pair('Project', input.project);
     ws2Pair('End-user', input.endUser);
-    ws2Pair('Partner / SI', input.partner);
-    ws2Pair('Consultant', input.consultant);
     ws2Pair('Venue', (input.venueName || '') + (input.venueType ? ' (' + input.venueType + ')' : ''));
     ws2Pair('Location', [input.city, input.state].filter(Boolean).join(', '));
-    ws2Pair('Stage', input.stage);
-    ws2Pair('Expected Close', input.close);
+    ws2Pair('Partner / SI', input.partner);
 
     ws2Section('RECOMMENDED CHASSIS');
     ws2Pair('Model', reco.chassis);
@@ -13584,21 +13635,57 @@ body.light .signal-card-footer-tv {
     });
 
     // Contact block
-    const contactR = specStartRow + 1 + specs.length + 2 + 2;
+    // v25.81: Replaced hardcoded Dipenkumar contact with deal salesperson + conditional presales.
+    let contactR = specStartRow + 1 + specs.length + 2 + 2;
     ws3.getRow(contactR - 1).height = 12;
-    ws3.mergeCells('A' + contactR + ':F' + contactR);
-    ws3.getCell('A' + contactR).value = 'FOR PRICING & QUOTATION';
-    ws3.getCell('A' + contactR).font = xlFont({ size: 10, bold: true, color: { argb: XL_WHITE } });
-    ws3.getCell('A' + contactR).fill = xlFill(XL_FOREST_DARK);
-    ws3.getCell('A' + contactR).alignment = { vertical: 'middle', indent: 1 };
-    ws3.getRow(contactR).height = 20;
 
-    ws3.mergeCells('A' + (contactR + 1) + ':F' + (contactR + 1));
-    ws3.getCell('A' + (contactR + 1)).value = 'Dipenkumar Gajjar · National Product Manager · dipen.g@cavitak.com · +91 8160 756 906';
-    ws3.getCell('A' + (contactR + 1)).font = xlFont({ size: 11, bold: true, color: { argb: XL_FOREST_DARK } });
-    ws3.getCell('A' + (contactR + 1)).fill = xlFill(XL_CREAM);
-    ws3.getCell('A' + (contactR + 1)).alignment = { vertical: 'middle', indent: 1 };
-    ws3.getRow(contactR + 1).height = 22;
+    const _spXL3 = _findUserXL(input.salesPerson);
+    const _ppXL3 = input.presalesPerson ? _findUserXL(input.presalesPerson) : null;
+
+    if(_spXL3){
+      ws3.mergeCells('A' + contactR + ':F' + contactR);
+      ws3.getCell('A' + contactR).value = 'SALESPERSON CONTACT';
+      ws3.getCell('A' + contactR).font = xlFont({ size: 10, bold: true, color: { argb: XL_WHITE } });
+      ws3.getCell('A' + contactR).fill = xlFill(XL_FOREST_DARK);
+      ws3.getCell('A' + contactR).alignment = { vertical: 'middle', indent: 1 };
+      ws3.getRow(contactR).height = 20;
+      contactR++;
+
+      [['Name', _spXL3.fullName], ['Role', _spXL3.role], ['Phone', _spXL3.phone], ['Email', _spXL3.email]].forEach(function(pair){
+        ws3.getCell('A' + contactR).value = pair[0];
+        ws3.getCell('A' + contactR).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT } });
+        ws3.getCell('A' + contactR).alignment = { vertical: 'middle', indent: 1 };
+        ws3.mergeCells('B' + contactR + ':F' + contactR);
+        ws3.getCell('B' + contactR).value = pair[1];
+        ws3.getCell('B' + contactR).font = xlFont({ size: 11, bold: true });
+        ws3.getCell('B' + contactR).alignment = { vertical: 'middle' };
+        ws3.getRow(contactR).height = 18;
+        contactR++;
+      });
+    }
+
+    if(_ppXL3){
+      ws3.getRow(contactR).height = 8; contactR++;
+      ws3.mergeCells('A' + contactR + ':F' + contactR);
+      ws3.getCell('A' + contactR).value = 'PRESALES CONTACT';
+      ws3.getCell('A' + contactR).font = xlFont({ size: 10, bold: true, color: { argb: XL_WHITE } });
+      ws3.getCell('A' + contactR).fill = xlFill(XL_FOREST_DARK);
+      ws3.getCell('A' + contactR).alignment = { vertical: 'middle', indent: 1 };
+      ws3.getRow(contactR).height = 20;
+      contactR++;
+
+      [['Name', _ppXL3.fullName], ['Role', _ppXL3.role], ['Phone', _ppXL3.phone], ['Email', _ppXL3.email]].forEach(function(pair){
+        ws3.getCell('A' + contactR).value = pair[0];
+        ws3.getCell('A' + contactR).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT } });
+        ws3.getCell('A' + contactR).alignment = { vertical: 'middle', indent: 1 };
+        ws3.mergeCells('B' + contactR + ':F' + contactR);
+        ws3.getCell('B' + contactR).value = pair[1];
+        ws3.getCell('B' + contactR).font = xlFont({ size: 11, bold: true });
+        ws3.getCell('B' + contactR).alignment = { vertical: 'middle' };
+        ws3.getRow(contactR).height = 18;
+        contactR++;
+      });
+    }
 
     // =================================================================
     // WRITE FILE
@@ -18008,29 +18095,10 @@ body.light .signal-card-footer-tv {
     return {total:total, count:n};
   }
 
-  async function _tvC2aFetchAggregate(mode) {
-    if (!WEB_APP_URL || !currentUser) return null;
-    try {
-      const resp = await fetch(WEB_APP_URL, {
-        method:'POST', mode:'cors',
-        headers:{'Content-Type':'text/plain'},
-        body: JSON.stringify({
-          action: 'sales_history_aggregate',
-          family: TV_C2A_FAMILY,
-          mode: mode,
-          authUsername: currentUser.username,
-          authPasswordHash: _authHash
-        })
-      });
-      const data = await resp.json();
-      if (data && data.ok) return data;
-      console.warn('[C2a-tv] aggregate failed:', data);
-      return null;
-    } catch (e) {
-      console.error('[C2a-tv] aggregate error:', e);
-      return null;
-    }
-  }
+  // v25.82 removed: _tvC2aFetchAggregate (sales_history_aggregate caller).
+  // Mirror of the BS v24.38.0 fetchAggregate cleanup — the C2a SAP/Actuals
+  // path was retired but this fetcher remained orphan. Pairs with backend
+  // v26.16.0 which drops handleSalesHistoryAggregate_.
 
   async function _tvC2aFetchNote(periodKey) {
     if (!WEB_APP_URL || !currentUser) return null;
@@ -19503,7 +19571,7 @@ function _cust360EscCloseTV(e){
     try { return localStorage.getItem('bsv26-active-tab') || 'team'; } catch(_){ return 'team'; }
   })();
   let _activeSort = { mine: { col: 'closemonth', dir: 'asc' }, team: { col: 'dealValue', dir: 'desc' } };
-  let _v26Charts = {};  // Chart.js instance store
+  let _v26Charts = {};  // ECharts instance store
 
   // ---- Helpers ----
   function _readEntries(){ return Array.isArray(centralLog) ? centralLog : []; }
@@ -22195,80 +22263,12 @@ async function _renderPipelineTrend_tv() {
   'use strict';
 
   // ── CH1: Number stepper wrapping ────────────────────────────────────
-  // v25.80.6: Empty list — all old form inputs are now either visible per-signal-type rows
-  // (already wrapped in qty-stepper-tv inline in HTML) or hidden compat shims (must NOT be
-  // wrapped — wrapping a type="hidden" input still renders the wrapper's buttons, creating
-  // the orphan "− +" rows users saw in v25.80.5). Specifically removed: f_sdiCount,
-  // f_projectorCount, f_inputs4K, f_inputsFHD — all hidden compat inputs in v25.80+.
-  const _STEPPER_INPUT_IDS = [];
-
-  function _wireQtyStepperTV(inputId) {
-    const inp = document.getElementById(inputId);
-    if (!inp) return;
-    // Already wired? bail.
-    if (inp.parentNode && inp.parentNode.classList && inp.parentNode.classList.contains('qty-stepper-tv')) return;
-    const parent = inp.parentNode;
-    if (!parent) return;
-    // Read constraints from input attrs
-    const min = inp.hasAttribute('min') ? parseInt(inp.getAttribute('min'), 10) : null;
-    const max = inp.hasAttribute('max') ? parseInt(inp.getAttribute('max'), 10) : null;
-    const step = inp.hasAttribute('step') ? parseFloat(inp.getAttribute('step')) : 1;
-    // Build wrapper
-    const wrap = document.createElement('div');
-    wrap.className = 'qty-stepper-tv';
-    const btnMinus = document.createElement('button');
-    btnMinus.type = 'button';
-    btnMinus.className = 'qty-step-btn-tv qty-step-minus-tv';
-    btnMinus.setAttribute('aria-label', 'Decrease ' + inputId);
-    btnMinus.setAttribute('tabindex', '-1');  // input itself stays focusable; buttons supplement
-    btnMinus.textContent = '−';
-    const btnPlus = document.createElement('button');
-    btnPlus.type = 'button';
-    btnPlus.className = 'qty-step-btn-tv qty-step-plus-tv';
-    btnPlus.setAttribute('aria-label', 'Increase ' + inputId);
-    btnPlus.setAttribute('tabindex', '-1');
-    btnPlus.textContent = '+';
-    // Replace input with wrap[btnMinus, input, btnPlus]
-    parent.insertBefore(wrap, inp);
-    wrap.appendChild(btnMinus);
-    wrap.appendChild(inp);
-    wrap.appendChild(btnPlus);
-
-    function _applyDelta(delta) {
-      const raw = String(inp.value || '').trim();
-      let cur = parseFloat(raw);
-      if (!isFinite(cur)) {
-        // empty → start from min if min defined, else 0
-        cur = (min != null && isFinite(min)) ? min - delta : 0;
-      }
-      let next = cur + (delta * step);
-      if (min != null && isFinite(min) && next < min) next = min;
-      if (max != null && isFinite(max) && next > max) next = max;
-      // Round to avoid float jitter (only if step is integer-ish)
-      if (Math.abs(step - Math.round(step)) < 1e-9) next = Math.round(next);
-      if (String(next) === String(inp.value)) return;
-      inp.value = String(next);
-      // Fire input + change so existing handlers (updateTotals/onInputsChange) run
-      try { inp.dispatchEvent(new Event('input',  { bubbles: true })); } catch (_) {}
-      try { inp.dispatchEvent(new Event('change', { bubbles: true })); } catch (_) {}
-    }
-    btnMinus.addEventListener('click', function(e) { e.preventDefault(); _applyDelta(-1); });
-    btnPlus.addEventListener('click',  function(e) { e.preventDefault(); _applyDelta(+1); });
-    // Update disabled state on input changes
-    function _updateBtnState() {
-      const cur = parseFloat(String(inp.value || '').trim());
-      btnMinus.disabled = isFinite(cur) && min != null && cur <= min;
-      btnPlus.disabled  = isFinite(cur) && max != null && cur >= max;
-    }
-    inp.addEventListener('input', _updateBtnState);
-    inp.addEventListener('change', _updateBtnState);
-    _updateBtnState();
-  }
-
-  function _initSteppersTV() {
-    _STEPPER_INPUT_IDS.forEach(_wireQtyStepperTV);
-  }
-  window._initSteppersTV = _initSteppersTV;
+  // v25.82 removed: _STEPPER_INPUT_IDS / _wireQtyStepperTV / _initSteppersTV.
+  // Per v25.80.6 comment the array was already empty (all per-signal-type inputs
+  // are wrapped inline in the HTML; hidden compat shims must NOT be wrapped).
+  // The forEach in _initSteppersTV looped over the empty array, so the wiring
+  // function never executed in production. Calls to _initSteppersTV() below are
+  // also removed.
 
   // ── CH3: Quarterly Target Card + run-rate tile ──────────────────────
   const _QT_KEY_TV = 'tvone-cockpit-target-quarterly';
@@ -22504,7 +22504,7 @@ async function _renderPipelineTrend_tv() {
 
   // ── Bootstrap ───────────────────────────────────────────────────────
   function _initV70() {
-    try { _initSteppersTV(); } catch (_) {}
+    // v25.82: _initSteppersTV() call removed (function deleted — array was empty).
     try { _renderQuarterlyTargetCardTV(); } catch (_) {}
     try { _updateTargetKPITileTV(); } catch (_) {}
   }
