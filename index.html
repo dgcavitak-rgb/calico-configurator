@@ -6639,6 +6639,128 @@ body.light .signal-card-footer-tv {
   }
 }
 
+/* ============================================================
+   v25.90 — Phase 2: Requirement Picker + Multi Viewer wizard
+   ============================================================ */
+.req-picker-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px; }
+@media (max-width:640px) { .req-picker-grid { grid-template-columns:1fr; } }
+.req-pick {
+  position:relative; display:flex; flex-direction:column; align-items:center;
+  padding:24px 20px; border:2px solid var(--border-soft, #CBD5E1); border-radius:14px;
+  background:var(--paper, #fff); cursor:pointer; transition:all .18s ease;
+  text-align:center; gap:6px;
+}
+.req-pick input[type=radio] { position:absolute; opacity:0; pointer-events:none; }
+.req-pick:hover { border-color:#C5A572; transform:translateY(-1px); box-shadow:0 6px 14px -8px rgba(180,138,76,.25); }
+.req-pick:has(input:checked) {
+  border-color:#064E3B; background:linear-gradient(135deg, rgba(197,165,114,0.08), rgba(6,78,59,0.06));
+  box-shadow:0 8px 20px -10px rgba(6,78,59,.28);
+}
+.req-pick:has(input:checked)::after {
+  content:'\2713'; position:absolute; top:8px; right:10px; width:24px; height:24px;
+  background:#064E3B; color:#fff; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;
+}
+.req-pick-doodle { width:96px; height:72px; color:#475569; transition:color .18s ease; }
+.req-pick:has(input:checked) .req-pick-doodle { color:#064E3B; }
+.req-pick-label { font-size:18px; font-weight:700; color:var(--ink, #0F172A); letter-spacing:.2px; }
+.req-pick-sub { font-size:12px; color:var(--ink-soft, #475569); line-height:1.4; max-width:220px; }
+
+.vp-sub-branch { margin-top:18px; padding:14px 16px; background:rgba(6,78,59,0.04); border-radius:10px; display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.vp-sub-label { font-size:13px; font-weight:600; color:var(--ink-soft, #475569); }
+.vp-sub-pills { display:flex; gap:8px; flex-wrap:wrap; }
+.vp-pill {
+  display:inline-flex; align-items:center; gap:8px; padding:8px 14px;
+  border:1.5px solid var(--border-soft, #CBD5E1); border-radius:999px;
+  background:#fff; cursor:pointer; font-size:13px; font-weight:600;
+  color:var(--ink, #0F172A); transition:all .15s ease; position:relative;
+}
+.vp-pill input { position:absolute; opacity:0; }
+.vp-pill:has(input:checked) { border-color:#064E3B; background:#064E3B; color:#fff; }
+.vp-pill.disabled { opacity:.5; cursor:not-allowed; }
+.vp-pill-tag { font-size:10px; font-weight:600; padding:2px 8px; border-radius:999px; background:#C5A572; color:#fff; letter-spacing:.4px; text-transform:uppercase; }
+.vp-pill-tag.muted { background:#94A3B8; }
+.vp-pill:has(input:checked) .vp-pill-tag { background:#fff; color:#064E3B; }
+
+.mv-wizard-card { border-left:4px solid #C5A572; }
+.mv-wizard-grid { display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:16px; margin-top:8px; }
+@media (max-width:760px) { .mv-wizard-grid { grid-template-columns:1fr; } }
+
+.mv-qty-row { display:flex; align-items:center; gap:8px; }
+.mv-qty-btn {
+  width:38px; height:38px; border-radius:10px; border:1.5px solid var(--border-soft, #CBD5E1);
+  background:#fff; cursor:pointer; font-size:18px; font-weight:600; color:var(--ink, #0F172A);
+  display:flex; align-items:center; justify-content:center; transition:all .15s ease;
+}
+.mv-qty-btn:hover:not(:disabled) { border-color:#064E3B; background:#F8FAFC; }
+.mv-qty-btn:disabled { opacity:.4; cursor:not-allowed; }
+#mv_inputCount { width:72px; text-align:center; font-size:18px; font-weight:600; padding:6px 8px; background:#F8FAFC; border:1.5px solid var(--border-soft, #CBD5E1); border-radius:10px; }
+.mv-qty-cap { font-size:12px; color:var(--ink-soft, #475569); margin-left:4px; }
+
+.field-hint { font-size:11px; color:var(--ink-soft, #64748B); margin-top:5px; line-height:1.4; }
+
+.mv-preview {
+  margin-top:18px; padding:18px 18px 16px;
+  background:linear-gradient(135deg, rgba(6,78,59,0.04), rgba(197,165,114,0.06));
+  border:1.5px solid rgba(6,78,59,0.18); border-radius:12px;
+}
+.mv-preview-head { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+.mv-preview-tag { font-size:11px; font-weight:700; letter-spacing:.5px; padding:4px 10px; border-radius:999px; background:#064E3B; color:#fff; text-transform:uppercase; }
+.mv-preview-tag.mto { background:#C5A572; }
+.mv-preview-tag.err { background:#B91C1C; }
+.mv-preview-chassis { font-size:22px; font-weight:700; color:var(--ink, #0F172A); }
+.mv-preview-bom { display:grid; grid-template-columns:auto auto 1fr auto; gap:6px 14px; font-size:13px; color:var(--ink, #0F172A); }
+.mv-preview-bom .bom-qty { font-weight:700; color:#064E3B; }
+.mv-preview-bom .bom-sku { font-family:'SF Mono', Menlo, Consolas, monospace; font-weight:600; color:var(--ink, #0F172A); }
+.mv-preview-bom .bom-desc { color:var(--ink-soft, #475569); }
+.mv-preview-bom .bom-cat { font-size:10px; padding:2px 8px; border-radius:999px; background:#E2E8F0; color:#475569; text-transform:uppercase; letter-spacing:.4px; align-self:center; }
+.mv-preview-err { color:#B91C1C; font-weight:600; padding:8px 0; }
+
+.mv-ext-row { margin-top:18px; padding-top:14px; border-top:1px dashed var(--border-soft, #CBD5E1); display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.mv-ext-label { font-size:14px; font-weight:600; color:var(--ink, #0F172A); }
+.mv-ext-pills { display:flex; gap:8px; }
+.mv-ext-pill { position:relative; display:inline-flex; align-items:center; padding:6px 14px; border:1.5px solid var(--border-soft, #CBD5E1); border-radius:999px; background:#fff; cursor:pointer; font-size:13px; font-weight:600; }
+.mv-ext-pill input { position:absolute; opacity:0; }
+.mv-ext-pill:has(input:checked) { border-color:#064E3B; background:#064E3B; color:#fff; }
+.mv-ext-placeholder { width:100%; font-size:12px; color:var(--ink-soft, #475569); padding:8px 12px; background:rgba(197,165,114,0.08); border-left:3px solid #C5A572; border-radius:6px; }
+
+/* ============================================================
+   v25.95 — Phase 3: Signal Extension panel
+   ============================================================ */
+.sx-card { border-left:4px solid #94A3B8; }
+.sx-head { display:flex; align-items:center; gap:12px; }
+.sx-num { background:#475569 !important; }
+.sx-optional-tag { font-size:10px; padding:2px 8px; border-radius:999px; background:#94A3B8; color:#fff; font-weight:600; letter-spacing:.4px; text-transform:uppercase; margin-left:8px; vertical-align:middle; }
+.sx-toggle-icon { font-size:22px; color:var(--ink-soft, #475569); transition:transform .2s ease; user-select:none; }
+.sx-card[data-sx-open="true"] .sx-toggle-icon { transform:rotate(180deg); }
+.sx-body { padding-top:12px; }
+
+.sx-subwiz { margin-top:16px; padding:16px 18px 14px; background:rgba(248,250,252,0.6); border:1px solid var(--border-soft, #E2E8F0); border-radius:10px; }
+.sx-subwiz-title { font-size:15px; font-weight:700; color:var(--ink, #0F172A); margin-bottom:2px; }
+.sx-subwiz-sub { font-size:12px; color:var(--ink-soft, #64748B); margin-bottom:12px; line-height:1.4; }
+.sx-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; }
+.sx-preview {
+  margin-top:12px; padding:10px 14px;
+  background:linear-gradient(135deg, rgba(6,78,59,0.05), rgba(197,165,114,0.06));
+  border:1px solid rgba(6,78,59,0.18); border-radius:8px;
+  font-size:13px; color:var(--ink, #0F172A);
+}
+.sx-preview .pv-sku { font-family:'SF Mono', Menlo, Consolas, monospace; font-weight:600; }
+.sx-preview .pv-err { color:#B91C1C; }
+.sx-add-btn { margin-top:10px; font-size:12px; padding:7px 14px; }
+.sx-cart { margin-top:10px; display:grid; gap:6px; }
+.sx-cart-row { display:flex; align-items:center; gap:10px; padding:8px 12px; background:#fff; border:1px solid var(--border-soft, #E2E8F0); border-radius:6px; font-size:13px; }
+.sx-cart-row .pv-qty { font-weight:700; color:#064E3B; min-width:32px; }
+.sx-cart-row .pv-sku { font-family:'SF Mono', Menlo, Consolas, monospace; font-weight:600; flex:1; }
+.sx-cart-row .pv-rm { padding:4px 10px; font-size:11px; background:transparent; border:1px solid var(--border-soft, #CBD5E1); border-radius:4px; cursor:pointer; color:var(--ink-soft, #64748B); }
+.sx-cart-row .pv-rm:hover { border-color:#B91C1C; color:#B91C1C; }
+
+.sx-summary { margin-top:18px; padding:14px 16px; background:rgba(6,78,59,0.04); border:1px solid rgba(6,78,59,0.18); border-radius:10px; }
+.sx-summary-title { font-size:13px; font-weight:700; color:#064E3B; margin-bottom:10px; letter-spacing:.3px; text-transform:uppercase; }
+.sx-summary-row { display:grid; grid-template-columns:auto auto 1fr; gap:8px 14px; font-size:13px; padding:4px 0; align-items:center; }
+.sx-summary-row .ss-qty { font-weight:700; color:#064E3B; }
+.sx-summary-row .ss-sku { font-family:'SF Mono', Menlo, Consolas, monospace; font-weight:600; }
+.sx-summary-row .ss-desc { color:var(--ink-soft, #475569); font-size:12px; }
 </style>
 </head>
 <body>
@@ -7150,6 +7272,168 @@ body.light .signal-card-footer-tv {
       </div>
     </div>
 
+      </div>
+    </div>
+
+    <!-- ============================================================
+         v25.90 — REQUIREMENT PICKER (Phase 2 — Multi Viewer wizard)
+         ============================================================
+         User picks between "Multi Viewer" (CORIOview wizard, new) and
+         "Video Processor" (existing CALICO/Corio path, current default).
+         Picking Multi Viewer HIDES Cards 02-04 and shows the MV wizard.
+         Picking Video Processor SHOWS Cards 02-04 and (eventually Phase 4)
+         a Calico/Corio sub-radio. For Phase 2, picking Video Processor
+         routes straight to existing CALICO flow.
+         ============================================================ -->
+    <div class="card form-section-tv" data-section="01b" data-section-title="Requirement" id="requirementCard">
+      <div class="section-head-tv">
+        <div class="section-num-tv">02</div>
+        <div class="section-head-text-tv">
+          <div class="section-title-tv">Requirement</div>
+          <div class="section-sub-tv">What are you configuring for this project? Multi Viewer for monitor-wall / multi-source preview; Video Processor for video-wall scaling and processing.</div>
+        </div>
+      </div>
+
+      <div class="req-picker-grid">
+        <label class="req-pick" data-value="multiviewer">
+          <input type="radio" name="req_type" value="multiviewer" onchange="_onRequirementChange()">
+          <div class="req-pick-doodle" aria-hidden="true">
+            <!-- doodle: TV-with-grid -->
+            <svg viewBox="0 0 96 72" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <path d="M8,10 Q9,8 12,8 L83,9 Q88,9 88,13 L87,52 Q87,56 83,56 L13,55 Q9,55 9,51 Z"/>
+              <line x1="32" y1="56" x2="30" y2="64"/>
+              <line x1="64" y1="56" x2="66" y2="64"/>
+              <line x1="22" y1="64" x2="74" y2="64"/>
+              <line x1="48" y1="9" x2="48" y2="55"/>
+              <line x1="9" y1="32" x2="87" y2="32"/>
+              <circle cx="20" cy="20" r="1.5" fill="currentColor"/>
+              <circle cx="70" cy="44" r="1.5" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="req-pick-label">Multi Viewer</div>
+          <div class="req-pick-sub">CORIOview · multi-source preview in one display</div>
+        </label>
+
+        <label class="req-pick" data-value="videoprocessor">
+          <input type="radio" name="req_type" value="videoprocessor" onchange="_onRequirementChange()">
+          <div class="req-pick-doodle" aria-hidden="true">
+            <!-- doodle: rack-with-arrows (video processor) -->
+            <svg viewBox="0 0 96 72" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <path d="M18,12 Q18,10 20,10 L76,11 Q78,11 78,13 L78,59 Q78,61 76,61 L20,60 Q18,60 18,58 Z"/>
+              <line x1="18" y1="24" x2="78" y2="24"/>
+              <line x1="18" y1="38" x2="78" y2="38"/>
+              <line x1="18" y1="50" x2="78" y2="50"/>
+              <circle cx="26" cy="17" r="2"/>
+              <circle cx="34" cy="17" r="2"/>
+              <line x1="2" y1="35" x2="16" y2="35"/>
+              <path d="M14,32 L17,35 L14,38"/>
+              <line x1="80" y1="35" x2="94" y2="35"/>
+              <path d="M91,32 L94,35 L91,38"/>
+            </svg>
+          </div>
+          <div class="req-pick-label">Video Processor</div>
+          <div class="req-pick-sub">CALICO / CORIO · video-wall scaling &amp; processing</div>
+        </label>
+      </div>
+
+      <!-- Video Processor sub-branch (visible when videoprocessor picked) -->
+      <div id="vpSubBranch" class="vp-sub-branch" style="display:none;">
+        <div class="vp-sub-label">Family:</div>
+        <div class="vp-sub-pills">
+          <label class="vp-pill active" data-vp-family="calico">
+            <input type="radio" name="vp_family" value="calico" checked onchange="_onVpFamilyChange()">
+            <span>CALICO</span>
+            <span class="vp-pill-tag">recommended</span>
+          </label>
+          <label class="vp-pill disabled" data-vp-family="corio" title="CORIO support coming in Phase 4">
+            <input type="radio" name="vp_family" value="corio" disabled>
+            <span>CORIO</span>
+            <span class="vp-pill-tag muted">coming soon</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         v25.90 — MULTI VIEWER WIZARD (CORIOview)
+         Shown when Requirement = Multi Viewer. Hides Cards 02-04.
+         ============================================================ -->
+    <div class="card form-section-tv mv-wizard-card" id="mvWizardCard" style="display:none;">
+      <div class="section-head-tv">
+        <div class="section-num-tv">03</div>
+        <div class="section-head-text-tv">
+          <div class="section-title-tv">Multi Viewer Configuration</div>
+          <div class="section-sub-tv">Pick your input signal type and quantity, and your output signal. The wizard recommends the right CORIOview chassis (or MWP-MTO if your configuration is custom).</div>
+        </div>
+      </div>
+
+      <div class="mv-wizard-grid">
+        <div class="field">
+          <label>Input Signal Type <span class="req">*</span></label>
+          <select id="mv_inputSignal" onchange="_onMvInputSignalChange()">
+            <option value="">— pick one —</option>
+            <option value="DVI-U">DVI-U</option>
+            <option value="FHD HDMI">FHD HDMI (1080p)</option>
+            <option value="4K HDMI">4K HDMI (UHD)</option>
+            <option value="3G-SDI">3G-SDI</option>
+            <option value="HD-SDI">HD-SDI</option>
+            <option value="HDBaseT">HDBaseT</option>
+          </select>
+          <div class="field-hint" id="mv_inputSignalHint">Single signal type only. For mixed signal projects, contact tvONE for custom build.</div>
+        </div>
+
+        <div class="field">
+          <label>Input Count <span class="req">*</span></label>
+          <div class="mv-qty-row">
+            <button type="button" class="mv-qty-btn" onclick="_mvQtyAdjust(-1)" aria-label="Decrease">−</button>
+            <input id="mv_inputCount" type="number" min="1" max="8" value="1" readonly>
+            <button type="button" class="mv-qty-btn" onclick="_mvQtyAdjust(1)" aria-label="Increase">+</button>
+            <span class="mv-qty-cap" id="mv_qtyCap">max 8</span>
+          </div>
+          <div class="field-hint">Quantity cap depends on signal type. DVI-U / 4K HDMI / HDBaseT cap at 4; FHD HDMI / SDI cap at 8.</div>
+        </div>
+
+        <div class="field">
+          <label>Output Signal <span class="req">*</span></label>
+          <select id="mv_outputSignal" onchange="_mvRecompute()">
+            <option value="4K HDMI" selected>4K HDMI</option>
+            <option value="HDMI 1080p">HDMI 1080p (FHD)</option>
+            <option value="DVI-I">DVI-I</option>
+            <option value="3G SDI">3G SDI</option>
+            <option value="HDBaseT">HDBaseT</option>
+          </select>
+          <div class="field-hint">Single output module. Non-4K-HDMI outputs route to MWP-MTO.</div>
+        </div>
+      </div>
+
+      <!-- Live recommendation preview -->
+      <div id="mvPreview" class="mv-preview" style="display:none;">
+        <div class="mv-preview-head">
+          <div class="mv-preview-tag" id="mvPreviewTag">Recommended</div>
+          <div class="mv-preview-chassis" id="mvPreviewChassis">—</div>
+        </div>
+        <div class="mv-preview-bom" id="mvPreviewBom"></div>
+      </div>
+
+      <!-- Signal extension Y/N — Phase 3 placeholder -->
+      <div class="mv-ext-row">
+        <div class="mv-ext-label">Required signal extension?</div>
+        <div class="mv-ext-pills">
+          <label class="mv-ext-pill active"><input type="radio" name="mv_ext" value="no" checked onchange="_onMvExtChange()">No</label>
+          <label class="mv-ext-pill"><input type="radio" name="mv_ext" value="yes" onchange="_onMvExtChange()">Yes</label>
+        </div>
+        <div id="mvExtPlaceholder" class="mv-ext-placeholder" style="display:none;">Scroll down to the Signal Extension panel to add HDBaseT extenders, HDMI splitters, or AOC cables to your BOM.</div>
+      </div>
+
+      <!-- v25.95 — MV-local action buttons (fixes Phase 2 bug where Generate BoM lived inside hidden Card 03) -->
+      <div id="mvFormError" class="error-msg" style="margin-top:14px;"></div>
+      <div id="mvFormInfo" class="info-msg" style="margin-top:14px;"></div>
+      <div class="btn-row" style="margin-top:18px">
+        <button class="primary" onclick="calculateAndLog()" id="mvCalcBtn">Generate BoM →</button>
+        <button class="secondary" onclick="resetForm()">Reset</button>
+      </div>
+    </div>
+
     <!-- v25.80: Card 02 REPLACED per user's handwritten spec + 10 dry-run scenarios.
          Was "Output Configuration" (output type choice cards + SDI pill).
          Now "Input Block of Video Processor" — 7 signal-type rows (HDMI 4K, HDMI FHD,
@@ -7423,6 +7707,157 @@ body.light .signal-card-footer-tv {
       </div>
     </div>
 
+    <!-- ============================================================
+         v25.95 — SIGNAL EXTENSION PANEL (Phase 3)
+         ============================================================
+         Visible in BOTH Multi Viewer + Video Processor modes.
+         Collapsible — default closed. When user expands and fills items,
+         the items are accumulated into window._sxLines[] and appended to
+         the BOM on save (either MV path or CALICO path).
+         3 sub-wizards: HDBaseT extender, HDMI splitter, AOC cable.
+         ============================================================ -->
+    <div class="card form-section-tv sx-card" id="signalExtensionCard">
+      <div class="section-head-tv sx-head" onclick="_sxToggle()" style="cursor:pointer;">
+        <div class="section-num-tv sx-num">SX</div>
+        <div class="section-head-text-tv" style="flex:1;">
+          <div class="section-title-tv">Signal Extension <span class="sx-optional-tag">optional</span></div>
+          <div class="section-sub-tv">HDBaseT extenders, HDMI distribution amplifiers (splitters), and AOC cables. Items added here are quoted as additional line items in your BOM.</div>
+        </div>
+        <div class="sx-toggle-icon" id="sxToggleIcon">▾</div>
+      </div>
+
+      <div class="sx-body" id="sxBody" style="display:none;">
+
+        <!-- ============ Sub-wizard 1: HDBaseT Extender ============ -->
+        <div class="sx-subwiz">
+          <div class="sx-subwiz-title">HDBaseT Extender</div>
+          <div class="sx-subwiz-sub">Magenta HD-One series. 100m at FHD / 60m at 4K.</div>
+          <div class="sx-grid">
+            <div class="field">
+              <label>Signal Type</label>
+              <select id="sx_hdbtSignalType" onchange="_sxHdbtRecompute()">
+                <option value="Video">Video only</option>
+                <option value="Video+Audio">Video + Audio</option>
+                <option value="Video+Audio+IR+RS232">Video + Audio + IR + RS232</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Video Resolution</label>
+              <select id="sx_hdbtVideoRes" onchange="_sxHdbtRecompute()">
+                <option value="FHD">FHD (1080p · 100m)</option>
+                <option value="4K">4K UHD (60m)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>No. of Transmitters</label>
+              <div class="mv-qty-row">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_hdbtTx',-1)">−</button>
+                <input id="sx_hdbtTx" type="number" min="0" max="32" value="0" readonly oninput="_sxHdbtRecompute()">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_hdbtTx',1)">+</button>
+              </div>
+            </div>
+            <div class="field">
+              <label>No. of Receivers</label>
+              <div class="mv-qty-row">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_hdbtRx',-1)">−</button>
+                <input id="sx_hdbtRx" type="number" min="0" max="32" value="0" readonly oninput="_sxHdbtRecompute()">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_hdbtRx',1)">+</button>
+              </div>
+            </div>
+          </div>
+          <div id="sx_hdbtPreview" class="sx-preview" style="display:none;"></div>
+        </div>
+
+        <!-- ============ Sub-wizard 2: HDMI Splitter ============ -->
+        <div class="sx-subwiz">
+          <div class="sx-subwiz-title">HDMI Splitter (Distribution Amplifier)</div>
+          <div class="sx-subwiz-sub">Magenta MG-DA series. All models 4K60 HDMI 2.0 with HDCP 2.2 and down-scaling.</div>
+          <div class="sx-grid">
+            <div class="field">
+              <label>1×2 Splitter (MG-DA-612)</label>
+              <div class="mv-qty-row">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_da612',-1)">−</button>
+                <input id="sx_da612" type="number" min="0" max="32" value="0" readonly oninput="_sxSplitterRecompute()">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_da612',1)">+</button>
+              </div>
+            </div>
+            <div class="field">
+              <label>1×4 Splitter (MG-DA-614)</label>
+              <div class="mv-qty-row">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_da614',-1)">−</button>
+                <input id="sx_da614" type="number" min="0" max="32" value="0" readonly oninput="_sxSplitterRecompute()">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_da614',1)">+</button>
+              </div>
+            </div>
+            <div class="field">
+              <label>1×8 Splitter (MG-DA-618)</label>
+              <div class="mv-qty-row">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_da618',-1)">−</button>
+                <input id="sx_da618" type="number" min="0" max="32" value="0" readonly oninput="_sxSplitterRecompute()">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_da618',1)">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ Sub-wizard 3: AOC Cable ============ -->
+        <div class="sx-subwiz">
+          <div class="sx-subwiz-title">AOC Cable (Active Optical)</div>
+          <div class="sx-subwiz-sub">Magenta MG-AOC series. 4K60 4:4:4 over fiber. Pick signal type, jacket, length, qty.</div>
+          <div class="sx-grid">
+            <div class="field">
+              <label>Signal</label>
+              <select id="sx_aocSignal" onchange="_sxAocOnSignalChange()">
+                <option value="HDMI">HDMI 2.0</option>
+                <option value="DisplayPort">DisplayPort 1.4</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Jacket</label>
+              <select id="sx_aocJacket" onchange="_sxAocOnJacketChange()">
+                <option value="Std">Standard</option>
+                <option value="Plenum">Plenum (CMP)</option>
+                <option value="LSZH">LSZH (Low Smoke Zero Halogen)</option>
+                <option value="Armored">Armored / Watertight</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Length</label>
+              <select id="sx_aocLength" onchange="_sxAocRecompute()">
+                <option value="10">10 m</option>
+                <option value="15">15 m</option>
+                <option value="20">20 m</option>
+                <option value="25">25 m</option>
+                <option value="30">30 m</option>
+                <option value="40">40 m</option>
+                <option value="50">50 m</option>
+                <option value="60">60 m</option>
+                <option value="70">70 m</option>
+                <option value="100">100 m</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Quantity</label>
+              <div class="mv-qty-row">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_aocQty',-1)">−</button>
+                <input id="sx_aocQty" type="number" min="0" max="64" value="0" readonly oninput="_sxAocRecompute()">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_aocQty',1)">+</button>
+              </div>
+            </div>
+          </div>
+          <div id="sx_aocPreview" class="sx-preview" style="display:none;"></div>
+          <button type="button" class="secondary sx-add-btn" onclick="_sxAocAdd()">+ Add this AOC cable to BOM</button>
+          <div id="sx_aocCart" class="sx-cart" style="display:none;"></div>
+        </div>
+
+        <!-- ============ Running BOM summary ============ -->
+        <div class="sx-summary" id="sxSummary" style="display:none;">
+          <div class="sx-summary-title">Signal Extension items in this BOM</div>
+          <div id="sxSummaryBody"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- v25.80.4: Card 04 (Technical Requirements) DELETED per user spec.
          Old fields (Total inputs, Signal types, HDMI 4K, HDMI FHD) were duplicates of Card 02's
          per-signal-type rows now. Notes textarea + Budget + DealValue kept as HIDDEN compat
@@ -7676,6 +8111,7 @@ body.light .signal-card-footer-tv {
               <tr>
                 <th data-sort="project">Project</th>
                 <th data-sort="enduser">End-user</th>
+                <th data-sort="family" style="width:90px;">Family</th>
                 <th data-sort="stage">Stage</th>
                 <th data-sort="dealValue" class="v26-th-num">Deal value</th>
                 <th data-sort="closemonth">Close</th>
@@ -7684,7 +8120,7 @@ body.light .signal-card-footer-tv {
               </tr>
             </thead>
             <tbody id="v26-mine-tbody">
-              <tr><td colspan="7" style="padding:32px;text-align:center;color:var(--ink-soft);">Loading…</td></tr>
+              <tr><td colspan="8" style="padding:32px;text-align:center;color:var(--ink-soft);">Loading…</td></tr>
             </tbody>
           </table>
         </div>
@@ -7775,6 +8211,13 @@ body.light .signal-card-footer-tv {
         <div class="v26-kpi v26-kpi-orange"><div class="v26-kpi-label">Days to Q Close</div><div class="v26-kpi-value" id="v26-team-kpi-qclose">—</div><div class="v26-kpi-sub" id="v26-team-kpi-qclose-sub">—</div></div>
         <!-- v25.70 (CH3): 9th KPI tile — Target progress. Hidden by default; shown when localStorage.tvone-cockpit-target-quarterly is set. -->
         <div class="v26-kpi v26-kpi-target-tv" id="v26-team-kpi-target-wrap" style="display:none;background:linear-gradient(135deg,rgba(212,175,55,0.10),rgba(4,120,87,0.05));"><div class="v26-kpi-label">Target Progress</div><div class="v26-kpi-value" id="v26-team-kpi-target">—</div><div class="v26-kpi-sub" id="v26-team-kpi-target-sub">— of target</div><div class="v26-kpi-target-bar-tv" id="v26-team-kpi-target-bar" style="width:0%"></div></div>
+      </div>
+
+      <!-- v25.97 — Phase 2.5 #4 lite: Family Mix strip. Compact summary of deals by product family across the visible (filtered) deal set. Counts derived client-side from outputType + recommended_chassis on each row — no backend call. -->
+      <div class="v26-family-strip" id="v26-family-strip" style="display:none;margin:8px 0 16px;padding:10px 14px;background:linear-gradient(90deg,rgba(6,78,59,0.05),rgba(197,165,114,0.06));border:1px solid var(--line-softer,#E2E8F0);border-radius:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.6px;color:var(--ink-soft,#64748B);text-transform:uppercase;">Family Mix</div>
+        <div id="v26-family-strip-chips" style="display:flex;gap:8px;flex-wrap:wrap;flex:1;"></div>
+        <div id="v26-family-strip-total" style="font-size:11px;color:var(--ink-soft,#64748B);font-weight:600;"></div>
       </div>
 
       <!-- 8 charts in 4 rows of 2 -->
@@ -8704,7 +9147,13 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.84';  // v25.84 — Autofill trim fix (sha256). Coerces password to String and calls .trim() before encoding so mobile/desktop autofill's invisible trailing whitespace doesn't produce a hash mismatch. Same root-cause as BS 2026-05-13 production lockout; preventive port to tvONE. No other changes from v25.83. Pairs with backend v26.17.0.
+  const TVONE_FRONTEND_VERSION = '25.97';  // v25.97 — tvONE Product Line Integration · Phase 2.5 complete. (1) Excel export now enumerates ProjectLines as a "Companion Items" section after main BOM (extender lines from EXTENDER_HDBASET / SPLITTER / AOC families with editable unit prices + line total formulas, matching CALICO row style). (2) Dashboard Team Analytics gets a Family Mix strip above the chart area — compact chips showing deal count + ₹ per family across the filtered set, no separate fetch needed. (3) HDMI 1080p output added to Multi Viewer dropdown with placeholder SKU (CV-HDMI-2K-SC-1OUT-FF) — flagged in description as pending tvONE confirmation. Pairs with backend v26.18.0.
+  // v25.96 — Phase 2.5 polish. Edit-existing repopulates MV + SX wizards. History Family column with color badges.
+  // v25.95 — Phase 3 (Signal Extension wizard live). HDBaseT + HDMI Splitter + AOC sub-wizards. CALICO mode also writes ProjectLines.
+  // v25.95 — Phase 3 (Signal Extension wizard live). HDBaseT + HDMI Splitter + AOC sub-wizards. CALICO mode also writes ProjectLines. MV button bug fixed.
+  // v25.90 — Phase 2 (Multi Viewer wizard live). Requirement Picker card. CORIOview recommendation engine (5 fixed + MTO fallback). MV-dedicated save path bypassing CALICO validation. ProjectLines write via apiProjectLinesBulkReplace.
+  // v25.85 — Phase 1 frontend (plumbing only). 5 API helper functions for ProjectLines CRUD.
+  // v25.84 — Autofill trim fix (sha256). Coerces password to String and calls .trim() before encoding so mobile/desktop autofill's invisible trailing whitespace doesn't produce a hash mismatch. Same root-cause as BS 2026-05-13 production lockout; preventive port to tvONE. No other changes from v25.83. Pairs with backend v26.17.0.
   // v25.80.6 — Removed orphan qty-stepper wrap for hidden compat inputs.
   // v25.80.5 — Removed Card 02 + Card 03 footer notes.
   // v25.80.4 — Card 04 (Tech Reqs) removed entirely.
@@ -11040,6 +11489,14 @@ body.light .signal-card-footer-tv {
     const info = document.getElementById('formInfo');
     err.classList.remove('show'); info.classList.remove('show');
 
+    // v25.90 — Phase 2: Multi Viewer mode has its own validation + save path.
+    // The CALICO calculateAndLog flow below (Card 02-04 validation, screen-count,
+    // input-port math, etc.) doesn't apply to a CORIOview project, so we branch
+    // here at the top and never touch the CALICO logic.
+    if (window._mvMode) {
+      return _mvCalculateAndLog();
+    }
+
     const proj = getProjectorLoad();
     const input = {
       // v25.9: payload updated for 13-field Project Context spec
@@ -11402,6 +11859,64 @@ body.light .signal-card-footer-tv {
     }
     sessionLog.unshift(submission);
     lastResult = { input: input, reco: reco, submission: submission };
+
+    // v25.90 — Phase 2: write ProjectLines if Multi Viewer mode is active.
+    // v25.95 — Phase 3: CALICO mode also writes ProjectLines (Calico chassis as line #1, plus Signal Extension items).
+    // Submissions row carries the project header; ProjectLines holds the multi-line BOM.
+    // This block is additive — if it fails, the deal is still saved in Submissions (graceful fallback).
+    try {
+      if (window._mvMode && window._mvLastResult && window._mvLastResult.bom && submission.refId) {
+        const _mvLines = window._mvLastResult.bom.map(function(ln, idx) {
+          return {
+            sequence: idx + 1,
+            family:   ln.family   || 'CORIOVIEW',
+            category: ln.category || '',
+            sku:      ln.sku      || '',
+            description: ln.description || '',
+            qty:      Number(ln.qty) || 0,
+            inputSignal:  ln.inputSignal  || '',
+            outputSignal: ln.outputSignal || '',
+            inputCount:   Number(ln.inputCount) || 0,
+            metaJSON:     JSON.stringify({ mvMode: true, sourceVersion: TVONE_FRONTEND_VERSION })
+          };
+        });
+        // Fire and don't await — if it fails, error_log_append catches it server-side later
+        apiProjectLinesBulkReplace(submission.refId, _mvLines).then(function(r) {
+          if (r && r.ok) {
+            console.log('[v25.90] ProjectLines bulk_replace OK — ' + (r.written || 0) + ' lines written for ' + submission.refId);
+          } else {
+            console.warn('[v25.90] ProjectLines bulk_replace returned error:', r);
+          }
+        }).catch(function(err) {
+          console.warn('[v25.90] ProjectLines bulk_replace failed (deal still saved):', err);
+        });
+      } else if (submission.refId) {
+        // CALICO mode (or any non-MV) — write Calico chassis as line #1, plus Signal Extension items
+        const _calicoChassis = String(submission.recommended_chassis || '').trim();
+        const _calicoLine = _calicoChassis
+          ? [{ sequence: 1, family: 'CALICO', category: 'chassis', sku: _calicoChassis, qty: 1,
+               description: 'CALICO PRO ' + _calicoChassis + (submission.value_adds ? ' \u00b7 ' + submission.value_adds : ''),
+               inputSignal: '', outputSignal: String(submission.outputSignal || ''), inputCount: Number(submission.inputs) || 0,
+               metaJSON: JSON.stringify({ calicoMode: true, sourceVersion: TVONE_FRONTEND_VERSION }) }]
+          : [];
+        const _sxLines = (typeof window._sxCollectAllLines === 'function') ? window._sxCollectAllLines() : [];
+        const _allLines = _calicoLine.concat(_sxLines.map(function(ln, idx) {
+          return Object.assign({}, ln, { sequence: _calicoLine.length + idx + 1 });
+        }));
+        if (_allLines.length > 0) {
+          apiProjectLinesBulkReplace(submission.refId, _allLines).then(function(r) {
+            if (r && r.ok) {
+              console.log('[v25.95] CALICO ProjectLines bulk_replace OK — ' + (r.written || 0) + ' lines (' + _calicoLine.length + ' Calico + ' + _sxLines.length + ' SX) for ' + submission.refId);
+            }
+          }).catch(function(err) {
+            console.warn('[v25.95] CALICO ProjectLines bulk_replace failed (deal still saved):', err);
+          });
+        }
+      }
+    } catch (_mvErr) {
+      console.warn('[v25.90/95] ProjectLines write threw (deal still saved):', _mvErr);
+    }
+
     // Clear edit mode after save so next calc is a fresh entry
     if (_editingRefId) {
       _editingRefId = null;
@@ -11460,6 +11975,803 @@ body.light .signal-card-footer-tv {
       })
     });
   }
+
+  // =================================================================
+  // v25.85 — PROJECT LINES API HELPERS (Phase 1 foundation)
+  // =================================================================
+  // Sibling-table architecture (Option D): one project row in Submissions + N rows in
+  // ProjectLines. These helpers are the data layer for the Phase 2 Multi Viewer wizard,
+  // Phase 3 Signal Extension wizard, and future Video Processor wizard.
+  //
+  // Line object shape (all string except numerics):
+  //   {
+  //     refId, lineId (optional on insert), sequence,
+  //     family: 'CALICO' | 'CORIOVIEW' | 'CORIO' | 'EXTENDER_HDBASET' | 'EXTENDER_AOC' | 'EXTENDER_SPLITTER',
+  //     category: 'chassis' | 'card' | 'kit' | 'tx' | 'rx' | 'cable' | 'splitter' | 'accessory',
+  //     sku, description, qty,
+  //     inputSignal, outputSignal, inputCount,
+  //     metaJSON  (extra wizard context as JSON string)
+  //   }
+  // =================================================================
+
+  async function apiProjectLinesList(refId) {
+    if (!WEB_APP_URL) throw new Error('No backend URL configured');
+    if (!refId) throw new Error('refId required');
+    const resp = await fetch(WEB_APP_URL, {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'project_lines_list',
+        authUsername: currentUser ? currentUser.username : '',
+        authPasswordHash: _authHash || '',
+        refId: String(refId)
+      })
+    });
+    return resp.json();
+  }
+
+  async function apiProjectLinesUpsert(refId, line) {
+    if (!WEB_APP_URL) throw new Error('No backend URL configured');
+    if (!refId) throw new Error('refId required');
+    if (!line || !line.sku) throw new Error('line.sku required');
+    const resp = await fetch(WEB_APP_URL, {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'project_lines_upsert',
+        authUsername: currentUser ? currentUser.username : '',
+        authPasswordHash: _authHash || '',
+        refId: String(refId),
+        line: line
+      })
+    });
+    return resp.json();
+  }
+
+  async function apiProjectLinesDelete(refId, lineId) {
+    if (!WEB_APP_URL) throw new Error('No backend URL configured');
+    if (!refId || !lineId) throw new Error('refId + lineId required');
+    const resp = await fetch(WEB_APP_URL, {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'project_lines_delete',
+        authUsername: currentUser ? currentUser.username : '',
+        authPasswordHash: _authHash || '',
+        refId: String(refId),
+        lineId: String(lineId)
+      })
+    });
+    return resp.json();
+  }
+
+  async function apiProjectLinesClear(refId) {
+    if (!WEB_APP_URL) throw new Error('No backend URL configured');
+    if (!refId) throw new Error('refId required');
+    const resp = await fetch(WEB_APP_URL, {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'project_lines_clear',
+        authUsername: currentUser ? currentUser.username : '',
+        authPasswordHash: _authHash || '',
+        refId: String(refId)
+      })
+    });
+    return resp.json();
+  }
+
+  // Atomic replace — preferred write path. Frontend collects all wizard outputs into
+  // a lines[] array, then writes in one call. Backend deletes existing rows for this
+  // refId then appends the new set. Cleared if lines is empty.
+  async function apiProjectLinesBulkReplace(refId, lines) {
+    if (!WEB_APP_URL) throw new Error('No backend URL configured');
+    if (!refId) throw new Error('refId required');
+    if (!Array.isArray(lines)) throw new Error('lines must be an array');
+    const resp = await fetch(WEB_APP_URL, {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'project_lines_bulk_replace',
+        authUsername: currentUser ? currentUser.username : '',
+        authPasswordHash: _authHash || '',
+        refId: String(refId),
+        lines: lines
+      })
+    });
+    return resp.json();
+  }
+
+  // =================================================================
+  // v25.90 — MULTI VIEWER WIZARD (Phase 2 — CORIOview recommendation)
+  // =================================================================
+  // Architecture: when Requirement = Multi Viewer, this module runs.
+  // Cards 02-04 (existing CALICO flow) hide. MV wizard inputs feed
+  // recommendMWP() which picks the smallest fixed chassis that fits the
+  // signal/qty combination, falling back to MWP-MTO if no fixed config
+  // matches. Result populates BOM lines that get written to ProjectLines
+  // alongside the project header on Save.
+  // =================================================================
+
+  // Catalog — locked spec (see SPEC-tvone-phase2-phase3-LOCKED.md)
+  const CORIOVIEW_CHASSIS = [
+    { sku: 'MWP-4D-1Y',  inSignal: 'DVI-U',    inPorts: 4, outSignal: '4K HDMI', desc: 'CORIOview MWP-4D-1Y · 4× DVI-U in / 1× 4K HDMI out' },
+    { sku: 'MWP-4H-1Y',  inSignal: 'FHD HDMI', inPorts: 4, outSignal: '4K HDMI', desc: 'CORIOview MWP-4H-1Y · 4× FHD HDMI in / 1× 4K HDMI out' },
+    { sku: 'MWP-4Y-1Y',  inSignal: '4K HDMI',  inPorts: 4, outSignal: '4K HDMI', desc: 'CORIOview MWP-4Y-1Y · 4× 4K HDMI in / 1× 4K HDMI out' },
+    { sku: 'MWP-8GS-1Y', inSignal: '3G-SDI',   inPorts: 8, outSignal: '4K HDMI', desc: 'CORIOview MWP-8GS-1Y · 8× 3G-SDI in / 1× 4K HDMI out' },
+    { sku: 'MWP-8H-1Y',  inSignal: 'FHD HDMI', inPorts: 8, outSignal: '4K HDMI', desc: 'CORIOview MWP-8H-1Y · 8× FHD HDMI in / 1× 4K HDMI out' }
+    // MWP-4Hi-1Y catalog-only (AVIP deferred from v1 wizard)
+  ];
+
+  const CORIOVIEW_INPUT_CARDS = {
+    'DVI-U':    { sku: 'CV-DVIU-2IN-FF',      portsPerCard: 2, desc: 'CORIOview DVI-U 2-IN module (Factory Fit)' },
+    'FHD HDMI': { sku: 'CV-HDMI-4IN-FF',      portsPerCard: 4, desc: 'CORIOview HDMI 1080p 4-IN module (Factory Fit)' },
+    '4K HDMI':  { sku: 'CV-HDMI-4K-2IN-FF',   portsPerCard: 2, desc: 'CORIOview HDMI 4K 2-IN module (Factory Fit)' },
+    '3G-SDI':   { sku: 'CV-3GSDI-4IN-FF',     portsPerCard: 4, desc: 'CORIOview 3G-SDI 4-IN module (Factory Fit)' },
+    'HD-SDI':   { sku: 'CV-HDSDI-4IN-FF',     portsPerCard: 4, desc: 'CORIOview HD/SD-SDI 4-IN module (Factory Fit)' },
+    'HDBaseT':  { sku: 'CV-HDBT-2IN-1ETH-FF', portsPerCard: 2, desc: 'CORIOview HDBaseT 2-IN + Ethernet (Factory Fit)' }
+  };
+
+  const CORIOVIEW_OUTPUT_CARDS = {
+    '4K HDMI':   { sku: 'CV-HDMI-4K-SC-1OUT-FF',    desc: 'CORIOview HDMI 4K Single Scaled Output (Factory Fit)' },
+    'HDMI 1080p':{ sku: 'CV-HDMI-2K-SC-1OUT-FF',    desc: 'CORIOview HDMI 1080p Single Scaled Output (Factory Fit) — PLACEHOLDER SKU; awaiting tvONE confirmation' },
+    'DVI-I':     { sku: 'CV-DVI-I-SC-2OUT-FF',      desc: 'CORIOview DVI-I Scaled Output (Factory Fit)' },
+    '3G SDI':    { sku: 'CV-3GSDI-SC-2OUT-FF',      desc: 'CORIOview 3G-SDI Scaled Output (Factory Fit)' },
+    'HDBaseT':   { sku: 'CV-HDBT-SC-2OUT-1ETH-FF',  desc: 'CORIOview HDBaseT Scaled Output + Ethernet (Factory Fit)' }
+  };
+
+  const MWP_MTO = { sku: 'MWP-MTO', desc: 'CORIOview MWP-MTO chassis (Made-to-Order)', maxInputCards: 2, maxOutputCards: 1 };
+
+  // Smart cap by signal — DVI-U / 4K HDMI / HDBaseT use 2-port cards so max 4 from 2 cards.
+  // FHD HDMI / 3G-SDI / HD-SDI use 4-port cards so max 8 from 2 cards.
+  const MV_QTY_CAP = {
+    'DVI-U': 4, 'FHD HDMI': 8, '4K HDMI': 4, '3G-SDI': 8, 'HD-SDI': 8, 'HDBaseT': 4
+  };
+
+  // ----------------------------------------------------------------
+  // Core recommendation engine
+  // ----------------------------------------------------------------
+  function recommendMWP(inputSignal, inputQty, outputSignal) {
+    inputQty = Number(inputQty) || 0;
+    if (!inputSignal || inputQty <= 0 || !outputSignal) {
+      return { type: 'empty' };
+    }
+    // Step 1: try fixed chassis (only possible if output is 4K HDMI — all fixed chassis output 4K HDMI)
+    if (outputSignal === '4K HDMI') {
+      const candidates = CORIOVIEW_CHASSIS.filter(function(c) {
+        return c.inSignal === inputSignal && c.inPorts >= inputQty;
+      });
+      if (candidates.length > 0) {
+        candidates.sort(function(a, b) { return a.inPorts - b.inPorts; });
+        const chosen = candidates[0];
+        return {
+          type: 'fixed',
+          chassis: chosen,
+          bom: [
+            { family: 'CORIOVIEW', category: 'chassis', sku: chosen.sku, qty: 1, description: chosen.desc, inputSignal: inputSignal, outputSignal: outputSignal, inputCount: inputQty }
+          ]
+        };
+      }
+    }
+    // Step 2: MTO fallback
+    const inputCard = CORIOVIEW_INPUT_CARDS[inputSignal];
+    const outputCard = CORIOVIEW_OUTPUT_CARDS[outputSignal];
+    if (!inputCard) return { type: 'error', error: 'Input signal "' + inputSignal + '" not supported in current catalog.' };
+    if (!outputCard) return { type: 'error', error: 'Output signal "' + outputSignal + '" not supported in current catalog.' };
+    const cardsNeeded = Math.ceil(inputQty / inputCard.portsPerCard);
+    if (cardsNeeded > MWP_MTO.maxInputCards) {
+      return {
+        type: 'error',
+        error: 'This configuration needs ' + cardsNeeded + ' input cards but MWP-MTO supports max ' + MWP_MTO.maxInputCards + '. Contact tvONE for a custom build.'
+      };
+    }
+    return {
+      type: 'mto',
+      chassis: { sku: MWP_MTO.sku, desc: MWP_MTO.desc },
+      bom: [
+        { family: 'CORIOVIEW', category: 'chassis', sku: MWP_MTO.sku,      qty: 1,           description: MWP_MTO.desc, inputSignal: inputSignal, outputSignal: outputSignal, inputCount: inputQty },
+        { family: 'CORIOVIEW', category: 'card',    sku: inputCard.sku,    qty: cardsNeeded, description: inputCard.desc, inputSignal: inputSignal },
+        { family: 'CORIOVIEW', category: 'card',    sku: outputCard.sku,   qty: 1,           description: outputCard.desc, outputSignal: outputSignal }
+      ]
+    };
+  }
+
+  // ----------------------------------------------------------------
+  // UI state + handlers
+  // ----------------------------------------------------------------
+  // Module-local cache so save flow can pick up the MV result without re-reading DOM
+  window._mvLastResult = null;
+  window._mvMode = false;
+
+  function _onRequirementChange() {
+    const radios = document.getElementsByName('req_type');
+    let picked = '';
+    for (let i = 0; i < radios.length; i++) { if (radios[i].checked) { picked = radios[i].value; break; } }
+    window._mvMode = (picked === 'multiviewer');
+    // Toggle visibility
+    const mvCard = document.getElementById('mvWizardCard');
+    const vpSub = document.getElementById('vpSubBranch');
+    if (mvCard) mvCard.style.display = window._mvMode ? '' : 'none';
+    if (vpSub)  vpSub.style.display  = window._mvMode ? 'none' : '';
+    // Hide/show existing CALICO cards (data-section 02, 03, 04)
+    const calicoCardSelectors = ['[data-section="02"]', '[data-section="03"]', '[data-section="04"]'];
+    for (let i = 0; i < calicoCardSelectors.length; i++) {
+      const els = document.querySelectorAll(calicoCardSelectors[i]);
+      for (let j = 0; j < els.length; j++) { els[j].style.display = window._mvMode ? 'none' : ''; }
+    }
+    // Repaint preview if MV mode now active
+    if (window._mvMode) _mvRecompute();
+  }
+
+  function _onVpFamilyChange() {
+    // Phase 2: Calico active, Corio greyed. No-op for now — placeholder for Phase 4.
+  }
+
+  function _onMvInputSignalChange() {
+    const sigEl = document.getElementById('mv_inputSignal');
+    const sig = sigEl ? sigEl.value : '';
+    const cap = MV_QTY_CAP[sig] || 8;
+    const qtyEl = document.getElementById('mv_inputCount');
+    const capLbl = document.getElementById('mv_qtyCap');
+    if (qtyEl) {
+      qtyEl.max = cap;
+      const cur = Number(qtyEl.value) || 1;
+      if (cur > cap) qtyEl.value = cap;
+      if (cur < 1) qtyEl.value = 1;
+    }
+    if (capLbl) capLbl.textContent = sig ? ('max ' + cap) : 'max 8';
+    _mvRecompute();
+  }
+
+  function _mvQtyAdjust(delta) {
+    const qtyEl = document.getElementById('mv_inputCount');
+    if (!qtyEl) return;
+    const sig = (document.getElementById('mv_inputSignal') || {}).value || '';
+    const cap = MV_QTY_CAP[sig] || 8;
+    const cur = Number(qtyEl.value) || 1;
+    const next = Math.max(1, Math.min(cap, cur + delta));
+    qtyEl.value = next;
+    _mvRecompute();
+  }
+
+  function _onMvExtYes() {
+    const ph = document.getElementById('mvExtPlaceholder');
+    if (ph) ph.style.display = '';
+  }
+
+  function _mvRecompute() {
+    if (!window._mvMode) return;
+    const sig = (document.getElementById('mv_inputSignal') || {}).value || '';
+    const qty = Number((document.getElementById('mv_inputCount') || {}).value) || 0;
+    const out = (document.getElementById('mv_outputSignal') || {}).value || '4K HDMI';
+    const preview = document.getElementById('mvPreview');
+    const tag = document.getElementById('mvPreviewTag');
+    const chassisEl = document.getElementById('mvPreviewChassis');
+    const bomEl = document.getElementById('mvPreviewBom');
+    const result = recommendMWP(sig, qty, out);
+    window._mvLastResult = result;
+    if (!preview) return;
+    if (result.type === 'empty') { preview.style.display = 'none'; return; }
+    preview.style.display = '';
+    if (result.type === 'error') {
+      if (tag) { tag.textContent = 'Cannot configure'; tag.className = 'mv-preview-tag err'; }
+      if (chassisEl) chassisEl.textContent = '—';
+      if (bomEl) bomEl.innerHTML = '<div class="mv-preview-err">' + _escMv(result.error) + '</div>';
+      return;
+    }
+    if (result.type === 'fixed') {
+      if (tag) { tag.textContent = 'Fixed chassis'; tag.className = 'mv-preview-tag'; }
+    } else {
+      if (tag) { tag.textContent = 'MTO build'; tag.className = 'mv-preview-tag mto'; }
+    }
+    if (chassisEl) chassisEl.textContent = result.chassis.sku;
+    if (bomEl) {
+      let html = '';
+      for (let i = 0; i < result.bom.length; i++) {
+        const ln = result.bom[i];
+        html += '<div class="bom-qty">' + ln.qty + '×</div>'
+              + '<div class="bom-sku">' + _escMv(ln.sku) + '</div>'
+              + '<div class="bom-desc">' + _escMv(ln.description) + '</div>'
+              + '<div class="bom-cat">' + _escMv(ln.category) + '</div>';
+      }
+      bomEl.innerHTML = html;
+    }
+  }
+
+  function _escMv(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+
+  // Expose helpers globally (form HTML uses inline onclick/onchange)
+  window._onRequirementChange   = _onRequirementChange;
+  window._onVpFamilyChange      = _onVpFamilyChange;
+  window._onMvInputSignalChange = _onMvInputSignalChange;
+  window._mvQtyAdjust           = _mvQtyAdjust;
+  window._onMvExtYes            = _onMvExtYes;
+  window._mvRecompute           = _mvRecompute;
+  window.recommendMWP           = recommendMWP;
+
+  // ----------------------------------------------------------------
+  // MV-dedicated save path (called from calculateAndLog when _mvMode active)
+  // ----------------------------------------------------------------
+  async function _mvCalculateAndLog() {
+    const err = document.getElementById('formError');
+    const info = document.getElementById('formInfo');
+    if (err) err.classList.remove('show');
+    if (info) info.classList.remove('show');
+
+    const mvRes = window._mvLastResult;
+    if (!mvRes || mvRes.type === 'empty') {
+      if (err) { err.textContent = 'Pick Multi Viewer input signal, count, and output before generating BOM.'; err.classList.add('show'); }
+      return;
+    }
+    if (mvRes.type === 'error') {
+      if (err) { err.textContent = mvRes.error; err.classList.add('show'); }
+      return;
+    }
+
+    // Read Project Context fields only — these are the universal/required ones
+    function _val(id) { const el = document.getElementById(id); return el ? String(el.value || '').trim() : ''; }
+    const input = {
+      project:               _val('f_project'),
+      stage:                 _val('f_stage'),
+      endUser:               _val('f_endUser'),
+      partner:               _val('f_partner'),
+      consultant:            _val('f_consultant'),
+      venueType:             _val('f_venueType'),
+      city:                  _val('f_city'),
+      state:                 _val('f_state'),
+      partnerContactName:    _val('f_partnerContactName'),
+      partnerContactPhone:   _val('f_partnerContactPhone'),
+      partnerContactEmail:   _val('f_partnerContactEmail'),
+      leadSource:            _val('f_leadSource'),
+      outcome:               _val('f_outcome') || 'open',
+      outcomeReason:         _val('f_outcomeReason'),
+      outcomeReasonNote:     _val('f_outcomeReasonNote'),
+      close:                 _val('f_close'),
+      dealValueINR:          parseFloat(_val('f_dealValueINR')) || 0,
+      notes:                 _val('f_notes'),
+      internalNotes:         _val('f_internalNotes'),
+      salesPerson:           _val('f_salesPerson').toLowerCase(),
+      presalesPerson:        _val('f_presalesPerson').toLowerCase(),
+      isTest:                (window._testModeOnTV === true) ? 'TRUE' : ''
+    };
+    input.contact = [input.partnerContactName, input.partnerContactPhone, input.partnerContactEmail].filter(function(x){return x;}).join(' \u00b7 ');
+
+    // Validation — Project Context fields only (no Card 02-04 logic in MV mode)
+    const required = [];
+    if (!input.project)              required.push({ id:'f_project',              label:'Project Name' });
+    if (!input.endUser)              required.push({ id:'f_endUser',              label:'End-user / Client' });
+    if (!input.venueType)            required.push({ id:'f_venueType',            label:'Venue Type' });
+    if (!input.consultant)           required.push({ id:'f_consultant',           label:'Consultant' });
+    if (!input.partner)              required.push({ id:'f_partner',              label:'Partner / SI' });
+    if (!input.city)                 required.push({ id:'f_city',                 label:'City' });
+    if (!input.state)                required.push({ id:'f_state',                label:'State' });
+    if (!input.stage)                required.push({ id:'f_stage',                label:'Deal Stage' });
+    if (!input.leadSource)           required.push({ id:'f_leadSource',           label:'Lead Source' });
+    if (!input.close)                required.push({ id:'f_close',                label:'Expected Closure' });
+    if (!input.outcome)              required.push({ id:'f_outcome',              label:'Outcome' });
+    if (input.outcome !== 'open' && !input.outcomeReason) required.push({ id:'f_outcomeReason', label:'Outcome reason' });
+    if (!input.salesPerson)          required.push({ id:'f_salesPerson',          label:'Sales person' });
+    if (input.salesPerson && input.presalesPerson && input.salesPerson === input.presalesPerson) {
+      required.push({ id:'f_presalesPerson', label:'Presales must be different from Sales' });
+    }
+    if (!input.partnerContactName)   required.push({ id:'f_partnerContactName',   label:'Partner Contact — Name' });
+    if (!input.partnerContactPhone || !/^[0-9]{10}$/.test(input.partnerContactPhone)) {
+      required.push({ id:'f_partnerContactPhone', label:'Partner Contact — Mobile (10 digits)' });
+    }
+    if (!input.partnerContactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.partnerContactEmail)) {
+      required.push({ id:'f_partnerContactEmail', label:'Partner Contact — Email (valid format)' });
+    }
+
+    document.querySelectorAll('.field-error').forEach(function(n) { n.classList.remove('field-error'); });
+    if (required.length) {
+      required.forEach(function(f) {
+        const el = document.getElementById(f.id);
+        if (el) {
+          el.classList.add('field-error');
+          const clear = function() { el.classList.remove('field-error'); el.removeEventListener('input', clear); el.removeEventListener('change', clear); };
+          el.addEventListener('input', clear); el.addEventListener('change', clear);
+        }
+      });
+      if (err) {
+        const lines = required.map(function(f) { return '\u2022 ' + f.label; });
+        err.innerHTML = '<strong>Please complete:</strong><br>' + lines.join('<br>');
+        err.classList.add('show');
+        const first = document.getElementById(required[0].id);
+        if (first && typeof first.scrollIntoView === 'function') {
+          first.scrollIntoView({ behavior:'smooth', block:'center' });
+          if (typeof first.focus === 'function') { try { first.focus(); } catch(_) {} }
+        }
+      }
+      return;
+    }
+
+    // Build submission row — populate legacy CALICO fields with neutral MV-equivalent values
+    const refId = (typeof _editingRefId !== 'undefined' && _editingRefId) ? _editingRefId : ('MWP-' + Date.now().toString(36).toUpperCase());
+    const bomSummaryText = mvRes.bom.map(function(ln) { return ln.qty + '\u00d7 ' + ln.sku; }).join('; ');
+    const chassisSku = (mvRes.chassis && mvRes.chassis.sku) || '';
+    const submission = Object.assign({}, input, {
+      refId:               refId,
+      status:              'pending',
+      timestampLocal:      new Date().toISOString(),
+      username:            currentUser ? currentUser.username : '',
+      userFullName:        currentUser ? (currentUser.fullName || currentUser.username) : '',
+      userRole:            currentUser ? currentUser.role : '',
+      // CALICO-specific fields neutralised for MV mode (recommend_chassis carries the real value)
+      recommended_chassis: chassisSku,
+      bom_summary:         bomSummaryText,
+      value_adds:          (mvRes.type === 'mto' ? 'MWP-MTO build · custom configuration' : 'CORIOview fixed chassis'),
+      outputType:          'CORIOview',
+      outputSignal:        mvRes.bom[0].outputSignal || '4K HDMI',
+      sdiCount:            0, projectorCount: 0, projectorRes: '', projectorPorts: 0,
+      screens_count: 0, led_pixels: 0, total_pixels_processed: 0, led_ports: 0, led_ports_raw: 0,
+      hdmi_ports_needed: 0, sdi_ports_needed: 0, total_ports: 0,
+      inputs: Number(mvRes.bom[0].inputCount) || 0, inputs4K: 0, inputsFHD: 0,
+      signals: mvRes.bom[0].inputSignal || '',
+      budget: 'Open',
+      timestamp: new Date().toISOString(),
+      userAgent: (navigator && navigator.userAgent) || '',
+      pageUrl: (location && location.href) || ''
+    });
+
+    // Submit to Submissions sheet via existing helpers
+    const calcBtn = document.getElementById('calcBtn');
+    if (calcBtn) { calcBtn.disabled = true; calcBtn.textContent = 'Saving\u2026'; }
+
+    try {
+      let resp;
+      if (typeof _editingRefId !== 'undefined' && _editingRefId) {
+        resp = await updateSubmissionOnSheet(submission);
+      } else {
+        resp = await logToSheet(submission);
+      }
+      let data = null;
+      try { data = await resp.json(); } catch(_) { /* opaque/legacy */ }
+      if (data && data.ok === false) { throw new Error(data.error || 'Server rejected submission'); }
+      if (typeof showSync === 'function') showSync('Multi Viewer deal saved', 'success');
+
+      // Write ProjectLines
+      const _mvBomLines = mvRes.bom.map(function(ln, idx) {
+        return {
+          sequence: idx + 1, family: ln.family || 'CORIOVIEW', category: ln.category || '',
+          sku: ln.sku || '', description: ln.description || '', qty: Number(ln.qty) || 0,
+          inputSignal: ln.inputSignal || '', outputSignal: ln.outputSignal || '', inputCount: Number(ln.inputCount) || 0,
+          metaJSON: JSON.stringify({ mvMode: true, mvType: mvRes.type, sourceVersion: TVONE_FRONTEND_VERSION })
+        };
+      });
+      // v25.95 (Phase 3): append Signal Extension lines after MV chassis/cards
+      const _sxLines = (typeof window._sxCollectAllLines === 'function') ? window._sxCollectAllLines() : [];
+      const _mvLines = _mvBomLines.concat(_sxLines.map(function(ln, idx) {
+        return Object.assign({}, ln, { sequence: _mvBomLines.length + idx + 1 });
+      }));
+      try {
+        const lr = await apiProjectLinesBulkReplace(refId, _mvLines);
+        if (!lr || lr.ok === false) {
+          console.warn('[v25.90] ProjectLines bulk_replace returned:', lr);
+        } else {
+          console.log('[v25.90] ProjectLines: ' + (lr.written || 0) + ' lines written for ' + refId);
+        }
+      } catch (lerr) {
+        console.warn('[v25.90] ProjectLines write failed (Submissions save still OK):', lerr);
+      }
+
+      // Cache for export buttons + Result page
+      lastResult = {
+        input: input,
+        reco:  { chassis: chassisSku, bom: mvRes.bom, mvMode: true, mvType: mvRes.type },
+        submission: submission
+      };
+      sessionLog.unshift(submission);
+
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
+      // Show a minimal MV result inline (re-using preview area on the form for now)
+      const previewEl = document.getElementById('mvPreview');
+      if (previewEl) {
+        const tag = document.getElementById('mvPreviewTag');
+        if (tag) { tag.textContent = 'Saved \u2713'; tag.style.background = '#16A34A'; }
+      }
+      if (info) {
+        info.innerHTML = '<strong>Saved.</strong> Ref: <code>' + _escMv(refId) + '</code> \u00b7 Chassis: <code>' + _escMv(chassisSku) + '</code> \u00b7 ' + mvRes.bom.length + ' line item(s) in ProjectLines.';
+        info.classList.add('show');
+      }
+      // Scroll to top for the success banner
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(_) {}
+    } catch (e) {
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
+      if (err) {
+        err.innerHTML = '<strong>Save failed:</strong> ' + _escMv(String(e && e.message || e));
+        err.classList.add('show');
+      }
+      console.error('[v25.90] MV save failed:', e);
+    }
+  }
+  window._mvCalculateAndLog = _mvCalculateAndLog;
+
+  // =================================================================
+  // v25.95 — SIGNAL EXTENSION WIZARD (Phase 3)
+  // =================================================================
+  // 3 sub-wizards (HDBaseT extender · HDMI splitter · AOC cable) feeding
+  // a unified window._sxLines[] array. On save, both the MV path and the
+  // CALICO path append _sxLines to the ProjectLines write.
+  // =================================================================
+
+  // HDBaseT extender SKU map — locked spec
+  // 500-series (152m FHD) DEFERRED — wizard auto-picks distance from 4K/FHD only
+  const SX_HDBT_MAP = {
+    'Video':                { kit: '2211079-03', tx: '2211093-02', rx: '2211094-02', familyLabel: 'HD-One DX' },
+    'Video+Audio':          { kit: '2211079-03', tx: '2211093-02', rx: '2211094-02', familyLabel: 'HD-One DX' },
+    'Video+Audio+IR+RS232': { kit: '2211078-02', tx: '2211095-02', rx: '2211096-02', familyLabel: 'HD-One LX' }
+  };
+
+  // HDMI splitter SKU map
+  const SX_DA_MAP = {
+    '612': { sku: 'MG-DA-612', desc: '1\u00d72 4K60 HDMI 2.0 Ultra Slim Splitter, HDCP 2.2 + downscaling' },
+    '614': { sku: 'MG-DA-614', desc: '1\u00d74 4K60 HDMI 2.0 Ultra Slim Splitter, HDCP 2.2 + downscaling' },
+    '618': { sku: 'MG-DA-618', desc: '1\u00d78 4K60 HDMI 2.0 Ultra Slim Splitter, HDCP 2.2 + downscaling' }
+  };
+
+  // AOC cable: code map + sparse-availability matrix per locked spec
+  const SX_AOC_CODE = {
+    'HDMI':        { 'Std': '661', 'Plenum': '662', 'LSZH': '663', 'Armored': '66A' },
+    'DisplayPort': { 'Std': '881', 'Plenum': '882', 'LSZH': '883', 'Armored': '88A' }
+  };
+  const SX_AOC_AVAIL = {
+    '661': [10,15,20,25,30,40,50,60,70,100],
+    '662': [10,15,20,25,30,40,50,60,70,100],
+    '663': [10,15,20,25,30,40,50,60,70,100],
+    '66A': [10,30,100],
+    '881': [10,15,20,25,30,40],
+    '882': [10,15,20,25,30,40],
+    '883': [10,15,20,25,30,40],
+    '88A': [10,30]
+  };
+
+  // Module state — both AOC cart and HDBaseT/Splitter live values get merged into _sxLines at save time
+  window._sxLines = window._sxLines || [];  // array of { family, category, sku, qty, description, metaJSON }
+  window._sxAocCart = window._sxAocCart || []; // multi-AOC support: user adds N AOC cables of different specs
+
+  function _sxToggle() {
+    const card = document.getElementById('signalExtensionCard');
+    const body = document.getElementById('sxBody');
+    if (!card || !body) return;
+    const open = card.getAttribute('data-sx-open') === 'true';
+    if (open) {
+      card.setAttribute('data-sx-open', 'false');
+      body.style.display = 'none';
+    } else {
+      card.setAttribute('data-sx-open', 'true');
+      body.style.display = '';
+    }
+  }
+
+  function _sxQtyAdj(id, delta) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const min = Number(el.min || 0), max = Number(el.max || 99);
+    const cur = Number(el.value) || 0;
+    const next = Math.max(min, Math.min(max, cur + delta));
+    el.value = next;
+    // Trigger handlers for live preview
+    try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch(_) {}
+  }
+
+  // -------- HDBaseT --------
+  function _sxHdbtRecompute() {
+    const sigType = (document.getElementById('sx_hdbtSignalType') || {}).value || 'Video';
+    const videoRes = (document.getElementById('sx_hdbtVideoRes') || {}).value || 'FHD';
+    const tx = Number((document.getElementById('sx_hdbtTx') || {}).value) || 0;
+    const rx = Number((document.getElementById('sx_hdbtRx') || {}).value) || 0;
+    const previewEl = document.getElementById('sx_hdbtPreview');
+    if (!previewEl) return;
+    if (tx === 0 && rx === 0) { previewEl.style.display = 'none'; _sxRebuildSummary(); return; }
+    const m = SX_HDBT_MAP[sigType];
+    if (!m) { previewEl.style.display = ''; previewEl.innerHTML = '<span class="pv-err">Unknown signal type.</span>'; return; }
+    const distLbl = (videoRes === '4K' ? '60m at 4K UHD' : '100m at 1080p');
+    let html = '<strong>' + m.familyLabel + '</strong> &middot; ' + distLbl + '<br>';
+    if (tx === rx && tx > 0) {
+      html += '<span class="pv-sku">' + m.kit + '</span> &times; <strong>' + tx + '</strong> (Kit = Tx + Rx + 2\u00d7 PSU)';
+    } else {
+      const parts = [];
+      if (tx > 0) parts.push('<span class="pv-sku">' + m.tx + '</span> &times; <strong>' + tx + '</strong> (Transmitter)');
+      if (rx > 0) parts.push('<span class="pv-sku">' + m.rx + '</span> &times; <strong>' + rx + '</strong> (Receiver)');
+      html += parts.join('<br>');
+    }
+    previewEl.innerHTML = html;
+    previewEl.style.display = '';
+    _sxRebuildSummary();
+  }
+
+  function _sxCollectHdbtLines() {
+    const sigType = (document.getElementById('sx_hdbtSignalType') || {}).value || 'Video';
+    const videoRes = (document.getElementById('sx_hdbtVideoRes') || {}).value || 'FHD';
+    const tx = Number((document.getElementById('sx_hdbtTx') || {}).value) || 0;
+    const rx = Number((document.getElementById('sx_hdbtRx') || {}).value) || 0;
+    if (tx === 0 && rx === 0) return [];
+    const m = SX_HDBT_MAP[sigType];
+    if (!m) return [];
+    const meta = JSON.stringify({ signalType: sigType, videoRes: videoRes, tx: tx, rx: rx });
+    if (tx === rx) {
+      return [{ family: 'EXTENDER_HDBASET', category: 'kit', sku: m.kit, qty: tx, description: m.familyLabel + ' Kit (Tx+Rx+2\u00d7PSU) \u00b7 ' + sigType + ' \u00b7 ' + (videoRes==='4K'?'60m 4K':'100m FHD'), metaJSON: meta }];
+    }
+    const lines = [];
+    if (tx > 0) lines.push({ family: 'EXTENDER_HDBASET', category: 'tx', sku: m.tx, qty: tx, description: m.familyLabel + ' Transmitter \u00b7 ' + sigType, metaJSON: meta });
+    if (rx > 0) lines.push({ family: 'EXTENDER_HDBASET', category: 'rx', sku: m.rx, qty: rx, description: m.familyLabel + ' Receiver \u00b7 ' + sigType, metaJSON: meta });
+    return lines;
+  }
+
+  // -------- Splitter --------
+  function _sxSplitterRecompute() { _sxRebuildSummary(); }
+  function _sxCollectSplitterLines() {
+    const lines = [];
+    const q612 = Number((document.getElementById('sx_da612') || {}).value) || 0;
+    const q614 = Number((document.getElementById('sx_da614') || {}).value) || 0;
+    const q618 = Number((document.getElementById('sx_da618') || {}).value) || 0;
+    if (q612 > 0) lines.push({ family: 'EXTENDER_SPLITTER', category: 'splitter', sku: SX_DA_MAP['612'].sku, qty: q612, description: SX_DA_MAP['612'].desc, metaJSON: '' });
+    if (q614 > 0) lines.push({ family: 'EXTENDER_SPLITTER', category: 'splitter', sku: SX_DA_MAP['614'].sku, qty: q614, description: SX_DA_MAP['614'].desc, metaJSON: '' });
+    if (q618 > 0) lines.push({ family: 'EXTENDER_SPLITTER', category: 'splitter', sku: SX_DA_MAP['618'].sku, qty: q618, description: SX_DA_MAP['618'].desc, metaJSON: '' });
+    return lines;
+  }
+
+  // -------- AOC --------
+  function _sxAocOnSignalChange() { _sxAocSyncJacketOptions(); _sxAocSyncLengthOptions(); _sxAocRecompute(); }
+  function _sxAocOnJacketChange() { _sxAocSyncLengthOptions(); _sxAocRecompute(); }
+
+  function _sxAocSyncJacketOptions() {
+    // No-op: all 4 jackets exist for both signals, but armored is sparse — handled by length sync
+  }
+
+  function _sxAocSyncLengthOptions() {
+    const signal = (document.getElementById('sx_aocSignal') || {}).value || 'HDMI';
+    const jacket = (document.getElementById('sx_aocJacket') || {}).value || 'Std';
+    const code = (SX_AOC_CODE[signal] || {})[jacket];
+    const lenEl = document.getElementById('sx_aocLength');
+    if (!lenEl || !code) return;
+    const avail = SX_AOC_AVAIL[code] || [];
+    const prev = Number(lenEl.value) || avail[0];
+    lenEl.innerHTML = '';
+    for (let i = 0; i < avail.length; i++) {
+      const o = document.createElement('option');
+      o.value = String(avail[i]); o.textContent = avail[i] + ' m';
+      if (avail[i] === prev) o.selected = true;
+      lenEl.appendChild(o);
+    }
+    if (!lenEl.value && avail.length) lenEl.value = String(avail[0]);
+  }
+
+  function _sxAocRecompute() {
+    const signal = (document.getElementById('sx_aocSignal') || {}).value || 'HDMI';
+    const jacket = (document.getElementById('sx_aocJacket') || {}).value || 'Std';
+    const length = Number((document.getElementById('sx_aocLength') || {}).value) || 0;
+    const qty = Number((document.getElementById('sx_aocQty') || {}).value) || 0;
+    const previewEl = document.getElementById('sx_aocPreview');
+    if (!previewEl) return;
+    if (qty === 0 || length === 0) { previewEl.style.display = 'none'; return; }
+    const code = (SX_AOC_CODE[signal] || {})[jacket];
+    if (!code) { previewEl.style.display = ''; previewEl.innerHTML = '<span class="pv-err">Combination not available.</span>'; return; }
+    const sku = 'MG-AOC-' + code + '-' + length;
+    const jacketLabel = (jacket === 'Std' ? '' : jacket + ' ');
+    const desc = signal + ' ' + jacketLabel + 'Active Optical Cable ' + length + 'm';
+    previewEl.innerHTML = '<span class="pv-sku">' + sku + '</span> &middot; ' + desc + ' &middot; <strong>qty ' + qty + '</strong>';
+    previewEl.style.display = '';
+  }
+
+  function _sxAocAdd() {
+    const signal = (document.getElementById('sx_aocSignal') || {}).value || 'HDMI';
+    const jacket = (document.getElementById('sx_aocJacket') || {}).value || 'Std';
+    const length = Number((document.getElementById('sx_aocLength') || {}).value) || 0;
+    const qty = Number((document.getElementById('sx_aocQty') || {}).value) || 0;
+    if (qty === 0 || length === 0) { alert('Pick a length and quantity before adding.'); return; }
+    const code = (SX_AOC_CODE[signal] || {})[jacket];
+    if (!code) { alert('That signal/jacket combination is not available.'); return; }
+    const sku = 'MG-AOC-' + code + '-' + length;
+    const jacketLabel = (jacket === 'Std' ? '' : jacket + ' ');
+    const desc = signal + ' ' + jacketLabel + 'Active Optical Cable ' + length + 'm';
+    window._sxAocCart.push({ family: 'EXTENDER_AOC', category: 'cable', sku: sku, qty: qty, description: desc, metaJSON: JSON.stringify({ signal:signal, jacket:jacket, length:length }) });
+    // Reset qty for next add
+    const qtyEl = document.getElementById('sx_aocQty');
+    if (qtyEl) qtyEl.value = '0';
+    _sxAocRecompute();
+    _sxRenderAocCart();
+    _sxRebuildSummary();
+  }
+
+  function _sxAocRemove(idx) {
+    if (idx >= 0 && idx < window._sxAocCart.length) {
+      window._sxAocCart.splice(idx, 1);
+      _sxRenderAocCart();
+      _sxRebuildSummary();
+    }
+  }
+  window._sxAocRemove = _sxAocRemove;
+
+  function _sxRenderAocCart() {
+    const cartEl = document.getElementById('sx_aocCart');
+    if (!cartEl) return;
+    if (!window._sxAocCart.length) { cartEl.style.display = 'none'; cartEl.innerHTML = ''; return; }
+    let html = '';
+    for (let i = 0; i < window._sxAocCart.length; i++) {
+      const ln = window._sxAocCart[i];
+      html += '<div class="sx-cart-row">'
+            +   '<span class="pv-qty">' + ln.qty + '\u00d7</span>'
+            +   '<span class="pv-sku">' + _escSx(ln.sku) + '</span>'
+            +   '<span style="color:var(--ink-soft,#64748B);font-size:12px;">' + _escSx(ln.description) + '</span>'
+            +   '<button class="pv-rm" onclick="_sxAocRemove(' + i + ')">remove</button>'
+            + '</div>';
+    }
+    cartEl.innerHTML = html;
+    cartEl.style.display = '';
+  }
+
+  // -------- Summary + Collect --------
+  function _sxCollectAllLines() {
+    return [].concat(
+      _sxCollectHdbtLines(),
+      _sxCollectSplitterLines(),
+      (window._sxAocCart || [])
+    );
+  }
+
+  function _sxRebuildSummary() {
+    const summary = document.getElementById('sxSummary');
+    const body = document.getElementById('sxSummaryBody');
+    if (!summary || !body) return;
+    const all = _sxCollectAllLines();
+    if (!all.length) { summary.style.display = 'none'; body.innerHTML = ''; return; }
+    let html = '';
+    for (let i = 0; i < all.length; i++) {
+      const ln = all[i];
+      html += '<div class="sx-summary-row">'
+            +   '<div class="ss-qty">' + ln.qty + '\u00d7</div>'
+            +   '<div class="ss-sku">' + _escSx(ln.sku) + '</div>'
+            +   '<div class="ss-desc">' + _escSx(ln.description) + '</div>'
+            + '</div>';
+    }
+    body.innerHTML = html;
+    summary.style.display = '';
+  }
+
+  function _escSx(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+
+  // Re-bind MV ext radio handler to open extension panel automatically
+  function _onMvExtChange() {
+    const radios = document.getElementsByName('mv_ext');
+    let v = 'no'; for (let i = 0; i < radios.length; i++) { if (radios[i].checked) { v = radios[i].value; break; } }
+    if (v === 'yes') {
+      const card = document.getElementById('signalExtensionCard');
+      const body = document.getElementById('sxBody');
+      if (card && body && card.getAttribute('data-sx-open') !== 'true') {
+        card.setAttribute('data-sx-open', 'true');
+        body.style.display = '';
+        try { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(_) {}
+      }
+      const ph = document.getElementById('mvExtPlaceholder');
+      if (ph) ph.style.display = '';
+    } else {
+      const ph = document.getElementById('mvExtPlaceholder');
+      if (ph) ph.style.display = 'none';
+    }
+  }
+
+  // Expose globally
+  window._sxToggle               = _sxToggle;
+  window._sxQtyAdj               = _sxQtyAdj;
+  window._sxHdbtRecompute        = _sxHdbtRecompute;
+  window._sxSplitterRecompute    = _sxSplitterRecompute;
+  window._sxAocOnSignalChange    = _sxAocOnSignalChange;
+  window._sxAocOnJacketChange    = _sxAocOnJacketChange;
+  window._sxAocRecompute         = _sxAocRecompute;
+  window._sxAocAdd               = _sxAocAdd;
+  window._sxCollectAllLines      = _sxCollectAllLines;
+  window._onMvExtChange          = _onMvExtChange;
+  window._sxRenderAocCart        = _sxRenderAocCart;  // v25.96: needed by edit-mode repopulation
+  window._sxRebuildSummary       = _sxRebuildSummary; // v25.96: needed by edit-mode repopulation
 
   // =================================================================
   // EDIT MODE — load an existing submission into the form and update it
@@ -11572,6 +12884,146 @@ body.light .signal-card-footer-tv {
         _editingOriginalRow = null;
         alert('Could not load submission into the form.\n\nError: ' + (popErr.message || popErr) + '\n\nCheck browser console for details.');
         return;
+      }
+
+      // v25.96 — Phase 2.5: detect Multi Viewer / CORIOview deal + repopulate MV wizard
+      //          and Signal Extension cart from ProjectLines.
+      try {
+        const _outType = String(row.outputType || '').trim();
+        const _isMv = (_outType === 'CORIOview') || String(row.recommended_chassis || '').match(/^MWP-/);
+        // Pick the Requirement radio appropriately
+        const _reqRadios = document.getElementsByName('req_type');
+        for (let _i = 0; _i < _reqRadios.length; _i++) {
+          if (_reqRadios[_i].value === (_isMv ? 'multiviewer' : 'videoprocessor')) {
+            _reqRadios[_i].checked = true; break;
+          }
+        }
+        if (typeof window._onRequirementChange === 'function') {
+          window._onRequirementChange();
+        }
+        // Fetch and replay ProjectLines for this deal
+        if (typeof apiProjectLinesList === 'function' && refId) {
+          apiProjectLinesList(refId).then(function(r) {
+            if (!r || !r.ok || !Array.isArray(r.lines) || !r.lines.length) {
+              console.log('[Edit] No ProjectLines for ' + refId + ' (legacy or empty deal)');
+              return;
+            }
+            const lines = r.lines;
+            console.log('[Edit] Repopulating from ' + lines.length + ' ProjectLines');
+
+            // --- Restore MV wizard inputs ---
+            const _mvChassis = lines.find(function(l) { return l.family === 'CORIOVIEW' && l.category === 'chassis'; });
+            if (_mvChassis && _isMv) {
+              const sigEl = document.getElementById('mv_inputSignal');
+              const qtyEl = document.getElementById('mv_inputCount');
+              const outEl = document.getElementById('mv_outputSignal');
+              if (sigEl && _mvChassis.inputSignal) sigEl.value = _mvChassis.inputSignal;
+              if (qtyEl && _mvChassis.inputCount)  qtyEl.value = Number(_mvChassis.inputCount) || 1;
+              if (outEl && _mvChassis.outputSignal) outEl.value = _mvChassis.outputSignal;
+              if (typeof window._onMvInputSignalChange === 'function') window._onMvInputSignalChange();
+              if (typeof window._mvRecompute === 'function') window._mvRecompute();
+            }
+
+            // --- Restore Signal Extension state ---
+            // Group lines by family/category, restore appropriate sub-wizard state
+            window._sxAocCart = [];
+            const _aocLines = [];
+            const _hdbtLines = [];
+            const _splitterByQty = { '612': 0, '614': 0, '618': 0 };
+
+            for (let i = 0; i < lines.length; i++) {
+              const ln = lines[i];
+              if (ln.family === 'EXTENDER_AOC') {
+                _aocLines.push(ln);
+              } else if (ln.family === 'EXTENDER_HDBASET') {
+                _hdbtLines.push(ln);
+              } else if (ln.family === 'EXTENDER_SPLITTER') {
+                if (/MG-DA-612/.test(ln.sku)) _splitterByQty['612'] = Number(ln.qty) || 0;
+                else if (/MG-DA-614/.test(ln.sku)) _splitterByQty['614'] = Number(ln.qty) || 0;
+                else if (/MG-DA-618/.test(ln.sku)) _splitterByQty['618'] = Number(ln.qty) || 0;
+              }
+            }
+
+            // Restore HDBaseT: pull signalType + videoRes + tx + rx from metaJSON if present
+            if (_hdbtLines.length > 0) {
+              const first = _hdbtLines[0];
+              let meta = {};
+              try { meta = first.metaJSON ? JSON.parse(first.metaJSON) : {}; } catch(_) {}
+              const sigSel = document.getElementById('sx_hdbtSignalType');
+              const resSel = document.getElementById('sx_hdbtVideoRes');
+              const txEl = document.getElementById('sx_hdbtTx');
+              const rxEl = document.getElementById('sx_hdbtRx');
+              if (sigSel && meta.signalType) sigSel.value = meta.signalType;
+              if (resSel && meta.videoRes) resSel.value = meta.videoRes;
+              if (txEl) txEl.value = Number(meta.tx) || 0;
+              if (rxEl) rxEl.value = Number(meta.rx) || 0;
+              // Fallback if no meta: kit line counts as tx+rx pair
+              if (!meta.tx && !meta.rx) {
+                if (first.category === 'kit') {
+                  if (txEl) txEl.value = Number(first.qty) || 0;
+                  if (rxEl) rxEl.value = Number(first.qty) || 0;
+                } else {
+                  for (let j = 0; j < _hdbtLines.length; j++) {
+                    if (_hdbtLines[j].category === 'tx' && txEl) txEl.value = Number(_hdbtLines[j].qty) || 0;
+                    if (_hdbtLines[j].category === 'rx' && rxEl) rxEl.value = Number(_hdbtLines[j].qty) || 0;
+                  }
+                }
+              }
+              if (typeof window._sxHdbtRecompute === 'function') window._sxHdbtRecompute();
+            }
+
+            // Restore splitter counters
+            const _da612 = document.getElementById('sx_da612');
+            const _da614 = document.getElementById('sx_da614');
+            const _da618 = document.getElementById('sx_da618');
+            if (_da612) _da612.value = _splitterByQty['612'];
+            if (_da614) _da614.value = _splitterByQty['614'];
+            if (_da618) _da618.value = _splitterByQty['618'];
+
+            // Restore AOC cart
+            for (let i = 0; i < _aocLines.length; i++) {
+              const ln = _aocLines[i];
+              window._sxAocCart.push({
+                family: 'EXTENDER_AOC', category: 'cable',
+                sku: ln.sku, qty: Number(ln.qty) || 0, description: ln.description,
+                metaJSON: ln.metaJSON || ''
+              });
+            }
+
+            // Open Signal Extension card if any extender lines exist
+            const hasSxItems = _hdbtLines.length || _aocLines.length || _splitterByQty['612'] || _splitterByQty['614'] || _splitterByQty['618'];
+            if (hasSxItems) {
+              const sxCard = document.getElementById('signalExtensionCard');
+              const sxBody = document.getElementById('sxBody');
+              if (sxCard && sxBody && sxCard.getAttribute('data-sx-open') !== 'true') {
+                sxCard.setAttribute('data-sx-open', 'true');
+                sxBody.style.display = '';
+              }
+              if (typeof window._sxAocCart !== 'undefined') {
+                // trigger render of cart + summary
+                const renderFns = ['_sxRenderAocCart', '_sxRebuildSummary'];
+                renderFns.forEach(function(fn) {
+                  if (typeof window[fn] === 'function') window[fn]();
+                  else {
+                    // Functions are module-local; call summary build via collect
+                    if (fn === '_sxRebuildSummary' && typeof window._sxCollectAllLines === 'function') {
+                      // module already updates summary on input events; trigger a no-op
+                    }
+                  }
+                });
+                // Trigger AOC + splitter rebuild via input events (which call _sxRebuildSummary internally)
+                if (_da612) try { _da612.dispatchEvent(new Event('input', { bubbles:true })); } catch(_) {}
+                if (_da614) try { _da614.dispatchEvent(new Event('input', { bubbles:true })); } catch(_) {}
+                if (_da618) try { _da618.dispatchEvent(new Event('input', { bubbles:true })); } catch(_) {}
+              }
+            }
+            console.log('[Edit] ✓ MV+SX state restored');
+          }).catch(function(err) {
+            console.warn('[Edit] ProjectLines fetch failed (edit still works, just empty wizards):', err);
+          });
+        }
+      } catch (_repErr) {
+        console.warn('[Edit] MV/SX repopulation threw (edit still works):', _repErr);
       }
 
       // 7. Show edit banner
@@ -12848,6 +14300,23 @@ body.light .signal-card-footer-tv {
     if (!lastResult) { alert('No calculation to export.'); return; }
     const input = lastResult.input, reco = lastResult.reco, submission = lastResult.submission;
 
+    // v25.97 — Phase 2.5 #3: fetch ProjectLines to enumerate extender / companion items
+    // in a separate section of the Quote sheet. Falls through silently if fetch fails.
+    let _companionLines = [];
+    try {
+      if (submission && submission.refId && typeof apiProjectLinesList === 'function') {
+        const _plRes = await apiProjectLinesList(submission.refId);
+        if (_plRes && _plRes.ok && Array.isArray(_plRes.lines)) {
+          // Only include EXTENDER_* families as companion items (chassis/cards already in main BOM)
+          _companionLines = _plRes.lines.filter(function(l) {
+            return String(l.family || '').indexOf('EXTENDER_') === 0;
+          });
+        }
+      }
+    } catch (_plErr) {
+      console.warn('[v25.97] ProjectLines fetch for Excel failed (continuing without companion section):', _plErr);
+    }
+
     // Quote metadata
     const now = new Date();
     const quoteDate = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -13122,6 +14591,86 @@ body.light .signal-card-footer-tv {
       r++;
     });
     const bomEndRow = r - 1;
+
+    // v25.97 — Phase 2.5 #3: Companion Items section (Signal Extension / extenders / splitters / AOC)
+    // sourced from ProjectLines. Only EXTENDER_* family lines are rendered here.
+    if (_companionLines && _companionLines.length > 0) {
+      // Spacer
+      ws1.getRow(r).height = 6;
+      r++;
+
+      // Section subheader
+      ws1.mergeCells('A' + r + ':G' + r);
+      const compHdr = ws1.getCell('A' + r);
+      compHdr.value = 'COMPANION ITEMS · Signal Extension';
+      compHdr.font = xlFont({ size: 11, bold: true, color: { argb: XL_FOREST_DARK } });
+      compHdr.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+      compHdr.fill = xlFill(XL_CREAM);
+      compHdr.border = {
+        top: { style: 'medium', color: { argb: XL_GOLD } },
+        bottom: xlThinBorder(XL_LINE)
+      };
+      ws1.getRow(r).height = 22;
+      r++;
+
+      // Companion rows — same column layout as main BOM
+      _companionLines.forEach(function(cl, i) {
+        const idx = bomEndRow + 1 + i; // continue numbering after main BOM
+        const zebra = (i % 2 === 0) ? XL_WHITE : XL_CREAM;
+
+        ws1.getCell('A' + r).value = idx - bomStartRow + 1;
+        ws1.getCell('A' + r).font = xlFont({ size: 11, color: { argb: XL_INK_SOFT } });
+        ws1.getCell('A' + r).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        ws1.getCell('B' + r).value = cl.sku || '';
+        ws1.getCell('B' + r).font = xlFont({ name: 'Consolas', size: 10, bold: true, color: { argb: XL_FOREST_DARK } });
+        ws1.getCell('B' + r).alignment = { vertical: 'middle', indent: 1 };
+
+        ws1.getCell('C' + r).value = cl.description || '';
+        ws1.getCell('C' + r).font = xlFont({ size: 11 });
+        ws1.getCell('C' + r).alignment = { vertical: 'middle', wrapText: true };
+
+        ws1.getCell('D' + r).value = Number(cl.qty) || 0;
+        ws1.getCell('D' + r).font = xlFont({ size: 11, bold: true });
+        ws1.getCell('D' + r).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        // Unit Price — EDITABLE
+        ws1.getCell('E' + r).value = null;
+        ws1.getCell('E' + r).font = xlFont({ size: 11, bold: true });
+        ws1.getCell('E' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
+        ws1.getCell('E' + r).fill = xlFill(XL_YELLOW_SOFT);
+        ws1.getCell('E' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
+        ws1.getCell('E' + r).border = Object.assign(xlBorders('TB', XL_LINE), {
+          left: { style: 'medium', color: { argb: XL_GOLD } },
+          right: { style: 'medium', color: { argb: XL_GOLD } }
+        });
+
+        // Line Total — FORMULA
+        ws1.getCell('F' + r).value = { formula: 'D' + r + '*E' + r, result: 0 };
+        ws1.getCell('F' + r).font = xlFont({ size: 11, bold: true, color: { argb: XL_FOREST_DARK } });
+        ws1.getCell('F' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
+        ws1.getCell('F' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
+
+        // Family badge as Notes
+        const famLabel = String(cl.family || '').replace('EXTENDER_', '').toLowerCase();
+        ws1.getCell('G' + r).value = famLabel;
+        ws1.getCell('G' + r).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT }, italic: true });
+        ws1.getCell('G' + r).alignment = { vertical: 'middle', wrapText: true };
+
+        ['A', 'B', 'C', 'D', 'G'].forEach(function(col) {
+          if (ws1.getCell(col + r).fill == null || !ws1.getCell(col + r).fill.fgColor) {
+            ws1.getCell(col + r).fill = xlFill(zebra);
+          }
+        });
+        ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(function(col) {
+          const existing = ws1.getCell(col + r).border || {};
+          existing.bottom = xlThinBorder(XL_LINE);
+          ws1.getCell(col + r).border = existing;
+        });
+        ws1.getRow(r).height = 24;
+        r++;
+      });
+    }
 
     // Spacer row
     ws1.getRow(r).height = 6;
@@ -19928,9 +21477,30 @@ function _cust360EscCloseTV(e){
     if(counter) counter.textContent = deals.length + ' deal' + (deals.length === 1 ? '' : 's');
     if(!tbody) return;
     if(!deals.length){
-      tbody.innerHTML = '<tr><td colspan="6" style="padding:32px;text-align:center;color:var(--ink-soft);">No deals yet — go to "+ New selection" to start one.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="padding:32px;text-align:center;color:var(--ink-soft);">No deals yet — go to "+ New selection" to start one.</td></tr>';
       return;
     }
+    // v25.96 — derive Family from outputType + recommended_chassis (no schema change needed)
+    function _familyOf(e) {
+      const ot = String(e.outputType || '').trim();
+      const ch = String(e.recommended_chassis || e.recommendedChassis || '').trim();
+      if (ot === 'CORIOview' || /^MWP-/.test(ch)) return 'CORIOview';
+      if (/^C7-PRO-/.test(ch)) return 'CALICO';
+      if (/^CM2-/.test(ch))    return 'CORIO·CM2';
+      if (/^C3-/.test(ch))     return 'CORIO';
+      return 'CALICO'; // legacy default
+    }
+    function _familyBadge(fam) {
+      const colorMap = {
+        'CORIOview': { bg:'#C5A572', fg:'#fff' },
+        'CALICO':    { bg:'#064E3B', fg:'#fff' },
+        'CORIO':     { bg:'#475569', fg:'#fff' },
+        'CORIO·CM2': { bg:'#334155', fg:'#fff' }
+      };
+      const c = colorMap[fam] || { bg:'#94A3B8', fg:'#fff' };
+      return '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:' + c.bg + ';color:' + c.fg + ';font-size:10px;font-weight:700;letter-spacing:.3px;">' + fam + '</span>';
+    }
+
     // Sort
     const sortCol = _activeSort.mine.col;
     const sortDir = _activeSort.mine.dir;
@@ -19938,6 +21508,7 @@ function _cust360EscCloseTV(e){
       let av = a[sortCol], bv = b[sortCol];
       if(sortCol === 'dealValue'){ av = _readDealValue(a); bv = _readDealValue(b); }
       if(sortCol === 'daysInStage'){ av = _daysInStage(a); bv = _daysInStage(b); }
+      if(sortCol === 'family'){ av = _familyOf(a); bv = _familyOf(b); }
       if(av == null) av = '';
       if(bv == null) bv = '';
       if(typeof av === 'number' && typeof bv === 'number'){ return sortDir === 'asc' ? av - bv : bv - av; }
@@ -19946,9 +21517,11 @@ function _cust360EscCloseTV(e){
     tbody.innerHTML = sorted.map(function(e){
       const days = _daysInStage(e);
       const stuckCls = days >= 30 ? ' style="color:#DC2626;font-weight:700;"' : (days >= 14 ? ' style="color:#D97706;font-weight:600;"' : '');
+      const fam = _familyOf(e);
       return '<tr>' +
              '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _esc(e.project || '—') + '</td>' +
              '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _esc(e.enduser || '—') + '</td>' +
+             '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _familyBadge(fam) + '</td>' +
              '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;"><span class="v26-stage-badge v26-stage-' + _esc(String(e.stage || '').toLowerCase()) + '">' + _esc(e.stage || '—') + '</span></td>' +
              '<td class="v26-th-num" onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _formatINR(_readDealValue(e)) + '</td>' +
              '<td onclick="bsv26_openDeal(\'' + _esc(e.refId || '') + '\')" style="cursor:pointer;">' + _esc(_formatCloseMonth(e.closemonth)) + '</td>' +
@@ -19970,10 +21543,61 @@ function _cust360EscCloseTV(e){
     const filtered = _applyFilters(scoped, f);
 
     _renderTeamKPIs(filtered);
+    _renderTeamFamilyMix(filtered);  // v25.97 — Phase 2.5 #4 lite
     _renderTeamCharts(filtered);
     _renderTeamLeaderboard(filtered);
     _renderTeamStuck(filtered);
     _renderTeamTable(filtered);
+  }
+
+  // v25.97 — Phase 2.5 #4 lite: Family Mix strip on Team Analytics. Compact summary,
+  // no separate fetch — derives family from outputType + recommended_chassis on each row.
+  // Same logic as _renderMyTable's _familyOf but module-scoped here for reuse.
+  function _v26FamilyOf(e) {
+    const ot = String(e.outputType || '').trim();
+    const ch = String(e.recommended_chassis || e.recommendedChassis || '').trim();
+    if (ot === 'CORIOview' || /^MWP-/.test(ch)) return 'CORIOview';
+    if (/^C7-PRO-/.test(ch)) return 'CALICO';
+    if (/^CM2-/.test(ch))    return 'CORIO·CM2';
+    if (/^C3-/.test(ch))     return 'CORIO';
+    return 'CALICO'; // legacy default
+  }
+  function _renderTeamFamilyMix(deals){
+    const strip = document.getElementById('v26-family-strip');
+    const chips = document.getElementById('v26-family-strip-chips');
+    const total = document.getElementById('v26-family-strip-total');
+    if (!strip || !chips || !total) return;
+    if (!deals || !deals.length) { strip.style.display = 'none'; return; }
+    const counts = {};
+    const values = {};
+    for (let i = 0; i < deals.length; i++) {
+      const fam = _v26FamilyOf(deals[i]);
+      counts[fam] = (counts[fam] || 0) + 1;
+      values[fam] = (values[fam] || 0) + (typeof _readDealValue === 'function' ? _readDealValue(deals[i]) : 0);
+    }
+    const colorMap = {
+      'CORIOview': '#C5A572',
+      'CALICO':    '#064E3B',
+      'CORIO':     '#475569',
+      'CORIO·CM2': '#334155'
+    };
+    // Sort by count descending
+    const ordered = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; });
+    let html = '';
+    for (let i = 0; i < ordered.length; i++) {
+      const fam = ordered[i];
+      const color = colorMap[fam] || '#94A3B8';
+      const valStr = (typeof _formatINR === 'function') ? _formatINR(values[fam] || 0) : '';
+      html += '<div style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;background:#fff;border:1.5px solid ' + color + ';border-radius:999px;font-size:12px;font-weight:600;">'
+            +   '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + color + ';"></span>'
+            +   '<span style="color:' + color + ';">' + fam + '</span>'
+            +   '<span style="color:#0F172A;">' + counts[fam] + '</span>'
+            +   '<span style="color:var(--ink-soft,#64748B);font-weight:500;font-size:11px;">' + valStr + '</span>'
+            + '</div>';
+    }
+    chips.innerHTML = html;
+    total.textContent = deals.length + ' total · across ' + ordered.length + ' famil' + (ordered.length === 1 ? 'y' : 'ies');
+    strip.style.display = 'flex';
   }
 
   function _renderTeamKPIs(deals){
