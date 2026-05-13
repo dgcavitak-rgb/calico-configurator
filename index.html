@@ -7272,9 +7272,6 @@ body.light .signal-card-footer-tv {
       </div>
     </div>
 
-      </div>
-    </div>
-
     <!-- ============================================================
          v25.90 — REQUIREMENT PICKER (Phase 2 — Multi Viewer wizard)
          ============================================================
@@ -7423,14 +7420,6 @@ body.light .signal-card-footer-tv {
           <label class="mv-ext-pill"><input type="radio" name="mv_ext" value="yes" onchange="_onMvExtChange()">Yes</label>
         </div>
         <div id="mvExtPlaceholder" class="mv-ext-placeholder" style="display:none;">Scroll down to the Signal Extension panel to add HDBaseT extenders, HDMI splitters, or AOC cables to your BOM.</div>
-      </div>
-
-      <!-- v25.95 — MV-local action buttons (fixes Phase 2 bug where Generate BoM lived inside hidden Card 03) -->
-      <div id="mvFormError" class="error-msg" style="margin-top:14px;"></div>
-      <div id="mvFormInfo" class="info-msg" style="margin-top:14px;"></div>
-      <div class="btn-row" style="margin-top:18px">
-        <button class="primary" onclick="calculateAndLog()" id="mvCalcBtn">Generate BoM →</button>
-        <button class="secondary" onclick="resetForm()">Reset</button>
       </div>
     </div>
 
@@ -7697,14 +7686,11 @@ body.light .signal-card-footer-tv {
       <!-- v25.80.4: Action buttons + error/info displays moved here from old Card 04.
            Card 04 (Technical Requirements) was removed entirely per user spec — those fields
            were duplicates of Card 02's per-signal-type inputs. Notes textarea is preserved
-           as a hidden input below (engine still reads f_notes in submit payload). -->
+           as a hidden input below (engine still reads f_notes in submit payload).
+           v25.97.1 FIX #2 — Generate BoM button RELOCATED to a unified row AFTER the Signal Extension card. Keeping error/info displays here. -->
       <div id="inputsWarn" class="warn-box" style="display:none; margin-top:18px"></div>
       <div id="formError" class="error-msg" style="margin-top: 14px;"></div>
       <div id="formInfo" class="info-msg" style="margin-top: 14px;"></div>
-      <div class="btn-row" style="margin-top:18px">
-        <button class="primary" onclick="calculateAndLog()" id="calcBtn">Generate BoM →</button>
-        <button class="secondary" onclick="resetForm()">Reset</button>
-      </div>
     </div>
 
     <!-- ============================================================
@@ -7731,7 +7717,7 @@ body.light .signal-card-footer-tv {
         <!-- ============ Sub-wizard 1: HDBaseT Extender ============ -->
         <div class="sx-subwiz">
           <div class="sx-subwiz-title">HDBaseT Extender</div>
-          <div class="sx-subwiz-sub">Magenta HD-One series. 100m at FHD / 60m at 4K.</div>
+          <div class="sx-subwiz-sub">Magenta HD-One series. 100m at FHD / 60m at 4K. Configure one set, click "+ Add" to push it to the BOM, then configure another if needed.</div>
           <div class="sx-grid">
             <div class="field">
               <label>Signal Type</label>
@@ -7766,38 +7752,35 @@ body.light .signal-card-footer-tv {
             </div>
           </div>
           <div id="sx_hdbtPreview" class="sx-preview" style="display:none;"></div>
+          <button type="button" class="secondary sx-add-btn" onclick="_sxHdbtAdd()">+ Add this HDBaseT extender to BOM</button>
+          <div id="sx_hdbtCart" class="sx-cart" style="display:none;"></div>
         </div>
 
         <!-- ============ Sub-wizard 2: HDMI Splitter ============ -->
         <div class="sx-subwiz">
           <div class="sx-subwiz-title">HDMI Splitter (Distribution Amplifier)</div>
-          <div class="sx-subwiz-sub">Magenta MG-DA series. All models 4K60 HDMI 2.0 with HDCP 2.2 and down-scaling.</div>
+          <div class="sx-subwiz-sub">Magenta MG-DA series. All models 4K60 HDMI 2.0 with HDCP 2.2 and down-scaling. Pick model + qty, click "+ Add" to push to BOM.</div>
           <div class="sx-grid">
             <div class="field">
-              <label>1×2 Splitter (MG-DA-612)</label>
-              <div class="mv-qty-row">
-                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_da612',-1)">−</button>
-                <input id="sx_da612" type="number" min="0" max="32" value="0" readonly oninput="_sxSplitterRecompute()">
-                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_da612',1)">+</button>
-              </div>
+              <label>Splitter Model</label>
+              <select id="sx_daModel" onchange="_sxSplitterRecompute()">
+                <option value="612">1×2 Splitter (MG-DA-612)</option>
+                <option value="614" selected>1×4 Splitter (MG-DA-614)</option>
+                <option value="618">1×8 Splitter (MG-DA-618)</option>
+              </select>
             </div>
             <div class="field">
-              <label>1×4 Splitter (MG-DA-614)</label>
+              <label>Quantity</label>
               <div class="mv-qty-row">
-                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_da614',-1)">−</button>
-                <input id="sx_da614" type="number" min="0" max="32" value="0" readonly oninput="_sxSplitterRecompute()">
-                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_da614',1)">+</button>
-              </div>
-            </div>
-            <div class="field">
-              <label>1×8 Splitter (MG-DA-618)</label>
-              <div class="mv-qty-row">
-                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_da618',-1)">−</button>
-                <input id="sx_da618" type="number" min="0" max="32" value="0" readonly oninput="_sxSplitterRecompute()">
-                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_da618',1)">+</button>
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_daQty',-1)">−</button>
+                <input id="sx_daQty" type="number" min="0" max="64" value="0" readonly oninput="_sxSplitterRecompute()">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_daQty',1)">+</button>
               </div>
             </div>
           </div>
+          <div id="sx_daPreview" class="sx-preview" style="display:none;"></div>
+          <button type="button" class="secondary sx-add-btn" onclick="_sxSplitterAdd()">+ Add this splitter to BOM</button>
+          <div id="sx_daCart" class="sx-cart" style="display:none;"></div>
         </div>
 
         <!-- ============ Sub-wizard 3: AOC Cable ============ -->
@@ -7856,6 +7839,15 @@ body.light .signal-card-footer-tv {
           <div id="sxSummaryBody"></div>
         </div>
       </div>
+    </div>
+
+    <!-- v25.97.1 FIX #2 — UNIFIED ACTION ROW at end of form.
+         Single Generate BoM + Reset for both Multi Viewer and Video Processor modes.
+         Lives OUTSIDE all hideable cards so it's always visible. -->
+    <div class="form-action-row-tv" style="margin:24px 0 8px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+      <button class="primary" onclick="calculateAndLog()" id="calcBtn" style="font-size:15px;padding:13px 28px;">Generate BoM →</button>
+      <button class="secondary" onclick="resetForm()" id="resetBtn">Reset</button>
+      <div style="flex:1;min-width:0;font-size:12px;color:var(--ink-soft,#64748B);">Fill Project Context (top), pick your Requirement, then add any Signal Extension items above — click Generate BoM when ready.</div>
     </div>
 
     <!-- v25.80.4: Card 04 (Technical Requirements) DELETED per user spec.
@@ -9147,7 +9139,8 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.97';  // v25.97 — tvONE Product Line Integration · Phase 2.5 complete. (1) Excel export now enumerates ProjectLines as a "Companion Items" section after main BOM (extender lines from EXTENDER_HDBASET / SPLITTER / AOC families with editable unit prices + line total formulas, matching CALICO row style). (2) Dashboard Team Analytics gets a Family Mix strip above the chart area — compact chips showing deal count + ₹ per family across the filtered set, no separate fetch needed. (3) HDMI 1080p output added to Multi Viewer dropdown with placeholder SKU (CV-HDMI-2K-SC-1OUT-FF) — flagged in description as pending tvONE confirmation. Pairs with backend v26.18.0.
+  const TVONE_FRONTEND_VERSION = '25.97.1';  // v25.97.1 — HOTFIX. (1) Removed 2 orphan </div> tags between Card 01 and Requirement card that prematurely closed formView wrapper — caused login-page leak + alignment offset. (2) Generate BoM button RELOCATED to a unified action row AFTER the Signal Extension card (was inside MV wizard + Card 03 = appeared BEFORE SX panel, broken flow). (3) HDBaseT extender + HDMI Splitter sub-wizards now follow the SAME "+ Add to BOM" cart pattern as AOC — each configure → preview → click Add → row in cart → form resets. Allows multiple HDBaseT configs and mixed splitter models per project. (4) Switching Requirement from Multi Viewer to Video Processor now auto-collapses the Signal Extension panel and resets the Yes/No radio. Backend stays at v26.18.0.
+  // v25.97 — Phase 2.5 complete. Excel ProjectLines enumeration · Dashboard Family Mix · HDMI 1080p output.
   // v25.96 — Phase 2.5 polish. Edit-existing repopulates MV + SX wizards. History Family column with color badges.
   // v25.95 — Phase 3 (Signal Extension wizard live). HDBaseT + HDMI Splitter + AOC sub-wizards. CALICO mode also writes ProjectLines.
   // v25.95 — Phase 3 (Signal Extension wizard live). HDBaseT + HDMI Splitter + AOC sub-wizards. CALICO mode also writes ProjectLines. MV button bug fixed.
@@ -12199,6 +12192,17 @@ body.light .signal-card-footer-tv {
       const els = document.querySelectorAll(calicoCardSelectors[i]);
       for (let j = 0; j < els.length; j++) { els[j].style.display = window._mvMode ? 'none' : ''; }
     }
+    // v25.97.1 FIX #4 — collapse Signal Extension panel + reset MV ext radio when mode changes
+    const sxCard = document.getElementById('signalExtensionCard');
+    const sxBody = document.getElementById('sxBody');
+    if (sxCard && sxBody) {
+      sxCard.setAttribute('data-sx-open', 'false');
+      sxBody.style.display = 'none';
+    }
+    const mvExtNo = document.querySelector('input[name="mv_ext"][value="no"]');
+    const mvExtPh = document.getElementById('mvExtPlaceholder');
+    if (mvExtNo) mvExtNo.checked = true;
+    if (mvExtPh) mvExtPh.style.display = 'none';
     // Repaint preview if MV mode now active
     if (window._mvMode) _mvRecompute();
   }
@@ -12532,6 +12536,9 @@ body.light .signal-card-footer-tv {
   // Module state — both AOC cart and HDBaseT/Splitter live values get merged into _sxLines at save time
   window._sxLines = window._sxLines || [];  // array of { family, category, sku, qty, description, metaJSON }
   window._sxAocCart = window._sxAocCart || []; // multi-AOC support: user adds N AOC cables of different specs
+  // v25.97.1 FIX #3 — Splitter + HDBaseT now follow the same cart pattern as AOC.
+  window._sxHdbtCart = window._sxHdbtCart || []; // each entry: { sku, qty, description, metaJSON, category }
+  window._sxDaCart   = window._sxDaCart   || []; // each entry: { sku, qty, description }
 
   function _sxToggle() {
     const card = document.getElementById('signalExtensionCard');
@@ -12566,7 +12573,7 @@ body.light .signal-card-footer-tv {
     const rx = Number((document.getElementById('sx_hdbtRx') || {}).value) || 0;
     const previewEl = document.getElementById('sx_hdbtPreview');
     if (!previewEl) return;
-    if (tx === 0 && rx === 0) { previewEl.style.display = 'none'; _sxRebuildSummary(); return; }
+    if (tx === 0 && rx === 0) { previewEl.style.display = 'none'; return; }
     const m = SX_HDBT_MAP[sigType];
     if (!m) { previewEl.style.display = ''; previewEl.innerHTML = '<span class="pv-err">Unknown signal type.</span>'; return; }
     const distLbl = (videoRes === '4K' ? '60m at 4K UHD' : '100m at 1080p');
@@ -12581,38 +12588,143 @@ body.light .signal-card-footer-tv {
     }
     previewEl.innerHTML = html;
     previewEl.style.display = '';
-    _sxRebuildSummary();
   }
 
-  function _sxCollectHdbtLines() {
+  // v25.97.1: HDBaseT now uses cart pattern. Each Add click snapshots current form values
+  // into _sxHdbtCart (one or two entries depending on Kit vs individual Tx/Rx), then resets form.
+  function _sxHdbtAdd() {
     const sigType = (document.getElementById('sx_hdbtSignalType') || {}).value || 'Video';
     const videoRes = (document.getElementById('sx_hdbtVideoRes') || {}).value || 'FHD';
     const tx = Number((document.getElementById('sx_hdbtTx') || {}).value) || 0;
     const rx = Number((document.getElementById('sx_hdbtRx') || {}).value) || 0;
-    if (tx === 0 && rx === 0) return [];
+    if (tx === 0 && rx === 0) { alert('Set at least one Transmitter or Receiver before adding.'); return; }
     const m = SX_HDBT_MAP[sigType];
-    if (!m) return [];
+    if (!m) { alert('Unknown signal type.'); return; }
     const meta = JSON.stringify({ signalType: sigType, videoRes: videoRes, tx: tx, rx: rx });
     if (tx === rx) {
-      return [{ family: 'EXTENDER_HDBASET', category: 'kit', sku: m.kit, qty: tx, description: m.familyLabel + ' Kit (Tx+Rx+2\u00d7PSU) \u00b7 ' + sigType + ' \u00b7 ' + (videoRes==='4K'?'60m 4K':'100m FHD'), metaJSON: meta }];
+      window._sxHdbtCart.push({
+        family: 'EXTENDER_HDBASET', category: 'kit', sku: m.kit, qty: tx,
+        description: m.familyLabel + ' Kit (Tx+Rx+2\u00d7PSU) \u00b7 ' + sigType + ' \u00b7 ' + (videoRes==='4K'?'60m 4K':'100m FHD'),
+        metaJSON: meta
+      });
+    } else {
+      if (tx > 0) window._sxHdbtCart.push({
+        family: 'EXTENDER_HDBASET', category: 'tx', sku: m.tx, qty: tx,
+        description: m.familyLabel + ' Transmitter \u00b7 ' + sigType + ' \u00b7 ' + (videoRes==='4K'?'60m 4K':'100m FHD'),
+        metaJSON: meta
+      });
+      if (rx > 0) window._sxHdbtCart.push({
+        family: 'EXTENDER_HDBASET', category: 'rx', sku: m.rx, qty: rx,
+        description: m.familyLabel + ' Receiver \u00b7 ' + sigType + ' \u00b7 ' + (videoRes==='4K'?'60m 4K':'100m FHD'),
+        metaJSON: meta
+      });
     }
-    const lines = [];
-    if (tx > 0) lines.push({ family: 'EXTENDER_HDBASET', category: 'tx', sku: m.tx, qty: tx, description: m.familyLabel + ' Transmitter \u00b7 ' + sigType, metaJSON: meta });
-    if (rx > 0) lines.push({ family: 'EXTENDER_HDBASET', category: 'rx', sku: m.rx, qty: rx, description: m.familyLabel + ' Receiver \u00b7 ' + sigType, metaJSON: meta });
-    return lines;
+    // Reset form for next add
+    const txEl = document.getElementById('sx_hdbtTx');
+    const rxEl = document.getElementById('sx_hdbtRx');
+    if (txEl) txEl.value = '0';
+    if (rxEl) rxEl.value = '0';
+    _sxHdbtRecompute();
+    _sxRenderHdbtCart();
+    _sxRebuildSummary();
+  }
+
+  function _sxHdbtRemove(idx) {
+    if (idx >= 0 && idx < window._sxHdbtCart.length) {
+      window._sxHdbtCart.splice(idx, 1);
+      _sxRenderHdbtCart();
+      _sxRebuildSummary();
+    }
+  }
+  window._sxHdbtRemove = _sxHdbtRemove;
+
+  function _sxRenderHdbtCart() {
+    const cartEl = document.getElementById('sx_hdbtCart');
+    if (!cartEl) return;
+    if (!window._sxHdbtCart.length) { cartEl.style.display = 'none'; cartEl.innerHTML = ''; return; }
+    let html = '';
+    for (let i = 0; i < window._sxHdbtCart.length; i++) {
+      const ln = window._sxHdbtCart[i];
+      html += '<div class="sx-cart-row">'
+            +   '<span class="pv-qty">' + ln.qty + '\u00d7</span>'
+            +   '<span class="pv-sku">' + _escSx(ln.sku) + '</span>'
+            +   '<span style="color:var(--ink-soft,#64748B);font-size:12px;">' + _escSx(ln.description) + '</span>'
+            +   '<button class="pv-rm" onclick="_sxHdbtRemove(' + i + ')">remove</button>'
+            + '</div>';
+    }
+    cartEl.innerHTML = html;
+    cartEl.style.display = '';
+  }
+
+  function _sxCollectHdbtLines() {
+    // v25.97.1: now reads from cart array, not from live form values
+    return (window._sxHdbtCart || []).slice();
   }
 
   // -------- Splitter --------
-  function _sxSplitterRecompute() { _sxRebuildSummary(); }
+  function _sxSplitterRecompute() {
+    const model = (document.getElementById('sx_daModel') || {}).value || '614';
+    const qty = Number((document.getElementById('sx_daQty') || {}).value) || 0;
+    const previewEl = document.getElementById('sx_daPreview');
+    if (!previewEl) return;
+    if (qty === 0) { previewEl.style.display = 'none'; return; }
+    const spec = SX_DA_MAP[model];
+    if (!spec) { previewEl.style.display = ''; previewEl.innerHTML = '<span class="pv-err">Unknown model.</span>'; return; }
+    previewEl.innerHTML = '<span class="pv-sku">' + spec.sku + '</span> &times; <strong>' + qty + '</strong> &middot; ' + spec.desc;
+    previewEl.style.display = '';
+  }
+
+  // v25.97.1: Splitter cart pattern — each Add pushes current model+qty as one cart row, resets qty
+  function _sxSplitterAdd() {
+    const model = (document.getElementById('sx_daModel') || {}).value || '614';
+    const qty = Number((document.getElementById('sx_daQty') || {}).value) || 0;
+    if (qty === 0) { alert('Set a quantity before adding.'); return; }
+    const spec = SX_DA_MAP[model];
+    if (!spec) { alert('Unknown splitter model.'); return; }
+    // If same SKU already in cart, merge by adding qty (avoid duplicate rows)
+    const existing = window._sxDaCart.find(function(r) { return r.sku === spec.sku; });
+    if (existing) {
+      existing.qty = Number(existing.qty) + qty;
+    } else {
+      window._sxDaCart.push({ family: 'EXTENDER_SPLITTER', category: 'splitter', sku: spec.sku, qty: qty, description: spec.desc, metaJSON: '' });
+    }
+    const qtyEl = document.getElementById('sx_daQty');
+    if (qtyEl) qtyEl.value = '0';
+    _sxSplitterRecompute();
+    _sxRenderDaCart();
+    _sxRebuildSummary();
+  }
+
+  function _sxSplitterRemove(idx) {
+    if (idx >= 0 && idx < window._sxDaCart.length) {
+      window._sxDaCart.splice(idx, 1);
+      _sxRenderDaCart();
+      _sxRebuildSummary();
+    }
+  }
+  window._sxSplitterRemove = _sxSplitterRemove;
+
+  function _sxRenderDaCart() {
+    const cartEl = document.getElementById('sx_daCart');
+    if (!cartEl) return;
+    if (!window._sxDaCart.length) { cartEl.style.display = 'none'; cartEl.innerHTML = ''; return; }
+    let html = '';
+    for (let i = 0; i < window._sxDaCart.length; i++) {
+      const ln = window._sxDaCart[i];
+      html += '<div class="sx-cart-row">'
+            +   '<span class="pv-qty">' + ln.qty + '\u00d7</span>'
+            +   '<span class="pv-sku">' + _escSx(ln.sku) + '</span>'
+            +   '<span style="color:var(--ink-soft,#64748B);font-size:12px;">' + _escSx(ln.description) + '</span>'
+            +   '<button class="pv-rm" onclick="_sxSplitterRemove(' + i + ')">remove</button>'
+            + '</div>';
+    }
+    cartEl.innerHTML = html;
+    cartEl.style.display = '';
+  }
+
   function _sxCollectSplitterLines() {
-    const lines = [];
-    const q612 = Number((document.getElementById('sx_da612') || {}).value) || 0;
-    const q614 = Number((document.getElementById('sx_da614') || {}).value) || 0;
-    const q618 = Number((document.getElementById('sx_da618') || {}).value) || 0;
-    if (q612 > 0) lines.push({ family: 'EXTENDER_SPLITTER', category: 'splitter', sku: SX_DA_MAP['612'].sku, qty: q612, description: SX_DA_MAP['612'].desc, metaJSON: '' });
-    if (q614 > 0) lines.push({ family: 'EXTENDER_SPLITTER', category: 'splitter', sku: SX_DA_MAP['614'].sku, qty: q614, description: SX_DA_MAP['614'].desc, metaJSON: '' });
-    if (q618 > 0) lines.push({ family: 'EXTENDER_SPLITTER', category: 'splitter', sku: SX_DA_MAP['618'].sku, qty: q618, description: SX_DA_MAP['618'].desc, metaJSON: '' });
-    return lines;
+    // v25.97.1: now reads from cart array
+    return (window._sxDaCart || []).slice();
   }
 
   // -------- AOC --------
@@ -12770,8 +12882,13 @@ body.light .signal-card-footer-tv {
   window._sxAocAdd               = _sxAocAdd;
   window._sxCollectAllLines      = _sxCollectAllLines;
   window._onMvExtChange          = _onMvExtChange;
-  window._sxRenderAocCart        = _sxRenderAocCart;  // v25.96: needed by edit-mode repopulation
-  window._sxRebuildSummary       = _sxRebuildSummary; // v25.96: needed by edit-mode repopulation
+  window._sxRenderAocCart        = _sxRenderAocCart;
+  window._sxRebuildSummary       = _sxRebuildSummary;
+  // v25.97.1 — new cart helpers
+  window._sxHdbtAdd              = _sxHdbtAdd;
+  window._sxSplitterAdd          = _sxSplitterAdd;
+  window._sxRenderHdbtCart       = _sxRenderHdbtCart;
+  window._sxRenderDaCart         = _sxRenderDaCart;
 
   // =================================================================
   // EDIT MODE — load an existing submission into the form and update it
@@ -12925,73 +13042,36 @@ body.light .signal-card-footer-tv {
             }
 
             // --- Restore Signal Extension state ---
-            // Group lines by family/category, restore appropriate sub-wizard state
+            // v25.97.1: HDBaseT + Splitter now use cart pattern, so restore directly into _sxHdbtCart and _sxDaCart.
             window._sxAocCart = [];
-            const _aocLines = [];
-            const _hdbtLines = [];
-            const _splitterByQty = { '612': 0, '614': 0, '618': 0 };
+            window._sxHdbtCart = [];
+            window._sxDaCart = [];
 
             for (let i = 0; i < lines.length; i++) {
               const ln = lines[i];
               if (ln.family === 'EXTENDER_AOC') {
-                _aocLines.push(ln);
+                window._sxAocCart.push({
+                  family: 'EXTENDER_AOC', category: 'cable',
+                  sku: ln.sku, qty: Number(ln.qty) || 0, description: ln.description,
+                  metaJSON: ln.metaJSON || ''
+                });
               } else if (ln.family === 'EXTENDER_HDBASET') {
-                _hdbtLines.push(ln);
+                window._sxHdbtCart.push({
+                  family: 'EXTENDER_HDBASET', category: ln.category || 'kit',
+                  sku: ln.sku, qty: Number(ln.qty) || 0, description: ln.description,
+                  metaJSON: ln.metaJSON || ''
+                });
               } else if (ln.family === 'EXTENDER_SPLITTER') {
-                if (/MG-DA-612/.test(ln.sku)) _splitterByQty['612'] = Number(ln.qty) || 0;
-                else if (/MG-DA-614/.test(ln.sku)) _splitterByQty['614'] = Number(ln.qty) || 0;
-                else if (/MG-DA-618/.test(ln.sku)) _splitterByQty['618'] = Number(ln.qty) || 0;
+                window._sxDaCart.push({
+                  family: 'EXTENDER_SPLITTER', category: 'splitter',
+                  sku: ln.sku, qty: Number(ln.qty) || 0, description: ln.description,
+                  metaJSON: ln.metaJSON || ''
+                });
               }
-            }
-
-            // Restore HDBaseT: pull signalType + videoRes + tx + rx from metaJSON if present
-            if (_hdbtLines.length > 0) {
-              const first = _hdbtLines[0];
-              let meta = {};
-              try { meta = first.metaJSON ? JSON.parse(first.metaJSON) : {}; } catch(_) {}
-              const sigSel = document.getElementById('sx_hdbtSignalType');
-              const resSel = document.getElementById('sx_hdbtVideoRes');
-              const txEl = document.getElementById('sx_hdbtTx');
-              const rxEl = document.getElementById('sx_hdbtRx');
-              if (sigSel && meta.signalType) sigSel.value = meta.signalType;
-              if (resSel && meta.videoRes) resSel.value = meta.videoRes;
-              if (txEl) txEl.value = Number(meta.tx) || 0;
-              if (rxEl) rxEl.value = Number(meta.rx) || 0;
-              // Fallback if no meta: kit line counts as tx+rx pair
-              if (!meta.tx && !meta.rx) {
-                if (first.category === 'kit') {
-                  if (txEl) txEl.value = Number(first.qty) || 0;
-                  if (rxEl) rxEl.value = Number(first.qty) || 0;
-                } else {
-                  for (let j = 0; j < _hdbtLines.length; j++) {
-                    if (_hdbtLines[j].category === 'tx' && txEl) txEl.value = Number(_hdbtLines[j].qty) || 0;
-                    if (_hdbtLines[j].category === 'rx' && rxEl) rxEl.value = Number(_hdbtLines[j].qty) || 0;
-                  }
-                }
-              }
-              if (typeof window._sxHdbtRecompute === 'function') window._sxHdbtRecompute();
-            }
-
-            // Restore splitter counters
-            const _da612 = document.getElementById('sx_da612');
-            const _da614 = document.getElementById('sx_da614');
-            const _da618 = document.getElementById('sx_da618');
-            if (_da612) _da612.value = _splitterByQty['612'];
-            if (_da614) _da614.value = _splitterByQty['614'];
-            if (_da618) _da618.value = _splitterByQty['618'];
-
-            // Restore AOC cart
-            for (let i = 0; i < _aocLines.length; i++) {
-              const ln = _aocLines[i];
-              window._sxAocCart.push({
-                family: 'EXTENDER_AOC', category: 'cable',
-                sku: ln.sku, qty: Number(ln.qty) || 0, description: ln.description,
-                metaJSON: ln.metaJSON || ''
-              });
             }
 
             // Open Signal Extension card if any extender lines exist
-            const hasSxItems = _hdbtLines.length || _aocLines.length || _splitterByQty['612'] || _splitterByQty['614'] || _splitterByQty['618'];
+            const hasSxItems = window._sxHdbtCart.length || window._sxAocCart.length || window._sxDaCart.length;
             if (hasSxItems) {
               const sxCard = document.getElementById('signalExtensionCard');
               const sxBody = document.getElementById('sxBody');
@@ -12999,25 +13079,12 @@ body.light .signal-card-footer-tv {
                 sxCard.setAttribute('data-sx-open', 'true');
                 sxBody.style.display = '';
               }
-              if (typeof window._sxAocCart !== 'undefined') {
-                // trigger render of cart + summary
-                const renderFns = ['_sxRenderAocCart', '_sxRebuildSummary'];
-                renderFns.forEach(function(fn) {
-                  if (typeof window[fn] === 'function') window[fn]();
-                  else {
-                    // Functions are module-local; call summary build via collect
-                    if (fn === '_sxRebuildSummary' && typeof window._sxCollectAllLines === 'function') {
-                      // module already updates summary on input events; trigger a no-op
-                    }
-                  }
-                });
-                // Trigger AOC + splitter rebuild via input events (which call _sxRebuildSummary internally)
-                if (_da612) try { _da612.dispatchEvent(new Event('input', { bubbles:true })); } catch(_) {}
-                if (_da614) try { _da614.dispatchEvent(new Event('input', { bubbles:true })); } catch(_) {}
-                if (_da618) try { _da618.dispatchEvent(new Event('input', { bubbles:true })); } catch(_) {}
-              }
+              if (typeof window._sxRenderHdbtCart === 'function') window._sxRenderHdbtCart();
+              if (typeof window._sxRenderDaCart === 'function') window._sxRenderDaCart();
+              if (typeof window._sxRenderAocCart === 'function') window._sxRenderAocCart();
+              if (typeof window._sxRebuildSummary === 'function') window._sxRebuildSummary();
             }
-            console.log('[Edit] ✓ MV+SX state restored');
+            console.log('[Edit] ✓ MV+SX state restored (v25.97.1 cart pattern)');
           }).catch(function(err) {
             console.warn('[Edit] ProjectLines fetch failed (edit still works, just empty wizards):', err);
           });
