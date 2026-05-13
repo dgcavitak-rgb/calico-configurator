@@ -8704,7 +8704,7 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.82';  // v25.82 — DEAD-CODE CLEANUP. No behavior change. Removed: (1) _STEPPER_INPUT_IDS empty array + _wireQtyStepperTV function + _initSteppersTV function + window._initSteppersTV exposure (~70 lines) — per v25.80.6 comment the array was already empty; _initSteppersTV.forEach looped over nothing, so the 60-line wiring function never executed. (2) _initSteppersTV() call removed from _initV70 bootstrap. (3) _tvC2aFetchAggregate (~25 lines) — sole frontend caller of sales_history_aggregate action; orphan since the C2a SAP/Actuals UI was retired (mirrors BS v24.38.0 fetchAggregate cleanup). (4) Stale "Chart.js instance store" comment on _v26Charts corrected to "ECharts instance store" (tvONE has zero Chart.js usage; uses ECharts exclusively). Pairs with backend v26.16.0 which drops handleSalesHistoryAggregate_, handleSalesHistoryList_, handleSalesHistoryClear_, handlePlanOfActionUpdate_, handleStageVelocityAggregate_ (no frontend callers). Sales History IMPORT path is preserved (handleSalesHistoryImport_ + ?action=getlog/listusers/health/getaudit GET endpoints are all live).
+  const TVONE_FRONTEND_VERSION = '25.83';  // v25.83 — P2 dead-code cleanup. No behavior change. Removed 12 orphan functions (~169 lines): _tvC2aRenderCard (~45 lines, C2a SAP/Actuals leftover), _renderHorizBars (~22 lines), pickOutputCards (~21 lines, pre-v25.80 engine artifact replaced by pickInputCards rewrite), animateCountUp (~15 lines), scopeRowsToUserStrict_ (~13 lines), _topNByCount (~12 lines), showLoadingOverlay/hideLoadingOverlay (~11 lines), toggleThemeMenu (~9 lines), _fyOf (~7 lines), _afterCutoffEntriesTV (~4 lines), _lastYM (~4 lines). Each delete validated individually with node --check. PRESERVED: 3 intentional back-compat shims (applyFilters/clearFilters/getFilters — author tagged "Back-compat shim for any older code paths"). Pairs with backend v26.17.0.
   // v25.80.6 — Removed orphan qty-stepper wrap for hidden compat inputs.
   // v25.80.5 — Removed Card 02 + Card 03 footer notes.
   // v25.80.4 — Card 04 (Tech Reqs) removed entirely.
@@ -8805,12 +8805,7 @@ body.light .signal-card-footer-tv {
     return ms >= new Date(TVONE_PIPELINE_DATA_START + 'T00:00:00').getTime();
   };
   // Convenience filter — apply to any list
-  window._afterCutoffEntriesTV = function(arr){
-    if(!Array.isArray(arr)) return [];
-    return arr.filter(window._entryAfterPipelineCutoffTV);
-  };
-
-  // Stamp version into login footer once DOM is ready (defer-safe)
+    // Stamp version into login footer once DOM is ready (defer-safe)
   try {
     document.addEventListener('DOMContentLoaded', function(){
       var el = document.getElementById('login-version');
@@ -10751,28 +10746,6 @@ body.light .signal-card-footer-tv {
   // =================================================================
   // RECOMMENDATION ENGINE
   // =================================================================
-  function pickOutputCards(extraPortsNeeded, input) {
-    // Single output slot. Pick ONE card SKU that best matches needs.
-    // User-selected output signal type drives card choice (HDMI vs SDI).
-    // For HDMI: prefer 4K card; fall back to FHD 8-OUT only for FHD-only projects that fit.
-    if (extraPortsNeeded <= 0) return [];
-    const outputSignal = input.outputSignal || 'HDMI';
-    let chosen;
-    if (outputSignal === 'SDI') {
-      chosen = OUTPUT_CARDS.SDI_12G_4OUT;
-    } else {
-      const allScreensFHD = input.screens.length > 0 && input.screens.every(s => s.pixels <= 1920 * 1080);
-      const hasAny4K = input.screens.some(s => s.resW >= 3840 || s.resH >= 2160) || input.projectorRes === '4K';
-      if (allScreensFHD && !hasAny4K && extraPortsNeeded <= 8) {
-        chosen = OUTPUT_CARDS.HDMI_2K_8OUT;
-      } else {
-        chosen = OUTPUT_CARDS.HDMI_4K_4OUT;
-      }
-    }
-    const cardsNeeded = Math.ceil(extraPortsNeeded / chosen.ports);
-    return [{ card: chosen, qty: cardsNeeded }];
-  }
-
   function pickInputCards(extraInputsNeeded, input) {
     // v25.80 REWRITE: Old logic treated all inputs as homogeneous (HDMI_4K_4IN got picked
     // whenever inputs4K > 0, regardless of whether those 4K inputs were HDMI native-fittable).
@@ -13735,20 +13708,6 @@ body.light .signal-card-footer-tv {
 
   /* DEPRECATED — kept for any callers that might still reference the strict version.
      Use scopeRowsToUser_ which trusts backend (preferred). */
-  function scopeRowsToUserStrict_(rows) {
-    if (hasFullDataAccess()) return rows;
-    if (!currentUser) return [];
-    const uname = String(String(currentUser.username || '')).toLowerCase();
-    return rows.filter(function(r) {
-      const elogin    = String(r.username       || '').toLowerCase();
-      const eSales    = String(r.salesPerson    || '').toLowerCase();
-      const ePresales = String(r.presalesPerson || '').toLowerCase();
-      return (elogin    && elogin    === uname)
-          || (eSales    && eSales    === uname)
-          || (ePresales && ePresales === uname);
-    });
-  }
-
   async function refreshLog() {
     const el = document.getElementById('logContent');
     const srcEl = document.getElementById('logSource');
@@ -15168,15 +15127,6 @@ body.light .signal-card-footer-tv {
     document.querySelectorAll('.theme-ico').forEach(function(el) {
       el.classList.toggle('active', el.getAttribute('data-mode') === mode);
     });
-  }
-
-  function toggleThemeMenu(evt) {
-    if (evt) { evt.stopPropagation(); evt.preventDefault(); }
-    const menu = document.getElementById('themeMenu');
-    const pill = document.getElementById('themePill');
-    if (!menu || !pill) return;
-    const isOpen = menu.classList.contains('open');
-    if (isOpen) { closeThemeMenu(); } else { openThemeMenu(); }
   }
   function openThemeMenu() {
     const menu = document.getElementById('themeMenu');
@@ -16933,18 +16883,6 @@ body.light .signal-card-footer-tv {
   };
 
   // --- Loading overlay ---
-  function showLoadingOverlay(msg) {
-    const ov = document.getElementById('loadingOverlay');
-    const sub = document.getElementById('loadingSubmessage');
-    if (!ov) return;
-    if (msg && sub) sub.textContent = msg;
-    ov.classList.remove('hidden');
-  }
-  function hideLoadingOverlay() {
-    const ov = document.getElementById('loadingOverlay');
-    if (ov) ov.classList.add('hidden');
-  }
-
   // =================================================================
   // REVIEW TAB — Quarterly + Annual + 1:1 Briefing unified
   // =================================================================
@@ -18035,23 +17973,7 @@ body.light .signal-card-footer-tv {
   // =================================================================
   // KPI COUNT-UP — animate numbers when dashboard renders
   // =================================================================
-  window.animateCountUp = function(el, target, duration) {
-    duration = duration || 800;
-    const start = 0;
-    const startTime = performance.now();
-    function step(now) {
-      const elapsed = now - startTime;
-      const t = Math.min(1, elapsed / duration);
-      // easeOutCubic
-      const eased = 1 - Math.pow(1 - t, 3);
-      el.textContent = Math.round(start + (target - start) * eased);
-      if (t < 1) requestAnimationFrame(step);
-      else el.textContent = target;
-    }
-    requestAnimationFrame(step);
-  };
-
-  /* ==========================================================================
+    /* ==========================================================================
    * v25.14 Cycle 2a — Comparison dropdown + per-period Plan of Action (PoA)
    * ========================================================================== */
   const TV_C2A_LS_KEY  = 'tv-c2a-mode';
@@ -18165,52 +18087,6 @@ body.light .signal-card-footer-tv {
       _tvC2aSaving = false;
     }
   }
-
-  function _tvC2aRenderCard(agg) {
-    const pipeline = _tvC2aCurrentPipeline();
-    const asofEl = document.getElementById('tv-c2a-asof');
-    if (asofEl && agg && agg.asOfDate) {
-      const d = new Date(agg.asOfDate);
-      asofEl.textContent = 'As of: ' + d.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
-    } else if (asofEl) {
-      asofEl.textContent = 'As of: — (no sales data uploaded yet)';
-    }
-
-    if (!agg) {
-      ['tv-c2a-cur-label','tv-c2a-cmp-label','tv-c2a-cur-actuals','tv-c2a-cmp-actuals','tv-c2a-delta','tv-c2a-cur-pipeline','tv-c2a-cur-tx','tv-c2a-cmp-tx']
-        .forEach(function(id){ const el=document.getElementById(id); if (el) el.textContent='—'; });
-      return;
-    }
-
-    document.getElementById('tv-c2a-cur-label').textContent = agg.current ? agg.current.label : '—';
-    document.getElementById('tv-c2a-cur-actuals').textContent = _tvC2aFmtINR(agg.current ? agg.current.actuals : null);
-    document.getElementById('tv-c2a-cur-pipeline').textContent = _tvC2aFmtINR(pipeline.total);
-    document.getElementById('tv-c2a-cur-tx').textContent =
-      (agg.current ? (agg.current.txCount + ' invoices') : '—') + ' · ' + pipeline.count + ' open deals';
-
-    const cmpCard = document.getElementById('tv-c2a-cmp-card');
-    if (agg.compare) {
-      cmpCard.style.display = '';
-      document.getElementById('tv-c2a-cmp-label').textContent = agg.compare.label;
-      if (agg.compareHasData) {
-        document.getElementById('tv-c2a-cmp-actuals').textContent = _tvC2aFmtINR(agg.compare.actuals);
-        document.getElementById('tv-c2a-cmp-tx').textContent = agg.compare.txCount + ' invoices';
-        const d = _tvC2aFmtDelta(agg.deltaPct);
-        const deltaEl = document.getElementById('tv-c2a-delta');
-        deltaEl.textContent = d.text;
-        deltaEl.style.color = d.color;
-      } else {
-        document.getElementById('tv-c2a-cmp-actuals').textContent = '—';
-        document.getElementById('tv-c2a-cmp-tx').textContent = 'No data for this period';
-        const deltaEl = document.getElementById('tv-c2a-delta');
-        deltaEl.textContent = '—';
-        deltaEl.style.color = 'var(--ink-subtle)';
-      }
-    } else {
-      cmpCard.style.display = 'none';
-    }
-  }
-
   async function _tvC2aLoadNote(periodKey, fy, scope, qOrH) {
     const ta = document.getElementById('tv-c2a-poa');
     const metaEl = document.getElementById('tv-c2a-poa-meta');
@@ -19603,10 +19479,6 @@ function _cust360EscCloseTV(e){
     const d = new Date(); d.setMonth(d.getMonth() + 1);
     return d.getFullYear() * 100 + (d.getMonth() + 1);
   }
-  function _lastYM(){
-    const d = new Date(); d.setMonth(d.getMonth() - 1);
-    return d.getFullYear() * 100 + (d.getMonth() + 1);
-  }
   // v24.26.8: Days since stage last changed. Uses stageEnteredAt if backend provides; falls back to ts.
   // Returns 0 if no timestamp data exists.
   function _daysInCurrentStage(e){
@@ -19683,13 +19555,6 @@ function _cust360EscCloseTV(e){
     return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
   }
   // Extract Cavitak FY from a date. FY April-March. e.g. April 2026 = FY 26-27
-  function _fyOf(ms){
-    if(!ms) return null;
-    const d = new Date(ms);
-    const y = d.getFullYear();
-    const m = d.getMonth(); // 0-11
-    return m >= 3 ? y : y - 1; // returns starting year (2026 for FY26-27)
-  }
   function _quarterClose(){
     // Cavitak FY April-March, quarters: Apr-Jun, Jul-Sep, Oct-Dec, Jan-Mar
     const now = new Date();
@@ -20623,40 +20488,6 @@ function _cust360EscCloseTV(e){
   }
 
   /* ────────────────────── Top Partners — HORIZONTAL BAR (kept) ────────────────────── */
-  function _topNByCount(deals, key, n){
-    const map = {};
-    deals.forEach(function(e){
-      const k = String(e[key] || '').trim();
-      // v24.26.7: Exclude blanks + all common N/A variants ("N/A", "n/a", "NA", "—", "-", "none")
-      if(!k) return;
-      const kLower = k.toLowerCase().replace(/[\s\.\-\/]/g, '');
-      if(kLower === '' || kLower === 'na' || kLower === 'none' || kLower === 'nil' || k === '—' || k === '-') return;
-      map[k] = (map[k] || 0) + 1;
-    });
-    return Object.keys(map).sort(function(a, b){ return map[b] - map[a]; }).slice(0, n).map(function(k){ return { name: k, count: map[k] }; });
-  }
-  function _renderHorizBars(domId, top, color, key){
-    _destroyChart(key);
-    const _theme = _themeColors();
-    const dom = document.getElementById(domId);
-    if(!dom) return;
-    dom.innerHTML = '';
-    if(!top.length){ dom.innerHTML = '<div style="padding:32px;text-align:center;color:var(--ink-soft);">No data yet</div>'; return; }
-    const inst = _initECharts(domId);
-    if(!inst) return;
-    inst.setOption({
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-      grid: { left: 8, right: 24, top: 12, bottom: 12, containLabel: true },
-      xAxis: { type: 'value', axisLabel: { color: _theme.inkMuted, fontSize: 11 }, splitLine: { lineStyle: { color: _theme.splitLine } } },
-      yAxis: { type: 'category', data: top.map(function(t){ return t.name; }).reverse(), axisLabel: { color: _theme.ink, fontSize: 11 } },
-      series: [{
-        type: 'bar', data: top.map(function(t){ return t.count; }).reverse(),
-        itemStyle: { color: color, borderRadius: [0, 6, 6, 0] },
-        label: { show: true, position: 'right', color: _theme.ink, fontSize: 11, fontWeight: 700 }
-      }]
-    });
-    _v26Charts[key] = inst;
-  }
   /* ────────────────────── Top Partners + Top Consultants — v24.26.8 OPTION B ──────────────────────
    * KPI STRIP (4 cards) + ₹-sorted bars. Tells the concentration & pipeline story.
    *   Total = unique entities · Repeat = entities with 2+ deals · Pipeline = ₹ total · Top share = % from #1
