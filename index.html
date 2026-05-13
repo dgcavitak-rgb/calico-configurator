@@ -8704,7 +8704,7 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.83';  // v25.83 — P2 dead-code cleanup. No behavior change. Removed 12 orphan functions (~169 lines): _tvC2aRenderCard (~45 lines, C2a SAP/Actuals leftover), _renderHorizBars (~22 lines), pickOutputCards (~21 lines, pre-v25.80 engine artifact replaced by pickInputCards rewrite), animateCountUp (~15 lines), scopeRowsToUserStrict_ (~13 lines), _topNByCount (~12 lines), showLoadingOverlay/hideLoadingOverlay (~11 lines), toggleThemeMenu (~9 lines), _fyOf (~7 lines), _afterCutoffEntriesTV (~4 lines), _lastYM (~4 lines). Each delete validated individually with node --check. PRESERVED: 3 intentional back-compat shims (applyFilters/clearFilters/getFilters — author tagged "Back-compat shim for any older code paths"). Pairs with backend v26.17.0.
+  const TVONE_FRONTEND_VERSION = '25.84';  // v25.84 — Autofill trim fix (sha256). Coerces password to String and calls .trim() before encoding so mobile/desktop autofill's invisible trailing whitespace doesn't produce a hash mismatch. Same root-cause as BS 2026-05-13 production lockout; preventive port to tvONE. No other changes from v25.83. Pairs with backend v26.17.0.
   // v25.80.6 — Removed orphan qty-stepper wrap for hidden compat inputs.
   // v25.80.5 — Removed Card 02 + Card 03 footer notes.
   // v25.80.4 — Card 04 (Tech Reqs) removed entirely.
@@ -9413,9 +9413,14 @@ body.light .signal-card-footer-tv {
   // =================================================================
   // LOGIN
   // =================================================================
-  // SHA-256 helper (browser-native)
+  // SHA-256 helper (browser-native).
+  // v25.84: Coerce to String + trim() before encoding. Mobile/desktop autofill
+  // sometimes appends invisible whitespace to password fields; without trim the
+  // resulting hash mismatches stored hash and login fails. No realistic password
+  // contains intentional leading/trailing whitespace.
   async function sha256(text) {
-    const buf = new TextEncoder().encode(text);
+    const clean = String(text == null ? '' : text).trim();
+    const buf = new TextEncoder().encode(clean);
     const hashBuf = await crypto.subtle.digest('SHA-256', buf);
     return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
   }
