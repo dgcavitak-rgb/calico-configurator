@@ -7196,7 +7196,7 @@ body.light .signal-card-footer-tv {
         </div>
 
         <div class="field"><label>Deal Stage <span class="req">*</span></label>
-          <select id="f_stage">
+          <select id="f_stage" autocomplete="off">
             <!-- v25.9: Stage standardized to BrightSign's 5 pure-stage options. Outcome tracks resolution separately. -->
             <option value="">— Select —</option>
             <option>Lead</option>
@@ -7216,7 +7216,7 @@ body.light .signal-card-footer-tv {
 
         <!-- v25.9: Lead Source required for Review tab tvONE-vs-Cavitak analytics -->
         <div class="field"><label>Lead Source <span class="req">*</span><span class="help-icon-tv" data-tip="tvONE = referral from the tvONE team (will be tracked for OEM commissions). Cavitak = self-sourced by Cavitak.">?</span></label>
-          <select id="f_leadSource">
+          <select id="f_leadSource" autocomplete="off">
             <option value="">— Select —</option>
             <option value="tvONE">tvONE</option>
             <option value="Cavitak">Cavitak</option>
@@ -7227,7 +7227,7 @@ body.light .signal-card-footer-tv {
         <!-- v25.9: Outcome explicit — drives Review tab win rate -->
         <!-- v25.97.5: Added blank placeholder so new projects don't auto-select 'open' (forced explicit choice). -->
         <div class="field"><label>Outcome <span class="req">*</span></label>
-          <select id="f_outcome" onchange="toggleOutcomeReasonTV()">
+          <select id="f_outcome" autocomplete="off" onchange="toggleOutcomeReasonTV()">
             <option value="" selected disabled>Select outcome…</option>
             <option value="open">Open (active)</option>
             <option value="won">Won</option>
@@ -9279,7 +9279,9 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.99';  // v25.99 — Phase 4b: CORIO save flow + Result page + edit-mode repopulation. (1) _corioCalculateAndLog() — validates Project Context fields only, saves Submissions row with outputType=CORIO + chassisSku in recommended_chassis, writes per-card lines (chassis + card-in + card-out + card-audio + accessories) to ProjectLines via apiProjectLinesBulkReplace including any Signal Extension lines appended after. (2) calculateAndLog() top-branches to _corioCalculateAndLog when window._corioMode is true. (3) _corioRenderResult() renders chassis hero with C3-/CM2- SKU, configuration summary with input/output/audio/accessory card counts and slot utilisation, BOM table including SX companion items, project summary. (4) renderResult() branches via if(reco.corioMode) return _corioRenderResult(). (5) editFromDetail extended to detect CORIO deals (outputType==='CORIO' OR chassis matches ^C3-/^CM2-), routes through Video Processor + Corio pill, then on ProjectLines fetch restores chassis radio + input/output counters (matching line.inputSignal/outputSignal to data-corio-signal attrs + reading metaJSON.portsRequested for accurate qty) + audio mode + PSU choice (400/700 + redundancy detection by counting PSU rows) + fan filter checkbox. Backend stays at v26.18.0. CORIO is now fully end-to-end: create -> save -> result page -> History -> edit -> update.
+  const TVONE_FRONTEND_VERSION = '25.99.2';  // v25.99.2 — STRICT PROGRESSIVE DISCLOSURE. On form open: only Card 01 (Project Context) visible. Solution Type card appears once all 15 Card 01 required fields filled (including phone-format + email-format + outcome-reason-if-not-open). Picking Multi Viewer → MV wizard appears, all else hidden. Picking Video Processor → vpSubBranch pills appear; CALICO/CORIO cards stay hidden. Picking Calico pill → Card 02 appears. Card 03 still gated by v25.97.4 logic (only when Card 02 has any input > 0). Picking Corio pill → CORIO wizard appears. Signal Extension panel never auto-shows — only on user action (MV ext "Yes" radio or manual SX header click). New module: _updateProgressiveDisclosure() — single source of truth for all card visibility, owns ALL the rules. _isCard01Complete() checks 15 required fields with format validation. _onRequirementChange + _onVpFamilyChange now delegate to the orchestrator. resetForm + editFromDetail fire the orchestrator after their work. Hooks: input/change events on all Card 01 required fields + Solution Type radios + VP family radios. Initial run on DOMContentLoaded. Backend stays at v26.18.0.
+  // v25.99.1 — Autofill hotfix (Stage / Lead Source / Outcome).
+  // v25.99 — Phase 4b: CORIO save flow + Result page + edit-mode repopulation.
   // v25.98 — Phase 4a CORIO wizard preview (catalog + algorithm + UI, no save).
   // v25.97.5 — Bugfixes (Card 02 tick · SX collapse · Outcome blank).
   // v25.97.5 — Bugfixes (Card 02 tick · SX collapse · Outcome blank).
@@ -12331,32 +12333,9 @@ body.light .signal-card-footer-tv {
   window._mvMode = false;
 
   function _onRequirementChange() {
-    const radios = document.getElementsByName('req_type');
-    let picked = '';
-    for (let i = 0; i < radios.length; i++) { if (radios[i].checked) { picked = radios[i].value; break; } }
-    window._mvMode = (picked === 'multiviewer');
-    // Toggle visibility
-    const mvCard = document.getElementById('mvWizardCard');
-    const vpSub = document.getElementById('vpSubBranch');
-    if (mvCard) mvCard.style.display = window._mvMode ? '' : 'none';
-    if (vpSub)  vpSub.style.display  = window._mvMode ? 'none' : '';
-    // v25.98 — Phase 4a: also hide CORIO wizard if switching to MV mode
-    const corioCard = document.getElementById('corioWizardCard');
-    if (corioCard && window._mvMode) {
-      corioCard.style.display = 'none';
-      window._corioMode = false;
-    }
-    // Hide/show existing CALICO cards (data-section 02, 03, 04)
-    const calicoCardSelectors = ['[data-section="02"]', '[data-section="03"]', '[data-section="04"]'];
-    for (let i = 0; i < calicoCardSelectors.length; i++) {
-      const els = document.querySelectorAll(calicoCardSelectors[i]);
-      for (let j = 0; j < els.length; j++) { els[j].style.display = window._mvMode ? 'none' : ''; }
-    }
-    // v25.97.4 — In VP mode, Card 03 (ledCard) starts hidden and only appears when Card 02 has some input filled.
-    if (!window._mvMode) {
-      if (typeof _updateLedCardVisibility === 'function') _updateLedCardVisibility();
-    }
-    // v25.97.1 FIX #4 — collapse Signal Extension panel + reset MV ext radio when mode changes
+    // v25.99.2 — delegate to progressive disclosure orchestrator which owns ALL visibility logic.
+    if (typeof _updateProgressiveDisclosure === 'function') _updateProgressiveDisclosure();
+    // SX panel collapse on mode switch (preserved behavior from earlier hotfixes)
     const sxCard = document.getElementById('signalExtensionCard');
     const sxBody = document.getElementById('sxBody');
     if (sxCard && sxBody) {
@@ -12367,33 +12346,14 @@ body.light .signal-card-footer-tv {
     const mvExtPh = document.getElementById('mvExtPlaceholder');
     if (mvExtNo) mvExtNo.checked = true;
     if (mvExtPh) mvExtPh.style.display = 'none';
-    // Repaint preview if MV mode now active
-    if (window._mvMode) _mvRecompute();
+    // Repaint MV preview if MV mode now active
+    if (window._mvMode && typeof _mvRecompute === 'function') _mvRecompute();
   }
 
   function _onVpFamilyChange() {
-    // v25.98 — Phase 4a: Corio pill activates the CORIO wizard. Calico pill restores
-    // the existing CALICO Cards 02/03/04 flow.
-    const radios = document.getElementsByName('vp_family');
-    let picked = 'calico';
-    for (let i = 0; i < radios.length; i++) { if (radios[i].checked) { picked = radios[i].value; break; } }
-    window._corioMode = (picked === 'corio');
-    const corioCard = document.getElementById('corioWizardCard');
-    if (corioCard) corioCard.style.display = window._corioMode ? '' : 'none';
-    // Hide CALICO cards when CORIO mode is active
-    const calicoCardSelectors = ['[data-section="02"]', '[data-section="03"]', '[data-section="04"]'];
-    for (let i = 0; i < calicoCardSelectors.length; i++) {
-      const els = document.querySelectorAll(calicoCardSelectors[i]);
-      for (let j = 0; j < els.length; j++) {
-        // Don't fight with MV mode (MV already hides these)
-        if (!window._mvMode) els[j].style.display = window._corioMode ? 'none' : '';
-      }
-    }
-    // If switching back to CALICO, re-check Card 03 visibility (it may need to hide if Card 02 inputs are 0)
-    if (!window._corioMode && typeof _updateLedCardVisibility === 'function') {
-      _updateLedCardVisibility();
-    }
-    // If switching to CORIO, recompute preview
+    // v25.99.2 — delegate to progressive disclosure orchestrator.
+    if (typeof _updateProgressiveDisclosure === 'function') _updateProgressiveDisclosure();
+    // Repaint CORIO preview if CORIO mode now active
     if (window._corioMode && typeof _corioRecompute === 'function') {
       try { _corioRecompute(); } catch(_) {}
     }
@@ -12421,6 +12381,164 @@ body.light .signal-card-footer-tv {
     ledCard.style.display = hasInput ? '' : 'none';
   }
   window._updateLedCardVisibility = _updateLedCardVisibility;
+
+  // =================================================================
+  // v25.99.2 — STRICT PROGRESSIVE DISCLOSURE
+  // =================================================================
+  // Rules:
+  //  - On form open: only Card 01 (Project Context) visible. All else hidden.
+  //  - Solution Type card appears once Card 01 required fields are filled.
+  //  - Picking Multi Viewer → MV wizard appears. Cards 02/03 stay hidden.
+  //  - Picking Video Processor → VP family pills appear. CALICO/CORIO cards stay hidden.
+  //  - Picking Calico pill → Card 02 appears. Card 03 stays hidden.
+  //    Card 03 then appears once Card 02 has any input > 0 (existing v25.97.4 logic).
+  //  - Picking Corio pill → CORIO wizard appears.
+  //  - Signal Extension panel never auto-shows. It appears when:
+  //      a) MV mode + user picks "Required signal extension? Yes"
+  //      b) User manually clicks the SX header to expand (already supported)
+  //  - The bottom Generate BoM action row always stays visible (user might just want to scroll out).
+  // =================================================================
+
+  // List of Card 01 required field IDs (15 fields)
+  const _C1_REQUIRED_FIELDS = [
+    'f_project', 'f_endUser', 'f_partner', 'f_consultant',
+    'f_venueType', 'f_city', 'f_state',
+    'f_stage', 'f_leadSource', 'f_outcome',
+    'f_salesPerson', 'f_close',
+    'f_partnerContactName', 'f_partnerContactPhone', 'f_partnerContactEmail'
+  ];
+
+  function _isCard01Complete() {
+    for (let i = 0; i < _C1_REQUIRED_FIELDS.length; i++) {
+      const el = document.getElementById(_C1_REQUIRED_FIELDS[i]);
+      if (!el) continue;
+      const v = String(el.value || '').trim();
+      if (!v) return false;
+      // Extra validation: phone = 10 digits, email = basic format
+      if (_C1_REQUIRED_FIELDS[i] === 'f_partnerContactPhone' && !/^[0-9]{10}$/.test(v)) return false;
+      if (_C1_REQUIRED_FIELDS[i] === 'f_partnerContactEmail' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return false;
+      // Outcome=='open' is fine; if outcome != 'open' then outcomeReason is also required
+      if (_C1_REQUIRED_FIELDS[i] === 'f_outcome' && v !== 'open' && v !== '') {
+        const reason = document.getElementById('f_outcomeReason');
+        if (reason && !String(reason.value || '').trim()) return false;
+      }
+    }
+    return true;
+  }
+
+  function _updateProgressiveDisclosure() {
+    const c1Complete = _isCard01Complete();
+
+    // Solution Type card visibility
+    const solutionCard = document.getElementById('requirementCard');
+    if (solutionCard) solutionCard.style.display = c1Complete ? '' : 'none';
+
+    // If Card 01 incomplete → hide everything below
+    if (!c1Complete) {
+      const idsToHide = ['mvWizardCard', 'corioWizardCard', 'signalExtensionCard'];
+      idsToHide.forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+      // Also hide CALICO Cards 02/03/04
+      ['[data-section="02"]', '[data-section="03"]', '[data-section="04"]'].forEach(function(sel) {
+        document.querySelectorAll(sel).forEach(function(el) { el.style.display = 'none'; });
+      });
+      // Hide vpSubBranch
+      const vpSub = document.getElementById('vpSubBranch');
+      if (vpSub) vpSub.style.display = 'none';
+      return;
+    }
+
+    // Card 01 is complete. Now read Solution Type + VP family selection.
+    const reqRadios = document.getElementsByName('req_type');
+    let solutionPicked = '';
+    for (let i = 0; i < reqRadios.length; i++) { if (reqRadios[i].checked) { solutionPicked = reqRadios[i].value; break; } }
+
+    const isMv    = solutionPicked === 'multiviewer';
+    const isVp    = solutionPicked === 'videoprocessor';
+    const noPick  = !solutionPicked;
+
+    // MV wizard
+    const mvCard = document.getElementById('mvWizardCard');
+    if (mvCard) mvCard.style.display = isMv ? '' : 'none';
+    window._mvMode = isMv;
+
+    // VP sub-branch (Calico/Corio pills)
+    const vpSub = document.getElementById('vpSubBranch');
+    if (vpSub) vpSub.style.display = isVp ? '' : 'none';
+
+    // If MV picked → CALICO cards + CORIO wizard hidden, SX hidden (unless user opened)
+    // If VP picked → which family?
+    let isCalico = false, isCorio = false;
+    if (isVp) {
+      const vpRadios = document.getElementsByName('vp_family');
+      for (let i = 0; i < vpRadios.length; i++) { if (vpRadios[i].checked) {
+        if (vpRadios[i].value === 'calico') isCalico = true;
+        if (vpRadios[i].value === 'corio')  isCorio  = true;
+        break;
+      }}
+    }
+    window._corioMode = isCorio;
+
+    // CALICO Cards 02
+    document.querySelectorAll('[data-section="02"]').forEach(function(el) {
+      el.style.display = isCalico ? '' : 'none';
+    });
+    // CALICO Card 03 is conditionally shown by _updateLedCardVisibility (only when Card 02 has inputs)
+    // We must first force it hidden when not in CALICO mode, then let _updateLedCardVisibility decide
+    if (!isCalico) {
+      document.querySelectorAll('[data-section="03"], [data-section="04"]').forEach(function(el) {
+        el.style.display = 'none';
+      });
+    } else {
+      // CALICO mode: Card 04 always shown if it exists
+      document.querySelectorAll('[data-section="04"]').forEach(function(el) { el.style.display = ''; });
+      // Card 03 visibility delegated to _updateLedCardVisibility
+      if (typeof _updateLedCardVisibility === 'function') _updateLedCardVisibility();
+    }
+
+    // CORIO wizard
+    const corioCard = document.getElementById('corioWizardCard');
+    if (corioCard) corioCard.style.display = isCorio ? '' : 'none';
+
+    // Signal Extension panel — never auto-show, only on user action
+    // (it remains hidden by default and only opens via MV ext radio "Yes" or manual header click).
+    // We don't toggle it here; mode switch already collapses it via _onRequirementChange.
+  }
+  window._updateProgressiveDisclosure = _updateProgressiveDisclosure;
+
+  // Wire Card 01 field listeners to trigger disclosure check
+  function _wireProgressiveDisclosureTV() {
+    _C1_REQUIRED_FIELDS.concat(['f_outcomeReason']).forEach(function(id) {
+      const el = document.getElementById(id);
+      if (el && !el.__progDisclosureWired) {
+        el.addEventListener('input', _updateProgressiveDisclosure);
+        el.addEventListener('change', _updateProgressiveDisclosure);
+        el.__progDisclosureWired = true;
+      }
+    });
+    // Also re-run when Solution Type or VP family changes
+    document.getElementsByName('req_type').forEach(function(el) {
+      if (!el.__progDisclosureWired) {
+        el.addEventListener('change', _updateProgressiveDisclosure);
+        el.__progDisclosureWired = true;
+      }
+    });
+    document.getElementsByName('vp_family').forEach(function(el) {
+      if (!el.__progDisclosureWired) {
+        el.addEventListener('change', _updateProgressiveDisclosure);
+        el.__progDisclosureWired = true;
+      }
+    });
+    // Initial run
+    _updateProgressiveDisclosure();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _wireProgressiveDisclosureTV);
+  } else {
+    setTimeout(_wireProgressiveDisclosureTV, 0);
+  }
 
   // Wire event listeners on all Card 02 input fields on initial bootstrap
   function _wireLedCardTriggersTV() {
@@ -13782,6 +13900,13 @@ body.light .signal-card-footer-tv {
         alert('Could not load submission into the form.\n\nError: ' + (popErr.message || popErr) + '\n\nCheck browser console for details.');
         return;
       }
+
+      // v25.99.2 — after edit-mode populates Card 01, fire progressive disclosure so
+      // Solution Type card + downstream cards appear. The mode-specific repop block
+      // below will then set the right radio buttons which re-trigger the orchestrator.
+      try {
+        if (typeof _updateProgressiveDisclosure === 'function') _updateProgressiveDisclosure();
+      } catch(_) {}
 
       // v25.96 — Phase 2.5: detect Multi Viewer / CORIOview deal + repopulate MV wizard
       //          and Signal Extension cart from ProjectLines.
@@ -17659,6 +17784,13 @@ body.light .signal-card-footer-tv {
     document.getElementById('f_stage').value = '';
     document.getElementById('f_venueType').value = '';
     document.getElementById('f_state').value = '';
+    // v25.99.1: force selectedIndex=0 for dropdowns to override Chrome autofill.
+    // Browser autofill can restore last-used values even when .value='' is set —
+    // selectedIndex=0 explicitly picks the blank placeholder option.
+    ['f_stage', 'f_leadSource', 'f_outcome', 'f_venueType', 'f_state'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && el.tagName === 'SELECT') el.selectedIndex = 0;
+    });
     // v25.21: Reset state field's locked styling — city→state lock can leave it disabled
     var _stEl = document.getElementById('f_state');
     if (_stEl) { _stEl.disabled = false; _stEl.classList.remove('autoset-locked'); _stEl.title = ''; }
@@ -17696,6 +17828,10 @@ body.light .signal-card-footer-tv {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     // v25.31: re-enable autosave after form reset is complete
     window._tvDraftSkipSave = false;
+    // v25.99.2 — refresh progressive disclosure after reset (hides everything except Card 01)
+    if (typeof _updateProgressiveDisclosure === 'function') {
+      try { _updateProgressiveDisclosure(); } catch(_) {}
+    }
   }
 
   // =================================================================
