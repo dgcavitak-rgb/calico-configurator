@@ -984,7 +984,8 @@
      the full available container width on all viewports. */
   .action-bar-v2-tv{
     display:grid;
-    grid-template-columns:repeat(7, minmax(72px, 1fr));
+    /* v25.99.5 — 6 buttons (Print removed). Equal columns. */
+    grid-template-columns:repeat(6, minmax(72px, 1fr));
     gap:8px;
     width:100%;
     margin-top:18px;
@@ -8027,9 +8028,9 @@ body.light .signal-card-footer-tv {
     </div>
     <div id="recoOutput"></div>
     <!-- v25.49: Option B action bar — equal-width grid, single gold accent, only Confirm filled.
-         Real brand SVG icons inline (no emoji — render identically across all platforms).
-         confirmBtn ID preserved for existing JS (4 selectors at lines ~7675, 7688, 8246, 9760).
-         Print button moved to a smaller secondary action below. -->
+         v25.99.5 — Final order per user screenshot: Back · Confirm · Excel · PDF · WhatsApp · Email.
+         Print removed (rarely used; kept available via browser Ctrl+P).
+         Dividers removed. Indigo accent for clean visual identity. -->
     <div class="btn-row action-bar-v2-tv">
       <button class="ab2tv-btn is-back" onclick="backToEdit()" title="Back to edit">
         <svg class="ab2tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
@@ -8067,15 +8068,6 @@ body.light .signal-card-footer-tv {
           <polyline points="22,6 12,13 2,6"/>
         </svg>
         <span class="ab2tv-label">Email</span>
-      </button>
-      <!-- v25.58: Print folded into the action bar as 7th button (was orphaned below). -->
-      <button class="ab2tv-btn is-tertiary" onclick="window.print()" title="Print this page">
-        <svg class="ab2tv-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polyline points="6 9 6 2 18 2 18 9"/>
-          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-          <rect x="6" y="14" width="12" height="8"/>
-        </svg>
-        <span class="ab2tv-label">Print</span>
       </button>
     </div>
   </div>
@@ -9279,7 +9271,9 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.99.3';  // v25.99.3 — UNIFORM BLOCK NUMBERING + CORIO restyle. Per user spec: Block 01 = Project Context, Block 02 = Solution Type, Block 03 = MV wizard (if MV picked) OR Input + Output Blocks (if Video Processor picked — both share badge 03 visually), Block 04 = Signal Extension. Renumbered badges: CALICO Input "02"→"03", CALICO Output kept at "03" (paired with Input as Block 03), CORIO badge "CO"→"03", SX badge "SX"→"04". Card titles aligned: "Input Block — Video Processor" / "Output Block — Video Processor" / "Input Block — CORIO Modular". CORIO input/output grids rebuilt to use CALICO's signal-row-tv styling: row layout becomes `[Signal Label]  [- qty +]  [Port info subtitle]` matching the CALICO Input Block exactly. The chassis picker tiles, audio/PSU/extras, and live preview stay below the input/output grids in their original CORIO-specific styling. Backend stays at v26.18.0.
+  const TVONE_FRONTEND_VERSION = '25.99.5';  // v25.99.5 — Action bar final layout per user reference screenshot. Order: Back · Confirm · Excel · PDF · WhatsApp · Email (6 buttons, Print removed — still available via browser Ctrl+P). No dividers. Grid switched to 6-col. KEPT existing Cavitak gold/emerald brand palette (.ab2tv-btn gold accent on transparent bg; .is-primary solid gold for Confirm; .is-back grey for Back). The screenshot was used as a reference for placement + order only, not colors. Backend stays at v26.18.0.
+  // v25.99.4 — Action bar grouped with dividers (since reverted).
+  // v25.99.3 — Uniform block numbering + CORIO restyle.
   // v25.99.2 — Strict progressive disclosure (cards hide until prerequisites complete).
   // v25.99.1 — Browser autofill hotfix.
   // v25.99.1 — Autofill hotfix (Stage / Lead Source / Outcome).
@@ -12077,7 +12071,7 @@ body.light .signal-card-footer-tv {
       if (banner) banner.classList.add('hidden');
     }
     calcBtn.disabled = false;
-    calcBtn.textContent = 'Calculate & Log';
+    calcBtn.textContent = 'Generate BoM →';
 
     // Ensure minimum 2.2-second analyzing display so the step animation completes
     const elapsed = performance.now() - analyzingStartedAt;
@@ -12822,7 +12816,7 @@ body.light .signal-card-footer-tv {
       };
       sessionLog.unshift(submission);
 
-      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM →'; }
 
       // v25.97.3 FIX — render the Result page and navigate to it (was missing — page didn't change after save)
       try {
@@ -12849,7 +12843,7 @@ body.light .signal-card-footer-tv {
         try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(_) {}
       }
     } catch (e) {
-      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM →'; }
       if (err) {
         err.innerHTML = '<strong>Save failed:</strong> ' + _escMv(String(e && e.message || e));
         err.classList.add('show');
@@ -13036,7 +13030,7 @@ body.light .signal-card-footer-tv {
       };
       sessionLog.unshift(submission);
 
-      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM →'; }
       try {
         if (typeof renderResult === 'function') renderResult(input, lastResult.reco);
         if (typeof showView === 'function') showView('result');
@@ -13049,7 +13043,7 @@ body.light .signal-card-footer-tv {
         }
       }
     } catch (e) {
-      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM →'; }
       if (err) {
         err.innerHTML = '<strong>Save failed:</strong> ' + _escCorio(String(e && e.message || e));
         err.classList.add('show');
@@ -14356,7 +14350,7 @@ body.light .signal-card-footer-tv {
       if (!btn) return;
       const outcome = sel ? String(sel.value || '').toLowerCase() : '';
       const isClosed = (outcome === 'won' || outcome === 'lost');
-      btn.textContent = isClosed ? 'View Quote →' : 'Calculate & Log';
+      btn.textContent = isClosed ? 'View Quote →' : 'Generate BoM →';
     } catch (_) { /* defensive — never throw from a label updater */ }
   }
   // Expose globally so other functions (e.g. mode toggle, view changes) can refresh on demand
@@ -15142,7 +15136,7 @@ body.light .signal-card-footer-tv {
   async function exportQuotePDFTV(returnDoc) {
     if (!lastResult) {
       if (returnDoc === true) return null;
-      alert('No calculation to export. Click Calculate & Log first.'); return;
+      alert('No calculation to export. Click Generate BoM first.'); return;
     }
     if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
       if (returnDoc === true) return null;
@@ -15360,7 +15354,7 @@ body.light .signal-card-footer-tv {
   // v25.29 — WHATSAPP SHARE (modal-based, popup-blocker-proof)
   // =================================================================
   function shareViaWhatsAppTV() {
-    if (!lastResult) { alert('No calculation to share. Click Calculate & Log first.'); return; }
+    if (!lastResult) { alert('No calculation to share. Click Generate BoM first.'); return; }
     const input = lastResult.input, reco = lastResult.reco, submission = lastResult.submission;
     const refId = (submission && submission.refId) || ('CAL-' + Date.now().toString(36).toUpperCase());
 
@@ -15432,7 +15426,7 @@ body.light .signal-card-footer-tv {
   // Backend route: 'email_send' → handleEmailSend_
   // =================================================================
   function openEmailModalTV() {
-    if (!lastResult) { alert('No calculation to email. Click Calculate & Log first.'); return; }
+    if (!lastResult) { alert('No calculation to email. Click Generate BoM first.'); return; }
     const input = lastResult.input, reco = lastResult.reco, submission = lastResult.submission;
     const refId = (submission && submission.refId) || ('CAL-' + Date.now().toString(36).toUpperCase());
 
