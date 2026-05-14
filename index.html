@@ -7486,189 +7486,80 @@ body.light .signal-card-footer-tv {
          Hides Cards 02-04 in that mode. Saves via _corioCalculateAndLog
          which writes a CORIO chassis line + per-card lines to ProjectLines.
          ============================================================ -->
-    <!-- v25.99.3 — CORIO split into TWO cards mirroring CALICO's structure.
-         Chassis picker REMOVED — recommendCORIO() auto-selects chassis based on
-         input/output signal totals + 4K presence (parallel to CALICO's chassis math). -->
-    <div class="card form-section-tv corio-input-card" id="corioInputCard" style="display:none;" data-progress-skip="true">
+    <div class="card form-section-tv corio-wizard-card" id="corioWizardCard" style="display:none;" data-progress-skip="true">
       <div class="section-head-tv">
-        <div class="section-num-tv">03</div>
+        <div class="section-num-tv corio-num">03</div>
         <div class="section-head-text-tv">
-          <div class="section-title-tv">Input Block of Video Processor</div>
-          <div class="section-sub-tv">Add quantities for each input signal type. Chassis (Micro / Mini / CM2) is auto-recommended based on signal count + 4K presence.</div>
+          <div class="section-title-tv">Input Block — CORIO Modular</div>
+          <div class="section-sub-tv">Pick chassis tier first, then add input + output cards. The wizard auto-validates against slot capacity. CM-* cards fit Micro/Mini; CM2-* cards fit CORIOmaster2 only.</div>
         </div>
       </div>
 
-      <div class="signal-row-grid-tv">
-        <div class="signal-row-tv">
-          <div class="signal-row-label-tv">HDMI 4K</div>
-          <div class="signal-row-qty-tv">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_HDMI4K', -1)">−</button>
-            <input id="corio_in_HDMI4K" type="number" min="0" max="64" value="0" readonly data-corio-direction="in" data-corio-signal="HDMI 4K" oninput="_corioRecompute()">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_HDMI4K', 1)">+</button>
-          </div>
-          <div class="signal-row-desc-tv">3840×2160 sources · routes to CM2 chassis</div>
-        </div>
-        <div class="signal-row-tv">
-          <div class="signal-row-label-tv">HDMI 1080p</div>
-          <div class="signal-row-qty-tv">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_HDMIFHD', -1)">−</button>
-            <input id="corio_in_HDMIFHD" type="number" min="0" max="64" value="0" readonly data-corio-direction="in" data-corio-signal="HDMI 1080p" oninput="_corioRecompute()">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_HDMIFHD', 1)">+</button>
-          </div>
-          <div class="signal-row-desc-tv">1920×1080 sources</div>
-        </div>
-        <div class="signal-row-tv">
-          <div class="signal-row-label-tv">SDI 12G</div>
-          <div class="signal-row-qty-tv">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_SDI12G', -1)">−</button>
-            <input id="corio_in_SDI12G" type="number" min="0" max="64" value="0" readonly data-corio-direction="in" data-corio-signal="SDI 12G" oninput="_corioRecompute()">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_SDI12G', 1)">+</button>
-          </div>
-          <div class="signal-row-desc-tv">4K SDI broadcast · CM2 only</div>
-        </div>
-        <div class="signal-row-tv">
-          <div class="signal-row-label-tv">SDI 3G</div>
-          <div class="signal-row-qty-tv">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_SDI3G', -1)">−</button>
-            <input id="corio_in_SDI3G" type="number" min="0" max="64" value="0" readonly data-corio-direction="in" data-corio-signal="SDI 3G" oninput="_corioRecompute()">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_SDI3G', 1)">+</button>
-          </div>
-          <div class="signal-row-desc-tv">1080p SDI broadcast</div>
-        </div>
-        <div class="signal-row-tv">
-          <div class="signal-row-label-tv">SDI HD</div>
-          <div class="signal-row-qty-tv">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_SDIHD', -1)">−</button>
-            <input id="corio_in_SDIHD" type="number" min="0" max="64" value="0" readonly data-corio-direction="in" data-corio-signal="SDI HD" oninput="_corioRecompute()">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_SDIHD', 1)">+</button>
-          </div>
-          <div class="signal-row-desc-tv">HD/SD-SDI · BNC · Micro/Mini only</div>
-        </div>
-        <div class="signal-row-tv">
-          <div class="signal-row-label-tv">HDBaseT</div>
-          <div class="signal-row-qty-tv">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_HDBT', -1)">−</button>
-            <input id="corio_in_HDBT" type="number" min="0" max="64" value="0" readonly data-corio-direction="in" data-corio-signal="HDBaseT" oninput="_corioRecompute()">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_HDBT', 1)">+</button>
-          </div>
-          <div class="signal-row-desc-tv">Long-reach video over Cat-cable</div>
-        </div>
-        <div class="signal-row-tv">
-          <div class="signal-row-label-tv">DVI-U</div>
-          <div class="signal-row-qty-tv">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_DVIU', -1)">−</button>
-            <input id="corio_in_DVIU" type="number" min="0" max="64" value="0" readonly data-corio-direction="in" data-corio-signal="DVI-U" oninput="_corioRecompute()">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_DVIU', 1)">+</button>
-          </div>
-          <div class="signal-row-desc-tv">Digital / analog universal (Mini has 2 fixed)</div>
-        </div>
-        <div class="signal-row-tv">
-          <div class="signal-row-label-tv">AVIP (IP)</div>
-          <div class="signal-row-qty-tv">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_AVIP', -1)">−</button>
-            <input id="corio_in_AVIP" type="number" min="0" max="64" value="0" readonly data-corio-direction="in" data-corio-signal="AVIP" oninput="_corioRecompute()">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_in_AVIP', 1)">+</button>
-          </div>
-          <div class="signal-row-desc-tv">4K media streaming over IP</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card form-section-tv corio-output-card" id="corioOutputCard" style="display:none;" data-progress-skip="true">
-      <div class="section-head-tv">
-        <div class="section-num-tv">04</div>
-        <div class="section-head-text-tv">
-          <div class="section-title-tv">Output Block of Video Processor</div>
-          <div class="section-sub-tv">Add quantities for each output signal type, then pick audio and chassis options. Live preview at the bottom shows the recommended chassis + full BOM.</div>
-        </div>
+      <!-- Step 1 — Chassis picker -->
+      <div class="corio-chassis-row">
+        <label class="corio-chassis-card" data-corio-chassis="C3-503">
+          <input type="radio" name="corio_chassis" value="C3-503" onchange="_onCorioChassisChange()">
+          <div class="corio-chassis-name">CORIOmaster Micro</div>
+          <div class="corio-chassis-sku">C3-503</div>
+          <div class="corio-chassis-stats">3 flex slots · 1080p · CM-* cards</div>
+        </label>
+        <label class="corio-chassis-card" data-corio-chassis="C3-510">
+          <input type="radio" name="corio_chassis" value="C3-510" onchange="_onCorioChassisChange()">
+          <div class="corio-chassis-name">CORIOmaster Mini</div>
+          <div class="corio-chassis-sku">C3-510</div>
+          <div class="corio-chassis-stats">5 slots + 1 fixed DVI-U · 1080p · CM-* cards</div>
+        </label>
+        <label class="corio-chassis-card" data-corio-chassis="CM2-547-MK2">
+          <input type="radio" name="corio_chassis" value="CM2-547-MK2" onchange="_onCorioChassisChange()">
+          <div class="corio-chassis-name">CORIOmaster2</div>
+          <div class="corio-chassis-sku">CM2-547-MK2</div>
+          <div class="corio-chassis-stats">13 slots · 4K · CM2-* cards · V-series FW</div>
+        </label>
       </div>
 
-      <div class="signal-row-grid-tv">
-        <div class="signal-row-tv">
-          <div class="signal-row-label-tv">HDMI 4K</div>
-          <div class="signal-row-qty-tv">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_out_HDMI4K', -1)">−</button>
-            <input id="corio_out_HDMI4K" type="number" min="0" max="64" value="0" readonly data-corio-direction="out" data-corio-signal="HDMI 4K" oninput="_corioRecompute()">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_out_HDMI4K', 1)">+</button>
-          </div>
-          <div class="signal-row-desc-tv">3840×2160 displays · routes to CM2</div>
+      <!-- Step 2 — Module config (hidden until chassis is picked) -->
+      <div class="corio-config-body" id="corioConfigBody" style="display:none;">
+        <div class="corio-section-divider">Inputs needed <span class="corio-divider-hint">— per signal type</span></div>
+        <div class="corio-grid" id="corioInputsGrid">
+          <!-- Populated dynamically based on chassis pick (CM-* vs CM2-* ecosystem) -->
         </div>
-        <div class="signal-row-tv">
-          <div class="signal-row-label-tv">HDMI 1080p</div>
-          <div class="signal-row-qty-tv">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_out_HDMIFHD', -1)">−</button>
-            <input id="corio_out_HDMIFHD" type="number" min="0" max="64" value="0" readonly data-corio-direction="out" data-corio-signal="HDMI 1080p" oninput="_corioRecompute()">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_out_HDMIFHD', 1)">+</button>
-          </div>
-          <div class="signal-row-desc-tv">1080p displays · video wall</div>
-        </div>
-        <div class="signal-row-tv">
-          <div class="signal-row-label-tv">SDI 12G</div>
-          <div class="signal-row-qty-tv">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_out_SDI12G', -1)">−</button>
-            <input id="corio_out_SDI12G" type="number" min="0" max="64" value="0" readonly data-corio-direction="out" data-corio-signal="SDI 12G" oninput="_corioRecompute()">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_out_SDI12G', 1)">+</button>
-          </div>
-          <div class="signal-row-desc-tv">4K SDI broadcast · CM2 only</div>
-        </div>
-        <div class="signal-row-tv">
-          <div class="signal-row-label-tv">SDI 3G</div>
-          <div class="signal-row-qty-tv">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_out_SDI3G', -1)">−</button>
-            <input id="corio_out_SDI3G" type="number" min="0" max="64" value="0" readonly data-corio-direction="out" data-corio-signal="SDI 3G" oninput="_corioRecompute()">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_out_SDI3G', 1)">+</button>
-          </div>
-          <div class="signal-row-desc-tv">1080p SDI · Micro/Mini only</div>
-        </div>
-        <div class="signal-row-tv">
-          <div class="signal-row-label-tv">DVI-I</div>
-          <div class="signal-row-qty-tv">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_out_DVII', -1)">−</button>
-            <input id="corio_out_DVII" type="number" min="0" max="64" value="0" readonly data-corio-direction="out" data-corio-signal="DVI-I scaled" oninput="_corioRecompute()">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_out_DVII', 1)">+</button>
-          </div>
-          <div class="signal-row-desc-tv">DVI-I scaled · Micro/Mini only</div>
-        </div>
-        <div class="signal-row-tv">
-          <div class="signal-row-label-tv">HDBaseT</div>
-          <div class="signal-row-qty-tv">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_out_HDBT', -1)">−</button>
-            <input id="corio_out_HDBT" type="number" min="0" max="64" value="0" readonly data-corio-direction="out" data-corio-signal="HDBaseT scaled" oninput="_corioRecompute()">
-            <button type="button" class="qty-btn-tv" onclick="_corioInputAdj('corio_out_HDBT', 1)">+</button>
-          </div>
-          <div class="signal-row-desc-tv">Long-reach over Cat · Micro/Mini only</div>
-        </div>
-      </div>
 
-      <div class="corio-extras-row" style="margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
-        <div class="field">
-          <label>Audio routing</label>
-          <select id="corio_audioMode" onchange="_corioRecompute()">
-            <option value="none">No audio module</option>
-            <option value="2-4">2-IN / 4-OUT analog + SPDIF</option>
-            <option value="8-8">8-IN / 8-OUT (CORIOmaster Micro/Mini only)</option>
-          </select>
+        <div class="corio-section-divider">Outputs needed</div>
+        <div class="corio-grid" id="corioOutputsGrid">
+          <!-- Populated dynamically based on chassis pick -->
         </div>
-        <div class="field" id="corioPsuField">
-          <label>PSU choice <span style="font-weight:400;color:var(--ink-soft);font-size:11px;">— CM2 only</span></label>
-          <select id="corio_psuChoice" onchange="_corioRecompute()">
-            <option value="400">400W single (default)</option>
-            <option value="400-redundant">400W + Redundant 400W</option>
-            <option value="700">700W single (Enforce 700W)</option>
-            <option value="700-redundant">700W + Redundant 700W</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Extras</label>
-          <label class="corio-extra-toggle" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);"><input type="checkbox" id="corio_fanFilter" onchange="_corioRecompute()"> Fan Filter Assembly</label>
-          <label class="corio-extra-toggle" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);margin-top:6px;"><input type="checkbox" id="corio_autoBlank" checked onchange="_corioRecompute()"> Auto-fill unused slots with CM-BLANK</label>
-        </div>
-      </div>
 
-      <!-- Live preview with recommended chassis -->
-      <div class="corio-preview" id="corioPreview" style="margin-top:18px;">
-        <div class="corio-preview-tag" id="corioPreviewTag">Add inputs/outputs to see recommendation</div>
-        <div class="corio-preview-body" id="corioPreviewBody"></div>
+        <div class="corio-section-divider">Audio &amp; Chassis options</div>
+        <div class="corio-grid">
+          <div class="field">
+            <label>Audio routing</label>
+            <select id="corio_audioMode" onchange="_corioRecompute()">
+              <option value="none">No audio module</option>
+              <option value="2-4">2-IN / 4-OUT analog + SPDIF</option>
+              <option value="8-8">8-IN / 8-OUT via HD-44 (CORIOmaster only)</option>
+            </select>
+          </div>
+          <div class="field" id="corioPsuField">
+            <label>PSU choice <span style="font-weight:400;color:var(--ink-soft);">— CM2 only</span></label>
+            <select id="corio_psuChoice" onchange="_corioRecompute()">
+              <option value="400">400W single (default)</option>
+              <option value="400-redundant">400W + Redundant 400W</option>
+              <option value="700">700W single (Enforce 700W)</option>
+              <option value="700-redundant">700W + Redundant 700W</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Extras</label>
+            <label class="corio-extra-toggle" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);"><input type="checkbox" id="corio_fanFilter" onchange="_corioRecompute()"> Fan Filter Assembly (CM2-Filter)</label>
+            <label class="corio-extra-toggle" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);margin-top:6px;"><input type="checkbox" id="corio_autoBlank" checked onchange="_corioRecompute()"> Auto-fill unused slots with CM-BLANK</label>
+          </div>
+        </div>
+
+        <!-- Live preview -->
+        <div class="corio-preview" id="corioPreview" style="margin-top:18px;">
+          <div class="corio-preview-tag" id="corioPreviewTag">Pick a chassis to start</div>
+          <div class="corio-preview-body" id="corioPreviewBody"></div>
+        </div>
       </div>
     </div>
 
@@ -7682,9 +7573,9 @@ body.light .signal-card-footer-tv {
          below. Per-signal-type field IDs are NEW (f_inputHdmi4kQty etc.). -->
     <div class="card form-section-tv" data-section="02" data-section-title="Input Block of Video Processor" data-progress-skip="true">
       <div class="section-head-tv">
-        <div class="section-num-tv">02</div>
+        <div class="section-num-tv">03</div>
         <div class="section-head-text-tv">
-          <div class="section-title-tv">Input Block of Video Processor</div>
+          <div class="section-title-tv">Input Block — Video Processor</div>
           <div class="section-sub-tv">Add quantities for each signal type the processor receives. Defaults to 0 — fill only what's needed.</div>
         </div>
       </div>
@@ -7799,7 +7690,7 @@ body.light .signal-card-footer-tv {
       <div class="section-head-tv">
         <div class="section-num-tv">03</div>
         <div class="section-head-text-tv">
-          <div class="section-title-tv">Output Block of Video Processor</div>
+          <div class="section-title-tv">Output Block — Video Processor</div>
           <div class="section-sub-tv">Displays, projectors, LED screens, SDI outputs, and audio.</div>
         </div>
       </div>
@@ -7953,7 +7844,7 @@ body.light .signal-card-footer-tv {
          ============================================================ -->
     <div class="card form-section-tv sx-card" id="signalExtensionCard">
       <div class="section-head-tv sx-head" onclick="_sxToggle()" style="cursor:pointer;">
-        <div class="section-num-tv sx-num">SX</div>
+        <div class="section-num-tv sx-num">04</div>
         <div class="section-head-text-tv" style="flex:1;">
           <div class="section-title-tv">Signal Extension <span class="sx-optional-tag">optional</span></div>
           <div class="section-sub-tv">HDBaseT extenders, HDMI distribution amplifiers (splitters), and AOC cables. Items added here are quoted as additional line items in your BOM.</div>
@@ -9388,9 +9279,9 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.99.3';  // v25.99.3 — Uniform numbering + CORIO restructure. (1) Section badges renumbered for consistency: 01=Project Context, 02=Solution Type, 03=Multi Viewer Form (MV path) OR CORIO/CALICO Input Block (VP path), 04=CORIO/CALICO Output Block (VP path only). Signal Extension stays unnumbered (appears on Yes only). (2) CORIO wizard SPLIT from 1 card into 2 cards mirroring CALICO structure: corioInputCard (Block 03 — 8 input signal counters in CALICO row layout) + corioOutputCard (Block 04 — 6 output signal counters + audio + PSU + extras + live preview). (3) Chassis picker REMOVED — recommendCORIO now auto-selects chassis (Micro/Mini/CM2) based on signal counts + 4K presence, same way CALICO auto-picks C7-PRO chassis. Includes auto-upgrade fallback if config exceeds slot capacity. (4) Soft warning surface for signals that don't exist on the auto-selected ecosystem (e.g., SDI HD when project has 4K → routes to CM2 which doesn't have SDI HD input; user sees a note in preview). (5) Edit-mode repopulation: reverse-maps catalog keys back to user-facing signal keys (e.g., "HDMI 4K 2-in" → "HDMI 4K"). Backend stays at v26.18.0.
-  // v25.99.2 — Strict progressive disclosure (Card 01 must be complete before Solution Type appears).
-  // v25.99.1 — Autofill hotfix (Stage / Lead Source / Outcome).
+  const TVONE_FRONTEND_VERSION = '25.99.3';  // v25.99.3 — UNIFORM BLOCK NUMBERING + CORIO restyle. Per user spec: Block 01 = Project Context, Block 02 = Solution Type, Block 03 = MV wizard (if MV picked) OR Input + Output Blocks (if Video Processor picked — both share badge 03 visually), Block 04 = Signal Extension. Renumbered badges: CALICO Input "02"→"03", CALICO Output kept at "03" (paired with Input as Block 03), CORIO badge "CO"→"03", SX badge "SX"→"04". Card titles aligned: "Input Block — Video Processor" / "Output Block — Video Processor" / "Input Block — CORIO Modular". CORIO input/output grids rebuilt to use CALICO's signal-row-tv styling: row layout becomes `[Signal Label]  [- qty +]  [Port info subtitle]` matching the CALICO Input Block exactly. The chassis picker tiles, audio/PSU/extras, and live preview stay below the input/output grids in their original CORIO-specific styling. Backend stays at v26.18.0.
+  // v25.99.2 — Strict progressive disclosure (cards hide until prerequisites complete).
+  // v25.99.1 — Browser autofill hotfix.
   // v25.99.1 — Autofill hotfix (Stage / Lead Source / Outcome).
   // v25.99 — Phase 4b: CORIO save flow + Result page + edit-mode repopulation.
   // v25.98 — Phase 4a CORIO wizard preview (catalog + algorithm + UI, no save).
@@ -12546,13 +12437,13 @@ body.light .signal-card-footer-tv {
 
     // If Card 01 incomplete → hide everything below
     if (!c1Complete) {
-      const idsToHide = ['mvWizardCard', 'corioWizardCard', 'corioInputCard', 'corioOutputCard', 'signalExtensionCard'];
+      const idsToHide = ['mvWizardCard', 'corioWizardCard', 'signalExtensionCard'];
       idsToHide.forEach(function(id) {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
       });
-      // Also hide CALICO Cards 03/04 (renumbered from 02/03 in v25.99.3)
-      ['[data-section="03"]', '[data-section="04"]'].forEach(function(sel) {
+      // Also hide CALICO Cards 02/03/04
+      ['[data-section="02"]', '[data-section="03"]', '[data-section="04"]'].forEach(function(sel) {
         document.querySelectorAll(sel).forEach(function(el) { el.style.display = 'none'; });
       });
       // Hide vpSubBranch
@@ -12592,28 +12483,26 @@ body.light .signal-card-footer-tv {
     }
     window._corioMode = isCorio;
 
-    // CALICO Card 03 (Input) — always shown in CALICO mode
-    document.querySelectorAll('[data-section="03"]').forEach(function(el) {
+    // CALICO Cards 02
+    document.querySelectorAll('[data-section="02"]').forEach(function(el) {
       el.style.display = isCalico ? '' : 'none';
     });
-    // CALICO Card 04 (Output / ledCard) — shown only when Card 03 has inputs (delegated to _updateLedCardVisibility)
+    // CALICO Card 03 is conditionally shown by _updateLedCardVisibility (only when Card 02 has inputs)
+    // We must first force it hidden when not in CALICO mode, then let _updateLedCardVisibility decide
     if (!isCalico) {
-      document.querySelectorAll('[data-section="04"]').forEach(function(el) {
+      document.querySelectorAll('[data-section="03"], [data-section="04"]').forEach(function(el) {
         el.style.display = 'none';
       });
     } else {
-      // CALICO mode: Card 04 visibility delegated to _updateLedCardVisibility
+      // CALICO mode: Card 04 always shown if it exists
+      document.querySelectorAll('[data-section="04"]').forEach(function(el) { el.style.display = ''; });
+      // Card 03 visibility delegated to _updateLedCardVisibility
       if (typeof _updateLedCardVisibility === 'function') _updateLedCardVisibility();
     }
 
-    // CORIO wizard — two cards (Input + Output), both shown in CORIO mode
-    const corioInputCard = document.getElementById('corioInputCard');
-    const corioOutputCard = document.getElementById('corioOutputCard');
-    if (corioInputCard)  corioInputCard.style.display  = isCorio ? '' : 'none';
-    if (corioOutputCard) corioOutputCard.style.display = isCorio ? '' : 'none';
-    // Old single corioWizardCard hidden if it still exists (defensive — should not)
-    const oldCorioCard = document.getElementById('corioWizardCard');
-    if (oldCorioCard) oldCorioCard.style.display = 'none';
+    // CORIO wizard
+    const corioCard = document.getElementById('corioWizardCard');
+    if (corioCard) corioCard.style.display = isCorio ? '' : 'none';
 
     // Signal Extension panel — never auto-show, only on user action
     // (it remains hidden by default and only opens via MV ext radio "Yes" or manual header click).
@@ -13789,213 +13678,113 @@ body.light .signal-card-footer-tv {
   window._corioMode = false;
   window._corioLastResult = null;
 
-  // v25.99.3 — auto-chassis selector + universal signal key mapping
-  // The 8 user-facing input signal IDs map to per-ecosystem catalog keys:
-  //   HDMI 4K, HDMI 1080p, SDI 12G, SDI 3G, SDI HD, HDBaseT, DVI-U, AVIP
-  // Some signals are ecosystem-restricted (e.g., SDI 12G is CM2-only, SDI HD is CM-only).
-  // The auto-selector picks chassis based on: any-4K → CM2; total slots > 3 (no 4K) → Mini; ≤3 → Micro.
-  const CORIO_SIGNAL_TO_CM_KEY = {
-    'HDMI 4K':    'HDMI 4K',
-    'HDMI 1080p': 'HDMI 1080p',
-    'SDI 3G':     'SDI 3G',
-    'SDI HD':     'SDI HD',
-    'HDBaseT':    'HDBaseT',
-    'DVI-U':      'DVI-U',
-    'AVIP':       'AVIP 16GB'    // default 16GB; upgrade to 128GB is a separate toggle
-    // SDI 12G has no CM equivalent
-  };
-  const CORIO_SIGNAL_TO_CM2_KEY = {
-    'HDMI 4K':    'HDMI 4K 2-in',   // 2-port variant — could be auto-upgraded to 4-in if qty > 4
-    'HDMI 1080p': 'HDMI 1080p',
-    'SDI 12G':    'SDI 12G',
-    'SDI 3G':     'SDI 3G',
-    'HDBaseT':    'HDBaseT',
-    'DVI-U':      'DVI-U',
-    'AVIP':       'AVIP 128GB'
-    // SDI HD has no CM2 equivalent
-  };
-  const CORIO_OUT_SIGNAL_TO_CM_KEY = {
-    'HDMI 4K':       'HDMI 4K 2-out',
-    'HDMI 1080p':    'HDMI 1080p 4-out',
-    'SDI 3G':        'SDI 3G scaled',
-    'DVI-I scaled':  'DVI-I scaled',
-    'HDBaseT scaled':'HDBaseT scaled'
-  };
-  const CORIO_OUT_SIGNAL_TO_CM2_KEY = {
-    'HDMI 4K':       'HDMI 4K',
-    'HDMI 1080p':    'HDMI 1080p',
-    'SDI 12G':       'SDI 12G'
-    // DVI-I, SDI 3G out, HDBaseT scaled out have no CM2 equivalent
-  };
+  function _onCorioChassisChange() {
+    const radios = document.getElementsByName('corio_chassis');
+    let picked = '';
+    for (let i = 0; i < radios.length; i++) { if (radios[i].checked) { picked = radios[i].value; break; } }
+    if (!picked) return;
+    const chassis = CORIO_CHASSIS[picked];
+    if (!chassis) return;
 
-  function _corioAutoSelectChassis(inputCounts, outputCounts) {
-    // Detect 4K need
-    const has4K = (Number(inputCounts['HDMI 4K'] || 0) > 0)
-               || (Number(inputCounts['SDI 12G'] || 0) > 0)
-               || (Number(outputCounts['HDMI 4K'] || 0) > 0)
-               || (Number(outputCounts['SDI 12G'] || 0) > 0);
-    // 4K → always CM2 (only chassis that supports 4K)
-    if (has4K) return 'CM2-547-MK2';
-    // Estimate total slots needed (rough: ceil(qty / 2) per signal as a conservative average)
-    let estSlots = 0;
-    Object.keys(inputCounts).forEach(function(k) {
-      const q = Number(inputCounts[k] || 0);
-      if (q > 0) estSlots += Math.ceil(q / 4); // assume ~4 ports/card avg for inputs
-    });
-    Object.keys(outputCounts).forEach(function(k) {
-      const q = Number(outputCounts[k] || 0);
-      if (q > 0) estSlots += Math.ceil(q / 2); // assume ~2 ports/card avg for outputs (conservative)
-    });
-    if (estSlots <= 3) return 'C3-503';
-    return 'C3-510';
+    // Show config body
+    const body = document.getElementById('corioConfigBody');
+    if (body) body.style.display = '';
+
+    // Populate input + output grids per chassis ecosystem
+    const moduleSet = (chassis.cardEcosystem === 'CM2') ? CORIO_CM2_MODULES : CORIO_CM_MODULES;
+    const inputsGrid = document.getElementById('corioInputsGrid');
+    const outputsGrid = document.getElementById('corioOutputsGrid');
+    // v25.99.3 — render CORIO input/output rows in CALICO signal-row-tv style for visual consistency
+    if (inputsGrid) {
+      // Wrap inside .signal-row-grid-tv for the matching grid layout
+      inputsGrid.className = 'signal-row-grid-tv';
+      inputsGrid.innerHTML = moduleSet.inputs.map(function(card) {
+        const id = 'corio_in_' + card.key.replace(/[^a-zA-Z0-9]/g, '_');
+        return '<div class="signal-row-tv">'
+             +   '<div class="signal-row-label-tv">' + _escCorio(card.key) + '</div>'
+             +   '<div class="signal-row-qty-tv">'
+             +     '<div class="qty-stepper-tv">'
+             +       '<button type="button" aria-label="Decrease ' + _escCorio(card.key) + ' input qty" onclick="_corioQtyAdj(\'' + id + '\',-1)">−</button>'
+             +       '<input id="' + id + '" type="number" min="0" max="64" value="0" inputmode="numeric" data-corio-signal="' + _escCorio(card.key) + '" data-corio-direction="in" oninput="_corioRecompute()">'
+             +       '<button type="button" aria-label="Increase ' + _escCorio(card.key) + ' input qty" onclick="_corioQtyAdj(\'' + id + '\',1)">+</button>'
+             +     '</div>'
+             +   '</div>'
+             +   '<div class="signal-row-note-tv signal-row-note-helper-tv">' + _escCorio(card.sku) + ' · ' + card.ports + ' port' + (card.ports===1?'':'s') + ' per card</div>'
+             + '</div>';
+      }).join('');
+    }
+    if (outputsGrid) {
+      outputsGrid.className = 'signal-row-grid-tv';
+      outputsGrid.innerHTML = moduleSet.outputs.map(function(card) {
+        const id = 'corio_out_' + card.key.replace(/[^a-zA-Z0-9]/g, '_');
+        return '<div class="signal-row-tv">'
+             +   '<div class="signal-row-label-tv">' + _escCorio(card.key) + '</div>'
+             +   '<div class="signal-row-qty-tv">'
+             +     '<div class="qty-stepper-tv">'
+             +       '<button type="button" aria-label="Decrease ' + _escCorio(card.key) + ' output qty" onclick="_corioQtyAdj(\'' + id + '\',-1)">−</button>'
+             +       '<input id="' + id + '" type="number" min="0" max="64" value="0" inputmode="numeric" data-corio-signal="' + _escCorio(card.key) + '" data-corio-direction="out" oninput="_corioRecompute()">'
+             +       '<button type="button" aria-label="Increase ' + _escCorio(card.key) + ' output qty" onclick="_corioQtyAdj(\'' + id + '\',1)">+</button>'
+             +     '</div>'
+             +   '</div>'
+             +   '<div class="signal-row-note-tv signal-row-note-helper-tv">' + _escCorio(card.sku) + ' · ' + card.ports + ' port' + (card.ports===1?'':'s') + ' per card</div>'
+             + '</div>';
+      }).join('');
+    }
+
+    // Show/hide PSU field — CM2 only
+    const psuField = document.getElementById('corioPsuField');
+    if (psuField) psuField.style.display = (chassis.cardEcosystem === 'CM2') ? '' : 'none';
+
+    _corioRecompute();
   }
 
-  function _corioInputAdj(id, delta) {
+  function _corioQtyAdj(id, delta) {
     const el = document.getElementById(id);
     if (!el) return;
     el.value = Math.max(0, Math.min(64, (Number(el.value) || 0) + delta));
     try { el.dispatchEvent(new Event('input', { bubbles:true })); } catch(_) {}
   }
-  window._corioInputAdj = _corioInputAdj;
-
-  function _corioReadInputs() {
-    const counts = {};
-    document.querySelectorAll('[data-corio-direction="in"]').forEach(function(el) {
-      counts[el.getAttribute('data-corio-signal')] = Number(el.value) || 0;
-    });
-    return counts;
-  }
-  function _corioReadOutputs() {
-    const counts = {};
-    document.querySelectorAll('[data-corio-direction="out"]').forEach(function(el) {
-      counts[el.getAttribute('data-corio-signal')] = Number(el.value) || 0;
-    });
-    return counts;
-  }
 
   function _corioRecompute() {
-    const userInputs = _corioReadInputs();
-    const userOutputs = _corioReadOutputs();
-    // Any input/output > 0?
-    let hasAny = false;
-    Object.values(userInputs).forEach(function(v) { if (v > 0) hasAny = true; });
-    Object.values(userOutputs).forEach(function(v) { if (v > 0) hasAny = true; });
-    const tag = document.getElementById('corioPreviewTag');
-    const body = document.getElementById('corioPreviewBody');
-    if (!tag || !body) return;
-    if (!hasAny) {
-      tag.className = 'corio-preview-tag';
-      tag.textContent = 'Add inputs/outputs to see recommendation';
-      body.innerHTML = '';
-      window._corioLastResult = null;
-      return;
-    }
-
-    // Auto-select chassis
-    const chassisSku = _corioAutoSelectChassis(userInputs, userOutputs);
-    const chassis = CORIO_CHASSIS[chassisSku];
-    if (!chassis) { tag.textContent = 'No suitable chassis found'; body.innerHTML = ''; return; }
-
-    // Map user signal keys to ecosystem-specific catalog keys
-    const isCm2 = chassis.cardEcosystem === 'CM2';
-    const inMap = isCm2 ? CORIO_SIGNAL_TO_CM2_KEY : CORIO_SIGNAL_TO_CM_KEY;
-    const outMap = isCm2 ? CORIO_OUT_SIGNAL_TO_CM2_KEY : CORIO_OUT_SIGNAL_TO_CM_KEY;
-    const mappedInputs = {}, mappedOutputs = {};
-    const unsupportedSignals = [];
-    Object.keys(userInputs).forEach(function(sig) {
-      const qty = userInputs[sig];
-      if (qty <= 0) return;
-      const catalogKey = inMap[sig];
-      if (!catalogKey) {
-        unsupportedSignals.push(sig + ' (input) — not available on ' + chassis.label);
-        return;
-      }
-      mappedInputs[catalogKey] = (mappedInputs[catalogKey] || 0) + qty;
+    const radios = document.getElementsByName('corio_chassis');
+    let picked = '';
+    for (let i = 0; i < radios.length; i++) { if (radios[i].checked) { picked = radios[i].value; break; } }
+    if (!picked) return;
+    // Read inputs
+    const inputCounts = {};
+    const outputCounts = {};
+    document.querySelectorAll('[data-corio-signal][data-corio-direction="in"]').forEach(function(el) {
+      inputCounts[el.getAttribute('data-corio-signal')] = Number(el.value) || 0;
     });
-    Object.keys(userOutputs).forEach(function(sig) {
-      const qty = userOutputs[sig];
-      if (qty <= 0) return;
-      const catalogKey = outMap[sig];
-      if (!catalogKey) {
-        unsupportedSignals.push(sig + ' (output) — not available on ' + chassis.label);
-        return;
-      }
-      mappedOutputs[catalogKey] = (mappedOutputs[catalogKey] || 0) + qty;
+    document.querySelectorAll('[data-corio-signal][data-corio-direction="out"]').forEach(function(el) {
+      outputCounts[el.getAttribute('data-corio-signal')] = Number(el.value) || 0;
     });
-
-    // Soft warning if some signals are filtered
-    let warnHtml = '';
-    if (unsupportedSignals.length) {
-      warnHtml = '<div style="color:#B45309;font-size:12px;margin-bottom:8px;padding:6px 10px;background:rgba(212,175,55,0.08);border-radius:6px;">Note: ' + unsupportedSignals.join('; ') + '</div>';
-    }
-
     const audioMode = (document.getElementById('corio_audioMode') || {}).value || 'none';
     const psuChoice = (document.getElementById('corio_psuChoice') || {}).value || '400';
     const fanFilter = !!(document.getElementById('corio_fanFilter') || {}).checked;
     const autoBlank = !!(document.getElementById('corio_autoBlank') || {}).checked;
 
-    const res = recommendCORIO(chassisSku, mappedInputs, mappedOutputs, audioMode, { psuChoice:psuChoice, fanFilter:fanFilter, autoBlank:autoBlank });
+    const res = recommendCORIO(picked, inputCounts, outputCounts, audioMode, { psuChoice:psuChoice, fanFilter:fanFilter, autoBlank:autoBlank });
     window._corioLastResult = res;
 
+    const tag = document.getElementById('corioPreviewTag');
+    const body = document.getElementById('corioPreviewBody');
+    if (!tag || !body) return;
     if (res.type === 'error') {
-      // If error is "too many slots" and chassis was Micro, retry with Mini; if Mini, retry with CM2
-      if (/exceeds.*capacity|needs.*slot/i.test(res.error)) {
-        let upgraded = null;
-        if (chassisSku === 'C3-503') upgraded = 'C3-510';
-        else if (chassisSku === 'C3-510') upgraded = 'CM2-547-MK2';
-        if (upgraded) {
-          // Re-map signals for the upgraded chassis if needed
-          const upgIsCm2 = CORIO_CHASSIS[upgraded].cardEcosystem === 'CM2';
-          if (upgIsCm2 !== isCm2) {
-            // Ecosystem change — re-map signals
-            const newInMap = upgIsCm2 ? CORIO_SIGNAL_TO_CM2_KEY : CORIO_SIGNAL_TO_CM_KEY;
-            const newOutMap = upgIsCm2 ? CORIO_OUT_SIGNAL_TO_CM2_KEY : CORIO_OUT_SIGNAL_TO_CM_KEY;
-            const reIn = {}, reOut = {};
-            Object.keys(userInputs).forEach(function(sig) { const q = userInputs[sig]; if (q <= 0) return; const k = newInMap[sig]; if (k) reIn[k] = (reIn[k] || 0) + q; });
-            Object.keys(userOutputs).forEach(function(sig) { const q = userOutputs[sig]; if (q <= 0) return; const k = newOutMap[sig]; if (k) reOut[k] = (reOut[k] || 0) + q; });
-            const res2 = recommendCORIO(upgraded, reIn, reOut, audioMode, { psuChoice:psuChoice, fanFilter:fanFilter, autoBlank:autoBlank });
-            if (res2.type === 'ok') {
-              window._corioLastResult = res2;
-              _corioRenderPreview(tag, body, res2, warnHtml + '<div style="font-size:11px;color:#475569;margin-bottom:8px;font-style:italic;">Auto-upgraded chassis: ' + chassisSku + ' \u2192 ' + upgraded + ' (slot capacity)</div>');
-              return;
-            }
-          } else {
-            const res2 = recommendCORIO(upgraded, mappedInputs, mappedOutputs, audioMode, { psuChoice:psuChoice, fanFilter:fanFilter, autoBlank:autoBlank });
-            if (res2.type === 'ok') {
-              window._corioLastResult = res2;
-              _corioRenderPreview(tag, body, res2, warnHtml + '<div style="font-size:11px;color:#475569;margin-bottom:8px;font-style:italic;">Auto-upgraded chassis: ' + chassisSku + ' \u2192 ' + upgraded + ' (slot capacity)</div>');
-              return;
-            }
-          }
-        }
-      }
       tag.className = 'corio-preview-tag corio-tag-error';
-      tag.textContent = 'Configuration error';
-      body.innerHTML = warnHtml + '<div style="color:#B91C1C;font-size:13px;">' + _escCorio(res.error) + '</div>';
+      tag.textContent = 'Invalid configuration';
+      body.innerHTML = '<div style="color:#B91C1C;font-size:13px;">' + _escCorio(res.error) + '</div>';
       return;
     }
-
-    _corioRenderPreview(tag, body, res, warnHtml);
-
-    // Show/hide PSU field based on chassis ecosystem
-    const psuField = document.getElementById('corioPsuField');
-    if (psuField) psuField.style.display = (chassis.cardEcosystem === 'CM2') ? '' : 'none';
-  }
-
-  function _corioRenderPreview(tag, body, res, warnHtml) {
     tag.className = 'corio-preview-tag corio-tag-ok';
-    tag.textContent = res.chassis.sku + ' \u00b7 ' + res.chassis.label;
-    let html = warnHtml || '';
+    tag.textContent = res.chassis.sku + ' · ' + res.chassis.label;
+    let html = '';
     res.bom.forEach(function(b) {
-      html += '<div class="corio-bom-line"><span class="qty">' + b.qty + '\u00d7</span><span class="sku">' + _escCorio(b.sku) + '</span><span class="desc">' + _escCorio(b.description) + '</span></div>';
+      html += '<div class="corio-bom-line"><span class="qty">' + b.qty + '×</span><span class="sku">' + _escCorio(b.sku) + '</span><span class="desc">' + _escCorio(b.description) + '</span></div>';
     });
     html += '<div class="corio-slot-meter">Slots used: <strong>' + res.slotsUsed + ' / ' + res.slotsTotal + '</strong> (' + res.slotsInputUsed + ' input + ' + res.slotsOutputUsed + ' output)</div>';
     body.innerHTML = html;
   }
-
-  // Legacy stub — chassis picker removed, but old code paths might still call this
-  function _onCorioChassisChange() { _corioRecompute(); }
-  function _corioQtyAdj(id, delta) { _corioInputAdj(id, delta); }
 
   function _escCorio(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
@@ -14165,77 +13954,69 @@ body.light .signal-card-footer-tv {
             const lines = r.lines;
             console.log('[Edit] Repopulating from ' + lines.length + ' ProjectLines');
 
-            // --- v25.99.3: Restore CORIO state. Chassis picker is gone — chassis is auto-computed
-            // from inputs/outputs at recompute time. We just need to restore the per-signal counter
-            // values + audio/PSU/fanFilter. Saved ln.inputSignal/outputSignal contains the CATALOG
-            // key (e.g., "HDMI 4K 2-in" for CM2 or "HDMI 4K" for CM). Reverse-map to user-facing key.
+            // --- v25.99: Restore CORIO wizard state if this is a CORIO deal ---
             if (_isCorio) {
-              // Reverse maps (catalog key -> user-facing signal key for the new row-based UI)
-              const REV_IN = {
-                'HDMI 4K': 'HDMI 4K', 'HDMI 4K 2-in': 'HDMI 4K', 'HDMI 4K 4-in': 'HDMI 4K',
-                'HDMI 1080p': 'HDMI 1080p',
-                'SDI 12G': 'SDI 12G', 'SDI 3G': 'SDI 3G', 'SDI HD': 'SDI HD',
-                'HDBaseT': 'HDBaseT', 'DVI-U': 'DVI-U',
-                'AVIP 16GB': 'AVIP', 'AVIP 128GB': 'AVIP'
-              };
-              const REV_OUT = {
-                'HDMI 4K': 'HDMI 4K', 'HDMI 4K 1-out': 'HDMI 4K', 'HDMI 4K 2-out': 'HDMI 4K',
-                'HDMI 1080p': 'HDMI 1080p', 'HDMI 1080p 4-out': 'HDMI 1080p', 'HDMI keying': 'HDMI 1080p',
-                'SDI 12G': 'SDI 12G', 'SDI 3G scaled': 'SDI 3G',
-                'DVI-I scaled': 'DVI-I scaled', 'DVI-I monitor': 'DVI-I scaled',
-                'HDBaseT scaled': 'HDBaseT scaled'
-              };
-              // Aggregate restored values by user-facing key (multiple catalog rows can roll up to one)
-              const aggIn = {}, aggOut = {};
-              lines.forEach(function(ln) {
-                if (ln.family !== 'CORIO') return;
-                if (ln.category === 'card-in' && ln.inputSignal) {
-                  let portsRequested = Number(ln.qty) || 0;
-                  try {
-                    const meta = ln.metaJSON ? JSON.parse(ln.metaJSON) : null;
-                    if (meta && typeof meta.portsRequested === 'number') portsRequested = meta.portsRequested;
-                  } catch(_) {}
-                  const userKey = REV_IN[ln.inputSignal] || ln.inputSignal;
-                  aggIn[userKey] = (aggIn[userKey] || 0) + portsRequested;
-                } else if (ln.category === 'card-out' && ln.outputSignal) {
-                  let portsRequested = Number(ln.qty) || 0;
-                  try {
-                    const meta = ln.metaJSON ? JSON.parse(ln.metaJSON) : null;
-                    if (meta && typeof meta.portsRequested === 'number') portsRequested = meta.portsRequested;
-                  } catch(_) {}
-                  const userKey = REV_OUT[ln.outputSignal] || ln.outputSignal;
-                  aggOut[userKey] = (aggOut[userKey] || 0) + portsRequested;
-                } else if (ln.category === 'card-audio') {
-                  const audioSel = document.getElementById('corio_audioMode');
-                  if (audioSel) audioSel.value = /8IN-8OUT|8-IN.*8-OUT/i.test(ln.sku + ' ' + (ln.description||'')) ? '8-8' : '2-4';
-                } else if (ln.category === 'accessory' && /CM2-4RPS/.test(ln.sku)) {
-                  const psuSel = document.getElementById('corio_psuChoice');
-                  const is700 = /-700/.test(ln.sku);
-                  const psuLinesCount = lines.filter(function(l) { return l.category === 'accessory' && /CM2-4RPS/.test(l.sku); }).length;
-                  if (psuSel) {
-                    if (is700 && psuLinesCount > 1) psuSel.value = '700-redundant';
-                    else if (is700) psuSel.value = '700';
-                    else if (psuLinesCount > 1) psuSel.value = '400-redundant';
-                    else psuSel.value = '400';
+              const _corioChassis = lines.find(function(l) { return l.family === 'CORIO' && l.category === 'chassis'; });
+              if (_corioChassis && _corioChassis.sku) {
+                const _cRadios = document.getElementsByName('corio_chassis');
+                for (let i = 0; i < _cRadios.length; i++) {
+                  if (_cRadios[i].value === _corioChassis.sku) {
+                    _cRadios[i].checked = true;
+                    if (typeof window._onCorioChassisChange === 'function') window._onCorioChassisChange();
+                    break;
                   }
-                } else if (ln.category === 'accessory' && ln.sku === 'CM2-Filter') {
-                  const cb = document.getElementById('corio_fanFilter');
-                  if (cb) cb.checked = true;
                 }
-              });
-              // Apply aggregated values to the new counter inputs
-              setTimeout(function() {
-                Object.keys(aggIn).forEach(function(userKey) {
-                  const el = document.querySelector('[data-corio-direction="in"][data-corio-signal="' + (window.CSS && CSS.escape ? CSS.escape(userKey) : userKey) + '"]');
-                  if (el) el.value = aggIn[userKey];
-                });
-                Object.keys(aggOut).forEach(function(userKey) {
-                  const el = document.querySelector('[data-corio-direction="out"][data-corio-signal="' + (window.CSS && CSS.escape ? CSS.escape(userKey) : userKey) + '"]');
-                  if (el) el.value = aggOut[userKey];
-                });
-                if (typeof window._corioRecompute === 'function') window._corioRecompute();
-                console.log('[Edit] \u2713 CORIO state restored (v25.99.3 — auto-chassis)');
-              }, 30);
+                // After chassis change, grids are populated. Now restore counter values.
+                // Wait one tick for DOM to settle, then set values.
+                setTimeout(function() {
+                  // Restore input/output counters by matching saved line.inputSignal / outputSignal
+                  // to data-corio-signal attributes on the freshly-rendered counter inputs.
+                  lines.forEach(function(ln) {
+                    if (ln.family !== 'CORIO') return;
+                    if (ln.category === 'card-in' && ln.inputSignal) {
+                      // Try to read meta to get total ports requested (so user-visible qty matches what they typed)
+                      let portsRequested = Number(ln.qty) || 0;
+                      try {
+                        const meta = ln.metaJSON ? JSON.parse(ln.metaJSON) : null;
+                        if (meta && typeof meta.portsRequested === 'number') portsRequested = meta.portsRequested;
+                      } catch(_) {}
+                      const inputEl = document.querySelector('[data-corio-signal="' + (window.CSS && CSS.escape ? CSS.escape(ln.inputSignal) : ln.inputSignal) + '"][data-corio-direction="in"]');
+                      if (inputEl) inputEl.value = portsRequested;
+                    } else if (ln.category === 'card-out' && ln.outputSignal) {
+                      let portsRequested = Number(ln.qty) || 0;
+                      try {
+                        const meta = ln.metaJSON ? JSON.parse(ln.metaJSON) : null;
+                        if (meta && typeof meta.portsRequested === 'number') portsRequested = meta.portsRequested;
+                      } catch(_) {}
+                      const outEl = document.querySelector('[data-corio-signal="' + (window.CSS && CSS.escape ? CSS.escape(ln.outputSignal) : ln.outputSignal) + '"][data-corio-direction="out"]');
+                      if (outEl) outEl.value = portsRequested;
+                    } else if (ln.category === 'card-audio') {
+                      const audioSel = document.getElementById('corio_audioMode');
+                      if (audioSel) {
+                        if (/8IN-8OUT|8-IN.*8-OUT/i.test(ln.sku + ' ' + (ln.description||''))) audioSel.value = '8-8';
+                        else audioSel.value = '2-4';
+                      }
+                    } else if (ln.category === 'accessory' && /CM2-4RPS/.test(ln.sku)) {
+                      // PSU detection (rough — Phase 4b initial pass)
+                      const psuSel = document.getElementById('corio_psuChoice');
+                      const is700 = /-700/.test(ln.sku);
+                      // Count PSU rows of this type to detect redundancy
+                      const psuLinesCount = lines.filter(function(l) { return l.category === 'accessory' && /CM2-4RPS/.test(l.sku); }).length;
+                      if (psuSel) {
+                        if (is700 && psuLinesCount > 1) psuSel.value = '700-redundant';
+                        else if (is700) psuSel.value = '700';
+                        else if (psuLinesCount > 1) psuSel.value = '400-redundant';
+                        else psuSel.value = '400';
+                      }
+                    } else if (ln.category === 'accessory' && ln.sku === 'CM2-Filter') {
+                      const cb = document.getElementById('corio_fanFilter');
+                      if (cb) cb.checked = true;
+                    }
+                  });
+                  if (typeof window._corioRecompute === 'function') window._corioRecompute();
+                  console.log('[Edit] ✓ CORIO state restored');
+                }, 30);
+              }
             }
 
             // --- Restore MV wizard inputs ---
