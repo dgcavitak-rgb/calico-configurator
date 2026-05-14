@@ -983,9 +983,12 @@
      v25.58 — 6→7 cols (Print folded in as tertiary), width:100% added so the bar spans
      the full available container width on all viewports. */
   .action-bar-v2-tv{
-    display:grid;
-    /* v25.99.5 — 6 buttons (Print removed). Equal columns. */
-    grid-template-columns:repeat(6, minmax(72px, 1fr));
+    /* v25.99.9 — !important on display+grid-template-columns to defeat any conflicting
+       .btn-row override that might fight the grid layout (.btn-row is display:flex with
+       flex-wrap:wrap which can cause buttons to stack when their natural width sums above
+       the container width). The grid here is authoritative. */
+    display:grid !important;
+    grid-template-columns:repeat(6, minmax(0, 1fr)) !important;
     gap:8px;
     width:100%;
     margin-top:18px;
@@ -993,6 +996,8 @@
     background:var(--paper-warm);
     border:1px solid var(--line-softer);
     border-radius:14px;
+    /* Ensure children don't overflow their grid cell */
+    grid-auto-flow:column;
   }
   .ab2tv-btn{
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
@@ -6976,8 +6981,8 @@ body.light .signal-card-footer-tv {
       <button type="button" onclick="if(confirm('Discard the saved draft? This cannot be undone.')){_clearDraftTV();}" style="padding:7px 14px;font-size:13px;font-weight:500;background:transparent;color:var(--ink-soft,#475569);border:1px solid var(--border-soft,#CBD5E1);border-radius:6px;cursor:pointer;">Discard</button>
     </div>
 
-    <h1 class="page-title">CALICO PRO Configuration</h1>
-    <p class="page-sub">Engineered to <strong>size the right CALICO PRO chassis</strong> for your project — from single-screen LED walls to mixed multi-display installations. Enter your requirements and get a <strong>validated BOM</strong> instantly.</p>
+    <h1 class="page-title">Solution Configuration</h1>
+    <p class="page-sub">Engineered to <strong>size the right tvONE solution</strong> for your project — Multi Viewer, CALICO video wall, or CORIO modular video processor. Enter your requirements and get a <strong>validated BOM</strong> instantly.</p>
 
     <!-- v25.69 (MH2 M3): Top sticky progress indicator -->
     <div id="guided-progress-bar-tv" class="guided-progress-wrap-tv" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Form completion progress">
@@ -9278,7 +9283,9 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.99.8';  // v25.99.8 — Batch fix per user spec. (1) Stage dropdown now defaults to "Lead" — set as <option selected> in HTML, and resetForm explicitly sets f_stage='Lead' after the v25.99.1 autofill-defeat selectedIndex=0 sweep. User can still change. (2) Signal Extension Yes/No radio added at end of CALICO Output Block (Card 04) and end of CORIO card — mirrors the MV pattern. New handlers _onCalicoExtChange / _onCorioExtChange clone _onMvExtChange exactly (open SX panel on Yes, collapse on No, scroll into view). (3) SX companion items now appear in CALICO Result page BOM table (was previously missing — only MV/CORIO had the section). Same "Signal Extension · companion items" subheader row pattern. (4) PDF export now includes SX rows after main BOM with same subheader. Was missing entirely from PDF — bomRowsHtml built only from reco.bom; now also appends from window._sxCollectAllLines(). (5) Analyzing splash page ("Command every pixel") now fires for MV + CORIO save flows too (was CALICO-only). Added showView('analyzing') + runAnalyzingSteps() at start of _mvCalculateAndLog + _corioCalculateAndLog, and wrapped the post-save navigation in setTimeout(remainingDelay) where remainingDelay = max(0, 2200 - elapsed) to give the animation time to play. Excel SX section was already present from v25.97 — verified no regression. Backend stays at v26.18.0.
+  const TVONE_FRONTEND_VERSION = '25.99.10';  // v25.99.10 — Ported "For Better Pricing" contact card from BS app. New helper _buildBetterPricingCardTV() returns inline HTML for an indigo-gradient hero card showing owner (Dipenkumar Gajjar · National Product Lead · Cavitak Marketing) with clickable email + phone pills and the indicative-pricing footer. Injected before Project Summary in all 4 Result-page renderers: MV (_mvRenderResult), CORIO (_corioRenderResult), CALICO offline-branch, CALICO main path. Same content + visual treatment as the BS app for consistency across both internal tools. Backend stays at v26.18.0.
+  // v25.99.9 — Form heading rename + button stacking defensive fix.
+  // v25.99.8 — Stage default + SX Yes/No on CALICO/CORIO + SX in PDF + analyzing splash for MV/CORIO.
   // v25.99.7 — App rename CALICO PRO Configurator -> tvONE Product Selector.
   // v25.99.6 — CORIO chassis picker removed + SX panel visibility fix.
   // v25.99.5 — Action bar 6-button layout.
@@ -14912,6 +14919,9 @@ body.light .signal-card-footer-tv {
     html += '</tbody></table>';
     html += '</div>';
 
+    // v25.99.10 — "For Better Pricing" contact card (BS-app port).
+    html += _buildBetterPricingCardTV();
+
     // ---- Card 4: Project Summary ----
     html += '<div class="card">';
     html += '<div class="card-title">Project Summary</div>';
@@ -15004,6 +15014,9 @@ body.light .signal-card-footer-tv {
     }
     html += '</tbody></table></div>';
 
+    // v25.99.10 — "For Better Pricing" contact card (BS-app port).
+    html += _buildBetterPricingCardTV();
+
     // ---- Card 4: Project summary ----
     html += '<div class="card">';
     html += '<div class="card-title">Project Summary</div>';
@@ -15016,6 +15029,45 @@ body.light .signal-card-footer-tv {
 
     const out = document.getElementById('recoOutput');
     if (out) out.innerHTML = html;
+  }
+
+  // v25.99.10 — "For Better Pricing" contact card (ported from BS app).
+  // Inserted on every Result page (MV / CORIO / CALICO) between BOM and Project Summary.
+  // Shows owner contact so partners know who to reach for volume rates / stock / PO placement.
+  function _buildBetterPricingCardTV() {
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+    // Pricing contact is the app owner — Dipenkumar Gajjar at Cavitak Marketing.
+    const ownerName  = 'Dipenkumar Gajjar';
+    const ownerRole  = 'National Product Lead \u00b7 Cavitak Marketing';
+    const ownerEmail = 'dipen.g@cavitak.com';
+    const ownerPhone = '8160756906';
+    const ownerPhoneTel = '+918160756906';
+    let html = '';
+    // Outer section title strip (matches BS app's "FOR BETTER PRICING" header)
+    html += '<div class="card better-pricing-wrap" style="background:transparent;border:none;padding:0;margin:18px 0 0;box-shadow:none;">';
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:6px 0 14px;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-soft,#475569);">';
+    html += '<span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#6366F1,#4F46E5);color:#FFFFFF;font-size:14px;">\u20B9</span>';
+    html += '<span>FOR BETTER PRICING</span>';
+    html += '</div>';
+    // Indigo gradient hero
+    html += '<div style="background:linear-gradient(135deg,#6366F1 0%,#4F46E5 100%);border-radius:14px;padding:24px 28px;color:#FFFFFF;box-shadow:0 8px 24px rgba(79,70,229,0.18);">';
+    html += '<div style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;opacity:0.85;margin-bottom:8px;">Contact ' + esc(ownerName.split(' ')[0]) + ' for better pricing</div>';
+    html += '<div style="font-family:\'PT Serif\',Georgia,serif;font-size:30px;font-weight:700;line-height:1.1;margin-bottom:6px;">' + esc(ownerName) + '</div>';
+    html += '<div style="font-size:13px;opacity:0.92;font-weight:600;margin-bottom:18px;">' + esc(ownerRole) + '</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;">';
+    html += '<a href="mailto:' + esc(ownerEmail) + '" style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.28);border-radius:10px;color:#FFFFFF;text-decoration:none;font-size:13px;font-weight:600;backdrop-filter:blur(8px);">';
+    html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
+    html += esc(ownerEmail);
+    html += '</a>';
+    html += '<a href="tel:' + esc(ownerPhoneTel) + '" style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.28);border-radius:10px;color:#FFFFFF;text-decoration:none;font-size:13px;font-weight:600;backdrop-filter:blur(8px);">';
+    html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
+    html += esc(ownerPhone);
+    html += '</a>';
+    html += '</div>';
+    html += '<div style="border-top:1px solid rgba(255,255,255,0.18);padding-top:14px;font-size:12px;opacity:0.85;line-height:1.5;">Prices shown above are indicative. Contact ' + esc(ownerName.split(' ')[0]) + ' for volume rates, stock position, and PO placement.</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
   }
 
   function renderResult(input, reco) {
@@ -15086,6 +15138,9 @@ body.light .signal-card-footer-tv {
       if (input.projectorCount) html += specCell('Projectors', input.projectorCount + ' × ' + input.projectorRes);
       if (input.screens.length) html += specCell('LED Screens', input.screens.length);
       html += '</div></div>';
+
+      // v25.99.10 — "For Better Pricing" contact card (BS-app port).
+      html += _buildBetterPricingCardTV();
 
       // Project Summary card
       html += '<div class="card">';
@@ -15191,6 +15246,9 @@ body.light .signal-card-footer-tv {
       });
       html += '</div>';
     }
+
+    // v25.99.10 — "For Better Pricing" contact card (BS-app port).
+    html += _buildBetterPricingCardTV();
 
     // ---- Card 5: Project Summary ----
     html += '<div class="card">';
