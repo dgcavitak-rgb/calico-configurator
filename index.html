@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CALICO PRO Configurator</title>
+<title>tvONE Product Selector</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -6835,7 +6835,7 @@ body.light .signal-card-footer-tv {
       <img src="tvone-logo-dark.png" alt="tvONE" class="logo-dark" onerror="this.onerror=null; this.src='tvone-logo.png'; this.onerror=function(){this.style.display='none'}">
       <img src="tvone-logo-light.png" alt="tvONE" class="logo-light" onerror="this.onerror=null; this.src='tvone-logo.png'; this.onerror=function(){this.style.display='none'}">
     </div>
-    <div class="login-title">CALICO PRO Configurator</div>
+    <div class="login-title">tvONE Product Selector</div>
     <div class="login-tagline">Command every pixel</div>
     <span class="login-accent"></span>
     <div id="loginError" class="error-msg">Invalid username or password.</div>
@@ -6893,7 +6893,7 @@ body.light .signal-card-footer-tv {
         </div>
         <div class="brand-divider"></div>
         <div>
-          <div class="brand-sub">CALICO PRO Configurator</div>
+          <div class="brand-sub">tvONE Product Selector</div>
           <div class="brand-tagline">Command every pixel</div>
         </div>
       </div>
@@ -7199,8 +7199,9 @@ body.light .signal-card-footer-tv {
         <div class="field"><label>Deal Stage <span class="req">*</span></label>
           <select id="f_stage" autocomplete="off">
             <!-- v25.9: Stage standardized to BrightSign's 5 pure-stage options. Outcome tracks resolution separately. -->
+            <!-- v25.99.8: Default = "Lead" (earliest funnel stage). User can change if needed. -->
             <option value="">— Select —</option>
-            <option>Lead</option>
+            <option selected>Lead</option>
             <option>Opportunity</option>
             <option>Proposal</option>
             <option>Negotiation</option>
@@ -7542,6 +7543,18 @@ body.light .signal-card-footer-tv {
           <div class="corio-preview-tag" id="corioPreviewTag">Pick a chassis to start</div>
           <div class="corio-preview-body" id="corioPreviewBody"></div>
         </div>
+
+        <!-- v25.99.8 — Signal Extension trigger at end of CORIO card. -->
+        <div class="mv-ext-question" style="margin-top:20px;padding:14px 16px;background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.18);border-radius:10px;">
+          <label class="mv-ext-label" style="margin-bottom:8px;font-weight:600;display:block;">Required signal extension?</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <label class="mv-ext-pill active"><input type="radio" name="corio_ext" value="no" checked onchange="_onCorioExtChange()">No</label>
+            <label class="mv-ext-pill"><input type="radio" name="corio_ext" value="yes" onchange="_onCorioExtChange()">Yes</label>
+          </div>
+          <div id="corioExtPlaceholder" class="mv-ext-placeholder" style="margin-top:10px;display:none;">
+            Scroll down to the Signal Extension panel to add HDBaseT extenders, HDMI splitters, or AOC cables to your BOM.
+          </div>
+        </div>
       </div>
     </div>
 
@@ -7804,6 +7817,19 @@ body.light .signal-card-footer-tv {
         <option value="4K" selected>4K (3840×2160)</option>
         <option value="FHD">FHD (1920×1080)</option>
       </select>
+
+      <!-- v25.99.8 — Signal Extension trigger at end of CALICO Output Block.
+           Same Yes/No pattern as Multi Viewer. Yes → expands Signal Extension panel below. -->
+      <div class="mv-ext-question" style="margin-top:20px;padding:14px 16px;background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.18);border-radius:10px;">
+        <label class="mv-ext-label" style="margin-bottom:8px;font-weight:600;display:block;">Required signal extension?</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <label class="mv-ext-pill active"><input type="radio" name="calico_ext" value="no" checked onchange="_onCalicoExtChange()">No</label>
+          <label class="mv-ext-pill"><input type="radio" name="calico_ext" value="yes" onchange="_onCalicoExtChange()">Yes</label>
+        </div>
+        <div id="calicoExtPlaceholder" class="mv-ext-placeholder" style="margin-top:10px;display:none;">
+          Scroll down to the Signal Extension panel to add HDBaseT extenders, HDMI splitters, or AOC cables to your BOM.
+        </div>
+      </div>
 
       <!-- v25.80.4: Action buttons + error/info displays moved here from old Card 04.
            Card 04 (Technical Requirements) was removed entirely per user spec — those fields
@@ -8963,7 +8989,7 @@ body.light .signal-card-footer-tv {
       <img src="tvone-logo-dark.png" alt="tvONE" class="logo-dark" onerror="this.style.display='none'">
       <img src="tvone-logo-light.png" alt="tvONE" class="logo-light" onerror="this.style.display='none'">
     </div>
-    <div class="splash-brand-name">CALICO PRO Configurator</div>
+    <div class="splash-brand-name">tvONE Product Selector</div>
     <div class="splash-step" id="splashStep">Signing in…</div>
     <div class="splash-progress">
       <div class="splash-progress-bar" id="splashProgressBar"></div>
@@ -9252,7 +9278,9 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.99.6';  // v25.99.6 — HOTFIX (2 issues). (1) CORIO chassis picker tiles REMOVED — chassis now auto-selected by _corioAutoSelectChassis() based on user's signal inputs (any 4K signal → CM2-547-MK2; >3 estimated slots no 4K → C3-510 Mini; else C3-503 Micro). Mirrors how CALICO auto-picks C7-PRO-1200 vs 2200. Input/output grids now show UNION of CM-* + CM2-* signals (de-duplicated by signal key, prefers CM2 SKU when both ecosystems offer the same key). Includes auto-upgrade fallback if a chosen chassis hits slot capacity. Old _onCorioChassisChange retained as no-op stub for backward compatibility. (2) SIGNAL EXTENSION PANEL not appearing when user picked "Required signal extension? Yes" — root cause: progressive disclosure orchestrator's incomplete-Card-01 branch hid signalExtensionCard via idsToHide array but the complete branch never explicitly re-showed it. The card body (sxBody) was being correctly expanded by _onMvExtChange but its outer container (signalExtensionCard) stayed at display:none, making the whole panel invisible. FIX: orchestrator now sets signalExtensionCard.style.display='' whenever a Solution Type (MV / Calico / Corio) is picked. The body still stays collapsed by default — user opens it via Yes radio or manual header click. Backend stays at v26.18.0.
+  const TVONE_FRONTEND_VERSION = '25.99.8';  // v25.99.8 — Batch fix per user spec. (1) Stage dropdown now defaults to "Lead" — set as <option selected> in HTML, and resetForm explicitly sets f_stage='Lead' after the v25.99.1 autofill-defeat selectedIndex=0 sweep. User can still change. (2) Signal Extension Yes/No radio added at end of CALICO Output Block (Card 04) and end of CORIO card — mirrors the MV pattern. New handlers _onCalicoExtChange / _onCorioExtChange clone _onMvExtChange exactly (open SX panel on Yes, collapse on No, scroll into view). (3) SX companion items now appear in CALICO Result page BOM table (was previously missing — only MV/CORIO had the section). Same "Signal Extension · companion items" subheader row pattern. (4) PDF export now includes SX rows after main BOM with same subheader. Was missing entirely from PDF — bomRowsHtml built only from reco.bom; now also appends from window._sxCollectAllLines(). (5) Analyzing splash page ("Command every pixel") now fires for MV + CORIO save flows too (was CALICO-only). Added showView('analyzing') + runAnalyzingSteps() at start of _mvCalculateAndLog + _corioCalculateAndLog, and wrapped the post-save navigation in setTimeout(remainingDelay) where remainingDelay = max(0, 2200 - elapsed) to give the animation time to play. Excel SX section was already present from v25.97 — verified no regression. Backend stays at v26.18.0.
+  // v25.99.7 — App rename CALICO PRO Configurator -> tvONE Product Selector.
+  // v25.99.6 — CORIO chassis picker removed + SX panel visibility fix.
   // v25.99.5 — Action bar 6-button layout.
   // v25.99.4 — Action bar grouped with dividers (since reverted).
   // v25.99.3 — Uniform block numbering + CORIO restyle.
@@ -12756,6 +12784,10 @@ body.light .signal-card-footer-tv {
     const calcBtn = document.getElementById('calcBtn');
     if (calcBtn) { calcBtn.disabled = true; calcBtn.textContent = 'Saving\u2026'; }
 
+    // v25.99.8 — Show analyzing splash for MV too (was CALICO-only) for UX consistency.
+    try { showView('analyzing'); if (typeof runAnalyzingSteps === 'function') runAnalyzingSteps(); } catch(_) {}
+    const _mvAnalyzingStartedAt = performance.now();
+
     try {
       let resp;
       if (typeof _editingRefId !== 'undefined' && _editingRefId) {
@@ -12801,32 +12833,37 @@ body.light .signal-card-footer-tv {
       };
       sessionLog.unshift(submission);
 
-      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM →'; }
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
 
-      // v25.97.3 FIX — render the Result page and navigate to it (was missing — page didn't change after save)
-      try {
-        if (typeof renderResult === 'function') {
-          renderResult(input, lastResult.reco);
+      // v25.99.8 — Delay navigation to Result so the analyzing splash has time to play (matches CALICO UX).
+      const _mvElapsedMs = performance.now() - _mvAnalyzingStartedAt;
+      const _mvRemainingDelay = Math.max(0, 2200 - _mvElapsedMs);
+      setTimeout(function() {
+        // v25.97.3 FIX — render the Result page and navigate to it (was missing — page didn't change after save)
+        try {
+          if (typeof renderResult === 'function') {
+            renderResult(input, lastResult.reco);
+          }
+          if (typeof showView === 'function') {
+            showView('result');
+          } else {
+            // Fallback if showView is unavailable for some reason
+            const formView = document.getElementById('formView');
+            const resultView = document.getElementById('resultView');
+            if (formView) formView.classList.add('hidden');
+            if (resultView) resultView.classList.remove('hidden');
+          }
+          try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(_) {}
+        } catch (renderErr) {
+          console.error('[v25.97.3] renderResult or showView threw for MV save:', renderErr);
+          // Graceful fallback: keep the inline "Saved" indicator
+          if (info) {
+            info.innerHTML = '<strong>Saved.</strong> Ref: <code>' + _escMv(refId) + '</code> \u00b7 Chassis: <code>' + _escMv(chassisSku) + '</code> \u00b7 ' + mvRes.bom.length + ' line item(s) in ProjectLines. <em>(Result page render failed \u2014 open History to view this deal.)</em>';
+            info.classList.add('show');
+          }
+          try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(_) {}
         }
-        if (typeof showView === 'function') {
-          showView('result');
-        } else {
-          // Fallback if showView is unavailable for some reason
-          const formView = document.getElementById('formView');
-          const resultView = document.getElementById('resultView');
-          if (formView) formView.classList.add('hidden');
-          if (resultView) resultView.classList.remove('hidden');
-        }
-        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(_) {}
-      } catch (renderErr) {
-        console.error('[v25.97.3] renderResult or showView threw for MV save:', renderErr);
-        // Graceful fallback: keep the inline "Saved" indicator
-        if (info) {
-          info.innerHTML = '<strong>Saved.</strong> Ref: <code>' + _escMv(refId) + '</code> \u00b7 Chassis: <code>' + _escMv(chassisSku) + '</code> \u00b7 ' + mvRes.bom.length + ' line item(s) in ProjectLines. <em>(Result page render failed — open History to view this deal.)</em>';
-          info.classList.add('show');
-        }
-        try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(_) {}
-      }
+      }, _mvRemainingDelay);
     } catch (e) {
       if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM →'; }
       if (err) {
@@ -12973,6 +13010,10 @@ body.light .signal-card-footer-tv {
     const calcBtn = document.getElementById('calcBtn');
     if (calcBtn) { calcBtn.disabled = true; calcBtn.textContent = 'Saving\u2026'; }
 
+    // v25.99.8 — Show analyzing splash for CORIO too (was CALICO-only).
+    try { showView('analyzing'); if (typeof runAnalyzingSteps === 'function') runAnalyzingSteps(); } catch(_) {}
+    const _corioAnalyzingStartedAt = performance.now();
+
     try {
       let resp;
       if (typeof _editingRefId !== 'undefined' && _editingRefId) {
@@ -13015,18 +13056,23 @@ body.light .signal-card-footer-tv {
       };
       sessionLog.unshift(submission);
 
-      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM →'; }
-      try {
-        if (typeof renderResult === 'function') renderResult(input, lastResult.reco);
-        if (typeof showView === 'function') showView('result');
-        try { window.scrollTo({ top:0, behavior:'smooth' }); } catch(_) {}
-      } catch (renderErr) {
-        console.error('[v25.99] CORIO renderResult/showView threw:', renderErr);
-        if (info) {
-          info.innerHTML = '<strong>Saved.</strong> Ref: <code>' + _escCorio(refId) + '</code> \u00b7 Chassis: <code>' + _escCorio(chassisSku) + '</code> \u00b7 ' + cRes.bom.length + ' line item(s). <em>(Result page render failed — open History to view.)</em>';
-          info.classList.add('show');
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
+      // v25.99.8 — Delay navigation to Result so the analyzing splash plays ~2.2s (matches CALICO/MV UX).
+      const _corioElapsedMs = performance.now() - _corioAnalyzingStartedAt;
+      const _corioRemainingDelay = Math.max(0, 2200 - _corioElapsedMs);
+      setTimeout(function() {
+        try {
+          if (typeof renderResult === 'function') renderResult(input, lastResult.reco);
+          if (typeof showView === 'function') showView('result');
+          try { window.scrollTo({ top:0, behavior:'smooth' }); } catch(_) {}
+        } catch (renderErr) {
+          console.error('[v25.99] CORIO renderResult/showView threw:', renderErr);
+          if (info) {
+            info.innerHTML = '<strong>Saved.</strong> Ref: <code>' + _escCorio(refId) + '</code> \u00b7 Chassis: <code>' + _escCorio(chassisSku) + '</code> \u00b7 ' + cRes.bom.length + ' line item(s). <em>(Result page render failed \u2014 open History to view.)</em>';
+            info.classList.add('show');
+          }
         }
-      }
+      }, _corioRemainingDelay);
     } catch (e) {
       if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM →'; }
       if (err) {
@@ -13419,6 +13465,52 @@ body.light .signal-card-footer-tv {
       if (ph) ph.style.display = 'none';
     }
   }
+
+  // v25.99.8 — CALICO + CORIO Signal Extension handlers. Mirror MV pattern exactly.
+  function _onCalicoExtChange() {
+    const radios = document.getElementsByName('calico_ext');
+    let v = 'no'; for (let i = 0; i < radios.length; i++) { if (radios[i].checked) { v = radios[i].value; break; } }
+    const card = document.getElementById('signalExtensionCard');
+    const body = document.getElementById('sxBody');
+    const ph = document.getElementById('calicoExtPlaceholder');
+    if (v === 'yes') {
+      if (card && body && card.getAttribute('data-sx-open') !== 'true') {
+        card.setAttribute('data-sx-open', 'true');
+        body.style.display = '';
+        try { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(_) {}
+      }
+      if (ph) ph.style.display = '';
+    } else {
+      if (card && body) {
+        card.setAttribute('data-sx-open', 'false');
+        body.style.display = 'none';
+      }
+      if (ph) ph.style.display = 'none';
+    }
+  }
+  function _onCorioExtChange() {
+    const radios = document.getElementsByName('corio_ext');
+    let v = 'no'; for (let i = 0; i < radios.length; i++) { if (radios[i].checked) { v = radios[i].value; break; } }
+    const card = document.getElementById('signalExtensionCard');
+    const body = document.getElementById('sxBody');
+    const ph = document.getElementById('corioExtPlaceholder');
+    if (v === 'yes') {
+      if (card && body && card.getAttribute('data-sx-open') !== 'true') {
+        card.setAttribute('data-sx-open', 'true');
+        body.style.display = '';
+        try { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(_) {}
+      }
+      if (ph) ph.style.display = '';
+    } else {
+      if (card && body) {
+        card.setAttribute('data-sx-open', 'false');
+        body.style.display = 'none';
+      }
+      if (ph) ph.style.display = 'none';
+    }
+  }
+  window._onCalicoExtChange = _onCalicoExtChange;
+  window._onCorioExtChange  = _onCorioExtChange;
 
   // Expose globally
   window._sxToggle               = _sxToggle;
@@ -15073,6 +15165,14 @@ body.light .signal-card-footer-tv {
     reco.bom.forEach(function(b) {
       html += '<tr><td>' + b.sku + '</td><td>' + b.description + '</td><td class="qty">' + b.qty + '</td></tr>';
     });
+    // v25.99.8 — Append Signal Extension companion items if any. Same pattern as MV/CORIO renderers.
+    const _sxLinesCalico = (typeof window._sxCollectAllLines === 'function') ? window._sxCollectAllLines() : [];
+    if (_sxLinesCalico.length) {
+      html += '<tr><td colspan="3" style="background:#F8FAFC;font-weight:600;font-size:12px;color:#475569;padding:8px 12px;letter-spacing:.4px;text-transform:uppercase;">Signal Extension \u00b7 companion items</td></tr>';
+      _sxLinesCalico.forEach(function(b) {
+        html += '<tr><td>' + (b.sku || '') + '</td><td>' + (b.description || '') + '</td><td class="qty">' + (b.qty || '') + '</td></tr>';
+      });
+    }
     html += '</tbody></table>';
     if (reco.concerns.length) {
       reco.concerns.forEach(function(c) { html += '<div class="warn-box" style="margin-top:14px">' + c + '</div>'; });
@@ -15202,9 +15302,24 @@ body.light .signal-card-footer-tv {
     const validUntil = new Date(Date.now() + 15*24*60*60*1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
     // Build BOM rows HTML (tvONE: qty + sku + desc, no prices)
-    const bomRowsHtml = reco.bom.map(function(b, idx) {
+    let _pdfBomRowList = (reco.bom || []).map(function(b) { return { sku:b.sku, desc:b.desc || b.description || '', qty:b.qty || 0 }; });
+    // v25.99.8 — Append Signal Extension companion items to PDF BOM (was missing — only main BOM was rendered).
+    const _sxLinesPdf = (typeof window._sxCollectAllLines === 'function') ? window._sxCollectAllLines() : [];
+    let _pdfSxHeaderIdx = -1;
+    if (_sxLinesPdf.length) {
+      _pdfSxHeaderIdx = _pdfBomRowList.length;  // remember where to inject the section subheader
+      _sxLinesPdf.forEach(function(b) {
+        _pdfBomRowList.push({ sku:b.sku, desc:b.description || '', qty:b.qty || 0, _isSx:true });
+      });
+    }
+    const bomRowsHtml = _pdfBomRowList.map(function(b, idx) {
+      // v25.99.8 — Inject section subheader before first SX row
+      let subHdr = '';
+      if (idx === _pdfSxHeaderIdx) {
+        subHdr = '<tr><td colspan="4" style="padding:8px 10px;background:#F8FAFC;font-size:10px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:#475569;border:1px solid #E2E8F0;">Signal Extension \u00b7 companion items</td></tr>';
+      }
       const rowBg = idx % 2 === 1 ? '#F8FAFC' : '#FFFFFF';
-      return '<tr style="background:' + rowBg + ';">' +
+      return subHdr + '<tr style="background:' + rowBg + ';">' +
         '<td style="padding:9px 10px;border:1px solid #E2E8F0;color:#475569;font-size:11px;text-align:center;width:8%;vertical-align:top;">' + (idx + 1) + '</td>' +
         '<td style="padding:9px 10px;border:1px solid #E2E8F0;font-family:Consolas,Monaco,monospace;font-weight:700;color:#064E3B;font-size:11px;width:32%;vertical-align:top;">' + _escapeHtmlTV(b.sku) + '</td>' +
         '<td style="padding:9px 10px;border:1px solid #E2E8F0;color:#1E293B;font-size:11px;width:48%;vertical-align:top;">' + _escapeHtmlTV(b.desc || '') + '</td>' +
@@ -15290,7 +15405,7 @@ body.light .signal-card-footer-tv {
         // Header strip — forest green
         '<div style="background:#064E3B;color:#FFFFFF;padding:18px 32px;display:flex;justify-content:space-between;align-items:flex-start;">' +
           '<div>' +
-            '<div style="font-size:18px;font-weight:700;letter-spacing:-0.3px;">tvONE CALICO PRO Configurator</div>' +
+            '<div style="font-size:18px;font-weight:700;letter-spacing:-0.3px;">tvONE Product Selector</div>' +
             '<div style="font-size:10px;opacity:0.85;margin-top:3px;">Engineered video processing — sized right, validated BOM</div>' +
             '<div style="font-size:9px;opacity:0.75;margin-top:6px;">Quote · ' + _escapeHtmlTV(refId) + '</div>' +
           '</div>' +
@@ -17840,6 +17955,10 @@ body.light .signal-card-footer-tv {
       var el = document.getElementById(id);
       if (el && el.tagName === 'SELECT') el.selectedIndex = 0;
     });
+    // v25.99.8: After the autofill-defeat reset, re-apply Stage = "Lead" as the project default.
+    // Users can change if needed; this is just the starting position for a new deal.
+    var _stEl_lead = document.getElementById('f_stage');
+    if (_stEl_lead) _stEl_lead.value = 'Lead';
     // v25.21: Reset state field's locked styling — city→state lock can leave it disabled
     var _stEl = document.getElementById('f_state');
     if (_stEl) { _stEl.disabled = false; _stEl.classList.remove('autoset-locked'); _stEl.title = ''; }
