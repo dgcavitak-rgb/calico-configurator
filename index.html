@@ -6725,6 +6725,61 @@ body.light .signal-card-footer-tv {
 .mv-ext-placeholder { width:100%; font-size:12px; color:var(--ink-soft, #475569); padding:8px 12px; background:rgba(197,165,114,0.08); border-left:3px solid #C5A572; border-radius:6px; }
 
 /* ============================================================
+   v25.98 — Phase 4a: CORIO wizard
+   ============================================================ */
+.corio-wizard-card { border-left:4px solid #475569; }
+.corio-num { background:#334155 !important; font-size:12px !important; letter-spacing:.4px; }
+
+.corio-chassis-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-top:14px; }
+.corio-chassis-card {
+  display:block; cursor:pointer; padding:18px 18px 14px;
+  border:2px solid var(--border-soft, #E2E8F0); border-radius:12px;
+  background:#fff; transition:all .15s ease;
+}
+.corio-chassis-card:hover { border-color:#475569; background:rgba(71,85,105,0.03); }
+.corio-chassis-card input[type="radio"] { position:absolute; opacity:0; pointer-events:none; }
+.corio-chassis-card:has(input:checked) { border-color:#334155; background:rgba(71,85,105,0.07); box-shadow:0 0 0 4px rgba(71,85,105,0.1); }
+.corio-chassis-name { font-size:14px; font-weight:700; color:var(--ink, #0F172A); letter-spacing:.2px; }
+.corio-chassis-sku { font-family:'SF Mono', Menlo, Consolas, monospace; font-size:13px; color:#475569; margin-top:4px; font-weight:600; }
+.corio-chassis-stats { font-size:11px; color:var(--ink-soft, #64748B); margin-top:8px; line-height:1.4; }
+
+.corio-config-body { padding-top:16px; }
+.corio-section-divider {
+  margin:18px 0 12px; padding:6px 0 4px;
+  font-size:11px; font-weight:700; letter-spacing:.6px; text-transform:uppercase;
+  color:var(--ink-soft, #475569); border-bottom:1px solid var(--border-soft, #E2E8F0);
+}
+.corio-divider-hint { font-weight:500; text-transform:none; color:#94A3B8; font-size:11px; letter-spacing:0; }
+.corio-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; }
+.corio-input-row, .corio-output-row { display:flex; align-items:center; gap:10px; padding:8px 12px; background:rgba(248,250,252,0.6); border:1px solid var(--border-soft, #E2E8F0); border-radius:8px; }
+.corio-row-label { flex:1; min-width:0; font-size:13px; color:var(--ink, #0F172A); }
+.corio-row-label .corio-port-info { display:block; font-size:11px; color:var(--ink-soft, #64748B); margin-top:2px; }
+.corio-row-qty { display:flex; align-items:center; gap:4px; }
+.corio-row-qty button { width:28px; height:28px; border:1px solid var(--border-soft, #CBD5E1); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; }
+.corio-row-qty button:hover { border-color:#334155; }
+.corio-row-qty input { width:50px; text-align:center; padding:4px; border:1px solid var(--border-soft, #CBD5E1); border-radius:6px; font-weight:600; font-size:13px; }
+
+.corio-preview {
+  padding:16px 18px;
+  background:linear-gradient(135deg, rgba(71,85,105,0.05), rgba(197,165,114,0.04));
+  border:1.5px solid rgba(71,85,105,0.2); border-radius:10px;
+}
+.corio-preview-tag {
+  display:inline-block; padding:3px 10px; border-radius:999px;
+  background:#475569; color:#fff; font-size:10px; font-weight:700;
+  letter-spacing:.4px; text-transform:uppercase; margin-bottom:10px;
+}
+.corio-preview-tag.corio-tag-ok    { background:#064E3B; }
+.corio-preview-tag.corio-tag-error { background:#B91C1C; }
+.corio-preview-body { font-size:13px; color:var(--ink, #0F172A); line-height:1.5; }
+.corio-preview-body .corio-bom-line { display:grid; grid-template-columns:auto auto 1fr; gap:4px 12px; padding:3px 0; }
+.corio-preview-body .corio-bom-line .qty { font-weight:700; color:#064E3B; }
+.corio-preview-body .corio-bom-line .sku { font-family:'SF Mono', Menlo, Consolas, monospace; font-weight:600; }
+.corio-preview-body .corio-bom-line .desc { color:var(--ink-soft, #64748B); font-size:12px; }
+.corio-slot-meter { margin-top:10px; padding:8px 12px; background:#fff; border:1px solid var(--border-soft, #E2E8F0); border-radius:6px; font-size:12px; }
+.corio-slot-meter strong { color:#334155; }
+
+/* ============================================================
    v25.95 — Phase 3: Signal Extension panel
    ============================================================ */
 .sx-card { border-left:4px solid #94A3B8; }
@@ -7170,8 +7225,10 @@ body.light .signal-card-footer-tv {
         </div>
 
         <!-- v25.9: Outcome explicit — drives Review tab win rate -->
+        <!-- v25.97.5: Added blank placeholder so new projects don't auto-select 'open' (forced explicit choice). -->
         <div class="field"><label>Outcome <span class="req">*</span></label>
           <select id="f_outcome" onchange="toggleOutcomeReasonTV()">
+            <option value="" selected disabled>Select outcome…</option>
             <option value="open">Open (active)</option>
             <option value="won">Won</option>
             <option value="lost">Lost</option>
@@ -7342,10 +7399,10 @@ body.light .signal-card-footer-tv {
             <span>CALICO</span>
             <span class="vp-pill-tag">recommended</span>
           </label>
-          <label class="vp-pill disabled" data-vp-family="corio" title="CORIO support coming in Phase 4">
-            <input type="radio" name="vp_family" value="corio" disabled>
+          <label class="vp-pill" data-vp-family="corio">
+            <input type="radio" name="vp_family" value="corio" onchange="_onVpFamilyChange()">
             <span>CORIO</span>
-            <span class="vp-pill-tag muted">coming soon</span>
+            <span class="vp-pill-tag muted">Modular</span>
           </label>
         </div>
       </div>
@@ -7423,6 +7480,89 @@ body.light .signal-card-footer-tv {
       </div>
     </div>
 
+    <!-- ============================================================
+         v25.98 — CORIO WIZARD (Phase 4a)
+         Shown when Requirement = Video Processor AND Family = Corio.
+         Hides Cards 02-04 in that mode. Saves via _corioCalculateAndLog
+         which writes a CORIO chassis line + per-card lines to ProjectLines.
+         ============================================================ -->
+    <div class="card form-section-tv corio-wizard-card" id="corioWizardCard" style="display:none;" data-progress-skip="true">
+      <div class="section-head-tv">
+        <div class="section-num-tv corio-num">CO</div>
+        <div class="section-head-text-tv">
+          <div class="section-title-tv">CORIO Modular Builder</div>
+          <div class="section-sub-tv">Pick chassis tier · configure input + output cards · auto-validates against slot capacity. CM-* cards fit Micro/Mini; CM2-* cards fit CORIOmaster2 only.</div>
+        </div>
+      </div>
+
+      <!-- Step 1 — Chassis picker -->
+      <div class="corio-chassis-row">
+        <label class="corio-chassis-card" data-corio-chassis="C3-503">
+          <input type="radio" name="corio_chassis" value="C3-503" onchange="_onCorioChassisChange()">
+          <div class="corio-chassis-name">CORIOmaster Micro</div>
+          <div class="corio-chassis-sku">C3-503</div>
+          <div class="corio-chassis-stats">3 flex slots · 1080p · CM-* cards</div>
+        </label>
+        <label class="corio-chassis-card" data-corio-chassis="C3-510">
+          <input type="radio" name="corio_chassis" value="C3-510" onchange="_onCorioChassisChange()">
+          <div class="corio-chassis-name">CORIOmaster Mini</div>
+          <div class="corio-chassis-sku">C3-510</div>
+          <div class="corio-chassis-stats">5 slots + 1 fixed DVI-U · 1080p · CM-* cards</div>
+        </label>
+        <label class="corio-chassis-card" data-corio-chassis="CM2-547-MK2">
+          <input type="radio" name="corio_chassis" value="CM2-547-MK2" onchange="_onCorioChassisChange()">
+          <div class="corio-chassis-name">CORIOmaster2</div>
+          <div class="corio-chassis-sku">CM2-547-MK2</div>
+          <div class="corio-chassis-stats">13 slots · 4K · CM2-* cards · V-series FW</div>
+        </label>
+      </div>
+
+      <!-- Step 2 — Module config (hidden until chassis is picked) -->
+      <div class="corio-config-body" id="corioConfigBody" style="display:none;">
+        <div class="corio-section-divider">Inputs needed <span class="corio-divider-hint">— per signal type</span></div>
+        <div class="corio-grid" id="corioInputsGrid">
+          <!-- Populated dynamically based on chassis pick (CM-* vs CM2-* ecosystem) -->
+        </div>
+
+        <div class="corio-section-divider">Outputs needed</div>
+        <div class="corio-grid" id="corioOutputsGrid">
+          <!-- Populated dynamically based on chassis pick -->
+        </div>
+
+        <div class="corio-section-divider">Audio &amp; Chassis options</div>
+        <div class="corio-grid">
+          <div class="field">
+            <label>Audio routing</label>
+            <select id="corio_audioMode" onchange="_corioRecompute()">
+              <option value="none">No audio module</option>
+              <option value="2-4">2-IN / 4-OUT analog + SPDIF</option>
+              <option value="8-8">8-IN / 8-OUT via HD-44 (CORIOmaster only)</option>
+            </select>
+          </div>
+          <div class="field" id="corioPsuField">
+            <label>PSU choice <span style="font-weight:400;color:var(--ink-soft);">— CM2 only</span></label>
+            <select id="corio_psuChoice" onchange="_corioRecompute()">
+              <option value="400">400W single (default)</option>
+              <option value="400-redundant">400W + Redundant 400W</option>
+              <option value="700">700W single (Enforce 700W)</option>
+              <option value="700-redundant">700W + Redundant 700W</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Extras</label>
+            <label class="corio-extra-toggle" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);"><input type="checkbox" id="corio_fanFilter" onchange="_corioRecompute()"> Fan Filter Assembly (CM2-Filter)</label>
+            <label class="corio-extra-toggle" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);margin-top:6px;"><input type="checkbox" id="corio_autoBlank" checked onchange="_corioRecompute()"> Auto-fill unused slots with CM-BLANK</label>
+          </div>
+        </div>
+
+        <!-- Live preview -->
+        <div class="corio-preview" id="corioPreview" style="margin-top:18px;">
+          <div class="corio-preview-tag" id="corioPreviewTag">Pick a chassis to start</div>
+          <div class="corio-preview-body" id="corioPreviewBody"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- v25.80: Card 02 REPLACED per user's handwritten spec + 10 dry-run scenarios.
          Was "Output Configuration" (output type choice cards + SDI pill).
          Now "Input Block of Video Processor" — 7 signal-type rows (HDMI 4K, HDMI FHD,
@@ -7431,7 +7571,7 @@ body.light .signal-card-footer-tv {
          f_projectorRes) MOVED to Card 03. The engine still reads f_inputs, f_inputs4K,
          f_inputsFHD, f_signals via _recomputeCompatShimsTV() defined in the JS module
          below. Per-signal-type field IDs are NEW (f_inputHdmi4kQty etc.). -->
-    <div class="card form-section-tv" data-section="02" data-section-title="Input Block of Video Processor">
+    <div class="card form-section-tv" data-section="02" data-section-title="Input Block of Video Processor" data-progress-skip="true">
       <div class="section-head-tv">
         <div class="section-num-tv">02</div>
         <div class="section-head-text-tv">
@@ -9139,7 +9279,12 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.97.4';  // v25.97.4 — HOTFIX (2 issues). (1) MV save now actually renders a Result page. Root cause was CALICO's renderResult() being shape-incompatible with MV's reco — it expects reco.model.model, reco.totalPixelsProcessed, input.screens.length, reco.concerns, etc. all of which are missing in MV mode → renderResult threw, try/catch in v25.97.3 fell back to inline indicator on the form so page appeared not to change. FIX: new _mvRenderResult() that handles MV's reco shape with chassis hero, requirements summary, BOM table (including Signal Extension companion items), and project summary. renderResult() now branches to it via `if (reco.mvMode) return _mvRenderResult(...)`. (2) Card 03 (ledCard / Output Block) progressive disclosure — in VP mode it's now hidden until Card 02 has at least one input counter > 0 OR Audio In = Yes. Re-hides if user drops everything to 0. Implemented via _updateLedCardVisibility() called on Card 02 input/change events + after _onRequirementChange in VP mode. Backend stays at v26.18.0.
+  const TVONE_FRONTEND_VERSION = '25.99';  // v25.99 — Phase 4b: CORIO save flow + Result page + edit-mode repopulation. (1) _corioCalculateAndLog() — validates Project Context fields only, saves Submissions row with outputType=CORIO + chassisSku in recommended_chassis, writes per-card lines (chassis + card-in + card-out + card-audio + accessories) to ProjectLines via apiProjectLinesBulkReplace including any Signal Extension lines appended after. (2) calculateAndLog() top-branches to _corioCalculateAndLog when window._corioMode is true. (3) _corioRenderResult() renders chassis hero with C3-/CM2- SKU, configuration summary with input/output/audio/accessory card counts and slot utilisation, BOM table including SX companion items, project summary. (4) renderResult() branches via if(reco.corioMode) return _corioRenderResult(). (5) editFromDetail extended to detect CORIO deals (outputType==='CORIO' OR chassis matches ^C3-/^CM2-), routes through Video Processor + Corio pill, then on ProjectLines fetch restores chassis radio + input/output counters (matching line.inputSignal/outputSignal to data-corio-signal attrs + reading metaJSON.portsRequested for accurate qty) + audio mode + PSU choice (400/700 + redundancy detection by counting PSU rows) + fan filter checkbox. Backend stays at v26.18.0. CORIO is now fully end-to-end: create -> save -> result page -> History -> edit -> update.
+  // v25.98 — Phase 4a CORIO wizard preview (catalog + algorithm + UI, no save).
+  // v25.97.5 — Bugfixes (Card 02 tick · SX collapse · Outcome blank).
+  // v25.97.5 — Bugfixes (Card 02 tick · SX collapse · Outcome blank).
+  // v25.97.4 — MV Result page renderer · Card 03 progressive disclosure.
+  // v25.97.4 — MV Result page renderer + Card 03 progressive disclosure.
   // v25.97.3 — MV navigation: renderResult + showView('result') added to MV save path.
   // v25.97.2 — Solution Type rename + data-progress-skip.
   // v25.97.2 — Solution Type rename. data-progress-skip removes spurious green tick + decorative ::before "patch" between cards.
@@ -11494,6 +11639,10 @@ body.light .signal-card-footer-tv {
     if (window._mvMode) {
       return _mvCalculateAndLog();
     }
+    // v25.99 — Phase 4b: CORIO mode also has its own save path.
+    if (window._corioMode) {
+      return _corioCalculateAndLog();
+    }
 
     const proj = getProjectorLoad();
     const input = {
@@ -12191,6 +12340,12 @@ body.light .signal-card-footer-tv {
     const vpSub = document.getElementById('vpSubBranch');
     if (mvCard) mvCard.style.display = window._mvMode ? '' : 'none';
     if (vpSub)  vpSub.style.display  = window._mvMode ? 'none' : '';
+    // v25.98 — Phase 4a: also hide CORIO wizard if switching to MV mode
+    const corioCard = document.getElementById('corioWizardCard');
+    if (corioCard && window._mvMode) {
+      corioCard.style.display = 'none';
+      window._corioMode = false;
+    }
     // Hide/show existing CALICO cards (data-section 02, 03, 04)
     const calicoCardSelectors = ['[data-section="02"]', '[data-section="03"]', '[data-section="04"]'];
     for (let i = 0; i < calicoCardSelectors.length; i++) {
@@ -12217,7 +12372,31 @@ body.light .signal-card-footer-tv {
   }
 
   function _onVpFamilyChange() {
-    // Phase 2: Calico active, Corio greyed. No-op for now — placeholder for Phase 4.
+    // v25.98 — Phase 4a: Corio pill activates the CORIO wizard. Calico pill restores
+    // the existing CALICO Cards 02/03/04 flow.
+    const radios = document.getElementsByName('vp_family');
+    let picked = 'calico';
+    for (let i = 0; i < radios.length; i++) { if (radios[i].checked) { picked = radios[i].value; break; } }
+    window._corioMode = (picked === 'corio');
+    const corioCard = document.getElementById('corioWizardCard');
+    if (corioCard) corioCard.style.display = window._corioMode ? '' : 'none';
+    // Hide CALICO cards when CORIO mode is active
+    const calicoCardSelectors = ['[data-section="02"]', '[data-section="03"]', '[data-section="04"]'];
+    for (let i = 0; i < calicoCardSelectors.length; i++) {
+      const els = document.querySelectorAll(calicoCardSelectors[i]);
+      for (let j = 0; j < els.length; j++) {
+        // Don't fight with MV mode (MV already hides these)
+        if (!window._mvMode) els[j].style.display = window._corioMode ? 'none' : '';
+      }
+    }
+    // If switching back to CALICO, re-check Card 03 visibility (it may need to hide if Card 02 inputs are 0)
+    if (!window._corioMode && typeof _updateLedCardVisibility === 'function') {
+      _updateLedCardVisibility();
+    }
+    // If switching to CORIO, recompute preview
+    if (window._corioMode && typeof _corioRecompute === 'function') {
+      try { _corioRecompute(); } catch(_) {}
+    }
   }
 
   // v25.97.4 — Progressive disclosure: Card 03 (LED screens / Output block) is hidden
@@ -12559,6 +12738,206 @@ body.light .signal-card-footer-tv {
     }
   }
   window._mvCalculateAndLog = _mvCalculateAndLog;
+
+  // =================================================================
+  // v25.99 — Phase 4b: CORIO save flow
+  // =================================================================
+  // Patterned after _mvCalculateAndLog. Validates Project Context fields only
+  // (CORIO wizard handles its own input/output config). Saves to Submissions
+  // with neutral CALICO field placeholders + writes per-card lines to ProjectLines.
+  // =================================================================
+  async function _corioCalculateAndLog() {
+    const err = document.getElementById('formError');
+    const info = document.getElementById('formInfo');
+    if (err) err.classList.remove('show');
+    if (info) info.classList.remove('show');
+
+    const cRes = window._corioLastResult;
+    if (!cRes) {
+      if (err) { err.textContent = 'Pick a CORIO chassis and add at least one input/output before generating BOM.'; err.classList.add('show'); }
+      return;
+    }
+    if (cRes.type === 'error') {
+      if (err) { err.textContent = cRes.error; err.classList.add('show'); }
+      return;
+    }
+    if (!cRes.bom || cRes.bom.length < 2) {
+      if (err) { err.textContent = 'CORIO configuration needs at least one input or output card before saving.'; err.classList.add('show'); }
+      return;
+    }
+
+    function _val(id) { const el = document.getElementById(id); return el ? String(el.value || '').trim() : ''; }
+    const input = {
+      project:               _val('f_project'),
+      stage:                 _val('f_stage'),
+      endUser:               _val('f_endUser'),
+      partner:               _val('f_partner'),
+      consultant:            _val('f_consultant'),
+      venueType:             _val('f_venueType'),
+      city:                  _val('f_city'),
+      state:                 _val('f_state'),
+      partnerContactName:    _val('f_partnerContactName'),
+      partnerContactPhone:   _val('f_partnerContactPhone'),
+      partnerContactEmail:   _val('f_partnerContactEmail'),
+      leadSource:            _val('f_leadSource'),
+      outcome:               _val('f_outcome') || 'open',
+      outcomeReason:         _val('f_outcomeReason'),
+      outcomeReasonNote:     _val('f_outcomeReasonNote'),
+      close:                 _val('f_close'),
+      dealValueINR:          parseFloat(_val('f_dealValueINR')) || 0,
+      notes:                 _val('f_notes'),
+      internalNotes:         _val('f_internalNotes'),
+      salesPerson:           _val('f_salesPerson').toLowerCase(),
+      presalesPerson:        _val('f_presalesPerson').toLowerCase(),
+      isTest:                (window._testModeOnTV === true) ? 'TRUE' : ''
+    };
+    input.contact = [input.partnerContactName, input.partnerContactPhone, input.partnerContactEmail].filter(function(x){return x;}).join(' \u00b7 ');
+
+    // Validation — Project Context only
+    const required = [];
+    if (!input.project)              required.push({ id:'f_project',              label:'Project Name' });
+    if (!input.endUser)              required.push({ id:'f_endUser',              label:'End-user / Client' });
+    if (!input.venueType)            required.push({ id:'f_venueType',            label:'Venue Type' });
+    if (!input.consultant)           required.push({ id:'f_consultant',           label:'Consultant' });
+    if (!input.partner)              required.push({ id:'f_partner',              label:'Partner / SI' });
+    if (!input.city)                 required.push({ id:'f_city',                 label:'City' });
+    if (!input.state)                required.push({ id:'f_state',                label:'State' });
+    if (!input.stage)                required.push({ id:'f_stage',                label:'Deal Stage' });
+    if (!input.leadSource)           required.push({ id:'f_leadSource',           label:'Lead Source' });
+    if (!input.close)                required.push({ id:'f_close',                label:'Expected Closure' });
+    if (!input.outcome)              required.push({ id:'f_outcome',              label:'Outcome' });
+    if (input.outcome !== 'open' && !input.outcomeReason) required.push({ id:'f_outcomeReason', label:'Outcome reason' });
+    if (!input.salesPerson)          required.push({ id:'f_salesPerson',          label:'Sales person' });
+    if (input.salesPerson && input.presalesPerson && input.salesPerson === input.presalesPerson) {
+      required.push({ id:'f_presalesPerson', label:'Presales must be different from Sales' });
+    }
+    if (!input.partnerContactName)   required.push({ id:'f_partnerContactName',   label:'Partner Contact — Name' });
+    if (!input.partnerContactPhone || !/^[0-9]{10}$/.test(input.partnerContactPhone)) {
+      required.push({ id:'f_partnerContactPhone', label:'Partner Contact — Mobile (10 digits)' });
+    }
+    if (!input.partnerContactEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.partnerContactEmail)) {
+      required.push({ id:'f_partnerContactEmail', label:'Partner Contact — Email (valid format)' });
+    }
+
+    document.querySelectorAll('.field-error').forEach(function(n) { n.classList.remove('field-error'); });
+    if (required.length) {
+      required.forEach(function(f) {
+        const el = document.getElementById(f.id);
+        if (el) {
+          el.classList.add('field-error');
+          const clear = function() { el.classList.remove('field-error'); el.removeEventListener('input', clear); el.removeEventListener('change', clear); };
+          el.addEventListener('input', clear); el.addEventListener('change', clear);
+        }
+      });
+      if (err) {
+        const lines = required.map(function(f) { return '\u2022 ' + f.label; });
+        err.innerHTML = '<strong>Please complete:</strong><br>' + lines.join('<br>');
+        err.classList.add('show');
+        const first = document.getElementById(required[0].id);
+        if (first && typeof first.scrollIntoView === 'function') {
+          first.scrollIntoView({ behavior:'smooth', block:'center' });
+          if (typeof first.focus === 'function') { try { first.focus(); } catch(_) {} }
+        }
+      }
+      return;
+    }
+
+    const refId = (typeof _editingRefId !== 'undefined' && _editingRefId) ? _editingRefId : ('CORIO-' + Date.now().toString(36).toUpperCase());
+    const chassisSku = (cRes.chassis && cRes.chassis.sku) || '';
+    const bomSummaryText = cRes.bom.map(function(ln){ return ln.qty + '\u00d7 ' + ln.sku; }).join('; ');
+    const firstInputLine = cRes.bom.find(function(l){ return l.category === 'card-in'; }) || {};
+    const firstOutputLine = cRes.bom.find(function(l){ return l.category === 'card-out'; }) || {};
+
+    const submission = Object.assign({}, input, {
+      refId:               refId,
+      status:              'pending',
+      timestampLocal:      new Date().toISOString(),
+      username:            currentUser ? currentUser.username : '',
+      userFullName:        currentUser ? (currentUser.fullName || currentUser.username) : '',
+      userRole:            currentUser ? currentUser.role : '',
+      recommended_chassis: chassisSku,
+      bom_summary:         bomSummaryText,
+      value_adds:          'CORIO modular build · ' + (cRes.chassis && cRes.chassis.label) + ' · ' + cRes.slotsUsed + '/' + cRes.slotsTotal + ' slots',
+      outputType:          'CORIO',
+      outputSignal:        firstOutputLine.outputSignal || '',
+      sdiCount:            0, projectorCount: 0, projectorRes: '', projectorPorts: 0,
+      screens_count: 0, led_pixels: 0, total_pixels_processed: 0, led_ports: 0, led_ports_raw: 0,
+      hdmi_ports_needed: 0, sdi_ports_needed: 0, total_ports: 0,
+      inputs: 0, inputs4K: 0, inputsFHD: 0,
+      signals: firstInputLine.inputSignal || '',
+      budget: 'Open',
+      timestamp: new Date().toISOString(),
+      userAgent: (navigator && navigator.userAgent) || '',
+      pageUrl: (location && location.href) || ''
+    });
+
+    const calcBtn = document.getElementById('calcBtn');
+    if (calcBtn) { calcBtn.disabled = true; calcBtn.textContent = 'Saving\u2026'; }
+
+    try {
+      let resp;
+      if (typeof _editingRefId !== 'undefined' && _editingRefId) {
+        resp = await updateSubmissionOnSheet(submission);
+      } else {
+        resp = await logToSheet(submission);
+      }
+      let data = null;
+      try { data = await resp.json(); } catch(_) {}
+      if (data && data.ok === false) { throw new Error(data.error || 'Server rejected submission'); }
+      if (typeof showSync === 'function') showSync('CORIO deal saved', 'success');
+
+      const _corioBomLines = cRes.bom.map(function(ln, idx) {
+        return {
+          sequence: idx + 1, family: ln.family || 'CORIO', category: ln.category || '',
+          sku: ln.sku || '', description: ln.description || '', qty: Number(ln.qty) || 0,
+          inputSignal: ln.inputSignal || '', outputSignal: ln.outputSignal || '', inputCount: 0,
+          metaJSON: ln.metaJSON || JSON.stringify({ corioMode: true, chassisSku: chassisSku, sourceVersion: TVONE_FRONTEND_VERSION })
+        };
+      });
+      const _sxLines = (typeof window._sxCollectAllLines === 'function') ? window._sxCollectAllLines() : [];
+      const _allLines = _corioBomLines.concat(_sxLines.map(function(ln, idx) {
+        return Object.assign({}, ln, { sequence: _corioBomLines.length + idx + 1 });
+      }));
+      try {
+        const lr = await apiProjectLinesBulkReplace(refId, _allLines);
+        if (!lr || lr.ok === false) {
+          console.warn('[v25.99] CORIO ProjectLines bulk_replace returned:', lr);
+        } else {
+          console.log('[v25.99] CORIO ProjectLines: ' + (lr.written || 0) + ' lines written for ' + refId);
+        }
+      } catch (lerr) {
+        console.warn('[v25.99] CORIO ProjectLines write failed (Submissions save still OK):', lerr);
+      }
+
+      lastResult = {
+        input: input,
+        reco:  { chassis: chassisSku, bom: cRes.bom, corioMode: true, slotsUsed: cRes.slotsUsed, slotsTotal: cRes.slotsTotal, chassisLabel: cRes.chassis.label },
+        submission: submission
+      };
+      sessionLog.unshift(submission);
+
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
+      try {
+        if (typeof renderResult === 'function') renderResult(input, lastResult.reco);
+        if (typeof showView === 'function') showView('result');
+        try { window.scrollTo({ top:0, behavior:'smooth' }); } catch(_) {}
+      } catch (renderErr) {
+        console.error('[v25.99] CORIO renderResult/showView threw:', renderErr);
+        if (info) {
+          info.innerHTML = '<strong>Saved.</strong> Ref: <code>' + _escCorio(refId) + '</code> \u00b7 Chassis: <code>' + _escCorio(chassisSku) + '</code> \u00b7 ' + cRes.bom.length + ' line item(s). <em>(Result page render failed — open History to view.)</em>';
+          info.classList.add('show');
+        }
+      }
+    } catch (e) {
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
+      if (err) {
+        err.innerHTML = '<strong>Save failed:</strong> ' + _escCorio(String(e && e.message || e));
+        err.classList.add('show');
+      }
+      console.error('[v25.99] CORIO save failed:', e);
+    }
+  }
+  window._corioCalculateAndLog = _corioCalculateAndLog;
 
   // =================================================================
   // v25.95 — SIGNAL EXTENSION WIZARD (Phase 3)
@@ -12921,18 +13300,23 @@ body.light .signal-card-footer-tv {
   function _onMvExtChange() {
     const radios = document.getElementsByName('mv_ext');
     let v = 'no'; for (let i = 0; i < radios.length; i++) { if (radios[i].checked) { v = radios[i].value; break; } }
+    const card = document.getElementById('signalExtensionCard');
+    const body = document.getElementById('sxBody');
+    const ph = document.getElementById('mvExtPlaceholder');
     if (v === 'yes') {
-      const card = document.getElementById('signalExtensionCard');
-      const body = document.getElementById('sxBody');
+      // Open panel + scroll into view
       if (card && body && card.getAttribute('data-sx-open') !== 'true') {
         card.setAttribute('data-sx-open', 'true');
         body.style.display = '';
         try { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(_) {}
       }
-      const ph = document.getElementById('mvExtPlaceholder');
       if (ph) ph.style.display = '';
     } else {
-      const ph = document.getElementById('mvExtPlaceholder');
+      // v25.97.5 FIX #2: explicitly collapse the panel when user picks No
+      if (card && body) {
+        card.setAttribute('data-sx-open', 'false');
+        body.style.display = 'none';
+      }
       if (ph) ph.style.display = 'none';
     }
   }
@@ -12955,6 +13339,336 @@ body.light .signal-card-footer-tv {
   window._sxSplitterAdd          = _sxSplitterAdd;
   window._sxRenderHdbtCart       = _sxRenderHdbtCart;
   window._sxRenderDaCart         = _sxRenderDaCart;
+
+  // =================================================================
+  // v25.98 — CORIO WIZARD (Phase 4a)
+  // =================================================================
+  // Catalog: 3 chassis (Micro/Mini/CM2) + 18 CM-* + 13 CM2-* + 8 accessories
+  // Algorithm: recommendCORIO() computes per-card qty via ceil(signalQty / portsPerCard),
+  //            validates against chassis slot capacity, auto-adds CPU + PSU + BLANK fill.
+  // UI: chassis radio cards → input/output counter grids populated per chassis ecosystem
+  //     → live preview with slot meter + BOM lines.
+  // SAVE flow + edit repop deferred to Phase 4b (fresh chat).
+  // =================================================================
+
+  const CORIO_CHASSIS = {
+    'C3-503': {
+      sku: 'C3-503', label: 'CORIOmaster Micro',
+      slots: 3, slotsAreFlex: true,            // 3 user slots, all input-OR-output
+      maxResolution: 'FHD',
+      cpuModule: 'CM-C3-503-CPU-HTTPS',
+      psuRequired: false,
+      cardEcosystem: 'CM',
+      desc: 'CORIOmaster Micro · 3 modular slots · 1080p'
+    },
+    'C3-510': {
+      sku: 'C3-510', label: 'CORIOmaster Mini',
+      slots: 5, slotsAreFlex: true,
+      fixedInput: { signal: 'DVI-U', ports: 2 },
+      maxResolution: 'FHD',
+      cpuModule: 'CM-C3-510-CPU-HTTPS',
+      psuRequired: false,
+      cardEcosystem: 'CM',
+      desc: 'CORIOmaster Mini · 5 modular slots + 1 fixed DVI-U input (2 ports) · 1080p'
+    },
+    'CM2-547-MK2': {
+      sku: 'CM2-547-MK2', label: 'CORIOmaster2',
+      slots: 13,
+      slotsInputOnly: 4,    // slots 1,4,7,10
+      slotsInputHb: 4,      // slots 2,5,8,11 (input or input_hb)
+      slotsOutput: 7,       // slots 3,6,9,12,15,16,17
+      slotsFlex: 1,         // slot 13 — input or output
+      maxResolution: '4K',
+      cpuModule: 'CM2-547-MK2-CPU-HTTPS',
+      psuRequired: true,
+      cardEcosystem: 'CM2',
+      desc: 'CORIOmaster2 · 13 modular slots · 4K · V-series FW · CM2-* cards only'
+    }
+  };
+
+  const CORIO_CM_MODULES = {
+    inputs: [
+      { key:'DVI-U',          sku:'CM-DVIU-2IN',         ports:2, desc:'DVI-U 2-IN' },
+      { key:'HDMI 1080p',     sku:'CM-HDMI-4IN',         ports:4, desc:'HDMI 1080p 4-IN' },
+      { key:'HDMI 4K',        sku:'CM-HDMI-4K-2IN',      ports:2, desc:'HDMI 4K 2-IN' },
+      { key:'SDI 3G',         sku:'CM-3GSDI-2IN',        ports:2, desc:'3G-SDI 2-IN' },
+      { key:'SDI HD',         sku:'CM-HDSDI-4IN',        ports:4, desc:'HD/SD-SDI 4-IN BNC' },
+      { key:'HDBaseT',        sku:'CM-HDBT-2IN-1ETH',    ports:2, desc:'HDBaseT 2-IN + Ethernet' },
+      { key:'AVIP 16GB',      sku:'CM-AVIP-IN-1USB-1ETH',     ports:1, desc:'4K Media Streaming IN · 16GB SSD' },
+      { key:'AVIP 128GB',     sku:'CM-AVIP-IN-1USB-1ETH-128', ports:1, desc:'4K Media Streaming IN · 128GB SSD' }
+    ],
+    outputs: [
+      { key:'DVI-I monitor',  sku:'CM-DVI-I-MON-2OUT',   ports:2, desc:'DVI-I 2-OUT monitoring (non-scaled)' },
+      { key:'DVI-I scaled',   sku:'CM-DVI-I-SC-2OUT',    ports:2, desc:'DVI-I 2-OUT scaled' },
+      { key:'HDMI 4K 1-out',  sku:'CM-HDMI-4K-SC-1OUT',  ports:1, desc:'HDMI 4K 1-OUT scaled' },
+      { key:'HDMI 4K 2-out',  sku:'CM-HDMI-4K-SC-2OUT',  ports:2, desc:'HDMI 4K 2-OUT scaled' },
+      { key:'HDMI keying',    sku:'CM-HDMI-SC-2OUT-KEY', ports:2, desc:'HDMI 1080p 2-OUT w/ keying' },
+      { key:'HDMI 1080p 4-out', sku:'CM-HDMI-SC-4OUT',   ports:4, desc:'HDMI 1080p 4-OUT scaled' },
+      { key:'SDI 3G scaled',  sku:'CM-3GSDI-SC-2OUT',    ports:2, desc:'3G-SDI 2-OUT scaled' },
+      { key:'HDBaseT scaled', sku:'CM-HDBT-SC-2OUT-1ETH', ports:2, desc:'HDBaseT 2-OUT scaled + Ethernet' }
+    ],
+    audio: {
+      '2-4': { sku:'CM-AUD-2IN-4OUT', desc:'Analog 1×IN/1×OUT + SPDIF 1×IN/4×OUT (terminal block)' },
+      '8-8': { sku:'CM-AUD-8IN-8OUT', desc:'8-IN / 8-OUT via HD-44' }
+    }
+  };
+
+  const CORIO_CM2_MODULES = {
+    inputs: [
+      { key:'DVI-U',          sku:'CM2-DVIU-2IN',        ports:2, desc:'CM2 DVI-U 2-IN' },
+      { key:'HDMI 1080p',     sku:'CM2-HDMI-4IN',        ports:4, desc:'CM2 HDMI 1080p 4-IN' },
+      { key:'HDMI 4K 2-in',   sku:'CM2-HDMI-4K-2IN',     ports:2, desc:'CM2 HDMI 4K 2-IN' },
+      { key:'HDMI 4K 4-in',   sku:'CM2-HDMI-4K-4IN',     ports:4, desc:'CM2 HDMI 4K60 4-IN' },
+      { key:'SDI 3G',         sku:'CM2-3GSDI-4IN',       ports:4, desc:'CM2 3G-SDI 4-IN' },
+      { key:'SDI 12G',        sku:'CM2-12GSDI-4IN',      ports:4, desc:'CM2 12G-SDI 4-IN' },
+      { key:'HDBaseT',        sku:'CM2-HDBT-2IN-1ETH',   ports:2, desc:'CM2 HDBaseT 2-IN + Ethernet' },
+      { key:'AVIP 128GB',     sku:'CM2-AVIP-IN-1USB-1ETH-128', ports:1, desc:'CM2 4K Media Streaming IN · 128GB SSD' }
+    ],
+    outputs: [
+      { key:'HDMI 4K',        sku:'CM2-HDMI-4K-4OUT',    ports:4, desc:'CM2 HDMI 4K 4-OUT' },
+      { key:'HDMI 1080p',     sku:'CM2-HDMI-HD-8OUT',    ports:8, desc:'CM2 HDMI 1080p 8-OUT' },
+      { key:'SDI 12G',        sku:'CM2-12GSDI-4OUT',     ports:4, desc:'CM2 12G-SDI 4-OUT' }
+    ],
+    audio: {
+      '2-4': { sku:'CM2-AUD-2IN-3OUT', desc:'CM2 Analog 1×IN/1×OUT + SPDIF 1×IN/3×OUT' }
+      // CM2 has NO 8-8 audio module — labeled as such in UI
+    }
+  };
+
+  const CORIO_PSU_SKUS = {
+    '400': { sku:'CM2-4RPS',     desc:'CM2 400W AC PSU' },
+    '700': { sku:'CM2-4RPS-700', desc:'CM2 700W AC PSU (Enforce 700W)' }
+  };
+
+  // ── recommendCORIO: core algorithm ──────────────────────────────
+  function recommendCORIO(chassisSku, inputCounts, outputCounts, audioMode, opts) {
+    const chassis = CORIO_CHASSIS[chassisSku];
+    if (!chassis) return { type:'error', error:'Unknown chassis: ' + chassisSku };
+    opts = opts || {};
+    const psuChoice = opts.psuChoice || '400';
+    const fanFilter = !!opts.fanFilter;
+    const autoBlank = (opts.autoBlank !== false);  // default true
+
+    const moduleSet = (chassis.cardEcosystem === 'CM2') ? CORIO_CM2_MODULES : CORIO_CM_MODULES;
+    const bom = [];
+    let slotsInputUsed = 0, slotsOutputUsed = 0;
+
+    // 1. Chassis line
+    bom.push({ family:'CORIO', category:'chassis', sku:chassis.sku, qty:1, description:chassis.desc, metaJSON:'' });
+
+    // 2. Input cards — for each signal with qty > 0, compute cards needed
+    for (let i = 0; i < moduleSet.inputs.length; i++) {
+      const card = moduleSet.inputs[i];
+      const qty = Number(inputCounts[card.key] || 0);
+      if (qty <= 0) continue;
+      let portsRequired = qty;
+      // C3-510 has 2 fixed DVI-U input ports built-in — subtract them only for DVI-U
+      if (chassis.fixedInput && card.key === chassis.fixedInput.signal) {
+        portsRequired = Math.max(0, qty - chassis.fixedInput.ports);
+      }
+      if (portsRequired <= 0) continue;
+      const cardsNeeded = Math.ceil(portsRequired / card.ports);
+      bom.push({
+        family:'CORIO', category:'card-in', sku:card.sku, qty:cardsNeeded,
+        description: card.desc + ' (' + qty + ' port' + (qty===1?'':'s') + ' requested)',
+        inputSignal: card.key,
+        metaJSON: JSON.stringify({ portsPerCard:card.ports, portsRequested:qty, portsAfterFixed:portsRequired })
+      });
+      slotsInputUsed += cardsNeeded;
+    }
+
+    // 3. Output cards
+    for (let i = 0; i < moduleSet.outputs.length; i++) {
+      const card = moduleSet.outputs[i];
+      const qty = Number(outputCounts[card.key] || 0);
+      if (qty <= 0) continue;
+      const cardsNeeded = Math.ceil(qty / card.ports);
+      bom.push({
+        family:'CORIO', category:'card-out', sku:card.sku, qty:cardsNeeded,
+        description: card.desc + ' (' + qty + ' port' + (qty===1?'':'s') + ' requested)',
+        outputSignal: card.key,
+        metaJSON: JSON.stringify({ portsPerCard:card.ports, portsRequested:qty })
+      });
+      slotsOutputUsed += cardsNeeded;
+    }
+
+    // 4. Audio module
+    if (audioMode === '2-4' && moduleSet.audio['2-4']) {
+      bom.push({ family:'CORIO', category:'card-audio', sku:moduleSet.audio['2-4'].sku, qty:1, description:moduleSet.audio['2-4'].desc, metaJSON:'' });
+      slotsInputUsed += 1;  // audio counts as input slot
+    } else if (audioMode === '8-8') {
+      if (moduleSet.audio['8-8']) {
+        bom.push({ family:'CORIO', category:'card-audio', sku:moduleSet.audio['8-8'].sku, qty:1, description:moduleSet.audio['8-8'].desc, metaJSON:'' });
+        slotsInputUsed += 1;
+      } else {
+        return { type:'error', error:'8-IN / 8-OUT audio module only available on CORIOmaster Micro/Mini. CM2 supports 2-IN/3-OUT only.' };
+      }
+    }
+
+    // 5. Slot validation
+    const totalSlotsUsed = slotsInputUsed + slotsOutputUsed;
+    if (chassis.slotsAreFlex) {
+      if (totalSlotsUsed > chassis.slots) {
+        return { type:'error', error:'Configuration needs ' + totalSlotsUsed + ' slots but ' + chassis.label + ' has only ' + chassis.slots + ' slots. Reduce the input/output count or pick a larger chassis.' };
+      }
+    } else {
+      // CM2: stricter slot validation. Input slots vs output slots.
+      const inputCap = (chassis.slotsInputOnly + chassis.slotsInputHb);  // 8 for CM2
+      const outputCap = chassis.slotsOutput;                              // 7 for CM2
+      const flexCap = chassis.slotsFlex;                                  // 1 for CM2
+      // Allow overflow into flex slot if either side is full
+      let inputOver = Math.max(0, slotsInputUsed - inputCap);
+      let outputOver = Math.max(0, slotsOutputUsed - outputCap);
+      let flexUsed = inputOver + outputOver;
+      if (flexUsed > flexCap) {
+        return { type:'error', error:'Configuration needs ' + slotsInputUsed + ' input slot(s) + ' + slotsOutputUsed + ' output slot(s) — exceeds CM2 capacity (max 8 input + 7 output + 1 flex). Reduce cards or split into multiple chassis.' };
+      }
+    }
+
+    // 6. CPU module (auto-include)
+    bom.push({ family:'CORIO', category:'accessory', sku:chassis.cpuModule, qty:1, description:'HTTPS CPU module for ' + chassis.label, metaJSON:'' });
+
+    // 7. PSU
+    if (chassis.psuRequired) {
+      const is700 = psuChoice.indexOf('700') === 0;
+      const psu = is700 ? CORIO_PSU_SKUS['700'] : CORIO_PSU_SKUS['400'];
+      bom.push({ family:'CORIO', category:'accessory', sku:psu.sku, qty:1, description:psu.desc + ' (chassis PSU)', metaJSON:'' });
+      if (psuChoice.indexOf('redundant') !== -1) {
+        bom.push({ family:'CORIO', category:'accessory', sku:psu.sku, qty:1, description:psu.desc + ' (redundant)', metaJSON:'' });
+      }
+    }
+
+    // 8. Fan filter
+    if (fanFilter) {
+      bom.push({ family:'CORIO', category:'accessory', sku:'CM2-Filter', qty:1, description:'CORIOmaster2 fan filter kit', metaJSON:'' });
+    }
+
+    // 9. CM-BLANK auto-fill for Micro/Mini if enabled
+    if (autoBlank && (chassis.sku === 'C3-503' || chassis.sku === 'C3-510')) {
+      const unfilled = chassis.slots - totalSlotsUsed;
+      if (unfilled > 0) {
+        bom.push({ family:'CORIO', category:'accessory', sku:'CM-BLANK', qty:unfilled, description:'Blanking panel · cover unused slot' + (unfilled===1?'':'s'), metaJSON:'' });
+      }
+    }
+
+    return { type:'ok', chassis:{ sku:chassis.sku, label:chassis.label }, bom:bom, slotsUsed:totalSlotsUsed, slotsTotal:chassis.slots, slotsInputUsed:slotsInputUsed, slotsOutputUsed:slotsOutputUsed };
+  }
+
+  // ── UI handlers ────────────────────────────────────────────────
+  window._corioMode = false;
+  window._corioLastResult = null;
+
+  function _onCorioChassisChange() {
+    const radios = document.getElementsByName('corio_chassis');
+    let picked = '';
+    for (let i = 0; i < radios.length; i++) { if (radios[i].checked) { picked = radios[i].value; break; } }
+    if (!picked) return;
+    const chassis = CORIO_CHASSIS[picked];
+    if (!chassis) return;
+
+    // Show config body
+    const body = document.getElementById('corioConfigBody');
+    if (body) body.style.display = '';
+
+    // Populate input + output grids per chassis ecosystem
+    const moduleSet = (chassis.cardEcosystem === 'CM2') ? CORIO_CM2_MODULES : CORIO_CM_MODULES;
+    const inputsGrid = document.getElementById('corioInputsGrid');
+    const outputsGrid = document.getElementById('corioOutputsGrid');
+    if (inputsGrid) {
+      inputsGrid.innerHTML = moduleSet.inputs.map(function(card) {
+        const id = 'corio_in_' + card.key.replace(/[^a-zA-Z0-9]/g, '_');
+        return '<div class="corio-input-row">'
+             + '<div class="corio-row-label">' + _escCorio(card.key)
+             + '<span class="corio-port-info">' + _escCorio(card.sku) + ' · ' + card.ports + ' port' + (card.ports===1?'':'s') + '/card</span>'
+             + '</div>'
+             + '<div class="corio-row-qty">'
+             +   '<button type="button" onclick="_corioQtyAdj(\'' + id + '\',-1)">−</button>'
+             +   '<input id="' + id + '" type="number" min="0" max="64" value="0" data-corio-signal="' + _escCorio(card.key) + '" data-corio-direction="in" oninput="_corioRecompute()">'
+             +   '<button type="button" onclick="_corioQtyAdj(\'' + id + '\',1)">+</button>'
+             + '</div>'
+             + '</div>';
+      }).join('');
+    }
+    if (outputsGrid) {
+      outputsGrid.innerHTML = moduleSet.outputs.map(function(card) {
+        const id = 'corio_out_' + card.key.replace(/[^a-zA-Z0-9]/g, '_');
+        return '<div class="corio-output-row">'
+             + '<div class="corio-row-label">' + _escCorio(card.key)
+             + '<span class="corio-port-info">' + _escCorio(card.sku) + ' · ' + card.ports + ' port' + (card.ports===1?'':'s') + '/card</span>'
+             + '</div>'
+             + '<div class="corio-row-qty">'
+             +   '<button type="button" onclick="_corioQtyAdj(\'' + id + '\',-1)">−</button>'
+             +   '<input id="' + id + '" type="number" min="0" max="64" value="0" data-corio-signal="' + _escCorio(card.key) + '" data-corio-direction="out" oninput="_corioRecompute()">'
+             +   '<button type="button" onclick="_corioQtyAdj(\'' + id + '\',1)">+</button>'
+             + '</div>'
+             + '</div>';
+      }).join('');
+    }
+
+    // Show/hide PSU field — CM2 only
+    const psuField = document.getElementById('corioPsuField');
+    if (psuField) psuField.style.display = (chassis.cardEcosystem === 'CM2') ? '' : 'none';
+
+    _corioRecompute();
+  }
+
+  function _corioQtyAdj(id, delta) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = Math.max(0, Math.min(64, (Number(el.value) || 0) + delta));
+    try { el.dispatchEvent(new Event('input', { bubbles:true })); } catch(_) {}
+  }
+
+  function _corioRecompute() {
+    const radios = document.getElementsByName('corio_chassis');
+    let picked = '';
+    for (let i = 0; i < radios.length; i++) { if (radios[i].checked) { picked = radios[i].value; break; } }
+    if (!picked) return;
+    // Read inputs
+    const inputCounts = {};
+    const outputCounts = {};
+    document.querySelectorAll('[data-corio-signal][data-corio-direction="in"]').forEach(function(el) {
+      inputCounts[el.getAttribute('data-corio-signal')] = Number(el.value) || 0;
+    });
+    document.querySelectorAll('[data-corio-signal][data-corio-direction="out"]').forEach(function(el) {
+      outputCounts[el.getAttribute('data-corio-signal')] = Number(el.value) || 0;
+    });
+    const audioMode = (document.getElementById('corio_audioMode') || {}).value || 'none';
+    const psuChoice = (document.getElementById('corio_psuChoice') || {}).value || '400';
+    const fanFilter = !!(document.getElementById('corio_fanFilter') || {}).checked;
+    const autoBlank = !!(document.getElementById('corio_autoBlank') || {}).checked;
+
+    const res = recommendCORIO(picked, inputCounts, outputCounts, audioMode, { psuChoice:psuChoice, fanFilter:fanFilter, autoBlank:autoBlank });
+    window._corioLastResult = res;
+
+    const tag = document.getElementById('corioPreviewTag');
+    const body = document.getElementById('corioPreviewBody');
+    if (!tag || !body) return;
+    if (res.type === 'error') {
+      tag.className = 'corio-preview-tag corio-tag-error';
+      tag.textContent = 'Invalid configuration';
+      body.innerHTML = '<div style="color:#B91C1C;font-size:13px;">' + _escCorio(res.error) + '</div>';
+      return;
+    }
+    tag.className = 'corio-preview-tag corio-tag-ok';
+    tag.textContent = res.chassis.sku + ' · ' + res.chassis.label;
+    let html = '';
+    res.bom.forEach(function(b) {
+      html += '<div class="corio-bom-line"><span class="qty">' + b.qty + '×</span><span class="sku">' + _escCorio(b.sku) + '</span><span class="desc">' + _escCorio(b.description) + '</span></div>';
+    });
+    html += '<div class="corio-slot-meter">Slots used: <strong>' + res.slotsUsed + ' / ' + res.slotsTotal + '</strong> (' + res.slotsInputUsed + ' input + ' + res.slotsOutputUsed + ' output)</div>';
+    body.innerHTML = html;
+  }
+
+  function _escCorio(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+  }
+
+  // Expose
+  window._onCorioChassisChange = _onCorioChassisChange;
+  window._corioQtyAdj          = _corioQtyAdj;
+  window._corioRecompute       = _corioRecompute;
+  window.recommendCORIO        = recommendCORIO;
 
   // =================================================================
   // EDIT MODE — load an existing submission into the form and update it
@@ -13071,9 +13785,12 @@ body.light .signal-card-footer-tv {
 
       // v25.96 — Phase 2.5: detect Multi Viewer / CORIOview deal + repopulate MV wizard
       //          and Signal Extension cart from ProjectLines.
+      // v25.99 — Phase 4b: extended to also detect CORIO deals and repopulate the CORIO wizard.
       try {
         const _outType = String(row.outputType || '').trim();
-        const _isMv = (_outType === 'CORIOview') || String(row.recommended_chassis || '').match(/^MWP-/);
+        const _chassisStr = String(row.recommended_chassis || '');
+        const _isMv = (_outType === 'CORIOview') || /^MWP-/.test(_chassisStr);
+        const _isCorio = (_outType === 'CORIO') || /^C3-/.test(_chassisStr) || /^CM2-/.test(_chassisStr);
         // Pick the Requirement radio appropriately
         const _reqRadios = document.getElementsByName('req_type');
         for (let _i = 0; _i < _reqRadios.length; _i++) {
@@ -13084,6 +13801,16 @@ body.light .signal-card-footer-tv {
         if (typeof window._onRequirementChange === 'function') {
           window._onRequirementChange();
         }
+        // If CORIO deal, also pick the Corio pill under Video Processor
+        if (_isCorio) {
+          const _vpRadios = document.getElementsByName('vp_family');
+          for (let _i = 0; _i < _vpRadios.length; _i++) {
+            if (_vpRadios[_i].value === 'corio') { _vpRadios[_i].checked = true; break; }
+          }
+          if (typeof window._onVpFamilyChange === 'function') {
+            window._onVpFamilyChange();
+          }
+        }
         // Fetch and replay ProjectLines for this deal
         if (typeof apiProjectLinesList === 'function' && refId) {
           apiProjectLinesList(refId).then(function(r) {
@@ -13093,6 +13820,71 @@ body.light .signal-card-footer-tv {
             }
             const lines = r.lines;
             console.log('[Edit] Repopulating from ' + lines.length + ' ProjectLines');
+
+            // --- v25.99: Restore CORIO wizard state if this is a CORIO deal ---
+            if (_isCorio) {
+              const _corioChassis = lines.find(function(l) { return l.family === 'CORIO' && l.category === 'chassis'; });
+              if (_corioChassis && _corioChassis.sku) {
+                const _cRadios = document.getElementsByName('corio_chassis');
+                for (let i = 0; i < _cRadios.length; i++) {
+                  if (_cRadios[i].value === _corioChassis.sku) {
+                    _cRadios[i].checked = true;
+                    if (typeof window._onCorioChassisChange === 'function') window._onCorioChassisChange();
+                    break;
+                  }
+                }
+                // After chassis change, grids are populated. Now restore counter values.
+                // Wait one tick for DOM to settle, then set values.
+                setTimeout(function() {
+                  // Restore input/output counters by matching saved line.inputSignal / outputSignal
+                  // to data-corio-signal attributes on the freshly-rendered counter inputs.
+                  lines.forEach(function(ln) {
+                    if (ln.family !== 'CORIO') return;
+                    if (ln.category === 'card-in' && ln.inputSignal) {
+                      // Try to read meta to get total ports requested (so user-visible qty matches what they typed)
+                      let portsRequested = Number(ln.qty) || 0;
+                      try {
+                        const meta = ln.metaJSON ? JSON.parse(ln.metaJSON) : null;
+                        if (meta && typeof meta.portsRequested === 'number') portsRequested = meta.portsRequested;
+                      } catch(_) {}
+                      const inputEl = document.querySelector('[data-corio-signal="' + (window.CSS && CSS.escape ? CSS.escape(ln.inputSignal) : ln.inputSignal) + '"][data-corio-direction="in"]');
+                      if (inputEl) inputEl.value = portsRequested;
+                    } else if (ln.category === 'card-out' && ln.outputSignal) {
+                      let portsRequested = Number(ln.qty) || 0;
+                      try {
+                        const meta = ln.metaJSON ? JSON.parse(ln.metaJSON) : null;
+                        if (meta && typeof meta.portsRequested === 'number') portsRequested = meta.portsRequested;
+                      } catch(_) {}
+                      const outEl = document.querySelector('[data-corio-signal="' + (window.CSS && CSS.escape ? CSS.escape(ln.outputSignal) : ln.outputSignal) + '"][data-corio-direction="out"]');
+                      if (outEl) outEl.value = portsRequested;
+                    } else if (ln.category === 'card-audio') {
+                      const audioSel = document.getElementById('corio_audioMode');
+                      if (audioSel) {
+                        if (/8IN-8OUT|8-IN.*8-OUT/i.test(ln.sku + ' ' + (ln.description||''))) audioSel.value = '8-8';
+                        else audioSel.value = '2-4';
+                      }
+                    } else if (ln.category === 'accessory' && /CM2-4RPS/.test(ln.sku)) {
+                      // PSU detection (rough — Phase 4b initial pass)
+                      const psuSel = document.getElementById('corio_psuChoice');
+                      const is700 = /-700/.test(ln.sku);
+                      // Count PSU rows of this type to detect redundancy
+                      const psuLinesCount = lines.filter(function(l) { return l.category === 'accessory' && /CM2-4RPS/.test(l.sku); }).length;
+                      if (psuSel) {
+                        if (is700 && psuLinesCount > 1) psuSel.value = '700-redundant';
+                        else if (is700) psuSel.value = '700';
+                        else if (psuLinesCount > 1) psuSel.value = '400-redundant';
+                        else psuSel.value = '400';
+                      }
+                    } else if (ln.category === 'accessory' && ln.sku === 'CM2-Filter') {
+                      const cb = document.getElementById('corio_fanFilter');
+                      if (cb) cb.checked = true;
+                    }
+                  });
+                  if (typeof window._corioRecompute === 'function') window._corioRecompute();
+                  console.log('[Edit] ✓ CORIO state restored');
+                }, 30);
+              }
+            }
 
             // --- Restore MV wizard inputs ---
             const _mvChassis = lines.find(function(l) { return l.family === 'CORIOVIEW' && l.category === 'chassis'; });
@@ -13868,12 +14660,108 @@ body.light .signal-card-footer-tv {
     if (out) out.innerHTML = html;
   }
 
+  // ============================================================
+  // v25.99 — Phase 4b: CORIO result renderer
+  // ============================================================
+  function _corioRenderResult(input, reco) {
+    try {
+      const cb = document.getElementById('confirmBtn');
+      if (cb) {
+        cb.disabled = false;
+        const lbl = cb.querySelector('.ab2tv-label');
+        if (lbl) lbl.textContent = 'Confirm';
+        cb.classList.remove('confirmed');
+        cb.style.background = ''; cb.style.borderColor = ''; cb.style.opacity = '';
+      }
+    } catch(_) {}
+
+    function specCell(k, v) {
+      return '<div class="spec-cell"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>';
+    }
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+    }
+
+    const chassisSku = reco.chassis || '—';
+    const chassisLabel = reco.chassisLabel || chassisSku;
+    const bom = reco.bom || [];
+
+    // Count card categories for summary
+    let inCards = 0, outCards = 0, audioCards = 0, accessories = 0;
+    bom.forEach(function(ln) {
+      if (ln.category === 'card-in')        inCards += Number(ln.qty) || 0;
+      else if (ln.category === 'card-out')  outCards += Number(ln.qty) || 0;
+      else if (ln.category === 'card-audio') audioCards += Number(ln.qty) || 0;
+      else if (ln.category === 'accessory')  accessories += Number(ln.qty) || 0;
+    });
+
+    let html = '';
+
+    // ---- Card 1: Chassis hero ----
+    html += '<div class="card reco-card">';
+    html += '<div class="card-title">Recommended Chassis</div>';
+    html += '<div class="chassis-hero">';
+    html += '<div class="chassis-hero-glow chassis-hero-glow-a"></div>';
+    html += '<div class="chassis-hero-glow chassis-hero-glow-b"></div>';
+    html += '<div class="chassis-hero-content">';
+    html += '<span class="chassis-pill">CORIO Modular</span>';
+    html += '<div class="chassis-model">' + esc(chassisSku) + '</div>';
+    html += '<div class="chassis-verdict">' + esc(chassisLabel) + '</div>';
+    html += '<div class="chassis-tagline">Slot-based modular builder</div>';
+    html += '<div class="chassis-spec">' + reco.slotsUsed + ' / ' + reco.slotsTotal + ' slots used</div>';
+    html += '</div></div></div>';
+
+    // ---- Card 2: Configuration summary ----
+    html += '<div class="card">';
+    html += '<div class="card-title">Configuration Summary</div>';
+    html += '<div class="reco-specs">';
+    html += specCell('Input cards', String(inCards));
+    html += specCell('Output cards', String(outCards));
+    if (audioCards > 0) html += specCell('Audio module', '1');
+    html += specCell('Accessories', String(accessories));
+    html += specCell('Slot utilisation', reco.slotsUsed + ' / ' + reco.slotsTotal);
+    html += '</div></div>';
+
+    // ---- Card 3: BOM with optional SX section ----
+    const sxLines = (typeof window._sxCollectAllLines === 'function') ? window._sxCollectAllLines() : [];
+    html += '<div class="card">';
+    html += '<div class="card-title">Bill of Materials</div>';
+    html += '<table class="bom-table"><thead><tr><th>SKU</th><th>Description</th><th>Qty</th></tr></thead><tbody>';
+    bom.forEach(function(b) {
+      html += '<tr><td>' + esc(b.sku) + '</td><td>' + esc(b.description) + '</td><td class="qty">' + esc(String(b.qty)) + '</td></tr>';
+    });
+    if (sxLines.length) {
+      html += '<tr><td colspan="3" style="background:#F8FAFC;font-weight:600;font-size:12px;color:#475569;padding:8px 12px;letter-spacing:.4px;text-transform:uppercase;">Signal Extension · companion items</td></tr>';
+      sxLines.forEach(function(b) {
+        html += '<tr><td>' + esc(b.sku) + '</td><td>' + esc(b.description) + '</td><td class="qty">' + esc(String(b.qty)) + '</td></tr>';
+      });
+    }
+    html += '</tbody></table></div>';
+
+    // ---- Card 4: Project summary ----
+    html += '<div class="card">';
+    html += '<div class="card-title">Project Summary</div>';
+    html += '<div class="reco-specs">';
+    html += specCell('Project', esc(input.project || '—'));
+    html += specCell('End-user', esc(input.endUser || '—'));
+    html += specCell('Partner', esc(input.partner || '—'));
+    html += specCell('Submitted by', esc(currentUser ? (currentUser.name || currentUser.fullName || currentUser.username) : '—'));
+    html += '</div></div>';
+
+    const out = document.getElementById('recoOutput');
+    if (out) out.innerHTML = html;
+  }
+
   function renderResult(input, reco) {
     // v25.97.4 — MV reco has a different shape than CALICO. Branch out early to a dedicated renderer.
     // MV reco: { chassis: 'MWP-...', bom: [...], mvMode: true, mvType: 'fixed'|'mto' }
     // CALICO reco: { chassis, model: {...}, hdmiPortsNeeded, sdiPortsNeeded, totalPixelsProcessed, hasCards, concerns, valueAdds, ... }
     if (reco && reco.mvMode) {
       return _mvRenderResult(input, reco);
+    }
+    // v25.99 — Phase 4b: CORIO reco shape: { chassis, bom, corioMode: true, slotsUsed, slotsTotal, chassisLabel }
+    if (reco && reco.corioMode) {
+      return _corioRenderResult(input, reco);
     }
     // v25.45: Reset confirm button state at every renderResult call.
     // confirmBtn is OUTSIDE #recoOutput in the static HTML (line ~4743) so the DOM element
