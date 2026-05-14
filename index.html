@@ -2145,15 +2145,9 @@
     transform: translateY(0);
   }
 
-  /* v25.63 (Beauty-2): focus state on inputs INSIDE the green-tinted Sales/Presales
-     callout (Project Context section) — was the standard gold glow which clashes
-     with the surrounding green border. Now a contextually-correct green glow. */
-  .sales-presales-callout-tv input:focus,
-  .sales-presales-callout-tv select:focus,
-  .sales-presales-callout-tv textarea:focus {
-    border-color: #047857;
-    box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.18);
-  }
+  /* v25.99.15 (A1): Sales/Presales fields now use the default gold focus glow,
+     matching the rest of Project Context. Previous green-tinted callout + green
+     focus glow removed per user spec for uniform field appearance. */
 
   /* v25.30: Default chip styling — soft gold tint, neutral but on-theme.
      Was using bare var(--line-softer) which looked alien from gold focus ring on adjacent fields. */
@@ -7256,16 +7250,18 @@ body.light .signal-card-footer-tv {
 
         <!-- v25.35 (#3): Sales/Presales handoff. salesPerson REQUIRED, presalesPerson OPTIONAL.
              Both store loginName lowercased. Same-person rule enforced in validation.
-             Display label is fullName (resolved from _allUsersTV cache). -->
-        <div class="field sales-presales-callout-tv" style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;padding:12px;">
+             Display label is fullName (resolved from _allUsersTV cache).
+             v25.99.15 (A1): green tint/border removed — fields now use uniform background to match
+             the rest of Project Context. Labels reverted to default ink color. Structure unchanged. -->
+        <div class="field sales-presales-callout-tv">
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div style="display:flex;flex-direction:column;gap:4px;">
-              <label style="font-weight:600;color:#064E3B;font-size:13px;">Sales person <span class="req">*</span><span class="help-icon-tv" data-tip="The sales owner — gets credit and follow-ups for this deal. Required.">?</span></label>
+              <label>Sales person <span class="req">*</span><span class="help-icon-tv" data-tip="The sales owner — gets credit and follow-ups for this deal. Required.">?</span></label>
               <select id="f_salesPerson"><option value="">— Select sales owner —</option></select>
               <div class="field-help-tv">Required. Sales credit is tracked here.</div>
             </div>
             <div style="display:flex;flex-direction:column;gap:4px;">
-              <label style="font-weight:600;color:#064E3B;font-size:13px;">Presales person <span class="label-meta">(optional)</span><span class="help-icon-tv" data-tip="Presales engineer assisting with the technical scoping. Optional but useful for handoffs.">?</span></label>
+              <label>Presales person <span class="label-meta">(optional)</span><span class="help-icon-tv" data-tip="Presales engineer assisting with the technical scoping. Optional but useful for handoffs.">?</span></label>
               <select id="f_presalesPerson"><option value="">— None —</option></select>
               <div class="field-help-tv">Optional. For handoffs with technical/presales input.</div>
             </div>
@@ -9283,7 +9279,8 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.99.14';  // v25.99.14 — Green "For Pricing & Quotation" card now appears on ALL result pages (MV, CORIO, CALICO main, CALICO offline). Previously only inlined in the CALICO main renderer — MV and CORIO results had no pricing card at all. Refactored into reusable helper _buildPricingCardTV() called from all 4 sites. Also updated role label "National Product Manager · CALICO PRO Portfolio" → "National Product Manager · Cavitak Marketing" since the app is now multi-product (CALICO + CORIOview + CORIO + Signal Extender). Backend stays at v26.18.0.
+  const TVONE_FRONTEND_VERSION = '25.99.15';  // v25.99.15 — A1 field alignment fix per user spec. Sales/Presales callout green tint REMOVED — wrapper div no longer has green background (#F0FDF4) / green border (#86EFAC) / inline padding. Both labels reverted to default ink color and weight (were dark-green #064E3B + bold 13px). Companion CSS rule at line ~2148 that gave the inner inputs/selects a green focus glow also removed — fields now use the standard gold focus glow matching the rest of Project Context. Field positions and HTML structure unchanged (per "keep current positions" pick). Mobile single-column override at line ~6383 preserved. No JS changes. Pending: A2 (HDMI 1080p MV output card real SKU), B3 (AP-536 audio extractor in SX panel), B5 (HDBaseT 500-series), B6 (Mixed-input MV — deferred to fresh chat). Backend remains at v26.19.0.
+  // v25.99.14 — Green "For Pricing & Quotation" card now appears on ALL result pages (MV, CORIO, CALICO main, CALICO offline). Previously only inlined in the CALICO main renderer — MV and CORIO results had no pricing card at all. Refactored into reusable helper _buildPricingCardTV() called from all 4 sites. Also updated role label "National Product Manager · CALICO PRO Portfolio" → "National Product Manager · Cavitak Marketing" since the app is now multi-product (CALICO + CORIOview + CORIO + Signal Extender). Backend stays at v26.18.0.
   // v25.99.13 — Analyzing splash text mode-aware.
   // v25.99.12 — Removed duplicate violet pricing card.
   // v25.99.11 — End-User column case-mismatch fix.
