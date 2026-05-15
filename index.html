@@ -9146,11 +9146,11 @@ body.light .signal-card-footer-tv {
   </div>
 </div>
 
-<!-- v25.29: Email-to-partner modal — sends PDF via backend MailApp/GmailApp -->
+<!-- v25.29: Email-to-partner modal — v25.99.23 mailto: flow (opens user's Outlook with auto-downloaded PDF + Excel to attach) -->
 <div id="emailModalTV" class="modal-overlay" style="display:none;">
   <div class="modal-card" style="max-width: 640px;">
     <div class="modal-title">✉ Email Quote to Partner</div>
-    <div class="modal-sub">Sent <strong>from your email</strong> (<span id="emailModalFromHintTV">—</span>) · 📎 PDF auto-attached · <strong>dipen.g@cavitak.com</strong> always CC'd</div>
+    <div class="modal-sub">Opens in your <strong>Outlook</strong> (<span id="emailModalFromHintTV">—</span>) · 📎 PDF + Excel auto-download · <strong>dipen.g@cavitak.com</strong> always CC'd · attach files in Outlook before sending</div>
     <div id="emailModalErrorTV" class="error-msg">Error</div>
     <div class="field">
       <label>To <span style="color:#DC2626">*</span></label>
@@ -9171,11 +9171,11 @@ body.light .signal-card-footer-tv {
     </div>
     <div style="display:flex;gap:10px;align-items:center;margin-top:6px;">
       <input type="checkbox" id="emailModalIncludePdfTV" checked style="margin:0;">
-      <label for="emailModalIncludePdfTV" style="margin:0;font-size:13px;color:var(--ink-soft,#475569);cursor:pointer;">Attach PDF quote</label>
+      <label for="emailModalIncludePdfTV" style="margin:0;font-size:13px;color:var(--ink-soft,#475569);cursor:pointer;">Auto-download PDF + Excel before opening Outlook</label>
     </div>
     <div class="btn-row" style="margin-top:16px;justify-content:flex-end;">
       <button class="secondary" onclick="closeEmailModalTV()">Cancel</button>
-      <button class="primary" onclick="sendEmailViaBackendTV()" id="emailModalSendBtnTV">Send Email</button>
+      <button class="primary" onclick="sendEmailViaBackendTV()" id="emailModalSendBtnTV">Open in Outlook</button>
     </div>
   </div>
 </div>
@@ -9340,7 +9340,7 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.99.22';  // v25.99.22 — UX wording pass + Excel polish. WORDING: every "Saving…" / "Signing in…" button label → "Loading…" (11 sites). "Generating..." → "Recommending…" on Generate BoM button. Success toasts neutralized: "Changes saved"/"Deal registered"/"CORIO deal saved"/"Multi Viewer deal saved" → "Done ✓"; "PDF downloaded" → "PDF ready ✓"; "Profile saved — welcome X!" → "Welcome, X ✓"; "Saved — will finalize shortly" → "Done · finalizing…"; "Draft saved" → "✓"; "Offline · saved locally only" → "Offline · stored on this device only". Trust signals removed: "Audit-logged." badge dropped from stage-note callout; "(only logged when stage actually changes)" stripped from f_stageNote placeholder. Analyzing splash eyebrow "Analyzing Configuration" → "Generating recommendation…". EXCEL POLISH: RECOMMENDED SOLUTION verdict now product-aware (was hardcoded CALICO-only) — MV deals show "tvONE CORIOview · Multi Viewer configuration", CORIO deals show "tvONE [chassisLabel] · CORIO configuration", CALICO unchanged. Warranty T&C: "tvONE CALICO PRO series" → "tvONE products". WhatsApp default message + Email body + Email subject + Excel filename all dropped CALICO-specific phrasing (now neutral "tvONE BOM summary" / "tvONE recommendation and BOM" / "tvONE Quote · …" / "tvONE_Quote_…xlsx"). Tricolor stripe alignment intentionally kept as-is (forest dominant = on-brand; true thirds would shrink primary brand colour). No backend changes; pairs with v26.19.0.
+  const TVONE_FRONTEND_VERSION = '25.99.23';  // v25.99.23 — EMAIL FLOW: replaced backend send (broken on M365 — emails were going from script-owner@gmail.com "on behalf of" rep, flagged as spoofing by Outlook receivers and dropped/spammed) with true mailto: flow. Click "Send Email" in modal now: (1) downloads BOTH the PDF and Excel quote files for the rep to attach, (2) opens their default mail client (Outlook on M365) with To/CC/Subject/Body pre-filled from the modal fields, (3) rep attaches the just-downloaded files in Outlook and clicks Send — email truly originates from rep's mailbox, appears in their Sent folder, passes SPF/DKIM/DMARC. dipen.g@cavitak.com forced CC pre-filled (rep can technically remove but instructed not to). Modal subtitle updated to reflect new flow. Backend email_send handler intentionally left in place (dormant, no UI call site) — easy revert if ever needed. No backend deploy required. Pairs with v26.19.0. Previously: v25.99.22 — UX wording pass + Excel polish. WORDING: every "Saving…" / "Signing in…" button label → "Loading…" (11 sites). "Generating..." → "Recommending…" on Generate BoM button. Success toasts neutralized: "Changes saved"/"Deal registered"/"CORIO deal saved"/"Multi Viewer deal saved" → "Done ✓"; "PDF downloaded" → "PDF ready ✓"; "Profile saved — welcome X!" → "Welcome, X ✓"; "Saved — will finalize shortly" → "Done · finalizing…"; "Draft saved" → "✓"; "Offline · saved locally only" → "Offline · stored on this device only". Trust signals removed: "Audit-logged." badge dropped from stage-note callout; "(only logged when stage actually changes)" stripped from f_stageNote placeholder. Analyzing splash eyebrow "Analyzing Configuration" → "Generating recommendation…". EXCEL POLISH: RECOMMENDED SOLUTION verdict now product-aware (was hardcoded CALICO-only) — MV deals show "tvONE CORIOview · Multi Viewer configuration", CORIO deals show "tvONE [chassisLabel] · CORIO configuration", CALICO unchanged. Warranty T&C: "tvONE CALICO PRO series" → "tvONE products". WhatsApp default message + Email body + Email subject + Excel filename all dropped CALICO-specific phrasing (now neutral "tvONE BOM summary" / "tvONE recommendation and BOM" / "tvONE Quote · …" / "tvONE_Quote_…xlsx"). Tricolor stripe alignment intentionally kept as-is (forest dominant = on-brand; true thirds would shrink primary brand colour). No backend changes; pairs with v26.19.0.
   // v25.99.21 — Fix salesperson/presales footer showing "loginName / — / — / —" instead of full name + role + phone + email. Root cause: _allUsersTV cache wasn't loaded when export was triggered directly from History tab (form-show effect that populates the cache hadn't fired). Two surgical fixes: (1) both exportQuotePDFTV and exportToExcel now await _fetchAllUsersTV() at entry if the cache is empty (~5 lines each). (2) Defensive _findUserTV / _findUserXL fallback: when cache lookup misses AND the missing user IS the currently logged-in user, populate from currentUser instead of returning login-name-as-name. Same fix applied to both PDF and Excel lookup helpers. No backend changes. NOTE: Users sheet rows must still have professionalTitle / phone / email populated for those fields to appear — Dipenkumar's row is missing these in production. Fill in the Users sheet to make role/phone/email populate.
   // v25.99.20 — Cavitak logo + redesigned headers/footers shipped in BOTH Excel and PDF exports. PDF: BS-pattern layout (logo top-left + vertical separator + title block + QUOTE meta top-right) using tvONE forest-green/gold colour palette. Tricolor accent stripe (forest/gold/red) under header. Section headers switched from slate ink to forest-dark. Footer gained Cavitak distributor band (logo + "Cavitak Marketing Pvt Ltd · Authorized tvONE distributor · India") above salesperson contact. Footer text "tvONE CALICO Configurator" corrected to "tvONE Product Selector". Excel Quote tab: rebuilt header — Cavitak logo over A1:B2 + tvONE title + tagline in C-G rows 1-2 + tricolor stripe in row 3, replacing the "CALICO PRO" / "Command every pixel" solid-green band. QUOTATION + Quote No. block preserved at row 4. Footer attribution line upgraded to logo + rich-text distributor band before print-area boundary. Logo files embedded as base64 PNG constants (LOGO_CAVITAK_B64 280x79px ~18KB, LOGO_TVONE_B64 240x61px ~14KB) at top of EXCEL_DESIGN section. Hardcoded base64 chosen over runtime fetch to avoid CORS/404 surface. All image embeds wrapped in try/catch so exports still succeed if image API fails. No backend changes; pairs with v26.19.0.
   // v25.99.19 — loadAuditHistory() micro-cache (60s TTL, module-scoped Map, no localStorage) + AbortController to cancel in-flight fetches on rapid re-clicks. Repeat clicks on same deal's 🕒 Edit History within 60s now skip the ~300ms backend round-trip. Stale-response clobber race (theoretical) fixed by aborting prior fetch when a new one starts. Render path extracted to _renderAuditHistory(refId, audit, sub, body) so cache-hit and fetch-hit share one code path. No backend changes; pairs with v26.19.0.
@@ -16084,15 +16084,20 @@ body.light .signal-card-footer-tv {
     document.getElementById('emailModalTV').style.display = 'none';
   }
   async function sendEmailViaBackendTV() {
+    // v25.99.23 — Function name kept for back-compat; behaviour replaced with mailto: flow.
+    // (1) Validate modal fields. (2) Auto-download BOTH PDF and Excel quote files.
+    // (3) Open user's default mail client (Outlook on M365) with To/CC/Subject/Body pre-filled.
+    // (4) Rep attaches the just-downloaded files in Outlook and clicks Send.
+    // Email truly originates from rep's mailbox — appears in Sent folder, passes SPF/DKIM/DMARC.
     const errEl = document.getElementById('emailModalErrorTV');
     const sendBtn = document.getElementById('emailModalSendBtnTV');
     errEl.textContent = ''; errEl.style.display = 'none';
 
     const to = document.getElementById('emailModalToTV').value.trim();
-    const cc = document.getElementById('emailModalCcTV').value.trim();
+    const ccExtra = document.getElementById('emailModalCcTV').value.trim();
     const subject = document.getElementById('emailModalSubjectTV').value.trim();
     const body = document.getElementById('emailModalBodyTV').value.trim();
-    const includePdf = document.getElementById('emailModalIncludePdfTV').checked;
+    const includeAttachments = document.getElementById('emailModalIncludePdfTV').checked;
 
     if (!to) { errEl.textContent = 'Recipient (To) is required.'; errEl.style.display = 'block'; return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
@@ -16100,55 +16105,85 @@ body.light .signal-card-footer-tv {
       errEl.style.display = 'block'; return;
     }
     if (!subject) { errEl.textContent = 'Subject is required.'; errEl.style.display = 'block'; return; }
-    if (!WEB_APP_URL) { errEl.textContent = 'Cannot send — webhook URL is not configured.'; errEl.style.display = 'block'; return; }
+
+    // Build CC list — dipen.g@cavitak.com is always forced; user-entered extras are appended.
+    // De-dup case-insensitively so we don't end up with "dipen.g@cavitak.com, dipen.g@cavitak.com".
+    const FORCED_CC = 'dipen.g@cavitak.com';
+    const ccList = [FORCED_CC];
+    if (ccExtra) {
+      ccExtra.split(',').map(function(s){ return s.trim(); }).filter(Boolean).forEach(function(addr){
+        if (addr.toLowerCase() !== FORCED_CC.toLowerCase() &&
+            !ccList.some(function(x){ return x.toLowerCase() === addr.toLowerCase(); })) {
+          ccList.push(addr);
+        }
+      });
+    }
+    const ccCombined = ccList.join(',');
 
     sendBtn.disabled = true;
-    sendBtn.textContent = 'Sending…';
+    sendBtn.textContent = 'Preparing files…';
 
     try {
-      let pdfBase64 = null, pdfFilename = null;
-      if (includePdf) {
-        const doc = await exportQuotePDFTV(true);
-        if (!doc) { throw new Error('PDF generation failed'); }
-        const refId = (lastResult.submission && lastResult.submission.refId) || ('CAL-' + Date.now().toString(36).toUpperCase());
-        const safeProj = (lastResult.input.project || 'project').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
-        pdfFilename = 'tvONE_Quote_' + refId + '_' + safeProj + '.pdf';
-        const dataUri = doc.output('datauristring');
-        pdfBase64 = dataUri.split(',')[1] || dataUri;
+      // Auto-download PDF + Excel so the rep can drag-attach them in Outlook.
+      // We trigger PDF first (it streams faster), then Excel. Both are fire-and-forget
+      // from this function's perspective — they each write a download to the user's
+      // Downloads folder. Wrap each in try/catch so one failing doesn't block the other
+      // or block the mailto open. Excel can take 3-8s on slow devices, so we give it
+      // a head start before opening the mail client (which steals focus on some OSes).
+      if (includeAttachments) {
+        // PDF — downloads via jsPDF doc.save() inside exportQuotePDFTV (no arg)
+        try {
+          await exportQuotePDFTV();
+        } catch (pdfErr) {
+          console.warn('[v25.99.23] PDF download failed (continuing):', pdfErr);
+        }
+        // Excel — downloads via ExcelJS workbook.xlsx.writeBuffer + saveAs inside exportToExcel
+        try {
+          await exportToExcel();
+        } catch (xlErr) {
+          console.warn('[v25.99.23] Excel download failed (continuing):', xlErr);
+        }
       }
 
-      const payload = {
-        action: 'email_send',
-        authUsername: currentUser ? currentUser.username : '',
-        authPasswordHash: _authHash || '',
-        to: to,
-        cc: cc,
-        subject: subject,
-        body: body,
-        attachmentBase64: pdfBase64,
-        attachmentFilename: pdfFilename,
-        attachmentMime: 'application/pdf'
-      };
+      // Build the mailto: URL. RFC 6068 spec — all params URI-encoded.
+      // Note: some mail clients have URL length limits (Outlook on Windows ~2KB historically,
+      // newer builds much higher). Body is the only field that could realistically blow this.
+      // If we ever hit the limit, the modal body field already has the full content — rep
+      // can copy-paste manually as fallback.
+      const mailtoUrl = 'mailto:' + encodeURIComponent(to)
+        + '?cc=' + encodeURIComponent(ccCombined)
+        + '&subject=' + encodeURIComponent(subject)
+        + '&body=' + encodeURIComponent(body);
 
-      const resp = await fetch(WEB_APP_URL, {
-        method: 'POST', mode: 'cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
-      });
-      const data = await resp.json();
-      if (!data.ok) {
-        throw new Error(data.error || 'Backend error');
-      }
+      sendBtn.textContent = 'Opening Outlook…';
 
-      closeEmailModalTV();
-      showSync('Email sent to ' + to + ' ✓', 'success');
+      // Small delay so the rep sees the download notifications before mail client steals focus.
+      setTimeout(function() {
+        try {
+          window.location.href = mailtoUrl;
+        } catch (mailErr) {
+          console.error('[v25.99.23] mailto: launch failed:', mailErr);
+          errEl.textContent = 'Could not open mail client. Copy the body from the modal manually.';
+          errEl.style.display = 'block';
+        }
+      }, 600);
+
+      // Close modal after a longer beat so the rep sees the success toast against the modal first
+      setTimeout(function() {
+        closeEmailModalTV();
+        showSync('Outlook opened · attach the downloaded files and click Send', 'success');
+      }, 1200);
+
     } catch (err) {
-      errEl.textContent = 'Send failed: ' + (err.message || err);
+      errEl.textContent = 'Failed: ' + (err.message || err);
       errEl.style.display = 'block';
-      console.error('[sendEmailViaBackendTV]', err);
+      console.error('[sendEmailViaBackendTV/mailto]', err);
     } finally {
-      sendBtn.disabled = false;
-      sendBtn.textContent = 'Send Email';
+      // Re-enable the button after a short delay so the rep can't double-fire while files download
+      setTimeout(function() {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Open in Outlook';
+      }, 2000);
     }
   }
   window.openEmailModalTV = openEmailModalTV;
