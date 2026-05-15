@@ -6697,6 +6697,51 @@ body.light .signal-card-footer-tv {
 #mv_inputCount { width:72px; text-align:center; font-size:18px; font-weight:600; padding:6px 8px; background:#F8FAFC; border:1.5px solid var(--border-soft, #CBD5E1); border-radius:10px; }
 .mv-qty-cap { font-size:12px; color:var(--ink-soft, #475569); margin-left:4px; }
 
+/* v25.99.16 (B6): Dynamic input rows — table of {signal type, qty, remove} entries.
+   First row never has a remove button (always ≥1 row). Second row gets a remove. */
+.mv-input-row {
+  display:grid; grid-template-columns:1.4fr auto auto; gap:12px; align-items:center;
+  padding:10px 12px; background:var(--paper-warm, #FAF8F3); border:1px solid var(--border-soft, #CBD5E1);
+  border-radius:10px; margin-bottom:8px;
+}
+@media (max-width:560px) {
+  .mv-input-row { grid-template-columns:1fr; gap:8px; padding:12px; }
+  .mv-input-row .mv-row-qty { justify-content:flex-start; }
+}
+.mv-input-row select {
+  width:100%; padding:8px 10px; border:1.5px solid var(--border-soft, #CBD5E1); border-radius:8px;
+  background:#fff; font-size:14px; color:var(--ink, #0F172A);
+}
+.mv-input-row select:focus { border-color:#C5A572; box-shadow:0 0 0 3px rgba(197,165,114,.18); outline:none; }
+.mv-input-row .mv-row-qty { display:flex; align-items:center; gap:6px; }
+.mv-input-row .mv-row-qty input {
+  width:60px; text-align:center; font-size:16px; font-weight:600; padding:6px 4px;
+  background:#fff; border:1.5px solid var(--border-soft, #CBD5E1); border-radius:8px;
+}
+.mv-input-row .mv-row-qty .mv-qty-btn { width:32px; height:32px; font-size:16px; }
+.mv-input-row .mv-row-cap { font-size:11px; color:var(--ink-soft, #64748B); margin-left:4px; min-width:42px; }
+.mv-input-row .mv-row-remove {
+  width:32px; height:32px; border-radius:8px; border:1.5px solid transparent; background:transparent;
+  cursor:pointer; color:#B91C1C; display:flex; align-items:center; justify-content:center;
+  font-size:18px; line-height:1; transition:all .15s ease;
+}
+.mv-input-row .mv-row-remove:hover { border-color:#FCA5A5; background:#FEF2F2; }
+.mv-input-row .mv-row-remove[disabled] { opacity:0; pointer-events:none; }
+
+.mv-add-row-btn {
+  display:inline-flex; align-items:center; gap:8px; padding:8px 16px;
+  background:#fff; border:1.5px dashed var(--border-soft, #CBD5E1); border-radius:10px;
+  color:#064E3B; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s ease;
+  margin-top:4px;
+}
+.mv-add-row-btn:hover:not(:disabled) { border-color:#064E3B; border-style:solid; background:#F0FDF4; }
+.mv-add-row-btn:disabled { opacity:.45; cursor:not-allowed; }
+.mv-add-row-btn .mv-add-row-icon {
+  width:22px; height:22px; border-radius:50%; background:#064E3B; color:#fff;
+  display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; line-height:1;
+}
+.mv-add-row-btn:disabled .mv-add-row-icon { background:#94A3B8; }
+
 .field-hint { font-size:11px; color:var(--ink-soft, #64748B); margin-top:5px; line-height:1.4; }
 
 .mv-preview {
@@ -7420,37 +7465,26 @@ body.light .signal-card-footer-tv {
         <div class="section-num-tv">03</div>
         <div class="section-head-text-tv">
           <div class="section-title-tv">Multi Viewer Configuration</div>
-          <div class="section-sub-tv">Pick your input signal type and quantity, and your output signal. The wizard recommends the right CORIOview chassis (or MWP-MTO if your configuration is custom).</div>
+          <div class="section-sub-tv">Pick one input signal type for a fixed chassis when a matching combo exists, or add a second signal type for a mixed-input MTO build. Set your output signal and the wizard recommends the right CORIOview chassis.</div>
         </div>
       </div>
 
       <div class="mv-wizard-grid">
-        <div class="field">
-          <label>Input Signal Type <span class="req">*</span></label>
-          <select id="mv_inputSignal" onchange="_onMvInputSignalChange()">
-            <option value="">— pick one —</option>
-            <option value="DVI-U">DVI-U</option>
-            <option value="FHD HDMI">FHD HDMI (1080p)</option>
-            <option value="4K HDMI">4K HDMI (UHD)</option>
-            <option value="3G-SDI">3G-SDI</option>
-            <option value="HD-SDI">HD-SDI</option>
-            <option value="HDBaseT">HDBaseT</option>
-          </select>
-          <div class="field-hint" id="mv_inputSignalHint">Single signal type only. For mixed signal projects, contact tvONE for custom build.</div>
+        <!-- v25.99.16 (B6): Dynamic input rows — was single signal+qty, now an array
+             so users can pick MULTIPLE signal types. Each row = 1 signal type + qty.
+             Max 2 rows enforced (MWP-MTO supports max 2 input cards in current spec).
+             Single-row config still routes to fixed chassis when matching combo exists. -->
+        <div class="field mv-mixed-inputs" style="grid-column:1 / -1;">
+          <label>Input Signals <span class="req">*</span></label>
+          <div id="mv_inputRowsContainer"></div>
+          <button type="button" class="mv-add-row-btn" id="mv_addRowBtn" onclick="_mvAddInputRow()">
+            <span class="mv-add-row-icon" aria-hidden="true">+</span>
+            <span>Add another input signal type</span>
+          </button>
+          <div class="field-hint" id="mv_inputSignalHint">Pick one signal type for a fixed chassis when a matching combo exists. Add a second for a mixed-input MTO build. Max 2 signal types in current MTO spec — contact tvONE for higher-density custom builds.</div>
         </div>
 
-        <div class="field">
-          <label>Input Count <span class="req">*</span></label>
-          <div class="mv-qty-row">
-            <button type="button" class="mv-qty-btn" onclick="_mvQtyAdjust(-1)" aria-label="Decrease">−</button>
-            <input id="mv_inputCount" type="number" min="1" max="8" value="1" readonly>
-            <button type="button" class="mv-qty-btn" onclick="_mvQtyAdjust(1)" aria-label="Increase">+</button>
-            <span class="mv-qty-cap" id="mv_qtyCap">max 8</span>
-          </div>
-          <div class="field-hint">Quantity cap depends on signal type. DVI-U / 4K HDMI / HDBaseT cap at 4; FHD HDMI / SDI cap at 8.</div>
-        </div>
-
-        <div class="field">
+        <div class="field" style="grid-column:1 / -1;">
           <label>Output Signal <span class="req">*</span></label>
           <select id="mv_outputSignal" onchange="_mvRecompute()">
             <option value="4K HDMI" selected>4K HDMI</option>
@@ -7459,7 +7493,7 @@ body.light .signal-card-footer-tv {
             <option value="3G SDI">3G SDI</option>
             <option value="HDBaseT">HDBaseT</option>
           </select>
-          <div class="field-hint">Single output module. Non-4K-HDMI outputs route to MWP-MTO.</div>
+          <div class="field-hint">Single output module. Non-4K-HDMI outputs route to MWP-MTO. Mixed inputs always route to MWP-MTO.</div>
         </div>
       </div>
 
@@ -9279,7 +9313,8 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.99.15';  // v25.99.15 — A1 field alignment fix per user spec. Sales/Presales callout green tint REMOVED — wrapper div no longer has green background (#F0FDF4) / green border (#86EFAC) / inline padding. Both labels reverted to default ink color and weight (were dark-green #064E3B + bold 13px). Companion CSS rule at line ~2148 that gave the inner inputs/selects a green focus glow also removed — fields now use the standard gold focus glow matching the rest of Project Context. Field positions and HTML structure unchanged (per "keep current positions" pick). Mobile single-column override at line ~6383 preserved. No JS changes. Pending: A2 (HDMI 1080p MV output card real SKU), B3 (AP-536 audio extractor in SX panel), B5 (HDBaseT 500-series), B6 (Mixed-input MV — deferred to fresh chat). Backend remains at v26.19.0.
+  const TVONE_FRONTEND_VERSION = '25.99.16';  // v25.99.16 — B6 Mixed-input Multi Viewer. MV wizard now supports up to 2 distinct input signal types per build (was 1). New `window._mvInputRows` state array = [{signal, qty}] replacing prior single mv_inputSignal+mv_inputCount fields. UI: dynamic row table with "+ Add another input signal type" button (auto-disabled at MWP_MTO.maxInputCards=2 with tooltip), per-row remove button (hidden on first row when only 1 row present), each row carries its own signal-type-aware qty cap (DVI-U/4K HDMI/HDBaseT=4, others=8). recommendMWP() refactored: new signature recommendMWP(inputs[], outputSignal). Single-row path PRESERVES fixed-chassis priority (Q3): tries 5 fixed MWP-* chassis first when output=4K HDMI, falls back to single-input MTO. Multi-row path ALWAYS routes to MWP-MTO with one input card per signal type + 1 output card; total input cards capped at MWP_MTO.maxInputCards with explicit error if exceeded (Q2). Dropdown options across rows mutually exclude already-picked signals so user can't pick same signal twice. Edit-restore path rebuilds rows from saved CORIOVIEW card lines (reverse-engineers port qty from card qty × portsPerCard) with fixed-chassis fallback reading the chassis line's inputSignal/inputCount directly. resetForm() now clears _mvInputRows back to single empty row + nukes _mvLastResult + hides preview + resets Output Signal to 4K HDMI default. _onMvInputSignalChange kept as global no-op stub for legacy compat. Save row's `signals` aggregate becomes "4× FHD HDMI + 2× SDI" format for mixed; chassis line description shows the breakdown. ProjectLines write unchanged. SX panel + analyzing splash + green pricing card + action bar all unchanged. ~210 lines net add (~310 added, ~100 removed). Pairs with backend v26.19.0 (no backend changes).
+  // v25.99.15 — A1 field alignment fix per user spec. Sales/Presales callout green tint REMOVED — wrapper div no longer has green background (#F0FDF4) / green border (#86EFAC) / inline padding. Both labels reverted to default ink color and weight (were dark-green #064E3B + bold 13px). Companion CSS rule at line ~2148 that gave the inner inputs/selects a green focus glow also removed — fields now use the standard gold focus glow matching the rest of Project Context. Field positions and HTML structure unchanged (per "keep current positions" pick). Mobile single-column override at line ~6383 preserved. No JS changes. Pending: A2 (HDMI 1080p MV output card real SKU), B3 (AP-536 audio extractor in SX panel), B5 (HDBaseT 500-series), B6 (Mixed-input MV — deferred to fresh chat). Backend remains at v26.19.0.
   // v25.99.14 — Green "For Pricing & Quotation" card now appears on ALL result pages (MV, CORIO, CALICO main, CALICO offline). Previously only inlined in the CALICO main renderer — MV and CORIO results had no pricing card at all. Refactored into reusable helper _buildPricingCardTV() called from all 4 sites. Also updated role label "National Product Manager · CALICO PRO Portfolio" → "National Product Manager · Cavitak Marketing" since the app is now multi-product (CALICO + CORIOview + CORIO + Signal Extender). Backend stays at v26.18.0.
   // v25.99.13 — Analyzing splash text mode-aware.
   // v25.99.12 — Removed duplicate violet pricing card.
@@ -12323,49 +12358,108 @@ body.light .signal-card-footer-tv {
 
   // ----------------------------------------------------------------
   // Core recommendation engine
+  // v25.99.16 (B6): now accepts an array of {signal, qty} pairs instead
+  // of a single signal+qty. Single-row config still routes to fixed chassis
+  // first (priority); multi-row always routes to MWP-MTO with one input card
+  // per signal type. Total input cards capped at MWP_MTO.maxInputCards (=2).
   // ----------------------------------------------------------------
-  function recommendMWP(inputSignal, inputQty, outputSignal) {
-    inputQty = Number(inputQty) || 0;
-    if (!inputSignal || inputQty <= 0 || !outputSignal) {
+  function recommendMWP(inputs, outputSignal) {
+    // Normalize: filter to entries with valid signal + qty>0
+    const validInputs = (Array.isArray(inputs) ? inputs : []).filter(function(r) {
+      return r && r.signal && Number(r.qty) > 0;
+    });
+    if (validInputs.length === 0 || !outputSignal) {
       return { type: 'empty' };
     }
-    // Step 1: try fixed chassis (only possible if output is 4K HDMI — all fixed chassis output 4K HDMI)
-    if (outputSignal === '4K HDMI') {
-      const candidates = CORIOVIEW_CHASSIS.filter(function(c) {
-        return c.inSignal === inputSignal && c.inPorts >= inputQty;
-      });
-      if (candidates.length > 0) {
-        candidates.sort(function(a, b) { return a.inPorts - b.inPorts; });
-        const chosen = candidates[0];
+
+    // Step 1: SINGLE-signal path — try fixed chassis first (only possible if output is 4K HDMI)
+    if (validInputs.length === 1) {
+      const single = validInputs[0];
+      const sig = single.signal;
+      const qty = Number(single.qty) || 0;
+      if (outputSignal === '4K HDMI') {
+        const candidates = CORIOVIEW_CHASSIS.filter(function(c) {
+          return c.inSignal === sig && c.inPorts >= qty;
+        });
+        if (candidates.length > 0) {
+          candidates.sort(function(a, b) { return a.inPorts - b.inPorts; });
+          const chosen = candidates[0];
+          return {
+            type: 'fixed',
+            chassis: chosen,
+            bom: [
+              { family: 'CORIOVIEW', category: 'chassis', sku: chosen.sku, qty: 1, description: chosen.desc, inputSignal: sig, outputSignal: outputSignal, inputCount: qty }
+            ]
+          };
+        }
+      }
+      // Step 2: single-signal MTO fallback
+      const inputCard = CORIOVIEW_INPUT_CARDS[sig];
+      const outputCard = CORIOVIEW_OUTPUT_CARDS[outputSignal];
+      if (!inputCard) return { type: 'error', error: 'Input signal "' + sig + '" not supported in current catalog.' };
+      if (!outputCard) return { type: 'error', error: 'Output signal "' + outputSignal + '" not supported in current catalog.' };
+      const cardsNeeded = Math.ceil(qty / inputCard.portsPerCard);
+      if (cardsNeeded > MWP_MTO.maxInputCards) {
         return {
-          type: 'fixed',
-          chassis: chosen,
-          bom: [
-            { family: 'CORIOVIEW', category: 'chassis', sku: chosen.sku, qty: 1, description: chosen.desc, inputSignal: inputSignal, outputSignal: outputSignal, inputCount: inputQty }
-          ]
+          type: 'error',
+          error: 'This configuration needs ' + cardsNeeded + ' input cards but MWP-MTO supports max ' + MWP_MTO.maxInputCards + '. Contact tvONE for a custom build.'
         };
       }
-    }
-    // Step 2: MTO fallback
-    const inputCard = CORIOVIEW_INPUT_CARDS[inputSignal];
-    const outputCard = CORIOVIEW_OUTPUT_CARDS[outputSignal];
-    if (!inputCard) return { type: 'error', error: 'Input signal "' + inputSignal + '" not supported in current catalog.' };
-    if (!outputCard) return { type: 'error', error: 'Output signal "' + outputSignal + '" not supported in current catalog.' };
-    const cardsNeeded = Math.ceil(inputQty / inputCard.portsPerCard);
-    if (cardsNeeded > MWP_MTO.maxInputCards) {
       return {
-        type: 'error',
-        error: 'This configuration needs ' + cardsNeeded + ' input cards but MWP-MTO supports max ' + MWP_MTO.maxInputCards + '. Contact tvONE for a custom build.'
+        type: 'mto',
+        chassis: { sku: MWP_MTO.sku, desc: MWP_MTO.desc },
+        bom: [
+          { family: 'CORIOVIEW', category: 'chassis', sku: MWP_MTO.sku,    qty: 1,           description: MWP_MTO.desc, inputSignal: sig, outputSignal: outputSignal, inputCount: qty },
+          { family: 'CORIOVIEW', category: 'card',    sku: inputCard.sku,  qty: cardsNeeded, description: inputCard.desc, inputSignal: sig },
+          { family: 'CORIOVIEW', category: 'card',    sku: outputCard.sku, qty: 1,           description: outputCard.desc, outputSignal: outputSignal }
+        ]
       };
     }
+
+    // Step 3: MIXED-input MTO path — always MWP-MTO with one input card per signal type
+    const outputCard = CORIOVIEW_OUTPUT_CARDS[outputSignal];
+    if (!outputCard) return { type: 'error', error: 'Output signal "' + outputSignal + '" not supported in current catalog.' };
+
+    // Resolve each signal to its input card + needed quantity. Reject unknown signals.
+    const cardLines = [];
+    let totalCards = 0;
+    const signalLabels = [];
+    let totalPorts = 0;
+    for (let i = 0; i < validInputs.length; i++) {
+      const row = validInputs[i];
+      const sig = row.signal;
+      const qty = Number(row.qty) || 0;
+      const inputCard = CORIOVIEW_INPUT_CARDS[sig];
+      if (!inputCard) {
+        return { type: 'error', error: 'Input signal "' + sig + '" not supported in current catalog.' };
+      }
+      const cardsNeeded = Math.ceil(qty / inputCard.portsPerCard);
+      cardLines.push({
+        family: 'CORIOVIEW', category: 'card',
+        sku: inputCard.sku, qty: cardsNeeded,
+        description: inputCard.desc, inputSignal: sig
+      });
+      totalCards += cardsNeeded;
+      signalLabels.push(qty + '\u00d7 ' + sig);
+      totalPorts += qty;
+    }
+
+    if (totalCards > MWP_MTO.maxInputCards) {
+      return {
+        type: 'error',
+        error: 'Mixed-input build needs ' + totalCards + ' input cards but MWP-MTO supports max ' + MWP_MTO.maxInputCards + '. Reduce signal-type count or quantities. Contact tvONE for higher-density custom builds.'
+      };
+    }
+
+    const summarySignals = signalLabels.join(' + ');
     return {
       type: 'mto',
-      chassis: { sku: MWP_MTO.sku, desc: MWP_MTO.desc },
+      chassis: { sku: MWP_MTO.sku, desc: MWP_MTO.desc + ' \u00b7 mixed input' },
       bom: [
-        { family: 'CORIOVIEW', category: 'chassis', sku: MWP_MTO.sku,      qty: 1,           description: MWP_MTO.desc, inputSignal: inputSignal, outputSignal: outputSignal, inputCount: inputQty },
-        { family: 'CORIOVIEW', category: 'card',    sku: inputCard.sku,    qty: cardsNeeded, description: inputCard.desc, inputSignal: inputSignal },
-        { family: 'CORIOVIEW', category: 'card',    sku: outputCard.sku,   qty: 1,           description: outputCard.desc, outputSignal: outputSignal }
-      ]
+        { family: 'CORIOVIEW', category: 'chassis', sku: MWP_MTO.sku, qty: 1, description: MWP_MTO.desc + ' \u00b7 mixed input (' + summarySignals + ')', inputSignal: summarySignals, outputSignal: outputSignal, inputCount: totalPorts }
+      ].concat(cardLines).concat([
+        { family: 'CORIOVIEW', category: 'card', sku: outputCard.sku, qty: 1, description: outputCard.desc, outputSignal: outputSignal }
+      ])
     };
   }
 
@@ -12608,30 +12702,113 @@ body.light .signal-card-footer-tv {
     setTimeout(_wireLedCardTriggersTV, 0);
   }
 
-  function _onMvInputSignalChange() {
-    const sigEl = document.getElementById('mv_inputSignal');
-    const sig = sigEl ? sigEl.value : '';
-    const cap = MV_QTY_CAP[sig] || 8;
-    const qtyEl = document.getElementById('mv_inputCount');
-    const capLbl = document.getElementById('mv_qtyCap');
-    if (qtyEl) {
-      qtyEl.max = cap;
-      const cur = Number(qtyEl.value) || 1;
-      if (cur > cap) qtyEl.value = cap;
-      if (cur < 1) qtyEl.value = 1;
+  // ----------------------------------------------------------------
+  // v25.99.16 (B6): Dynamic input rows state + handlers
+  //   window._mvInputRows = [{ signal, qty }]  (1..MWP_MTO.maxInputCards entries)
+  // First row is always present; second row appears when user clicks "+ Add".
+  // ----------------------------------------------------------------
+  window._mvInputRows = window._mvInputRows || [{ signal: '', qty: 1 }];
+
+  function _mvSignalOptionsHtml(selectedSignal, otherSignals) {
+    // Build dropdown options excluding signals already picked in OTHER rows
+    // (so user can't pick the same signal twice).
+    const allSignals = [
+      { v: '',         label: '\u2014 pick one \u2014' },
+      { v: 'DVI-U',    label: 'DVI-U' },
+      { v: 'FHD HDMI', label: 'FHD HDMI (1080p)' },
+      { v: '4K HDMI',  label: '4K HDMI (UHD)' },
+      { v: '3G-SDI',   label: '3G-SDI' },
+      { v: 'HD-SDI',   label: 'HD-SDI' },
+      { v: 'HDBaseT',  label: 'HDBaseT' }
+    ];
+    let html = '';
+    for (let i = 0; i < allSignals.length; i++) {
+      const opt = allSignals[i];
+      const disabled = (opt.v !== '' && opt.v !== selectedSignal && otherSignals.indexOf(opt.v) !== -1);
+      const sel = (opt.v === (selectedSignal || ''));
+      html += '<option value="' + _escMv(opt.v) + '"'
+            + (sel ? ' selected' : '')
+            + (disabled ? ' disabled' : '')
+            + '>' + _escMv(opt.label) + (disabled ? ' \u2014 already used' : '') + '</option>';
     }
-    if (capLbl) capLbl.textContent = sig ? ('max ' + cap) : 'max 8';
+    return html;
+  }
+
+  function _mvRenderInputRows() {
+    const cont = document.getElementById('mv_inputRowsContainer');
+    if (!cont) return;
+    const rows = window._mvInputRows;
+    let html = '';
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const otherSignals = rows.filter(function(_, j) { return j !== i; }).map(function(x) { return x.signal; }).filter(Boolean);
+      const cap = MV_QTY_CAP[r.signal] || 8;
+      const qty = Math.max(1, Math.min(cap, Number(r.qty) || 1));
+      const canRemove = rows.length > 1;
+      html += '<div class="mv-input-row" data-row-idx="' + i + '">'
+            +   '<select onchange="_mvUpdateRowSignal(' + i + ', this.value)">' + _mvSignalOptionsHtml(r.signal, otherSignals) + '</select>'
+            +   '<div class="mv-row-qty">'
+            +     '<button type="button" class="mv-qty-btn" onclick="_mvRowQtyAdjust(' + i + ', -1)" aria-label="Decrease">\u2212</button>'
+            +     '<input type="number" min="1" max="' + cap + '" value="' + qty + '" readonly>'
+            +     '<button type="button" class="mv-qty-btn" onclick="_mvRowQtyAdjust(' + i + ', 1)" aria-label="Increase">+</button>'
+            +     '<span class="mv-row-cap">' + (r.signal ? ('max ' + cap) : 'max 8') + '</span>'
+            +   '</div>'
+            +   '<button type="button" class="mv-row-remove" onclick="_mvRemoveInputRow(' + i + ')" title="Remove this signal row" aria-label="Remove" ' + (canRemove ? '' : 'disabled') + '>\u00d7</button>'
+            + '</div>';
+    }
+    cont.innerHTML = html;
+    _mvUpdateAddButton();
+  }
+
+  function _mvUpdateAddButton() {
+    const btn = document.getElementById('mv_addRowBtn');
+    if (!btn) return;
+    const atCap = (window._mvInputRows.length >= MWP_MTO.maxInputCards);
+    btn.disabled = atCap;
+    btn.title = atCap ? ('Max ' + MWP_MTO.maxInputCards + ' signal types in current MTO spec \u2014 contact tvONE for higher-density custom builds') : '';
+  }
+
+  function _mvUpdateRowSignal(idx, newSignal) {
+    if (!window._mvInputRows[idx]) return;
+    // Clamp qty if new signal has lower cap
+    const cap = MV_QTY_CAP[newSignal] || 8;
+    window._mvInputRows[idx].signal = newSignal || '';
+    const curQty = Number(window._mvInputRows[idx].qty) || 1;
+    if (curQty > cap) window._mvInputRows[idx].qty = cap;
+    if (curQty < 1)   window._mvInputRows[idx].qty = 1;
+    _mvRenderInputRows();
     _mvRecompute();
   }
 
-  function _mvQtyAdjust(delta) {
-    const qtyEl = document.getElementById('mv_inputCount');
-    if (!qtyEl) return;
-    const sig = (document.getElementById('mv_inputSignal') || {}).value || '';
-    const cap = MV_QTY_CAP[sig] || 8;
-    const cur = Number(qtyEl.value) || 1;
-    const next = Math.max(1, Math.min(cap, cur + delta));
-    qtyEl.value = next;
+  function _mvRowQtyAdjust(idx, delta) {
+    if (!window._mvInputRows[idx]) return;
+    const row = window._mvInputRows[idx];
+    const cap = MV_QTY_CAP[row.signal] || 8;
+    const cur = Number(row.qty) || 1;
+    row.qty = Math.max(1, Math.min(cap, cur + delta));
+    _mvRenderInputRows();
+    _mvRecompute();
+  }
+
+  function _mvAddInputRow() {
+    if (window._mvInputRows.length >= MWP_MTO.maxInputCards) return;
+    window._mvInputRows.push({ signal: '', qty: 1 });
+    _mvRenderInputRows();
+    _mvRecompute();
+  }
+
+  function _mvRemoveInputRow(idx) {
+    if (window._mvInputRows.length <= 1) return;
+    window._mvInputRows.splice(idx, 1);
+    _mvRenderInputRows();
+    _mvRecompute();
+  }
+
+  // Legacy compat shim — old code path (Edit-restore older saves with single-input
+  // chassis line) may still call _onMvInputSignalChange. Map it to the first row.
+  function _onMvInputSignalChange() {
+    // No-op: signal/qty now live in window._mvInputRows. Kept as global stub
+    // so old inline onchange handlers don't throw if any survive in restored state.
     _mvRecompute();
   }
 
@@ -12642,14 +12819,13 @@ body.light .signal-card-footer-tv {
 
   function _mvRecompute() {
     if (!window._mvMode) return;
-    const sig = (document.getElementById('mv_inputSignal') || {}).value || '';
-    const qty = Number((document.getElementById('mv_inputCount') || {}).value) || 0;
+    const inputs = (window._mvInputRows || []).map(function(r) { return { signal: r.signal, qty: Number(r.qty) || 0 }; });
     const out = (document.getElementById('mv_outputSignal') || {}).value || '4K HDMI';
     const preview = document.getElementById('mvPreview');
     const tag = document.getElementById('mvPreviewTag');
     const chassisEl = document.getElementById('mvPreviewChassis');
     const bomEl = document.getElementById('mvPreviewBom');
-    const result = recommendMWP(sig, qty, out);
+    const result = recommendMWP(inputs, out);
     window._mvLastResult = result;
     if (!preview) return;
     if (result.type === 'empty') { preview.style.display = 'none'; return; }
@@ -12663,7 +12839,7 @@ body.light .signal-card-footer-tv {
     if (result.type === 'fixed') {
       if (tag) { tag.textContent = 'Fixed chassis'; tag.className = 'mv-preview-tag'; }
     } else {
-      if (tag) { tag.textContent = 'MTO build'; tag.className = 'mv-preview-tag mto'; }
+      if (tag) { tag.textContent = (inputs.filter(function(r){return r.signal && r.qty>0;}).length > 1 ? 'MTO build · mixed input' : 'MTO build'); tag.className = 'mv-preview-tag mto'; }
     }
     if (chassisEl) chassisEl.textContent = result.chassis.sku;
     if (bomEl) {
@@ -12689,10 +12865,20 @@ body.light .signal-card-footer-tv {
   window._onRequirementChange   = _onRequirementChange;
   window._onVpFamilyChange      = _onVpFamilyChange;
   window._onMvInputSignalChange = _onMvInputSignalChange;
-  window._mvQtyAdjust           = _mvQtyAdjust;
+  window._mvUpdateRowSignal     = _mvUpdateRowSignal;
+  window._mvRowQtyAdjust        = _mvRowQtyAdjust;
+  window._mvAddInputRow         = _mvAddInputRow;
+  window._mvRemoveInputRow      = _mvRemoveInputRow;
+  window._mvRenderInputRows     = _mvRenderInputRows;
   window._onMvExtYes            = _onMvExtYes;
   window._mvRecompute           = _mvRecompute;
   window.recommendMWP           = recommendMWP;
+
+  // v25.99.16: Initialize input rows table on first paint of MV wizard.
+  // _onRequirementChange and the Edit-restore path also call this when needed.
+  document.addEventListener('DOMContentLoaded', function() {
+    try { _mvRenderInputRows(); } catch(_) {}
+  });
 
   // ----------------------------------------------------------------
   // MV-dedicated save path (called from calculateAndLog when _mvMode active)
@@ -12705,7 +12891,7 @@ body.light .signal-card-footer-tv {
 
     const mvRes = window._mvLastResult;
     if (!mvRes || mvRes.type === 'empty') {
-      if (err) { err.textContent = 'Pick Multi Viewer input signal, count, and output before generating BOM.'; err.classList.add('show'); }
+      if (err) { err.textContent = 'Pick at least one Multi Viewer input signal with quantity, and an output, before generating the BOM.'; err.classList.add('show'); }
       return;
     }
     if (mvRes.type === 'error') {
@@ -14191,15 +14377,45 @@ body.light .signal-card-footer-tv {
             }
 
             // --- Restore MV wizard inputs ---
+            // v25.99.16 (B6): MV now supports mixed input. Rebuild window._mvInputRows
+            // from the saved input-card lines (each has inputSignal + qty in CARDS).
+            // For mixed-input MTO saves: cards form the row state.
+            // For single-input fixed-chassis saves: there are no card lines, so fall back
+            // to the chassis line's inputSignal + inputCount.
+            // For single-input MTO saves: also has card lines, same path as mixed.
             const _mvChassis = lines.find(function(l) { return l.family === 'CORIOVIEW' && l.category === 'chassis'; });
             if (_mvChassis && _isMv) {
-              const sigEl = document.getElementById('mv_inputSignal');
-              const qtyEl = document.getElementById('mv_inputCount');
               const outEl = document.getElementById('mv_outputSignal');
-              if (sigEl && _mvChassis.inputSignal) sigEl.value = _mvChassis.inputSignal;
-              if (qtyEl && _mvChassis.inputCount)  qtyEl.value = Number(_mvChassis.inputCount) || 1;
               if (outEl && _mvChassis.outputSignal) outEl.value = _mvChassis.outputSignal;
-              if (typeof window._onMvInputSignalChange === 'function') window._onMvInputSignalChange();
+
+              // Rebuild rows from saved card lines (input-side only — output card has no inputSignal)
+              const inputCardLines = lines.filter(function(l) {
+                return l.family === 'CORIOVIEW' && l.category === 'card' && l.inputSignal;
+              });
+              if (inputCardLines.length > 0) {
+                // Reverse-engineer port qty from card qty + signal's portsPerCard
+                window._mvInputRows = inputCardLines.map(function(cl) {
+                  const sig = String(cl.inputSignal || '').trim();
+                  const cardSpec = CORIOVIEW_INPUT_CARDS[sig];
+                  const ports = cardSpec ? (Number(cl.qty) * cardSpec.portsPerCard) : (Number(cl.qty) || 1);
+                  // Clamp to signal cap
+                  const cap = MV_QTY_CAP[sig] || 8;
+                  return { signal: sig, qty: Math.max(1, Math.min(cap, ports)) };
+                });
+              } else if (_mvChassis.inputSignal && _mvChassis.inputCount) {
+                // Fixed-chassis path: chassis line carries inputSignal + inputCount directly
+                window._mvInputRows = [{
+                  signal: String(_mvChassis.inputSignal).trim(),
+                  qty: Number(_mvChassis.inputCount) || 1
+                }];
+              } else {
+                window._mvInputRows = [{ signal: '', qty: 1 }];
+              }
+              // Clamp to max 2 rows per current MTO cap (safety in case sheet has stale data)
+              if (window._mvInputRows.length > MWP_MTO.maxInputCards) {
+                window._mvInputRows = window._mvInputRows.slice(0, MWP_MTO.maxInputCards);
+              }
+              if (typeof window._mvRenderInputRows === 'function') window._mvRenderInputRows();
               if (typeof window._mvRecompute === 'function') window._mvRecompute();
             }
 
@@ -18016,6 +18232,16 @@ body.light .signal-card-footer-tv {
     // Users can change if needed; this is just the starting position for a new deal.
     var _stEl_lead = document.getElementById('f_stage');
     if (_stEl_lead) _stEl_lead.value = 'Lead';
+    // v25.99.16 (B6): reset MV input rows to single empty row, and clear the live result.
+    window._mvInputRows = [{ signal: '', qty: 1 }];
+    window._mvLastResult = null;
+    try { if (typeof window._mvRenderInputRows === 'function') window._mvRenderInputRows(); } catch(_) {}
+    // Hide MV preview if rendered
+    var _mvPrev = document.getElementById('mvPreview');
+    if (_mvPrev) _mvPrev.style.display = 'none';
+    // Reset Output Signal back to 4K HDMI default
+    var _mvOut = document.getElementById('mv_outputSignal');
+    if (_mvOut) _mvOut.value = '4K HDMI';
     // v25.21: Reset state field's locked styling — city→state lock can leave it disabled
     var _stEl = document.getElementById('f_state');
     if (_stEl) { _stEl.disabled = false; _stEl.classList.remove('autoset-locked'); _stEl.title = ''; }
