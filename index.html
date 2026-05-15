@@ -9150,7 +9150,7 @@ body.light .signal-card-footer-tv {
 <div id="emailModalTV" class="modal-overlay" style="display:none;">
   <div class="modal-card" style="max-width: 640px;">
     <div class="modal-title">✉ Email Quote to Partner</div>
-    <div class="modal-sub">Opens in your <strong>Outlook</strong> (<span id="emailModalFromHintTV">—</span>) · 📎 PDF + Excel auto-download · <strong>dipen.g@cavitak.com</strong> always CC'd · attach files in Outlook before sending</div>
+    <div class="modal-sub">Opens in your <strong>Outlook</strong> · 📎 PDF + Excel auto-download · <strong>dipen.g@cavitak.com</strong> always CC'd · attach files in Outlook before sending</div>
     <div id="emailModalErrorTV" class="error-msg">Error</div>
     <div class="field">
       <label>To <span style="color:#DC2626">*</span></label>
@@ -9340,7 +9340,7 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.99.23';  // v25.99.23 — EMAIL FLOW: replaced backend send (broken on M365 — emails were going from script-owner@gmail.com "on behalf of" rep, flagged as spoofing by Outlook receivers and dropped/spammed) with true mailto: flow. Click "Send Email" in modal now: (1) downloads BOTH the PDF and Excel quote files for the rep to attach, (2) opens their default mail client (Outlook on M365) with To/CC/Subject/Body pre-filled from the modal fields, (3) rep attaches the just-downloaded files in Outlook and clicks Send — email truly originates from rep's mailbox, appears in their Sent folder, passes SPF/DKIM/DMARC. dipen.g@cavitak.com forced CC pre-filled (rep can technically remove but instructed not to). Modal subtitle updated to reflect new flow. Backend email_send handler intentionally left in place (dormant, no UI call site) — easy revert if ever needed. No backend deploy required. Pairs with v26.19.0. Previously: v25.99.22 — UX wording pass + Excel polish. WORDING: every "Saving…" / "Signing in…" button label → "Loading…" (11 sites). "Generating..." → "Recommending…" on Generate BoM button. Success toasts neutralized: "Changes saved"/"Deal registered"/"CORIO deal saved"/"Multi Viewer deal saved" → "Done ✓"; "PDF downloaded" → "PDF ready ✓"; "Profile saved — welcome X!" → "Welcome, X ✓"; "Saved — will finalize shortly" → "Done · finalizing…"; "Draft saved" → "✓"; "Offline · saved locally only" → "Offline · stored on this device only". Trust signals removed: "Audit-logged." badge dropped from stage-note callout; "(only logged when stage actually changes)" stripped from f_stageNote placeholder. Analyzing splash eyebrow "Analyzing Configuration" → "Generating recommendation…". EXCEL POLISH: RECOMMENDED SOLUTION verdict now product-aware (was hardcoded CALICO-only) — MV deals show "tvONE CORIOview · Multi Viewer configuration", CORIO deals show "tvONE [chassisLabel] · CORIO configuration", CALICO unchanged. Warranty T&C: "tvONE CALICO PRO series" → "tvONE products". WhatsApp default message + Email body + Email subject + Excel filename all dropped CALICO-specific phrasing (now neutral "tvONE BOM summary" / "tvONE recommendation and BOM" / "tvONE Quote · …" / "tvONE_Quote_…xlsx"). Tricolor stripe alignment intentionally kept as-is (forest dominant = on-brand; true thirds would shrink primary brand colour). No backend changes; pairs with v26.19.0.
+  const TVONE_FRONTEND_VERSION = '25.99.24';  // v25.99.24 — HOTFIX: "Generate BoM does nothing" bug — error banner was firing correctly but never scrolled into view. After v25.97.1's "Generate BoM relocated to bottom of form", the formError/formInfo divs stayed at their old position (~L7874, near top of form, far above the new button location). Rep clicks Generate BoM with invalid input (e.g. no MV input signal picked) → _mvCalculateAndLog or _corioCalculateAndLog fires err.classList.add('show') → banner appears but ~hundreds of pixels above rep's viewport → rep sees "nothing happens". Fix: added err.scrollIntoView({behavior:'smooth',block:'center'}) at 7 error-show sites in MV and CORIO branches that were missing it (the standard CALICO calculateAndLog already had scrollIntoView at L11920). 7 sites patched: MV empty-input, MV result-error, MV save-fail, CORIO no-result, CORIO result-error, CORIO empty-bom, CORIO save-fail. No backend change. Pairs with v26.19.0. Previously: v25.99.23 — EMAIL FLOW mailto: switch. Click "Send Email" in modal now: (1) downloads BOTH the PDF and Excel quote files for the rep to attach, (2) opens their default mail client (Outlook on M365) with To/CC/Subject/Body pre-filled from the modal fields, (3) rep attaches the just-downloaded files in Outlook and clicks Send — email truly originates from rep's mailbox, appears in their Sent folder, passes SPF/DKIM/DMARC. dipen.g@cavitak.com forced CC pre-filled (rep can technically remove but instructed not to). Modal subtitle updated to reflect new flow. Backend email_send handler intentionally left in place (dormant, no UI call site) — easy revert if ever needed. No backend deploy required. Pairs with v26.19.0. Previously: v25.99.22 — UX wording pass + Excel polish. WORDING: every "Saving…" / "Signing in…" button label → "Loading…" (11 sites). "Generating..." → "Recommending…" on Generate BoM button. Success toasts neutralized: "Changes saved"/"Deal registered"/"CORIO deal saved"/"Multi Viewer deal saved" → "Done ✓"; "PDF downloaded" → "PDF ready ✓"; "Profile saved — welcome X!" → "Welcome, X ✓"; "Saved — will finalize shortly" → "Done · finalizing…"; "Draft saved" → "✓"; "Offline · saved locally only" → "Offline · stored on this device only". Trust signals removed: "Audit-logged." badge dropped from stage-note callout; "(only logged when stage actually changes)" stripped from f_stageNote placeholder. Analyzing splash eyebrow "Analyzing Configuration" → "Generating recommendation…". EXCEL POLISH: RECOMMENDED SOLUTION verdict now product-aware (was hardcoded CALICO-only) — MV deals show "tvONE CORIOview · Multi Viewer configuration", CORIO deals show "tvONE [chassisLabel] · CORIO configuration", CALICO unchanged. Warranty T&C: "tvONE CALICO PRO series" → "tvONE products". WhatsApp default message + Email body + Email subject + Excel filename all dropped CALICO-specific phrasing (now neutral "tvONE BOM summary" / "tvONE recommendation and BOM" / "tvONE Quote · …" / "tvONE_Quote_…xlsx"). Tricolor stripe alignment intentionally kept as-is (forest dominant = on-brand; true thirds would shrink primary brand colour). No backend changes; pairs with v26.19.0.
   // v25.99.21 — Fix salesperson/presales footer showing "loginName / — / — / —" instead of full name + role + phone + email. Root cause: _allUsersTV cache wasn't loaded when export was triggered directly from History tab (form-show effect that populates the cache hadn't fired). Two surgical fixes: (1) both exportQuotePDFTV and exportToExcel now await _fetchAllUsersTV() at entry if the cache is empty (~5 lines each). (2) Defensive _findUserTV / _findUserXL fallback: when cache lookup misses AND the missing user IS the currently logged-in user, populate from currentUser instead of returning login-name-as-name. Same fix applied to both PDF and Excel lookup helpers. No backend changes. NOTE: Users sheet rows must still have professionalTitle / phone / email populated for those fields to appear — Dipenkumar's row is missing these in production. Fill in the Users sheet to make role/phone/email populate.
   // v25.99.20 — Cavitak logo + redesigned headers/footers shipped in BOTH Excel and PDF exports. PDF: BS-pattern layout (logo top-left + vertical separator + title block + QUOTE meta top-right) using tvONE forest-green/gold colour palette. Tricolor accent stripe (forest/gold/red) under header. Section headers switched from slate ink to forest-dark. Footer gained Cavitak distributor band (logo + "Cavitak Marketing Pvt Ltd · Authorized tvONE distributor · India") above salesperson contact. Footer text "tvONE CALICO Configurator" corrected to "tvONE Product Selector". Excel Quote tab: rebuilt header — Cavitak logo over A1:B2 + tvONE title + tagline in C-G rows 1-2 + tricolor stripe in row 3, replacing the "CALICO PRO" / "Command every pixel" solid-green band. QUOTATION + Quote No. block preserved at row 4. Footer attribution line upgraded to logo + rich-text distributor band before print-area boundary. Logo files embedded as base64 PNG constants (LOGO_CAVITAK_B64 280x79px ~18KB, LOGO_TVONE_B64 240x61px ~14KB) at top of EXCEL_DESIGN section. Hardcoded base64 chosen over runtime fetch to avoid CORS/404 surface. All image embeds wrapped in try/catch so exports still succeed if image API fails. No backend changes; pairs with v26.19.0.
   // v25.99.19 — loadAuditHistory() micro-cache (60s TTL, module-scoped Map, no localStorage) + AbortController to cancel in-flight fetches on rapid re-clicks. Repeat clicks on same deal's 🕒 Edit History within 60s now skip the ~300ms backend round-trip. Stale-response clobber race (theoretical) fixed by aborting prior fetch when a new one starts. Render path extracted to _renderAuditHistory(refId, audit, sub, body) so cache-hit and fetch-hit share one code path. No backend changes; pairs with v26.19.0.
@@ -12928,11 +12928,11 @@ body.light .signal-card-footer-tv {
 
     const mvRes = window._mvLastResult;
     if (!mvRes || mvRes.type === 'empty') {
-      if (err) { err.textContent = 'Pick at least one Multi Viewer input signal with quantity, and an output, before generating the BOM.'; err.classList.add('show'); }
+      if (err) { err.textContent = 'Pick at least one Multi Viewer input signal with quantity, and an output, before generating the BOM.'; err.classList.add('show'); err.scrollIntoView({behavior:'smooth',block:'center'}); }
       return;
     }
     if (mvRes.type === 'error') {
-      if (err) { err.textContent = mvRes.error; err.classList.add('show'); }
+      if (err) { err.textContent = mvRes.error; err.classList.add('show'); err.scrollIntoView({behavior:'smooth',block:'center'}); }
       return;
     }
 
@@ -13130,6 +13130,7 @@ body.light .signal-card-footer-tv {
       if (err) {
         err.innerHTML = '<strong>Save failed:</strong> ' + _escMv(String(e && e.message || e));
         err.classList.add('show');
+        err.scrollIntoView({behavior:'smooth',block:'center'});
       }
       console.error('[v25.90] MV save failed:', e);
     }
@@ -13151,15 +13152,15 @@ body.light .signal-card-footer-tv {
 
     const cRes = window._corioLastResult;
     if (!cRes) {
-      if (err) { err.textContent = 'Pick a CORIO chassis and add at least one input/output before generating BOM.'; err.classList.add('show'); }
+      if (err) { err.textContent = 'Pick a CORIO chassis and add at least one input/output before generating BOM.'; err.classList.add('show'); err.scrollIntoView({behavior:'smooth',block:'center'}); }
       return;
     }
     if (cRes.type === 'error') {
-      if (err) { err.textContent = cRes.error; err.classList.add('show'); }
+      if (err) { err.textContent = cRes.error; err.classList.add('show'); err.scrollIntoView({behavior:'smooth',block:'center'}); }
       return;
     }
     if (!cRes.bom || cRes.bom.length < 2) {
-      if (err) { err.textContent = 'CORIO configuration needs at least one input or output card before saving.'; err.classList.add('show'); }
+      if (err) { err.textContent = 'CORIO configuration needs at least one input or output card before saving.'; err.classList.add('show'); err.scrollIntoView({behavior:'smooth',block:'center'}); }
       return;
     }
 
@@ -13339,6 +13340,7 @@ body.light .signal-card-footer-tv {
       if (err) {
         err.innerHTML = '<strong>Save failed:</strong> ' + _escCorio(String(e && e.message || e));
         err.classList.add('show');
+        err.scrollIntoView({behavior:'smooth',block:'center'});
       }
       console.error('[v25.99] CORIO save failed:', e);
     }
@@ -16076,11 +16078,19 @@ body.light .signal-card-footer-tv {
     document.getElementById('emailModalIncludePdfTV').checked = true;
     document.getElementById('emailModalErrorTV').textContent = '';
     document.getElementById('emailModalErrorTV').style.display = 'none';
-    const fromHintEl = document.getElementById('emailModalFromHintTV');
-    if (fromHintEl) fromHintEl.textContent = (currentUser && currentUser.email) || '(your email — set it in Profile)';
+    // v25.99.23 — Dropped fromHint setter: subtitle no longer shows "(your email)" hint.
+    // The mailto: flow opens whatever Outlook profile the rep has as default — the app
+    // can't control which identity sends. Showing the rep's Cavitak email in the subtitle
+    // was misleading (implied the app chooses the From). Removed for clarity.
+    // v25.99.23 — Reset cancellation flag on open. Used by sendEmailViaBackendTV to
+    // bail out if the rep closes the modal mid-export (Cancel / X / Escape).
+    window._emailModalCancelledTV = false;
     document.getElementById('emailModalTV').style.display = 'flex';
   }
   function closeEmailModalTV() {
+    // v25.99.23 — Set cancellation flag so an in-flight export-then-mailto chain in
+    // sendEmailViaBackendTV bails out gracefully instead of opening Outlook after Cancel.
+    window._emailModalCancelledTV = true;
     document.getElementById('emailModalTV').style.display = 'none';
   }
   async function sendEmailViaBackendTV() {
@@ -16125,24 +16135,31 @@ body.light .signal-card-footer-tv {
 
     try {
       // Auto-download PDF + Excel so the rep can drag-attach them in Outlook.
-      // We trigger PDF first (it streams faster), then Excel. Both are fire-and-forget
-      // from this function's perspective — they each write a download to the user's
-      // Downloads folder. Wrap each in try/catch so one failing doesn't block the other
-      // or block the mailto open. Excel can take 3-8s on slow devices, so we give it
-      // a head start before opening the mail client (which steals focus on some OSes).
+      // Serial (not parallel) because both heavy ops share the main JS thread —
+      // running them in parallel via Promise.allSettled doesn't actually save time.
+      // Each is wrapped in try/catch so one failing doesn't block the other
+      // or block the mailto open. PDF takes 3-5s (html2canvas), Excel takes 1-3s
+      // (ExcelJS workbook build). Total wait ~5-10s before Outlook opens — show
+      // per-step progress on the button so the rep knows it's working.
       if (includeAttachments) {
-        // PDF — downloads via jsPDF doc.save() inside exportQuotePDFTV (no arg)
+        // Step 1/2 — PDF (downloads via jsPDF doc.save() inside exportQuotePDFTV with no arg)
+        sendBtn.textContent = 'Generating PDF (1 of 2)…';
         try {
           await exportQuotePDFTV();
         } catch (pdfErr) {
           console.warn('[v25.99.23] PDF download failed (continuing):', pdfErr);
         }
-        // Excel — downloads via ExcelJS workbook.xlsx.writeBuffer + saveAs inside exportToExcel
+        // v25.99.23 — Bail out if rep cancelled the modal during PDF generation.
+        if (window._emailModalCancelledTV) return;
+        // Step 2/2 — Excel (downloads via ExcelJS writeBuffer + a.click() inside exportToExcel)
+        sendBtn.textContent = 'Generating Excel (2 of 2)…';
         try {
           await exportToExcel();
         } catch (xlErr) {
           console.warn('[v25.99.23] Excel download failed (continuing):', xlErr);
         }
+        // v25.99.23 — Bail out if rep cancelled during Excel generation.
+        if (window._emailModalCancelledTV) return;
       }
 
       // Build the mailto: URL. RFC 6068 spec — all params URI-encoded.
@@ -16159,6 +16176,8 @@ body.light .signal-card-footer-tv {
 
       // Small delay so the rep sees the download notifications before mail client steals focus.
       setTimeout(function() {
+        // v25.99.23 — Final cancellation check: rep may have hit Cancel in the 600ms window.
+        if (window._emailModalCancelledTV) return;
         try {
           window.location.href = mailtoUrl;
         } catch (mailErr) {
@@ -16170,6 +16189,9 @@ body.light .signal-card-footer-tv {
 
       // Close modal after a longer beat so the rep sees the success toast against the modal first
       setTimeout(function() {
+        // v25.99.23 — Don't show "Outlook opened" toast if rep cancelled (closeEmailModalTV
+        // already ran via Cancel/X click; calling it again is fine but the toast would lie).
+        if (window._emailModalCancelledTV) return;
         closeEmailModalTV();
         showSync('Outlook opened · attach the downloaded files and click Send', 'success');
       }, 1200);
