@@ -7256,7 +7256,7 @@ body.light .signal-card-footer-tv {
         <!-- v25.28: Stage change note — optional, captures "why this move" if stage changes on edit. -->
         <div class="field">
           <label style="font-size:13px;">Stage change note <span class="label-meta">(optional)</span></label>
-          <textarea id="f_stageNote" rows="1" placeholder="If you're changing stage, share why — helps the team understand the move (only logged when stage actually changes)" style="width:100%;resize:vertical;min-height:36px;"></textarea>
+          <textarea id="f_stageNote" rows="1" placeholder="If you're changing stage, share why — helps the team understand the move" style="width:100%;resize:vertical;min-height:36px;"></textarea>
         </div>
 
         <!-- v25.9: Lead Source required for Review tab tvONE-vs-Cavitak analytics -->
@@ -7369,7 +7369,7 @@ body.light .signal-card-footer-tv {
           <label for="f_internalNotes">Internal Notes <span class="label-meta">· internal only · not shared with partner</span></label>
           <textarea id="f_internalNotes" rows="3" maxlength="2000" placeholder="Internal notes about this opportunity — context, history, next steps, blockers. Visible to your team only. Not included in Excel/PDF exports." style="width:100%;resize:vertical;min-height:72px;"></textarea>
           <div style="font-size:10.5px;color:var(--ink-subtle);margin-top:4px;display:flex;justify-content:space-between;">
-            <span>Visible only to Cavitak team. Audit-logged.</span>
+            <span>Visible only to Cavitak team.</span>
             <span id="f_internalNotes_counter" style="font-family:JetBrains Mono,monospace;color:var(--gold-bright);">0 / 2000</span>
           </div>
         </div>
@@ -8147,7 +8147,7 @@ body.light .signal-card-footer-tv {
       <div class="analyzing-hero">
         <div class="analyzing-eyebrow">
           <span class="analyzing-pulse"></span>
-          <span>Analyzing Configuration</span>
+          <span>Generating recommendation…</span>
         </div>
         <div class="analyzing-title">Command every pixel</div>
         <div class="analyzing-sub">Computing optimal chassis and port allocation for your project…</div>
@@ -9052,7 +9052,7 @@ body.light .signal-card-footer-tv {
       <img src="tvone-logo-light.png" alt="tvONE" class="logo-light" onerror="this.style.display='none'">
     </div>
     <div class="splash-brand-name">tvONE Product Selector</div>
-    <div class="splash-step" id="splashStep">Signing in…</div>
+    <div class="splash-step" id="splashStep">Loading…</div>
     <div class="splash-progress">
       <div class="splash-progress-bar" id="splashProgressBar"></div>
     </div>
@@ -9340,7 +9340,9 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.99.20';  // v25.99.20 — Cavitak logo + redesigned headers/footers shipped in BOTH Excel and PDF exports. PDF: BS-pattern layout (logo top-left + vertical separator + title block + QUOTE meta top-right) using tvONE forest-green/gold colour palette. Tricolor accent stripe (forest/gold/red) under header. Section headers switched from slate ink to forest-dark. Footer gained Cavitak distributor band (logo + "Cavitak Marketing Pvt Ltd · Authorized tvONE distributor · India") above salesperson contact. Footer text "tvONE CALICO Configurator" corrected to "tvONE Product Selector". Excel Quote tab: rebuilt header — Cavitak logo over A1:B2 + tvONE title + tagline in C-G rows 1-2 + tricolor stripe in row 3, replacing the "CALICO PRO" / "Command every pixel" solid-green band. QUOTATION + Quote No. block preserved at row 4. Footer attribution line upgraded to logo + rich-text distributor band before print-area boundary. Logo files embedded as base64 PNG constants (LOGO_CAVITAK_B64 280x79px ~18KB, LOGO_TVONE_B64 240x61px ~14KB) at top of EXCEL_DESIGN section. Hardcoded base64 chosen over runtime fetch to avoid CORS/404 surface. All image embeds wrapped in try/catch so exports still succeed if image API fails. No backend changes; pairs with v26.19.0.
+  const TVONE_FRONTEND_VERSION = '25.99.22';  // v25.99.22 — UX wording pass + Excel polish. WORDING: every "Saving…" / "Signing in…" button label → "Loading…" (11 sites). "Generating..." → "Recommending…" on Generate BoM button. Success toasts neutralized: "Changes saved"/"Deal registered"/"CORIO deal saved"/"Multi Viewer deal saved" → "Done ✓"; "PDF downloaded" → "PDF ready ✓"; "Profile saved — welcome X!" → "Welcome, X ✓"; "Saved — will finalize shortly" → "Done · finalizing…"; "Draft saved" → "✓"; "Offline · saved locally only" → "Offline · stored on this device only". Trust signals removed: "Audit-logged." badge dropped from stage-note callout; "(only logged when stage actually changes)" stripped from f_stageNote placeholder. Analyzing splash eyebrow "Analyzing Configuration" → "Generating recommendation…". EXCEL POLISH: RECOMMENDED SOLUTION verdict now product-aware (was hardcoded CALICO-only) — MV deals show "tvONE CORIOview · Multi Viewer configuration", CORIO deals show "tvONE [chassisLabel] · CORIO configuration", CALICO unchanged. Warranty T&C: "tvONE CALICO PRO series" → "tvONE products". WhatsApp default message + Email body + Email subject + Excel filename all dropped CALICO-specific phrasing (now neutral "tvONE BOM summary" / "tvONE recommendation and BOM" / "tvONE Quote · …" / "tvONE_Quote_…xlsx"). Tricolor stripe alignment intentionally kept as-is (forest dominant = on-brand; true thirds would shrink primary brand colour). No backend changes; pairs with v26.19.0.
+  // v25.99.21 — Fix salesperson/presales footer showing "loginName / — / — / —" instead of full name + role + phone + email. Root cause: _allUsersTV cache wasn't loaded when export was triggered directly from History tab (form-show effect that populates the cache hadn't fired). Two surgical fixes: (1) both exportQuotePDFTV and exportToExcel now await _fetchAllUsersTV() at entry if the cache is empty (~5 lines each). (2) Defensive _findUserTV / _findUserXL fallback: when cache lookup misses AND the missing user IS the currently logged-in user, populate from currentUser instead of returning login-name-as-name. Same fix applied to both PDF and Excel lookup helpers. No backend changes. NOTE: Users sheet rows must still have professionalTitle / phone / email populated for those fields to appear — Dipenkumar's row is missing these in production. Fill in the Users sheet to make role/phone/email populate.
+  // v25.99.20 — Cavitak logo + redesigned headers/footers shipped in BOTH Excel and PDF exports. PDF: BS-pattern layout (logo top-left + vertical separator + title block + QUOTE meta top-right) using tvONE forest-green/gold colour palette. Tricolor accent stripe (forest/gold/red) under header. Section headers switched from slate ink to forest-dark. Footer gained Cavitak distributor band (logo + "Cavitak Marketing Pvt Ltd · Authorized tvONE distributor · India") above salesperson contact. Footer text "tvONE CALICO Configurator" corrected to "tvONE Product Selector". Excel Quote tab: rebuilt header — Cavitak logo over A1:B2 + tvONE title + tagline in C-G rows 1-2 + tricolor stripe in row 3, replacing the "CALICO PRO" / "Command every pixel" solid-green band. QUOTATION + Quote No. block preserved at row 4. Footer attribution line upgraded to logo + rich-text distributor band before print-area boundary. Logo files embedded as base64 PNG constants (LOGO_CAVITAK_B64 280x79px ~18KB, LOGO_TVONE_B64 240x61px ~14KB) at top of EXCEL_DESIGN section. Hardcoded base64 chosen over runtime fetch to avoid CORS/404 surface. All image embeds wrapped in try/catch so exports still succeed if image API fails. No backend changes; pairs with v26.19.0.
   // v25.99.19 — loadAuditHistory() micro-cache (60s TTL, module-scoped Map, no localStorage) + AbortController to cancel in-flight fetches on rapid re-clicks. Repeat clicks on same deal's 🕒 Edit History within 60s now skip the ~300ms backend round-trip. Stale-response clobber race (theoretical) fixed by aborting prior fetch when a new one starts. Render path extracted to _renderAuditHistory(refId, audit, sub, body) so cache-hit and fetch-hit share one code path. No backend changes; pairs with v26.19.0.
   // v25.99.18 — Audit cleanup per AUDIT-v25.99.17 (L1-L5): orphan CSS removed, stale comments and copy refreshed for B6/B3 architecture. Zero behavior change, zero JS logic touched, node --check clean. H1/M3 (placeholder SKUs) and M1/M2 (UX) deferred — not cleanup. Backend unchanged at v26.19.0.
   // v25.99.17 — B3 HDMI Audio Extractor (AP-536) added as Sub-wizard 4 in the Signal Extension panel. Pattern mirrors the HDMI Splitter sub-wizard exactly: SX_AP_MAP constant (1 model today: AP-536), `window._sxApCart` cart array, _sxApRecompute / _sxApAdd / _sxApRemove / _sxRenderApCart / _sxCollectApLines functions, wired into _sxCollectAllLines so AP lines flow to BOM / Excel / PDF / ProjectLines automatically. Family tag `EXTENDER_AUDIO`, category `audio_extractor`. Edit-restore path rebuilds _sxApCart from saved EXTENDER_AUDIO lines (parity with HDBaseT/Splitter/AOC restoration). resetForm() does NOT clear SX carts (parity with other carts — design intent: SX is persistent across main-form resets). SKU placeholder: 'AP-536' literal — swap to real tvONE billing SKU (e.g. T1-AP-536-1Y or MG-AP-536) in SX_AP_MAP when confirmed; the dropdown option value 'AP-536' is the internal key and can stay. No backend changes — uses existing ProjectLines schema unchanged. ~80 lines added. Pairs with backend v26.19.0.
@@ -10220,7 +10222,7 @@ body.light .signal-card-footer-tv {
     }
 
     saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving…';
+    saveBtn.textContent = 'Loading\u2026';
     try {
       const resp = await fetch(WEB_APP_URL, {
         method: 'POST', mode: 'cors',
@@ -10242,7 +10244,7 @@ body.light .signal-card-footer-tv {
       currentUser.phone = phone;
       _hideProfileGateTV();
       if (typeof showSync === 'function') {
-        showSync('Profile saved — welcome ' + String(String(currentUser.fullName || '')).split(' ')[0] + '!', 'success');
+        showSync('Welcome, ' + String(String(currentUser.fullName || '')).split(' ')[0] + ' ✓', 'success');
       }
     } catch (err) {
       errEl.textContent = 'Save failed: ' + (err.message || err);
@@ -10586,7 +10588,7 @@ body.light .signal-card-footer-tv {
         // tvONE form has its own draft save: _saveDraftTV
         if(typeof window._saveDraftTV === 'function'){ try { window._saveDraftTV(); } catch(_){} }
         else if(typeof _saveDraftTV === 'function'){ try { _saveDraftTV(); } catch(_){} }
-        _flashStatus('Draft saved');
+        _flashStatus('✓');
         return true;
       }
       if(view === 'resultView'){
@@ -10719,7 +10721,7 @@ body.light .signal-card-footer-tv {
     }
     err.classList.remove('show');
     const signInBtn = document.querySelector('#loginScreen button.primary');
-    if (signInBtn) { signInBtn.disabled = true; signInBtn.textContent = 'Signing in…'; }
+    if (signInBtn) { signInBtn.disabled = true; signInBtn.textContent = 'Loading\u2026'; }
     try {
       const hash = await sha256(p);
       const res = await fetch(WEB_APP_URL, {
@@ -12035,7 +12037,7 @@ body.light .signal-card-footer-tv {
     }
 
     calcBtn.disabled = true;
-    calcBtn.textContent = _editingRefId ? 'Saving changes...' : 'Generating...';
+    calcBtn.textContent = _editingRefId ? 'Loading\u2026' : 'Recommending\u2026';
     showSync(_editingRefId ? 'Updating your deal…' : 'Preparing recommendation…', 'pending');
 
     // Show the analyzing page immediately and drive the step animation
@@ -12065,7 +12067,7 @@ body.light .signal-card-footer-tv {
             const ridx = _rawCentralLog.findIndex(function(r) { return String(r.refId) === String(_editingRefId); });
             if (ridx >= 0) _rawCentralLog[ridx] = submission;
           }
-          showSync('Changes saved', 'success');
+          showSync('Done ✓', 'success');
           // v25.35 (#6): submit succeeded — clear dirty flag so user can navigate freely
           window._formDirtyTV = false;
           pushNotification({
@@ -12085,7 +12087,7 @@ body.light .signal-card-footer-tv {
           try { if (typeof _clearDraftTV === 'function') _clearDraftTV(); } catch (_) {}
           // v25.35 (#6): submit succeeded — clear dirty flag
           window._formDirtyTV = false;
-          showSync('Deal registered', 'success');
+          showSync('Done ✓', 'success');
           pushNotification({
             title: 'Deal registered',
             sub: (submission.project || 'Untitled') + ' · ' + (submission.recommended_chassis || 'recommendation ready'),
@@ -12093,7 +12095,7 @@ body.light .signal-card-footer-tv {
           });
         }
       } else {
-        showSync('Deal registered', 'success');
+        showSync('Done ✓', 'success');
       }
       // v25.42 (#10) — Won-deal confetti. Skip when we're editing an already-won deal.
       try {
@@ -12111,7 +12113,7 @@ body.light .signal-card-footer-tv {
       // Hold for retry later (only for new deals — edits are not held)
       if (!_editingRefId) {
         queuePendingSubmission(submission);
-        showSync('Saved — will finalize shortly', 'pending');
+        showSync('Done · finalizing…', 'pending');
       } else {
         showSync('Update couldn\'t complete — try again', 'error');
       }
@@ -13041,7 +13043,7 @@ body.light .signal-card-footer-tv {
 
     // Submit to Submissions sheet via existing helpers
     const calcBtn = document.getElementById('calcBtn');
-    if (calcBtn) { calcBtn.disabled = true; calcBtn.textContent = 'Saving\u2026'; }
+    if (calcBtn) { calcBtn.disabled = true; calcBtn.textContent = 'Loading\u2026'; }
 
     // v25.99.8 — Show analyzing splash for MV too (was CALICO-only) for UX consistency.
     try { showView('analyzing'); if (typeof runAnalyzingSteps === 'function') runAnalyzingSteps(); } catch(_) {}
@@ -13057,7 +13059,7 @@ body.light .signal-card-footer-tv {
       let data = null;
       try { data = await resp.json(); } catch(_) { /* opaque/legacy */ }
       if (data && data.ok === false) { throw new Error(data.error || 'Server rejected submission'); }
-      if (typeof showSync === 'function') showSync('Multi Viewer deal saved', 'success');
+      if (typeof showSync === 'function') showSync('Done ✓', 'success');
 
       // Write ProjectLines
       const _mvBomLines = mvRes.bom.map(function(ln, idx) {
@@ -13267,7 +13269,7 @@ body.light .signal-card-footer-tv {
     });
 
     const calcBtn = document.getElementById('calcBtn');
-    if (calcBtn) { calcBtn.disabled = true; calcBtn.textContent = 'Saving\u2026'; }
+    if (calcBtn) { calcBtn.disabled = true; calcBtn.textContent = 'Loading\u2026'; }
 
     // v25.99.8 — Show analyzing splash for CORIO too (was CALICO-only).
     try { showView('analyzing'); if (typeof runAnalyzingSteps === 'function') runAnalyzingSteps(); } catch(_) {}
@@ -13283,7 +13285,7 @@ body.light .signal-card-footer-tv {
       let data = null;
       try { data = await resp.json(); } catch(_) {}
       if (data && data.ok === false) { throw new Error(data.error || 'Server rejected submission'); }
-      if (typeof showSync === 'function') showSync('CORIO deal saved', 'success');
+      if (typeof showSync === 'function') showSync('Done ✓', 'success');
 
       const _corioBomLines = cRes.bom.map(function(ln, idx) {
         return {
@@ -15145,7 +15147,7 @@ body.light .signal-card-footer-tv {
     const oldStage = String(entry.stage || '');
     if (oldStage === newStage) return;
     showSync('Updating stage…');
-    if (!WEB_APP_URL) { showSync('Offline · saved locally only', 'error'); return; }
+    if (!WEB_APP_URL) { showSync('Offline · stored on this device only', 'error'); return; }
     try {
       const updated = Object.assign({}, entry, { stage: newStage });
       const body = {
@@ -15697,6 +15699,17 @@ body.light .signal-card-footer-tv {
       alert('PDF rendering library not loaded. Refresh and try again.'); return;
     }
 
+    // v25.99.21 — Ensure _allUsersTV cache is loaded before salesperson/presales lookup.
+    // Bug: when user exports PDF directly from History tab without visiting the form, the
+    // form-show effect that populates _allUsersTV may not have fired, so _findUserTV falls
+    // through to {fullName: loginName, role: '—', ...} — that's what produced the
+    // "dipenkumar / — / — / —" footer in production v25.99.20.
+    if (!Array.isArray(window._allUsersTV) || window._allUsersTV.length === 0) {
+      if (typeof _fetchAllUsersTV === 'function') {
+        try { await _fetchAllUsersTV(); } catch (_uErr) { /* non-fatal; lookup will fall back gracefully */ }
+      }
+    }
+
     const input = lastResult.input;
     const reco = lastResult.reco;
     const submission = lastResult.submission;
@@ -15779,6 +15792,19 @@ body.light .signal-card-footer-tv {
         const list = Array.isArray(window._allUsersTV) ? window._allUsersTV : [];
         const x = list.find(function(u){ return String(u.loginName||'').toLowerCase() === String(loginName).toLowerCase(); });
         if(x) return { fullName: x.fullName || loginName, role: x.professionalTitle || x.role || '—', phone: x.phone || '—', email: x.email || '—' };
+      } catch(_){}
+      // v25.99.21 — Cache miss fallback: if the missing user IS the currently logged-in user,
+      // populate from currentUser (which is already hydrated at login time). Covers the case
+      // where _allUsersTV fetch failed but the export is still being run by a known user.
+      try {
+        if (currentUser && String(currentUser.username||'').toLowerCase() === String(loginName).toLowerCase()) {
+          return {
+            fullName: currentUser.fullName || currentUser.name || loginName,
+            role:     currentUser.professionalTitle || currentUser.role || '—',
+            phone:    currentUser.phone || '—',
+            email:    currentUser.email || '—'
+          };
+        }
       } catch(_){}
       return { fullName: loginName, role: '—', phone: '—', email: '—' };
     };
@@ -15929,7 +15955,7 @@ body.light .signal-card-footer-tv {
 
     const safeProj = (input.project || 'project').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
     doc.save('tvONE_Quote_' + refId + '_' + safeProj + '.pdf');
-    if (typeof showSync === 'function') showSync('PDF downloaded', 'success');
+    if (typeof showSync === 'function') showSync('PDF ready ✓', 'success');
   }
   window.exportQuotePDFTV = exportQuotePDFTV;
 
@@ -15958,7 +15984,7 @@ body.light .signal-card-footer-tv {
 
     const defaultMsg =
       'Hi ' + greeting + ',\n\n' +
-      'Here is the tvONE CALICO PRO BOM summary:\n\n' +
+      'Here is the tvONE BOM summary:\n\n' +
       '*Project*: ' + (input.project || '—') + '\n' +
       '*End-user*: ' + (input.endUser || '—') + '\n' +
       '*Recommended Chassis*: ' + (reco.chassis || '—') + (reco.model ? ' — ' + reco.model : '') + '\n' +
@@ -16019,7 +16045,7 @@ body.light .signal-card-footer-tv {
     // v25.32: Use partner-facing professionalTitle, NOT internal role.
     const userTitle = (currentUser && currentUser.professionalTitle) || '';
     const userPhone = (currentUser && currentUser.phone) || '';
-    const subject = 'tvONE CALICO Quote · ' + (input.project || 'Project') + ' · ' + (reco.chassis || 'Configuration');
+    const subject = 'tvONE Quote · ' + (input.project || 'Project') + ' · ' + (reco.chassis || 'Configuration');
 
     // Sign-off lines, skipping empty ones
     const signOffLines = [userName];
@@ -16030,7 +16056,7 @@ body.light .signal-card-footer-tv {
     const body = [
       greeting,
       '',
-      'Please find attached the tvONE CALICO PRO recommendation and BOM for your project "' + (input.project || 'Project') + '"' + (input.endUser ? (' at ' + input.endUser) : '') + '.',
+      'Please find attached the tvONE recommendation and BOM for your project "' + (input.project || 'Project') + '"' + (input.endUser ? (' at ' + input.endUser) : '') + '.',
       '',
       'Quote ref: ' + refId,
       'Recommended Chassis: ' + (reco.chassis || '—') + (reco.model ? ' — ' + reco.model : ''),
@@ -16132,6 +16158,15 @@ body.light .signal-card-footer-tv {
   async function exportToExcel() {
     if (!lastResult) { alert('No calculation to export.'); return; }
     const input = lastResult.input, reco = lastResult.reco, submission = lastResult.submission;
+
+    // v25.99.21 — Ensure _allUsersTV cache is loaded before salesperson/presales lookup.
+    // Same bug as PDF: exporting straight from History without visiting the form leaves
+    // the user cache empty, so _findUserXL falls through to {fullName: loginName, …}.
+    if (!Array.isArray(window._allUsersTV) || window._allUsersTV.length === 0) {
+      if (typeof _fetchAllUsersTV === 'function') {
+        try { await _fetchAllUsersTV(); } catch (_uErr) { /* non-fatal */ }
+      }
+    }
 
     // v25.97 — Phase 2.5 #3: fetch ProjectLines to enumerate extender / companion items
     // in a separate section of the Quote sheet. Falls through silently if fetch fails.
@@ -16330,8 +16365,19 @@ body.light .signal-card-footer-tv {
     ws1.getRow(r).height = 20;
     r++;
 
-    const verdict = reco.chassis === 'C7-PRO-1200' ? 'tvONE CALICO PRO 1U · HDMI only' :
-                    (reco.hasCards ? 'tvONE CALICO PRO 2U · with expansion cards' : 'tvONE CALICO PRO 2U · native configuration');
+    // v25.99.22 — Product-aware verdict (was hardcoded CALICO-only). Handles MV / CORIO / CALICO.
+    let verdict;
+    if (reco.mvMode) {
+      verdict = 'tvONE CORIOview · Multi Viewer configuration';
+    } else if (reco.corioMode) {
+      verdict = reco.chassisLabel
+        ? ('tvONE ' + reco.chassisLabel + ' · CORIO configuration')
+        : 'tvONE CORIO · video wall / multi-output configuration';
+    } else {
+      // CALICO PRO path (legacy)
+      verdict = reco.chassis === 'C7-PRO-1200' ? 'tvONE CALICO PRO 1U · HDMI only' :
+                (reco.hasCards ? 'tvONE CALICO PRO 2U · with expansion cards' : 'tvONE CALICO PRO 2U · native configuration');
+    }
     ws1.mergeCells('A' + r + ':B' + r);
     ws1.getCell('A' + r).value = reco.chassis;
     ws1.getCell('A' + r).font = xlFont({ name: 'Consolas', size: 16, bold: true, color: { argb: XL_CAVITAK_RED } });
@@ -16588,7 +16634,7 @@ body.light .signal-card-footer-tv {
       ['Payment Terms', '100% advance along with purchase order'],
       ['Lead Time', 'Standard 4–5 weeks from receipt of confirmed PO & advance payment, subject to stock availability'],
       ['Delivery', 'Ex-warehouse Ahmedabad. Outbound freight & in-transit insurance extra at actuals.'],
-      ['Warranty', "Standard 5-year OEM warranty on tvONE CALICO PRO series. Faulty units must be returned to Cavitak's Ahmedabad office for warranty processing; outbound logistics are at the customer's cost."],
+      ['Warranty', "Standard 5-year OEM warranty on tvONE products. Faulty units must be returned to Cavitak's Ahmedabad office for warranty processing; outbound logistics are at the customer's cost."],
       ['Validity', '15 days from quote date (' + quoteDate + '). Pricing subject to revision thereafter.'],
       ['Taxes', 'GST @ 18% included above. Any additional levies, cess or local duties extra at actuals.'],
       ['Forex', 'Pricing based on prevailing INR–USD rate on quote date. Material forex movement (>3%) before PO may revise pricing.'],
@@ -16627,6 +16673,18 @@ body.light .signal-card-footer-tv {
         const list = Array.isArray(window._allUsersTV) ? window._allUsersTV : [];
         const x = list.find(function(u){ return String(u.loginName||'').toLowerCase() === String(loginName).toLowerCase(); });
         if(x) return { fullName: x.fullName || loginName, role: x.professionalTitle || x.role || '—', phone: x.phone || '—', email: x.email || '—' };
+      } catch(_){}
+      // v25.99.21 — Cache miss fallback: same as PDF (_findUserTV). If the missing user IS
+      // the currently logged-in user, populate from currentUser.
+      try {
+        if (currentUser && String(currentUser.username||'').toLowerCase() === String(loginName).toLowerCase()) {
+          return {
+            fullName: currentUser.fullName || currentUser.name || loginName,
+            role:     currentUser.professionalTitle || currentUser.role || '—',
+            phone:    currentUser.phone || '—',
+            email:    currentUser.email || '—'
+          };
+        }
       } catch(_){}
       return { fullName: loginName, role: '—', phone: '—', email: '—' };
     };
@@ -17097,7 +17155,7 @@ body.light .signal-card-footer-tv {
     const safeProject = (input.project || 'Project').replace(/[^a-zA-Z0-9]/gi, '_').slice(0, 30);
     const safeClient = (input.endUser || 'Client').replace(/[^a-zA-Z0-9]/gi, '_').slice(0, 20);
     const today = now.toISOString().slice(0, 10);
-    const filename = 'CALICO_Quote_' + safeClient + '_' + safeProject + '_' + today + '.xlsx';
+    const filename = 'tvONE_Quote_' + safeClient + '_' + safeProject + '_' + today + '.xlsx';
 
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -17516,7 +17574,7 @@ body.light .signal-card-footer-tv {
     const s = document.getElementById('loginSplash');
     if (!s) return;
     s.classList.remove('hidden');
-    updateLoginSplash(10, 'Signing in…');
+    updateLoginSplash(10, 'Loading\u2026');
   }
   function updateLoginSplash(pct, message) {
     const bar = document.getElementById('splashProgressBar');
@@ -18836,7 +18894,7 @@ body.light .signal-card-footer-tv {
 
     btn.disabled = true;
     const originalLabel = btn.textContent;
-    btn.textContent = 'Saving…';
+    btn.textContent = 'Loading…';
 
     try {
       const res = await fetch(WEB_APP_URL, {
@@ -19208,7 +19266,7 @@ body.light .signal-card-footer-tv {
       website: document.getElementById('customerFormWebsite').value.trim(),
       notes: document.getElementById('customerFormNotes').value.trim()
     };
-    btn.disabled = true; btn.textContent = 'Saving…';
+    btn.disabled = true; btn.textContent = 'Loading…';
     try {
       const res = await fetch(WEB_APP_URL, {
         method: 'POST', mode: 'cors',
@@ -19936,7 +19994,7 @@ body.light .signal-card-footer-tv {
       err.classList.add('show'); return;
     }
     const btn = document.getElementById('umSubmitBtn');
-    btn.disabled = true; btn.textContent = 'Saving…';
+    btn.disabled = true; btn.textContent = 'Loading…';
     try {
       let payload;
       if (_teamEditUsername) {
@@ -21542,7 +21600,7 @@ body.light .signal-card-footer-tv {
     if (!WEB_APP_URL || !currentUser || !currentUser.isSuper) return null;
     _tvC2aSaving = true;
     const statusEl = document.getElementById('tv-c2a-poa-status');
-    if (statusEl) { statusEl.textContent = 'Saving…'; statusEl.style.color = 'var(--ink-subtle)'; }
+    if (statusEl) { statusEl.textContent = 'Loading…'; statusEl.style.color = 'var(--ink-subtle)'; }
     try {
       const resp = await fetch(WEB_APP_URL, {
         method:'POST', mode:'cors',
@@ -24795,7 +24853,7 @@ async function saveEmailTemplate_tv(id) {
   const bodyText = body.value.trim();
   if (!subject) { if (status) { status.textContent = 'Subject is required'; status.style.color = '#DC2626'; } return; }
   if (!bodyText) { if (status) { status.textContent = 'Body is required'; status.style.color = '#DC2626'; } return; }
-  if (status) { status.textContent = 'Saving…'; status.style.color = 'var(--ink-soft)'; }
+  if (status) { status.textContent = 'Loading…'; status.style.color = 'var(--ink-soft)'; }
   try {
     const resp = await fetch(WEB_APP_URL, {
       method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
