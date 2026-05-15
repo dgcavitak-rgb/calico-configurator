@@ -8016,6 +8016,34 @@ body.light .signal-card-footer-tv {
           <div id="sx_aocCart" class="sx-cart" style="display:none;"></div>
         </div>
 
+        <!-- ============ Sub-wizard 4: HDMI Audio Extractor (AP-536) ============ -->
+        <!-- v25.99.17 (B3): Individual item — mirrors the Splitter sub-wizard pattern.
+             Single SKU for now (AP-536); user can replace with real tvONE part number
+             in SX_AP_MAP if it differs (e.g. MG-AP-536 or T1-AP-536-1Y). -->
+        <div class="sx-subwiz">
+          <div class="sx-subwiz-title">HDMI Audio Extractor</div>
+          <div class="sx-subwiz-sub">tvONE / Magenta AP-536. De-embeds audio from an HDMI stream to analog L/R + S/PDIF outputs. Pick qty and click "+ Add" to push to BOM.</div>
+          <div class="sx-grid">
+            <div class="field">
+              <label>Model</label>
+              <select id="sx_apModel" onchange="_sxApRecompute()">
+                <option value="AP-536" selected>HDMI Audio Extractor (AP-536)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Quantity</label>
+              <div class="mv-qty-row">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_apQty',-1)">−</button>
+                <input id="sx_apQty" type="number" min="0" max="64" value="0" readonly oninput="_sxApRecompute()">
+                <button type="button" class="mv-qty-btn" onclick="_sxQtyAdj('sx_apQty',1)">+</button>
+              </div>
+            </div>
+          </div>
+          <div id="sx_apPreview" class="sx-preview" style="display:none;"></div>
+          <button type="button" class="secondary sx-add-btn" onclick="_sxApAdd()">+ Add this audio extractor to BOM</button>
+          <div id="sx_apCart" class="sx-cart" style="display:none;"></div>
+        </div>
+
         <!-- ============ Running BOM summary ============ -->
         <div class="sx-summary" id="sxSummary" style="display:none;">
           <div class="sx-summary-title">Signal Extension items in this BOM</div>
@@ -9313,7 +9341,8 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.99.16';  // v25.99.16 — B6 Mixed-input Multi Viewer. MV wizard now supports up to 2 distinct input signal types per build (was 1). New `window._mvInputRows` state array = [{signal, qty}] replacing prior single mv_inputSignal+mv_inputCount fields. UI: dynamic row table with "+ Add another input signal type" button (auto-disabled at MWP_MTO.maxInputCards=2 with tooltip), per-row remove button (hidden on first row when only 1 row present), each row carries its own signal-type-aware qty cap (DVI-U/4K HDMI/HDBaseT=4, others=8). recommendMWP() refactored: new signature recommendMWP(inputs[], outputSignal). Single-row path PRESERVES fixed-chassis priority (Q3): tries 5 fixed MWP-* chassis first when output=4K HDMI, falls back to single-input MTO. Multi-row path ALWAYS routes to MWP-MTO with one input card per signal type + 1 output card; total input cards capped at MWP_MTO.maxInputCards with explicit error if exceeded (Q2). Dropdown options across rows mutually exclude already-picked signals so user can't pick same signal twice. Edit-restore path rebuilds rows from saved CORIOVIEW card lines (reverse-engineers port qty from card qty × portsPerCard) with fixed-chassis fallback reading the chassis line's inputSignal/inputCount directly. resetForm() now clears _mvInputRows back to single empty row + nukes _mvLastResult + hides preview + resets Output Signal to 4K HDMI default. _onMvInputSignalChange kept as global no-op stub for legacy compat. Save row's `signals` aggregate becomes "4× FHD HDMI + 2× SDI" format for mixed; chassis line description shows the breakdown. ProjectLines write unchanged. SX panel + analyzing splash + green pricing card + action bar all unchanged. ~210 lines net add (~310 added, ~100 removed). Pairs with backend v26.19.0 (no backend changes).
+  const TVONE_FRONTEND_VERSION = '25.99.17';  // v25.99.17 — B3 HDMI Audio Extractor (AP-536) added as Sub-wizard 4 in the Signal Extension panel. Pattern mirrors the HDMI Splitter sub-wizard exactly: SX_AP_MAP constant (1 model today: AP-536), `window._sxApCart` cart array, _sxApRecompute / _sxApAdd / _sxApRemove / _sxRenderApCart / _sxCollectApLines functions, wired into _sxCollectAllLines so AP lines flow to BOM / Excel / PDF / ProjectLines automatically. Family tag `EXTENDER_AUDIO`, category `audio_extractor`. Edit-restore path rebuilds _sxApCart from saved EXTENDER_AUDIO lines (parity with HDBaseT/Splitter/AOC restoration). resetForm() does NOT clear SX carts (parity with other carts — design intent: SX is persistent across main-form resets). SKU placeholder: 'AP-536' literal — swap to real tvONE billing SKU (e.g. T1-AP-536-1Y or MG-AP-536) in SX_AP_MAP when confirmed; the dropdown option value 'AP-536' is the internal key and can stay. No backend changes — uses existing ProjectLines schema unchanged. ~80 lines added. Pairs with backend v26.19.0.
+  // v25.99.16 — B6 Mixed-input Multi Viewer. MV wizard now supports up to 2 distinct input signal types per build (was 1). New `window._mvInputRows` state array = [{signal, qty}] replacing prior single mv_inputSignal+mv_inputCount fields. UI: dynamic row table with "+ Add another input signal type" button (auto-disabled at MWP_MTO.maxInputCards=2 with tooltip), per-row remove button (hidden on first row when only 1 row present), each row carries its own signal-type-aware qty cap (DVI-U/4K HDMI/HDBaseT=4, others=8). recommendMWP() refactored: new signature recommendMWP(inputs[], outputSignal). Single-row path PRESERVES fixed-chassis priority (Q3): tries 5 fixed MWP-* chassis first when output=4K HDMI, falls back to single-input MTO. Multi-row path ALWAYS routes to MWP-MTO with one input card per signal type + 1 output card; total input cards capped at MWP_MTO.maxInputCards with explicit error if exceeded (Q2). Dropdown options across rows mutually exclude already-picked signals so user can't pick same signal twice. Edit-restore path rebuilds rows from saved CORIOVIEW card lines (reverse-engineers port qty from card qty × portsPerCard) with fixed-chassis fallback reading the chassis line's inputSignal/inputCount directly. resetForm() now clears _mvInputRows back to single empty row + nukes _mvLastResult + hides preview + resets Output Signal to 4K HDMI default. _onMvInputSignalChange kept as global no-op stub for legacy compat. Save row's `signals` aggregate becomes "4× FHD HDMI + 2× SDI" format for mixed; chassis line description shows the breakdown. ProjectLines write unchanged. SX panel + analyzing splash + green pricing card + action bar all unchanged. ~210 lines net add (~310 added, ~100 removed). Pairs with backend v26.19.0 (no backend changes).
   // v25.99.15 — A1 field alignment fix per user spec. Sales/Presales callout green tint REMOVED — wrapper div no longer has green background (#F0FDF4) / green border (#86EFAC) / inline padding. Both labels reverted to default ink color and weight (were dark-green #064E3B + bold 13px). Companion CSS rule at line ~2148 that gave the inner inputs/selects a green focus glow also removed — fields now use the standard gold focus glow matching the rest of Project Context. Field positions and HTML structure unchanged (per "keep current positions" pick). Mobile single-column override at line ~6383 preserved. No JS changes. Pending: A2 (HDMI 1080p MV output card real SKU), B3 (AP-536 audio extractor in SX panel), B5 (HDBaseT 500-series), B6 (Mixed-input MV — deferred to fresh chat). Backend remains at v26.19.0.
   // v25.99.14 — Green "For Pricing & Quotation" card now appears on ALL result pages (MV, CORIO, CALICO main, CALICO offline). Previously only inlined in the CALICO main renderer — MV and CORIO results had no pricing card at all. Refactored into reusable helper _buildPricingCardTV() called from all 4 sites. Also updated role label "National Product Manager · CALICO PRO Portfolio" → "National Product Manager · Cavitak Marketing" since the app is now multi-product (CALICO + CORIOview + CORIO + Signal Extender). Backend stays at v26.18.0.
   // v25.99.13 — Analyzing splash text mode-aware.
@@ -13331,6 +13360,13 @@ body.light .signal-card-footer-tv {
     '618': { sku: 'MG-DA-618', desc: '1\u00d78 4K60 HDMI 2.0 Ultra Slim Splitter, HDCP 2.2 + downscaling' }
   };
 
+  // v25.99.17 (B3): HDMI Audio Extractor SKU map. One model today (AP-536).
+  // If tvONE's billing SKU differs (e.g. T1-AP-536-1Y or MG-AP-536), update the sku
+  // field below — the dropdown option value can stay 'AP-536' as the internal key.
+  const SX_AP_MAP = {
+    'AP-536': { sku: 'AP-536', desc: 'HDMI Audio Extractor (AP-536) \u00b7 de-embeds audio to analog L/R + S/PDIF' }
+  };
+
   // AOC cable: code map + sparse-availability matrix per locked spec
   const SX_AOC_CODE = {
     'HDMI':        { 'Std': '661', 'Plenum': '662', 'LSZH': '663', 'Armored': '66A' },
@@ -13353,6 +13389,8 @@ body.light .signal-card-footer-tv {
   // v25.97.1 FIX #3 — Splitter + HDBaseT now follow the same cart pattern as AOC.
   window._sxHdbtCart = window._sxHdbtCart || []; // each entry: { sku, qty, description, metaJSON, category }
   window._sxDaCart   = window._sxDaCart   || []; // each entry: { sku, qty, description }
+  // v25.99.17 (B3): HDMI Audio Extractor cart — same pattern as splitter.
+  window._sxApCart   = window._sxApCart   || []; // each entry: { sku, qty, description }
 
   function _sxToggle() {
     const card = document.getElementById('signalExtensionCard');
@@ -13541,6 +13579,71 @@ body.light .signal-card-footer-tv {
     return (window._sxDaCart || []).slice();
   }
 
+  // -------- HDMI Audio Extractor (AP-536) --------
+  // v25.99.17 (B3): Individual-item pattern — mirrors splitter exactly.
+  function _sxApRecompute() {
+    const model = (document.getElementById('sx_apModel') || {}).value || 'AP-536';
+    const qty = Number((document.getElementById('sx_apQty') || {}).value) || 0;
+    const previewEl = document.getElementById('sx_apPreview');
+    if (!previewEl) return;
+    if (qty === 0) { previewEl.style.display = 'none'; return; }
+    const spec = SX_AP_MAP[model];
+    if (!spec) { previewEl.style.display = ''; previewEl.innerHTML = '<span class="pv-err">Unknown model.</span>'; return; }
+    previewEl.innerHTML = '<span class="pv-sku">' + spec.sku + '</span> &times; <strong>' + qty + '</strong> &middot; ' + spec.desc;
+    previewEl.style.display = '';
+  }
+
+  function _sxApAdd() {
+    const model = (document.getElementById('sx_apModel') || {}).value || 'AP-536';
+    const qty = Number((document.getElementById('sx_apQty') || {}).value) || 0;
+    if (qty === 0) { alert('Set a quantity before adding.'); return; }
+    const spec = SX_AP_MAP[model];
+    if (!spec) { alert('Unknown audio extractor model.'); return; }
+    // If same SKU already in cart, merge by adding qty (avoid duplicate rows)
+    const existing = window._sxApCart.find(function(r) { return r.sku === spec.sku; });
+    if (existing) {
+      existing.qty = Number(existing.qty) + qty;
+    } else {
+      window._sxApCart.push({ family: 'EXTENDER_AUDIO', category: 'audio_extractor', sku: spec.sku, qty: qty, description: spec.desc, metaJSON: '' });
+    }
+    const qtyEl = document.getElementById('sx_apQty');
+    if (qtyEl) qtyEl.value = '0';
+    _sxApRecompute();
+    _sxRenderApCart();
+    _sxRebuildSummary();
+  }
+
+  function _sxApRemove(idx) {
+    if (idx >= 0 && idx < window._sxApCart.length) {
+      window._sxApCart.splice(idx, 1);
+      _sxRenderApCart();
+      _sxRebuildSummary();
+    }
+  }
+  window._sxApRemove = _sxApRemove;
+
+  function _sxRenderApCart() {
+    const cartEl = document.getElementById('sx_apCart');
+    if (!cartEl) return;
+    if (!window._sxApCart.length) { cartEl.style.display = 'none'; cartEl.innerHTML = ''; return; }
+    let html = '';
+    for (let i = 0; i < window._sxApCart.length; i++) {
+      const ln = window._sxApCart[i];
+      html += '<div class="sx-cart-row">'
+            +   '<span class="pv-qty">' + ln.qty + '\u00d7</span>'
+            +   '<span class="pv-sku">' + _escSx(ln.sku) + '</span>'
+            +   '<span style="color:var(--ink-soft,#64748B);font-size:12px;">' + _escSx(ln.description) + '</span>'
+            +   '<button class="pv-rm" onclick="_sxApRemove(' + i + ')">remove</button>'
+            + '</div>';
+    }
+    cartEl.innerHTML = html;
+    cartEl.style.display = '';
+  }
+
+  function _sxCollectApLines() {
+    return (window._sxApCart || []).slice();
+  }
+
   // -------- AOC --------
   function _sxAocOnSignalChange() { _sxAocSyncJacketOptions(); _sxAocSyncLengthOptions(); _sxAocRecompute(); }
   function _sxAocOnJacketChange() { _sxAocSyncLengthOptions(); _sxAocRecompute(); }
@@ -13636,6 +13739,7 @@ body.light .signal-card-footer-tv {
     return [].concat(
       _sxCollectHdbtLines(),
       _sxCollectSplitterLines(),
+      _sxCollectApLines(),
       (window._sxAocCart || [])
     );
   }
@@ -13754,6 +13858,11 @@ body.light .signal-card-footer-tv {
   window._sxSplitterAdd          = _sxSplitterAdd;
   window._sxRenderHdbtCart       = _sxRenderHdbtCart;
   window._sxRenderDaCart         = _sxRenderDaCart;
+  // v25.99.17 (B3) — HDMI Audio Extractor helpers
+  window._sxApRecompute          = _sxApRecompute;
+  window._sxApAdd                = _sxApAdd;
+  window._sxRenderApCart         = _sxRenderApCart;
+  window._sxCollectApLines       = _sxCollectApLines;
 
   // =================================================================
   // v25.98 — CORIO WIZARD (Phase 4a)
@@ -14421,9 +14530,11 @@ body.light .signal-card-footer-tv {
 
             // --- Restore Signal Extension state ---
             // v25.97.1: HDBaseT + Splitter now use cart pattern, so restore directly into _sxHdbtCart and _sxDaCart.
+            // v25.99.17 (B3): plus AP-536 audio extractor → _sxApCart.
             window._sxAocCart = [];
             window._sxHdbtCart = [];
             window._sxDaCart = [];
+            window._sxApCart = [];
 
             for (let i = 0; i < lines.length; i++) {
               const ln = lines[i];
@@ -14445,11 +14556,17 @@ body.light .signal-card-footer-tv {
                   sku: ln.sku, qty: Number(ln.qty) || 0, description: ln.description,
                   metaJSON: ln.metaJSON || ''
                 });
+              } else if (ln.family === 'EXTENDER_AUDIO') {
+                window._sxApCart.push({
+                  family: 'EXTENDER_AUDIO', category: 'audio_extractor',
+                  sku: ln.sku, qty: Number(ln.qty) || 0, description: ln.description,
+                  metaJSON: ln.metaJSON || ''
+                });
               }
             }
 
             // Open Signal Extension card if any extender lines exist
-            const hasSxItems = window._sxHdbtCart.length || window._sxAocCart.length || window._sxDaCart.length;
+            const hasSxItems = window._sxHdbtCart.length || window._sxAocCart.length || window._sxDaCart.length || window._sxApCart.length;
             if (hasSxItems) {
               const sxCard = document.getElementById('signalExtensionCard');
               const sxBody = document.getElementById('sxBody');
@@ -14460,9 +14577,10 @@ body.light .signal-card-footer-tv {
               if (typeof window._sxRenderHdbtCart === 'function') window._sxRenderHdbtCart();
               if (typeof window._sxRenderDaCart === 'function') window._sxRenderDaCart();
               if (typeof window._sxRenderAocCart === 'function') window._sxRenderAocCart();
+              if (typeof window._sxRenderApCart === 'function') window._sxRenderApCart();
               if (typeof window._sxRebuildSummary === 'function') window._sxRebuildSummary();
             }
-            console.log('[Edit] ✓ MV+SX state restored (v25.97.1 cart pattern)');
+            console.log('[Edit] ✓ MV+SX state restored (v25.99.17: HDBaseT/Splitter/AOC/AP-536)');
           }).catch(function(err) {
             console.warn('[Edit] ProjectLines fetch failed (edit still works, just empty wizards):', err);
           });
