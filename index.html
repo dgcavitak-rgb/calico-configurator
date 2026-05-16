@@ -6914,7 +6914,7 @@ body.light .signal-card-footer-tv {
     </div>
     <!-- v25.22: Frontend version display for ops/debug -->
     <div id="login-version-wrap" style="text-align:center;margin-top:14px;font-size:11px;color:rgba(255,255,255,0.35);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em;">
-      <span id="login-version">v25.99.29</span>
+      <span id="login-version">v25.99.30</span>
     </div>
   </div>
 </div>
@@ -9321,7 +9321,7 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.99.29';  // v25.99.29 — PERFORMANCE + UX (C-TV-3/4/5/7). PERF — ~2.5 MB removed from the initial page load: (1) echarts-gl (~600 KB) deleted — it was loaded as foundation for a 3D India map that was never built; no registerMap/geo3D/3D-series code exists. (2) xlsx@0.18.5 (~900 KB) no longer loaded in <head> — it is used ONLY by the Super-admin Sales-History Excel upload, so it now loads on demand via _ensureXlsxLoaded_tv() the first time a Super opens that upload; the ~25 non-Super reps never download it. (3) ECharts@5.4.3 (~1 MB) no longer in <head> — it now loads on demand via _ensureEchartsLoaded_tv() the first time the Dashboard is opened; _renderTeamCharts() kicks the load then re-runs once ready. Dashboard KPIs/tables render instantly; chart graphics fill in a beat later on first open. The single-file deploy model is intentionally KEPT — the inline script was deliberately NOT split into separate files (that would add multi-file deploy fragility without speeding first paint, since the browser parses all the JS regardless; deferring unused code is the actual win and is what was done). UX — (4) C-TV-4: resetForm() now also clears the 4 Signal Extension carts (HDBaseT/Splitter/AOC/Audio-Extractor) and re-renders their panels — Reset is now a genuinely clean slate (was 'design intent' to keep them; it surprised users). (5) C-TV-5: the MV '+ Add another input signal type' button now scrolls the newly added row into view — on mobile the new row rendered below the fold so the tap looked dead. No backend change. Pairs with v26.19.0. Previously: v25.99.28 — TEST MODE HARDENING: verified Test Mode is permanently gone. Closed the last path that could keep a deal test-flagged — the edit/re-save object builder was carrying isTest forward via 'input.isTest || ' '' '; it now always writes '' so editing ANY old test-flagged deal turns it into a real deal. Confirmed every assignment to window._testModeOnTV is '= false' (zero '= true' paths). _initTestModeTV() force-clears stale localStorage on boot; setTestModeTV() is a no-op. Test Mode cannot be re-enabled by any code path. No backend change. Pairs with v26.19.0. Previously: v25.99.27 — UI CLEANUP: (1) Removed the yellow "Recommendation logic rebuilt (v25.80)" engine banner from the Result page — it was launch-era explanatory copy no longer needed. (2) Removed the note at the bottom of the green "For Pricing & Quotation" card ("Download the Excel BOM below and email it along with your enquiry for a swift quote.") per request. (3) Corrected the role label on the pricing card "National Product Manager" → "National Product Lead". No backend change. Pairs with v26.19.0. Previously: v25.99.26 — TEST MODE RETIRED. Test Mode let a user flag their submissions isTest=TRUE so they were hidden from Dashboard + Review analytics — but if left on by accident, real deals silently vanished from reporting. Now retired (parity with BrightSign, which retired it in BS v24.25.7). Changes: (1) _initTestModeTV() stubbed — always sets _testModeOnTV=false AND force-clears any stale per-user localStorage flag so a user who had Test Mode ON before this update does not keep flagging deals. (2) setTestModeTV() stubbed to a no-op. (3) _renderTestModeBannerTV() stubbed — banner permanently hidden. (4) Test Mode banner HTML removed (was a sticky orange diagonal-stripe strip). (5) Profile Test Mode toggle card removed (hidden no-op stub inputs kept so legacy references never throw). (6) All 3 isTest write sites now always write '' — all deals are real deals. The isTest sheet column stays intact (unwritten); _filterTestDataTV and _buildTestBadgeTV read-side logic kept so any pre-existing test-flagged rows still filter from analytics and still show the History badge. No backend change. Pairs with v26.19.0. Previously: v25.99.25 — UX POLISH: splash performance + wording stragglers. After v25.97.1's "Generate BoM relocated to bottom of form", the formError/formInfo divs stayed at their old position (~L7874, near top of form, far above the new button location). Rep clicks Generate BoM with invalid input (e.g. no MV input signal picked) → _mvCalculateAndLog or _corioCalculateAndLog fires err.classList.add('show') → banner appears but ~hundreds of pixels above rep's viewport → rep sees "nothing happens". Fix: added err.scrollIntoView({behavior:'smooth',block:'center'}) at 7 error-show sites in MV and CORIO branches that were missing it (the standard CALICO calculateAndLog already had scrollIntoView at L11920). 7 sites patched: MV empty-input, MV result-error, MV save-fail, CORIO no-result, CORIO result-error, CORIO empty-bom, CORIO save-fail. No backend change. Pairs with v26.19.0. Previously: v25.99.23 — EMAIL FLOW mailto: switch. Click "Send Email" in modal now: (1) downloads BOTH the PDF and Excel quote files for the rep to attach, (2) opens their default mail client (Outlook on M365) with To/CC/Subject/Body pre-filled from the modal fields, (3) rep attaches the just-downloaded files in Outlook and clicks Send — email truly originates from rep's mailbox, appears in their Sent folder, passes SPF/DKIM/DMARC. dipen.g@cavitak.com forced CC pre-filled (rep can technically remove but instructed not to). Modal subtitle updated to reflect new flow. Backend email_send handler intentionally left in place (dormant, no UI call site) — easy revert if ever needed. No backend deploy required. Pairs with v26.19.0. Previously: v25.99.22 — UX wording pass + Excel polish. WORDING: every "Saving…" / "Signing in…" button label → "Loading…" (11 sites). "Generating..." → "Recommending…" on Generate BoM button. Success toasts neutralized: "Changes saved"/"Deal registered"/"CORIO deal saved"/"Multi Viewer deal saved" → "Done ✓"; "PDF downloaded" → "PDF ready ✓"; "Profile saved — welcome X!" → "Welcome, X ✓"; "Saved — will finalize shortly" → "Done · finalizing…"; "Draft saved" → "✓"; "Offline · saved locally only" → "Offline · stored on this device only". Trust signals removed: "Audit-logged." badge dropped from stage-note callout; "(only logged when stage actually changes)" stripped from f_stageNote placeholder. Analyzing splash eyebrow "Analyzing Configuration" → "Generating recommendation…". EXCEL POLISH: RECOMMENDED SOLUTION verdict now product-aware (was hardcoded CALICO-only) — MV deals show "tvONE CORIOview · Multi Viewer configuration", CORIO deals show "tvONE [chassisLabel] · CORIO configuration", CALICO unchanged. Warranty T&C: "tvONE CALICO PRO series" → "tvONE products". WhatsApp default message + Email body + Email subject + Excel filename all dropped CALICO-specific phrasing (now neutral "tvONE BOM summary" / "tvONE recommendation and BOM" / "tvONE Quote · …" / "tvONE_Quote_…xlsx"). Tricolor stripe alignment intentionally kept as-is (forest dominant = on-brand; true thirds would shrink primary brand colour). No backend changes; pairs with v26.19.0.
+  const TVONE_FRONTEND_VERSION = '25.99.30';  // v25.99.30 — GENERATE BOM SILENT-FAIL FIX. Reported: "Generate BoM does nothing." Root cause class: calculateAndLog() could throw before any error UI rendered, so the handler died silently and the button appeared dead. Two fixes: (1) the CALICO entry path's very first line did an UNGUARDED err.classList.remove('show') / info.classList.remove('show') — if formError/formInfo were ever missing this crashed the whole handler before the MV/CORIO mode-branch (the MV/CORIO branch functions were already null-guarded; the CALICO entry was not). Now null-guarded. (2) The CALICO input-building block read ~20 fields via unguarded document.getElementById('f_xxx').value.trim() — any one missing element threw. Replaced with a null-safe _fv(id) helper: a missing element yields '' so it degrades to a visible validation miss instead of a silent crash. Also: the whole handler is now wrapped — calculateAndLog() delegates to _calculateAndLogImpl() inside try/catch; any unhandled error is shown on the form (red banner, scrolled into view) + a toast, the button is re-enabled, and the error is console.error'd. A console breadcrumb logs every click with the active mode. Net: Generate BoM can no longer fail invisibly — it either works, shows a validation message, or shows the actual error. No backend change. Pairs with v26.19.0. Previously: v25.99.29 — PERFORMANCE + UX (C-TV-3/4/5/7). PERF — ~2.5 MB removed from the initial page load: (1) echarts-gl (~600 KB) deleted — it was loaded as foundation for a 3D India map that was never built; no registerMap/geo3D/3D-series code exists. (2) xlsx@0.18.5 (~900 KB) no longer loaded in <head> — it is used ONLY by the Super-admin Sales-History Excel upload, so it now loads on demand via _ensureXlsxLoaded_tv() the first time a Super opens that upload; the ~25 non-Super reps never download it. (3) ECharts@5.4.3 (~1 MB) no longer in <head> — it now loads on demand via _ensureEchartsLoaded_tv() the first time the Dashboard is opened; _renderTeamCharts() kicks the load then re-runs once ready. Dashboard KPIs/tables render instantly; chart graphics fill in a beat later on first open. The single-file deploy model is intentionally KEPT — the inline script was deliberately NOT split into separate files (that would add multi-file deploy fragility without speeding first paint, since the browser parses all the JS regardless; deferring unused code is the actual win and is what was done). UX — (4) C-TV-4: resetForm() now also clears the 4 Signal Extension carts (HDBaseT/Splitter/AOC/Audio-Extractor) and re-renders their panels — Reset is now a genuinely clean slate (was 'design intent' to keep them; it surprised users). (5) C-TV-5: the MV '+ Add another input signal type' button now scrolls the newly added row into view — on mobile the new row rendered below the fold so the tap looked dead. No backend change. Pairs with v26.19.0. Previously: v25.99.28 — TEST MODE HARDENING: verified Test Mode is permanently gone. Closed the last path that could keep a deal test-flagged — the edit/re-save object builder was carrying isTest forward via 'input.isTest || ' '' '; it now always writes '' so editing ANY old test-flagged deal turns it into a real deal. Confirmed every assignment to window._testModeOnTV is '= false' (zero '= true' paths). _initTestModeTV() force-clears stale localStorage on boot; setTestModeTV() is a no-op. Test Mode cannot be re-enabled by any code path. No backend change. Pairs with v26.19.0. Previously: v25.99.27 — UI CLEANUP: (1) Removed the yellow "Recommendation logic rebuilt (v25.80)" engine banner from the Result page — it was launch-era explanatory copy no longer needed. (2) Removed the note at the bottom of the green "For Pricing & Quotation" card ("Download the Excel BOM below and email it along with your enquiry for a swift quote.") per request. (3) Corrected the role label on the pricing card "National Product Manager" → "National Product Lead". No backend change. Pairs with v26.19.0. Previously: v25.99.26 — TEST MODE RETIRED. Test Mode let a user flag their submissions isTest=TRUE so they were hidden from Dashboard + Review analytics — but if left on by accident, real deals silently vanished from reporting. Now retired (parity with BrightSign, which retired it in BS v24.25.7). Changes: (1) _initTestModeTV() stubbed — always sets _testModeOnTV=false AND force-clears any stale per-user localStorage flag so a user who had Test Mode ON before this update does not keep flagging deals. (2) setTestModeTV() stubbed to a no-op. (3) _renderTestModeBannerTV() stubbed — banner permanently hidden. (4) Test Mode banner HTML removed (was a sticky orange diagonal-stripe strip). (5) Profile Test Mode toggle card removed (hidden no-op stub inputs kept so legacy references never throw). (6) All 3 isTest write sites now always write '' — all deals are real deals. The isTest sheet column stays intact (unwritten); _filterTestDataTV and _buildTestBadgeTV read-side logic kept so any pre-existing test-flagged rows still filter from analytics and still show the History badge. No backend change. Pairs with v26.19.0. Previously: v25.99.25 — UX POLISH: splash performance + wording stragglers. After v25.97.1's "Generate BoM relocated to bottom of form", the formError/formInfo divs stayed at their old position (~L7874, near top of form, far above the new button location). Rep clicks Generate BoM with invalid input (e.g. no MV input signal picked) → _mvCalculateAndLog or _corioCalculateAndLog fires err.classList.add('show') → banner appears but ~hundreds of pixels above rep's viewport → rep sees "nothing happens". Fix: added err.scrollIntoView({behavior:'smooth',block:'center'}) at 7 error-show sites in MV and CORIO branches that were missing it (the standard CALICO calculateAndLog already had scrollIntoView at L11920). 7 sites patched: MV empty-input, MV result-error, MV save-fail, CORIO no-result, CORIO result-error, CORIO empty-bom, CORIO save-fail. No backend change. Pairs with v26.19.0. Previously: v25.99.23 — EMAIL FLOW mailto: switch. Click "Send Email" in modal now: (1) downloads BOTH the PDF and Excel quote files for the rep to attach, (2) opens their default mail client (Outlook on M365) with To/CC/Subject/Body pre-filled from the modal fields, (3) rep attaches the just-downloaded files in Outlook and clicks Send — email truly originates from rep's mailbox, appears in their Sent folder, passes SPF/DKIM/DMARC. dipen.g@cavitak.com forced CC pre-filled (rep can technically remove but instructed not to). Modal subtitle updated to reflect new flow. Backend email_send handler intentionally left in place (dormant, no UI call site) — easy revert if ever needed. No backend deploy required. Pairs with v26.19.0. Previously: v25.99.22 — UX wording pass + Excel polish. WORDING: every "Saving…" / "Signing in…" button label → "Loading…" (11 sites). "Generating..." → "Recommending…" on Generate BoM button. Success toasts neutralized: "Changes saved"/"Deal registered"/"CORIO deal saved"/"Multi Viewer deal saved" → "Done ✓"; "PDF downloaded" → "PDF ready ✓"; "Profile saved — welcome X!" → "Welcome, X ✓"; "Saved — will finalize shortly" → "Done · finalizing…"; "Draft saved" → "✓"; "Offline · saved locally only" → "Offline · stored on this device only". Trust signals removed: "Audit-logged." badge dropped from stage-note callout; "(only logged when stage actually changes)" stripped from f_stageNote placeholder. Analyzing splash eyebrow "Analyzing Configuration" → "Generating recommendation…". EXCEL POLISH: RECOMMENDED SOLUTION verdict now product-aware (was hardcoded CALICO-only) — MV deals show "tvONE CORIOview · Multi Viewer configuration", CORIO deals show "tvONE [chassisLabel] · CORIO configuration", CALICO unchanged. Warranty T&C: "tvONE CALICO PRO series" → "tvONE products". WhatsApp default message + Email body + Email subject + Excel filename all dropped CALICO-specific phrasing (now neutral "tvONE BOM summary" / "tvONE recommendation and BOM" / "tvONE Quote · …" / "tvONE_Quote_…xlsx"). Tricolor stripe alignment intentionally kept as-is (forest dominant = on-brand; true thirds would shrink primary brand colour). No backend changes; pairs with v26.19.0.
   // v25.99.21 — Fix salesperson/presales footer showing "loginName / — / — / —" instead of full name + role + phone + email. Root cause: _allUsersTV cache wasn't loaded when export was triggered directly from History tab (form-show effect that populates the cache hadn't fired). Two surgical fixes: (1) both exportQuotePDFTV and exportToExcel now await _fetchAllUsersTV() at entry if the cache is empty (~5 lines each). (2) Defensive _findUserTV / _findUserXL fallback: when cache lookup misses AND the missing user IS the currently logged-in user, populate from currentUser instead of returning login-name-as-name. Same fix applied to both PDF and Excel lookup helpers. No backend changes. NOTE: Users sheet rows must still have professionalTitle / phone / email populated for those fields to appear — Dipenkumar's row is missing these in production. Fill in the Users sheet to make role/phone/email populate.
   // v25.99.20 — Cavitak logo + redesigned headers/footers shipped in BOTH Excel and PDF exports. PDF: BS-pattern layout (logo top-left + vertical separator + title block + QUOTE meta top-right) using tvONE forest-green/gold colour palette. Tricolor accent stripe (forest/gold/red) under header. Section headers switched from slate ink to forest-dark. Footer gained Cavitak distributor band (logo + "Cavitak Marketing Pvt Ltd · Authorized tvONE distributor · India") above salesperson contact. Footer text "tvONE CALICO Configurator" corrected to "tvONE Product Selector". Excel Quote tab: rebuilt header — Cavitak logo over A1:B2 + tvONE title + tagline in C-G rows 1-2 + tricolor stripe in row 3, replacing the "CALICO PRO" / "Command every pixel" solid-green band. QUOTATION + Quote No. block preserved at row 4. Footer attribution line upgraded to logo + rich-text distributor band before print-area boundary. Logo files embedded as base64 PNG constants (LOGO_CAVITAK_B64 280x79px ~18KB, LOGO_TVONE_B64 240x61px ~14KB) at top of EXCEL_DESIGN section. Hardcoded base64 chosen over runtime fetch to avoid CORS/404 surface. All image embeds wrapped in try/catch so exports still succeed if image API fails. No backend changes; pairs with v26.19.0.
   // v25.99.19 — loadAuditHistory() micro-cache (60s TTL, module-scoped Map, no localStorage) + AbortController to cancel in-flight fetches on rapid re-clicks. Repeat clicks on same deal's 🕒 Edit History within 60s now skip the ~300ms backend round-trip. Stale-response clobber race (theoretical) fixed by aborting prior fetch when a new one starts. Render path extracted to _renderAuditHistory(refId, audit, sub, body) so cache-hit and fetch-hit share one code path. No backend changes; pairs with v26.19.0.
@@ -11727,9 +11727,35 @@ body.light .signal-card-footer-tv {
   // CALCULATE + LOG
   // =================================================================
   async function calculateAndLog() {
+    // v25.99.30 — Generate BoM silent-fail fix. Wrap the whole handler: if anything
+    // throws, surface it as a visible toast instead of dying silently ("button does
+    // nothing"). Also null-guards the formError/formInfo access below — previously an
+    // unguarded err.classList.remove() on the very first line would crash the entire
+    // handler before the mode-branch if the element was ever missing.
+    try {
+      console.log('[calculateAndLog] clicked · mode:', window._mvMode ? 'MV' : (window._corioMode ? 'CORIO' : 'CALICO'));
+      return await _calculateAndLogImpl();
+    } catch (e) {
+      console.error('[calculateAndLog] unhandled error:', e);
+      try {
+        const _btn = document.getElementById('calcBtn');
+        if (_btn) { _btn.disabled = false; _btn.textContent = 'Generate BoM \u2192'; }
+        const _ev = document.getElementById('formError');
+        if (_ev) {
+          _ev.textContent = '\u26a0 Something went wrong generating the BoM: ' + (e && e.message ? e.message : e) + ' \u00b7 Please screenshot this and send it to Dipenkumar.';
+          _ev.classList.add('show');
+          _ev.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        if (typeof showSync === 'function') showSync('Could not generate BoM — see the message on the form.', 'error');
+      } catch (_) { /* last-resort: never re-throw from the error handler */ }
+    }
+  }
+
+  async function _calculateAndLogImpl() {
     const err = document.getElementById('formError');
     const info = document.getElementById('formInfo');
-    err.classList.remove('show'); info.classList.remove('show');
+    if (err) err.classList.remove('show');
+    if (info) info.classList.remove('show');
 
     // v25.90 — Phase 2: Multi Viewer mode has its own validation + save path.
     // The CALICO calculateAndLog flow below (Card 02-04 validation, screen-count,
@@ -11744,56 +11770,60 @@ body.light .signal-card-footer-tv {
     }
 
     const proj = getProjectorLoad();
+    // v25.99.30 — null-safe field reader. A missing element yields '' instead of
+    // throwing — so one absent field degrades to a validation miss (visible, fixable)
+    // rather than a silent crash of the whole Generate BoM handler.
+    function _fv(id) { const el = document.getElementById(id); return el ? String(el.value == null ? '' : el.value) : ''; }
     const input = {
       // v25.9: payload updated for 13-field Project Context spec
-      project: document.getElementById('f_project').value.trim(),
-      stage: document.getElementById('f_stage').value,
-      endUser: document.getElementById('f_endUser').value.trim(),
-      partner: document.getElementById('f_partner').value.trim(),
-      consultant: document.getElementById('f_consultant').value.trim(),
-      venueType: document.getElementById('f_venueType').value,
-      city: document.getElementById('f_city').value.trim(),
-      state: document.getElementById('f_state').value,
-      partnerContactName:  document.getElementById('f_partnerContactName').value.trim(),
-      partnerContactPhone: document.getElementById('f_partnerContactPhone').value.trim(),
-      partnerContactEmail: document.getElementById('f_partnerContactEmail').value.trim(),
+      project: _fv('f_project').trim(),
+      stage: _fv('f_stage'),
+      endUser: _fv('f_endUser').trim(),
+      partner: _fv('f_partner').trim(),
+      consultant: _fv('f_consultant').trim(),
+      venueType: _fv('f_venueType'),
+      city: _fv('f_city').trim(),
+      state: _fv('f_state'),
+      partnerContactName:  _fv('f_partnerContactName').trim(),
+      partnerContactPhone: _fv('f_partnerContactPhone').trim(),
+      partnerContactEmail: _fv('f_partnerContactEmail').trim(),
       // Legacy `contact` string kept populated so old Sheet queries don't break
       contact: [
-        document.getElementById('f_partnerContactName').value.trim(),
-        document.getElementById('f_partnerContactPhone').value.trim(),
-        document.getElementById('f_partnerContactEmail').value.trim()
+        _fv('f_partnerContactName').trim(),
+        _fv('f_partnerContactPhone').trim(),
+        _fv('f_partnerContactEmail').trim()
       ].filter(function(x){ return x; }).join(' · '),
-      leadSource: document.getElementById('f_leadSource').value,
-      outcome: document.getElementById('f_outcome').value || 'open',
+      leadSource: _fv('f_leadSource'),
+      outcome: _fv('f_outcome') || 'open',
       // v25.28: Win/Loss reason capture + stage change note (parity with BS v24.17.0)
-      outcomeReason: (document.getElementById('f_outcomeReason') || {}).value || '',
-      outcomeReasonNote: (document.getElementById('f_outcomeReasonNote') || {}).value || '',
-      stageNote: (document.getElementById('f_stageNote') || {}).value || '',
-      planOfAction: (document.getElementById('f_planOfAction') || {}).value || '',
+      outcomeReason: _fv('f_outcomeReason'),
+      outcomeReasonNote: _fv('f_outcomeReasonNote'),
+      stageNote: _fv('f_stageNote'),
+      planOfAction: _fv('f_planOfAction'),
       // v25.51: General internal notes (free-text per opportunity, NOT in Excel/PDF exports).
       // Distinct from the existing 'notes' field (deployment notes / special requirements)
       // which IS included in exports — see line ~8839.
-      internalNotes: ((document.getElementById('f_internalNotes') || {}).value || '').trim(),
+      internalNotes: _fv('f_internalNotes').trim(),
       // v25.35 (#3): Sales/Presales handoff. Both stored as lowercase loginName.
-      salesPerson:    String(((document.getElementById('f_salesPerson')    || {}).value || '')).trim().toLowerCase(),
-      presalesPerson: String(((document.getElementById('f_presalesPerson') || {}).value || '')).trim().toLowerCase(),
+      salesPerson:    _fv('f_salesPerson').trim().toLowerCase(),
+      presalesPerson: _fv('f_presalesPerson').trim().toLowerCase(),
       // v25.99.26 — Test Mode retired. isTest always written blank — all deals are real deals.
       isTest: '',
-      outputType: document.getElementById('f_outputType').value,
-      outputSignal: document.getElementById('f_outputSignal').value,
-      sdiCount: parseInt(document.getElementById('f_sdiCount').value) || 0,
+      outputType: _fv('f_outputType'),
+      outputSignal: _fv('f_outputSignal'),
+      sdiCount: parseInt(_fv('f_sdiCount'), 10) || 0,
       projectorCount: proj.count,
       projectorRes: proj.resolution,
       projectorPorts: proj.ports,
       screens: collectScreens().filter(s => s.pixels > 0),
-      inputs: parseInt(document.getElementById('f_inputs').value) || 0,
-      inputs4K: parseInt(document.getElementById('f_inputs4K').value) || 0,
-      inputsFHD: parseInt(document.getElementById('f_inputsFHD').value) || 0,
-      signals: document.getElementById('f_signals').value,
-      budget: document.getElementById('f_budget').value,
-      dealValueINR: parseFloat(document.getElementById('f_dealValueINR').value) || 0,
-      close: document.getElementById('f_close').value,
-      notes: document.getElementById('f_notes').value.trim()
+      inputs: parseInt(_fv('f_inputs'), 10) || 0,
+      inputs4K: parseInt(_fv('f_inputs4K'), 10) || 0,
+      inputsFHD: parseInt(_fv('f_inputsFHD'), 10) || 0,
+      signals: _fv('f_signals'),
+      budget: _fv('f_budget'),
+      dealValueINR: parseFloat(_fv('f_dealValueINR')) || 0,
+      close: _fv('f_close'),
+      notes: _fv('f_notes').trim()
     };
 
     // Build a list of { id, label } pairs for required fields in the order they appear on the page
