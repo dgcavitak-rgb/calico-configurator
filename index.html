@@ -6907,23 +6907,18 @@ body.light .signal-card-footer-tv {
     </div>
     <!-- v25.22: Frontend version display for ops/debug -->
     <div id="login-version-wrap" style="text-align:center;margin-top:14px;font-size:11px;color:rgba(255,255,255,0.35);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em;">
-      <span id="login-version">v25.23</span>
+      <span id="login-version">v25.99.26</span>
     </div>
   </div>
 </div>
 
 <!-- APP -->
 <div id="appScreen" class="hidden">
-  <!-- v25.35 (#12): Test-mode banner — sticky orange strip when user has test mode on.
-       v25.44 — Made screaming-obvious. Diagonal stripes + flashing emoji + bigger Turn-off
-       button so owners stop wondering "why is my data missing from analytics" when test
-       mode was left on accidentally. -->
-  <div id="test-mode-banner-tv" style="display:none;background:repeating-linear-gradient(45deg,#F59E0B 0,#F59E0B 12px,#D97706 12px,#D97706 24px);color:#fff;padding:11px 16px;font-size:13.5px;font-weight:700;letter-spacing:0.04em;text-align:center;position:sticky;top:0;z-index:60;box-shadow:0 2px 10px rgba(245,158,11,0.40);border-bottom:2px solid #B45309;">
-    <span style="font-size:16px;animation:tm-flash-tv 1.6s ease-in-out infinite;display:inline-block;">🧪</span>
-    <span style="margin-left:8px;">TEST MODE ACTIVE — every submission is flagged <code style="background:rgba(0,0,0,0.20);padding:2px 8px;border-radius:4px;font-family:monospace;font-size:12px;">isTest=TRUE</code> and HIDDEN from Dashboard + Review analytics.</span>
-    <button onclick="setTestModeTV(false)" style="margin-left:14px;background:#fff;color:#B45309;border:none;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:0.03em;text-transform:uppercase;box-shadow:0 2px 4px rgba(0,0,0,0.20);">Turn off</button>
-    <style>@keyframes tm-flash-tv{0%,100%{opacity:1}50%{opacity:0.5}}</style>
-  </div>
+  <!-- v25.99.26 — TEST MODE BANNER REMOVED. Test Mode feature retired (parity with
+       BrightSign v24.25.7). All deals are real deals; nothing is flagged isTest=TRUE.
+       The #test-mode-banner-tv element is intentionally gone; _renderTestModeBannerTV()
+       is a stub that no longer references it meaningfully. -->
+  <div id="test-mode-banner-tv" style="display:none;"></div>
   <header class="app-header">
     <!-- Row 1: Brand (left) · User + Controls + Exit (right) -->
     <div class="header-top">
@@ -8962,30 +8957,13 @@ body.light .signal-card-footer-tv {
     <h1 class="page-title">My Account</h1>
     <p class="page-sub">View your account, update your contact details, and manage your password.</p>
 
-    <!-- v25.35 (#12) / v25.44: Test mode toggle card. Per-user, localStorage-backed.
-         When ON, deals submitted are flagged isTest=TRUE in col CB and excluded from
-         Dashboard + Review aggregations. Banner appears at the top of the app.
-         v25.44 — clearer explainer of what test mode is + when to use it. -->
-    <div class="card" style="background:#FFFBEB;border:1px solid #FCD34D;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-        <span style="font-size:11px;letter-spacing:0.10em;text-transform:uppercase;color:#B45309;font-weight:700;">🧪 Test Mode</span>
-        <span id="test-mode-status-pill-tv" style="font-size:12px;font-weight:700;letter-spacing:0.05em;padding:2px 8px;border-radius:999px;background:#F1F5F9;color:#64748B;">OFF</span>
-      </div>
-      <div style="font-size:13px; color:var(--ink); margin-bottom:8px; line-height:1.5;">
-        <strong>What is Test Mode?</strong> When ON, every deal you save is flagged
-        <code style="background:rgba(0,0,0,0.05);padding:1px 6px;border-radius:3px;font-family:monospace;font-size:11.5px;">isTest=TRUE</code>.
-        Test deals are hidden from Dashboard + Review analytics. They still appear in History (with a 🧪 marker) so you can find and edit them.
-      </div>
-      <div style="font-size:12px; color:var(--ink-soft); margin-bottom:14px; line-height:1.5;">
-        <strong>When to use it:</strong> Practicing a new feature · Training a teammate · Demoing to a client · Recording a screencast.
-        Turn it OFF before submitting real deals.
-      </div>
-      <label style="display:inline-flex;align-items:center;gap:10px;padding:10px 16px;background:#FFF;border:1px solid #FCD34D;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;">
-        <input type="checkbox" id="test-mode-checkbox-tv" onchange="setTestModeTV(this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:#F59E0B;">
-        <span>Enable Test Mode</span>
-      </label>
-      <span id="test-mode-label-tv" style="display:none;"></span>
-    </div>
+    <!-- v25.99.26 — TEST MODE TOGGLE CARD REMOVED. Test Mode feature retired
+         (parity with BrightSign v24.25.7). All deals are real deals. The hidden
+         #test-mode-checkbox-tv input is kept below as a no-op stub so _renderTestModeBannerTV()
+         and any other legacy reference never throws. -->
+    <input type="checkbox" id="test-mode-checkbox-tv" style="display:none;" aria-hidden="true">
+    <span id="test-mode-status-pill-tv" style="display:none;"></span>
+    <span id="test-mode-label-tv" style="display:none;"></span>
 
     <!-- Identity (read-only) -->
     <div class="card">
@@ -9340,7 +9318,7 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.99.24';  // v25.99.24 — HOTFIX: "Generate BoM does nothing" bug — error banner was firing correctly but never scrolled into view. After v25.97.1's "Generate BoM relocated to bottom of form", the formError/formInfo divs stayed at their old position (~L7874, near top of form, far above the new button location). Rep clicks Generate BoM with invalid input (e.g. no MV input signal picked) → _mvCalculateAndLog or _corioCalculateAndLog fires err.classList.add('show') → banner appears but ~hundreds of pixels above rep's viewport → rep sees "nothing happens". Fix: added err.scrollIntoView({behavior:'smooth',block:'center'}) at 7 error-show sites in MV and CORIO branches that were missing it (the standard CALICO calculateAndLog already had scrollIntoView at L11920). 7 sites patched: MV empty-input, MV result-error, MV save-fail, CORIO no-result, CORIO result-error, CORIO empty-bom, CORIO save-fail. No backend change. Pairs with v26.19.0. Previously: v25.99.23 — EMAIL FLOW mailto: switch. Click "Send Email" in modal now: (1) downloads BOTH the PDF and Excel quote files for the rep to attach, (2) opens their default mail client (Outlook on M365) with To/CC/Subject/Body pre-filled from the modal fields, (3) rep attaches the just-downloaded files in Outlook and clicks Send — email truly originates from rep's mailbox, appears in their Sent folder, passes SPF/DKIM/DMARC. dipen.g@cavitak.com forced CC pre-filled (rep can technically remove but instructed not to). Modal subtitle updated to reflect new flow. Backend email_send handler intentionally left in place (dormant, no UI call site) — easy revert if ever needed. No backend deploy required. Pairs with v26.19.0. Previously: v25.99.22 — UX wording pass + Excel polish. WORDING: every "Saving…" / "Signing in…" button label → "Loading…" (11 sites). "Generating..." → "Recommending…" on Generate BoM button. Success toasts neutralized: "Changes saved"/"Deal registered"/"CORIO deal saved"/"Multi Viewer deal saved" → "Done ✓"; "PDF downloaded" → "PDF ready ✓"; "Profile saved — welcome X!" → "Welcome, X ✓"; "Saved — will finalize shortly" → "Done · finalizing…"; "Draft saved" → "✓"; "Offline · saved locally only" → "Offline · stored on this device only". Trust signals removed: "Audit-logged." badge dropped from stage-note callout; "(only logged when stage actually changes)" stripped from f_stageNote placeholder. Analyzing splash eyebrow "Analyzing Configuration" → "Generating recommendation…". EXCEL POLISH: RECOMMENDED SOLUTION verdict now product-aware (was hardcoded CALICO-only) — MV deals show "tvONE CORIOview · Multi Viewer configuration", CORIO deals show "tvONE [chassisLabel] · CORIO configuration", CALICO unchanged. Warranty T&C: "tvONE CALICO PRO series" → "tvONE products". WhatsApp default message + Email body + Email subject + Excel filename all dropped CALICO-specific phrasing (now neutral "tvONE BOM summary" / "tvONE recommendation and BOM" / "tvONE Quote · …" / "tvONE_Quote_…xlsx"). Tricolor stripe alignment intentionally kept as-is (forest dominant = on-brand; true thirds would shrink primary brand colour). No backend changes; pairs with v26.19.0.
+  const TVONE_FRONTEND_VERSION = '25.99.26';  // v25.99.26 — TEST MODE RETIRED. Test Mode let a user flag their submissions isTest=TRUE so they were hidden from Dashboard + Review analytics — but if left on by accident, real deals silently vanished from reporting. Now retired (parity with BrightSign, which retired it in BS v24.25.7). Changes: (1) _initTestModeTV() stubbed — always sets _testModeOnTV=false AND force-clears any stale per-user localStorage flag so a user who had Test Mode ON before this update does not keep flagging deals. (2) setTestModeTV() stubbed to a no-op. (3) _renderTestModeBannerTV() stubbed — banner permanently hidden. (4) Test Mode banner HTML removed (was a sticky orange diagonal-stripe strip). (5) Profile Test Mode toggle card removed (hidden no-op stub inputs kept so legacy references never throw). (6) All 3 isTest write sites now always write '' — all deals are real deals. The isTest sheet column stays intact (unwritten); _filterTestDataTV and _buildTestBadgeTV read-side logic kept so any pre-existing test-flagged rows still filter from analytics and still show the History badge. No backend change. Pairs with v26.19.0. Previously: v25.99.25 — UX POLISH: splash performance + wording stragglers. After v25.97.1's "Generate BoM relocated to bottom of form", the formError/formInfo divs stayed at their old position (~L7874, near top of form, far above the new button location). Rep clicks Generate BoM with invalid input (e.g. no MV input signal picked) → _mvCalculateAndLog or _corioCalculateAndLog fires err.classList.add('show') → banner appears but ~hundreds of pixels above rep's viewport → rep sees "nothing happens". Fix: added err.scrollIntoView({behavior:'smooth',block:'center'}) at 7 error-show sites in MV and CORIO branches that were missing it (the standard CALICO calculateAndLog already had scrollIntoView at L11920). 7 sites patched: MV empty-input, MV result-error, MV save-fail, CORIO no-result, CORIO result-error, CORIO empty-bom, CORIO save-fail. No backend change. Pairs with v26.19.0. Previously: v25.99.23 — EMAIL FLOW mailto: switch. Click "Send Email" in modal now: (1) downloads BOTH the PDF and Excel quote files for the rep to attach, (2) opens their default mail client (Outlook on M365) with To/CC/Subject/Body pre-filled from the modal fields, (3) rep attaches the just-downloaded files in Outlook and clicks Send — email truly originates from rep's mailbox, appears in their Sent folder, passes SPF/DKIM/DMARC. dipen.g@cavitak.com forced CC pre-filled (rep can technically remove but instructed not to). Modal subtitle updated to reflect new flow. Backend email_send handler intentionally left in place (dormant, no UI call site) — easy revert if ever needed. No backend deploy required. Pairs with v26.19.0. Previously: v25.99.22 — UX wording pass + Excel polish. WORDING: every "Saving…" / "Signing in…" button label → "Loading…" (11 sites). "Generating..." → "Recommending…" on Generate BoM button. Success toasts neutralized: "Changes saved"/"Deal registered"/"CORIO deal saved"/"Multi Viewer deal saved" → "Done ✓"; "PDF downloaded" → "PDF ready ✓"; "Profile saved — welcome X!" → "Welcome, X ✓"; "Saved — will finalize shortly" → "Done · finalizing…"; "Draft saved" → "✓"; "Offline · saved locally only" → "Offline · stored on this device only". Trust signals removed: "Audit-logged." badge dropped from stage-note callout; "(only logged when stage actually changes)" stripped from f_stageNote placeholder. Analyzing splash eyebrow "Analyzing Configuration" → "Generating recommendation…". EXCEL POLISH: RECOMMENDED SOLUTION verdict now product-aware (was hardcoded CALICO-only) — MV deals show "tvONE CORIOview · Multi Viewer configuration", CORIO deals show "tvONE [chassisLabel] · CORIO configuration", CALICO unchanged. Warranty T&C: "tvONE CALICO PRO series" → "tvONE products". WhatsApp default message + Email body + Email subject + Excel filename all dropped CALICO-specific phrasing (now neutral "tvONE BOM summary" / "tvONE recommendation and BOM" / "tvONE Quote · …" / "tvONE_Quote_…xlsx"). Tricolor stripe alignment intentionally kept as-is (forest dominant = on-brand; true thirds would shrink primary brand colour). No backend changes; pairs with v26.19.0.
   // v25.99.21 — Fix salesperson/presales footer showing "loginName / — / — / —" instead of full name + role + phone + email. Root cause: _allUsersTV cache wasn't loaded when export was triggered directly from History tab (form-show effect that populates the cache hadn't fired). Two surgical fixes: (1) both exportQuotePDFTV and exportToExcel now await _fetchAllUsersTV() at entry if the cache is empty (~5 lines each). (2) Defensive _findUserTV / _findUserXL fallback: when cache lookup misses AND the missing user IS the currently logged-in user, populate from currentUser instead of returning login-name-as-name. Same fix applied to both PDF and Excel lookup helpers. No backend changes. NOTE: Users sheet rows must still have professionalTitle / phone / email populated for those fields to appear — Dipenkumar's row is missing these in production. Fill in the Users sheet to make role/phone/email populate.
   // v25.99.20 — Cavitak logo + redesigned headers/footers shipped in BOTH Excel and PDF exports. PDF: BS-pattern layout (logo top-left + vertical separator + title block + QUOTE meta top-right) using tvONE forest-green/gold colour palette. Tricolor accent stripe (forest/gold/red) under header. Section headers switched from slate ink to forest-dark. Footer gained Cavitak distributor band (logo + "Cavitak Marketing Pvt Ltd · Authorized tvONE distributor · India") above salesperson contact. Footer text "tvONE CALICO Configurator" corrected to "tvONE Product Selector". Excel Quote tab: rebuilt header — Cavitak logo over A1:B2 + tvONE title + tagline in C-G rows 1-2 + tricolor stripe in row 3, replacing the "CALICO PRO" / "Command every pixel" solid-green band. QUOTATION + Quote No. block preserved at row 4. Footer attribution line upgraded to logo + rich-text distributor band before print-area boundary. Logo files embedded as base64 PNG constants (LOGO_CAVITAK_B64 280x79px ~18KB, LOGO_TVONE_B64 240x61px ~14KB) at top of EXCEL_DESIGN section. Hardcoded base64 chosen over runtime fetch to avoid CORS/404 surface. All image embeds wrapped in try/catch so exports still succeed if image API fails. No backend changes; pairs with v26.19.0.
   // v25.99.19 — loadAuditHistory() micro-cache (60s TTL, module-scoped Map, no localStorage) + AbortController to cancel in-flight fetches on rapid re-clicks. Repeat clicks on same deal's 🕒 Edit History within 60s now skip the ~300ms backend round-trip. Stale-response clobber race (theoretical) fixed by aborting prior fetch when a new one starts. Render path extracted to _renderAuditHistory(refId, audit, sub, body) so cache-hit and fetch-hit share one code path. No backend changes; pairs with v26.19.0.
@@ -10052,7 +10030,7 @@ body.light .signal-card-footer-tv {
     const w = document.getElementById('sessionWarnBanner');
     if (w) w.classList.remove('show');
     if (_sessionCountdownInterval) { clearInterval(_sessionCountdownInterval); _sessionCountdownInterval = null; }
-    showSync('Session extended ✓', 'success');
+    showSync('Done ✓', 'success');
     console.log('[session] Idle timer reset at', new Date().toLocaleTimeString());
   }
 
@@ -11048,25 +11026,29 @@ body.light .signal-card-footer-tv {
     });
     // Step 1 active immediately
     if (steps[0]) steps[0].classList.add('active');
-    // Step 2 at 500ms
+    // v25.99.25 — Compressed splash timings: was 500/1000/1500/2000 (= 2s, padded to 5s in practice
+    // by the 2200ms min-wait gate). Now 150/300/450/600 (= 600ms total). Min-wait gate also dropped
+    // from 2200 → 800ms at all 3 sites. Net: splash still appears with all 4 steps animating, but
+    // total visible time is ~800ms instead of 2.2-5s. No artificial padding.
+    // Step 2 at 150ms
     setTimeout(function() {
       if (steps[0]) { steps[0].classList.remove('active'); steps[0].classList.add('done'); }
       if (steps[1]) steps[1].classList.add('active');
-    }, 500);
-    // Step 3 at 1000ms
+    }, 150);
+    // Step 3 at 300ms
     setTimeout(function() {
       if (steps[1]) { steps[1].classList.remove('active'); steps[1].classList.add('done'); }
       if (steps[2]) steps[2].classList.add('active');
-    }, 1000);
-    // Step 4 at 1500ms
+    }, 300);
+    // Step 4 at 450ms
     setTimeout(function() {
       if (steps[2]) { steps[2].classList.remove('active'); steps[2].classList.add('done'); }
       if (steps[3]) steps[3].classList.add('active');
-    }, 1500);
-    // Step 4 done at 2000ms (caller advances to result)
+    }, 450);
+    // Step 4 done at 600ms (caller advances to result after 800ms min-wait gate elapses)
     setTimeout(function() {
       if (steps[3]) { steps[3].classList.remove('active'); steps[3].classList.add('done'); }
-    }, 2000);
+    }, 600);
   }
   function startNewConfig() {
     // Clear any edit-mode state — starting fresh
@@ -11792,8 +11774,8 @@ body.light .signal-card-footer-tv {
       // v25.35 (#3): Sales/Presales handoff. Both stored as lowercase loginName.
       salesPerson:    String(((document.getElementById('f_salesPerson')    || {}).value || '')).trim().toLowerCase(),
       presalesPerson: String(((document.getElementById('f_presalesPerson') || {}).value || '')).trim().toLowerCase(),
-      // v25.35 (#12): Test mode flag. 'TRUE' when user has test mode toggled on, else empty.
-      isTest: (window._testModeOnTV === true) ? 'TRUE' : '',
+      // v25.99.26 — Test Mode retired. isTest always written blank — all deals are real deals.
+      isTest: '',
       outputType: document.getElementById('f_outputType').value,
       outputSignal: document.getElementById('f_outputSignal').value,
       sdiCount: parseInt(document.getElementById('f_sdiCount').value) || 0,
@@ -12189,9 +12171,11 @@ body.light .signal-card-footer-tv {
     calcBtn.disabled = false;
     calcBtn.textContent = 'Generate BoM →';
 
-    // Ensure minimum 2.2-second analyzing display so the step animation completes
+    // v25.99.25 — Min-wait gate compressed from 2200 → 800ms. Step animation completes at 600ms;
+    // 800ms gives a brief moment for the rep to read "done" before transitioning to result.
+    // Was: 2.2s min, often padded to 5s. Now: ~0.8s. No artificial latency.
     const elapsed = performance.now() - analyzingStartedAt;
-    await new Promise(function(resolve) { setTimeout(resolve, Math.max(0, 2200 - elapsed)); });
+    await new Promise(function(resolve) { setTimeout(resolve, Math.max(0, 800 - elapsed)); });
 
     // v25.34 — Defensive try/catch around the result render chain.
     // Previously a render-side exception (e.g. unsafe .trim() on numeric fields) would silently
@@ -12960,7 +12944,7 @@ body.light .signal-card-footer-tv {
       internalNotes:         _val('f_internalNotes'),
       salesPerson:           _val('f_salesPerson').toLowerCase(),
       presalesPerson:        _val('f_presalesPerson').toLowerCase(),
-      isTest:                (window._testModeOnTV === true) ? 'TRUE' : ''
+      isTest:                ''  /* v25.99.26 — Test Mode retired; all deals are real */
     };
     input.contact = [input.partnerContactName, input.partnerContactPhone, input.partnerContactEmail].filter(function(x){return x;}).join(' \u00b7 ');
 
@@ -13096,9 +13080,9 @@ body.light .signal-card-footer-tv {
 
       if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
 
-      // v25.99.8 — Delay navigation to Result so the analyzing splash has time to play (matches CALICO UX).
+      // v25.99.25 — Min-wait compressed from 2200 → 800ms (matches CALICO).
       const _mvElapsedMs = performance.now() - _mvAnalyzingStartedAt;
-      const _mvRemainingDelay = Math.max(0, 2200 - _mvElapsedMs);
+      const _mvRemainingDelay = Math.max(0, 800 - _mvElapsedMs);
       setTimeout(function() {
         // v25.97.3 FIX — render the Result page and navigate to it (was missing — page didn't change after save)
         try {
@@ -13187,7 +13171,7 @@ body.light .signal-card-footer-tv {
       internalNotes:         _val('f_internalNotes'),
       salesPerson:           _val('f_salesPerson').toLowerCase(),
       presalesPerson:        _val('f_presalesPerson').toLowerCase(),
-      isTest:                (window._testModeOnTV === true) ? 'TRUE' : ''
+      isTest:                ''  /* v25.99.26 — Test Mode retired; all deals are real */
     };
     input.contact = [input.partnerContactName, input.partnerContactPhone, input.partnerContactEmail].filter(function(x){return x;}).join(' \u00b7 ');
 
@@ -13319,9 +13303,9 @@ body.light .signal-card-footer-tv {
       sessionLog.unshift(submission);
 
       if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
-      // v25.99.8 — Delay navigation to Result so the analyzing splash plays ~2.2s (matches CALICO/MV UX).
+      // v25.99.25 — Min-wait compressed from 2200 → 800ms (matches CALICO/MV).
       const _corioElapsedMs = performance.now() - _corioAnalyzingStartedAt;
-      const _corioRemainingDelay = Math.max(0, 2200 - _corioElapsedMs);
+      const _corioRemainingDelay = Math.max(0, 800 - _corioElapsedMs);
       setTimeout(function() {
         try {
           if (typeof renderResult === 'function') renderResult(input, lastResult.reco);
@@ -14645,9 +14629,16 @@ body.light .signal-card-footer-tv {
   // Populate every form input from a submission row fetched from the sheet.
   // This mirrors how calculateAndLog reads the form in reverse.
   function populateFormFromRow_(r) {
+    // v25.99.25 — Known-orphan IDs are legacy fields removed from the form but still
+    // referenced by the edit-restore code for backward compat with old saved rows.
+    // Silently skip them instead of console.warn — keeps the console clean for real errors.
+    const _KNOWN_ORPHAN_FIELDS = new Set(['f_venueName', 'f_planOfAction']);
     const setVal = function(id, val) {
       const el = document.getElementById(id);
-      if (!el) { console.warn('[Edit] Missing form field:', id); return; }
+      if (!el) {
+        if (!_KNOWN_ORPHAN_FIELDS.has(id)) console.warn('[Edit] Missing form field:', id);
+        return;
+      }
       try {
         el.value = (val == null ? '' : String(val));
       } catch (e) {
@@ -17602,7 +17593,7 @@ body.light .signal-card-footer-tv {
       errEl.classList.add('show');
       return;
     }
-    btn.disabled = true; btn.textContent = 'Sending…';
+    btn.disabled = true; btn.textContent = 'Loading…';
     try {
       const res = await fetch(WEB_APP_URL, {
         method: 'POST', mode: 'cors',
@@ -18236,60 +18227,31 @@ body.light .signal-card-footer-tv {
     const u = currentUser && currentUser.username;
     return u ? ('tv-test-mode__' + String(u).toLowerCase()) : null;
   }
+  // ===== v25.99.26 — TEST MODE FEATURE RETIRED =====
+  // Test Mode let a user flag their submissions isTest=TRUE so they'd be hidden
+  // from Dashboard + Review analytics. It is now retired (parity with BrightSign,
+  // which retired it in BS v24.25.7). All deals are real deals.
+  // The isTest column on the sheet stays intact (just always written blank now).
+  // Functions are kept as pass-through stubs so any old call site is harmless.
+  // On boot, _initTestModeTV() force-clears any stale localStorage flag so a user
+  // who previously had Test Mode ON does not silently keep flagging deals.
   function _initTestModeTV() {
-    const key = _testModeKeyTV();
-    if (!key) return;
+    window._testModeOnTV = false;
+    // Clean up any stale per-user localStorage flag left from before retirement.
     try {
-      const stored = localStorage.getItem(key);
-      window._testModeOnTV = (stored === 'TRUE');
-    } catch (e) {
-      window._testModeOnTV = false;
-    }
+      const key = _testModeKeyTV();
+      if (key) localStorage.removeItem(key);
+    } catch (e) { /* localStorage may be unavailable */ }
     _renderTestModeBannerTV();
   }
   function _renderTestModeBannerTV() {
+    // Banner permanently hidden — Test Mode retired.
     const banner = document.getElementById('test-mode-banner-tv');
-    if (banner) banner.style.display = window._testModeOnTV ? 'block' : 'none';
-    const cb = document.getElementById('test-mode-checkbox-tv');
-    const lbl = document.getElementById('test-mode-label-tv');  // legacy hidden span — kept for any old code path
-    if (cb) cb.checked = !!window._testModeOnTV;
-    if (lbl) {
-      lbl.textContent = window._testModeOnTV ? 'ON' : 'OFF';
-      lbl.style.color = window._testModeOnTV ? '#92400E' : 'var(--ink-soft)';
-    }
-    // v25.44 — also update the new status pill on the upgraded Profile card.
-    const pill = document.getElementById('test-mode-status-pill-tv');
-    if (pill) {
-      pill.textContent = window._testModeOnTV ? 'ON' : 'OFF';
-      if (window._testModeOnTV) {
-        pill.style.background = '#FEF3C7';
-        pill.style.color = '#92400E';
-      } else {
-        pill.style.background = '#F1F5F9';
-        pill.style.color = '#64748B';
-      }
-    }
-    if (typeof showSync === 'function') {
-      // Only fire toast on actual user toggle, not on initial banner render.
-      // _renderTestModeBannerTV is called both on init AND from setTestModeTV;
-      // we use a flag in setTestModeTV to differentiate.
-      if (window._testModeJustToggledTV === true) {
-        showSync(window._testModeOnTV ? '🧪 Test mode ON — submissions will be flagged' : 'Test mode OFF', window._testModeOnTV ? 'warn' : 'success');
-        window._testModeJustToggledTV = false;
-      }
-    }
+    if (banner) banner.style.display = 'none';
   }
   function setTestModeTV(on) {
-    window._testModeOnTV = !!on;
-    window._testModeJustToggledTV = true;  // v25.44 — signals _render to also fire toast
-    const key = _testModeKeyTV();
-    if (key) {
-      try {
-        if (on) localStorage.setItem(key, 'TRUE');
-        else    localStorage.removeItem(key);
-      } catch (e) { /* localStorage may be full */ }
-    }
-    _renderTestModeBannerTV();
+    // Backwards-compat stub. Setting Test Mode now does nothing — feature retired.
+    window._testModeOnTV = false;
   }
   window.setTestModeTV = setTestModeTV;
 
@@ -18477,7 +18439,7 @@ body.light .signal-card-footer-tv {
     }
     const btn = document.getElementById('errorSummaryTestBtnTV');
     const oldLabel = btn ? btn.textContent : '';
-    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
     try {
       const res = await fetch(WEB_APP_URL, {
         method: 'POST',
@@ -20934,7 +20896,7 @@ body.light .signal-card-footer-tv {
     const sub = document.getElementById('srbQSub');
     const originalSub = sub ? sub.textContent : '';
     if (btn) btn.disabled = true;
-    if (sub) sub.textContent = 'Sending…';
+    if (sub) sub.textContent = 'Loading…';
     try {
       const res = await fetch(WEB_APP_URL, {
         method: 'POST', mode: 'cors',
@@ -20978,7 +20940,7 @@ body.light .signal-card-footer-tv {
     const sub = document.getElementById('srbYSub');
     const originalSub = sub ? sub.textContent : '';
     if (btn) btn.disabled = true;
-    if (sub) sub.textContent = 'Sending…';
+    if (sub) sub.textContent = 'Loading…';
     try {
       const res = await fetch(WEB_APP_URL, {
         method: 'POST', mode: 'cors',
@@ -21675,9 +21637,9 @@ body.light .signal-card-footer-tv {
       if (data && data.ok) {
         _tvC2aLastPoaText = text;
         if (statusEl) {
-          statusEl.textContent = 'Saved ✓';
+          statusEl.textContent = 'Done ✓';
           statusEl.style.color = '#5ECE9F';
-          setTimeout(function(){ if (statusEl.textContent === 'Saved ✓') statusEl.textContent = ''; }, 2000);
+          setTimeout(function(){ if (statusEl.textContent === 'Done ✓') statusEl.textContent = ''; }, 2000);
         }
         const metaEl = document.getElementById('tv-c2a-poa-meta');
         if (metaEl && data.updatedAt) {
@@ -26583,7 +26545,7 @@ async function _renderPipelineTrend_tv() {
 <!-- Silent sync toast indicator -->
 <div class="sync-status" id="syncStatus">
   <span class="sync-dot"></span>
-  <span id="syncMsg">Saving…</span>
+  <span id="syncMsg">Working…</span>
 </div>
 
 </body>
