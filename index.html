@@ -6914,7 +6914,7 @@ body.light .signal-card-footer-tv {
     </div>
     <!-- v25.22: Frontend version display for ops/debug -->
     <div id="login-version-wrap" style="text-align:center;margin-top:14px;font-size:11px;color:rgba(255,255,255,0.35);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em;">
-      <span id="login-version">v25.99.32</span>
+      <span id="login-version">v25.99.36</span>
     </div>
   </div>
 </div>
@@ -9321,7 +9321,7 @@ body.light .signal-card-footer-tv {
 <script>
   // v25.23: tvONE frontend version constant — single source of truth.
   // Visible on login page footer AND as persistent corner footer on every page (parity with BS).
-  const TVONE_FRONTEND_VERSION = '25.99.32';  // v25.99.32 — STALE-CACHE FIX: the Profile Gate save (_saveProfileGateTV) mirrored the freshly-entered professionalTitle/email/phone to currentUser but never invalidated window._allUsersTV. The Excel/PDF salesperson + presales lookup reads professionalTitle/phone/email from that cache; if it had been fetched earlier in the session it still held the pre-update (blank-title) row, so a quote referencing that rep showed a stale/blank professional title even right after they filled it in. The save now sets window._allUsersTV = null after a successful profile_update, forcing _fetchAllUsersTV() to re-fetch fresh on the next export. Pairs with BS v24.45.10 (same fix, same reasoning). No backend change. Pairs with v26.19.0. Previously: v25.99.31 — ROOT-CAUSE FIX: Excel + PDF showed the SHORT login name for Sales/Presales person instead of the full name. Reported repeatedly; prior fixes (v25.99.21) addressed the wrong layer (cache-fetch timing) and never worked. ACTUAL root cause: _findUserXL (Excel) and _findUserTV (PDF) matched the user cache on `u.loginName` — a field that does NOT exist on tvONE user objects. tvONE objects use `username` (every other lookup in the file — _resolveLabel, _resolveOwnerNameTV — correctly uses `username`; these two export helpers were ported from BS, which DOES use loginName, without adapting the field name). So .find() ALWAYS missed and both exports fell through to {fullName: loginName}. Fixed both helpers to match on `u.username`. Verified by simulation: old returned 'dipenkumar', fixed returns 'Dipenkumar Gajjar'. CROSS-CHECK also found + fixed 4 dashboard/leaderboard lookups using `window._allUsers` (BS's variable name — never populated in tvONE) with `x.loginName`; switched to `window._allUsersTV` + `x.username`. The 2 remaining u.loginName reads (L23351/23503) are correct — they read _getStateUser() which deliberately aliases loginName=username. PARITY: BS Excel/PDF resolves names correctly via its own _allUsers+loginName (correct for BS's data shape); tvONE now resolves correctly via _allUsersTV+username — user-facing output (full name in Excel + PDF) is now uniform across both apps. No backend change. Pairs with v26.19.0. Previously: v25.99.30 — GENERATE BOM SILENT-FAIL FIX. Reported: "Generate BoM does nothing." Root cause class: calculateAndLog() could throw before any error UI rendered, so the handler died silently and the button appeared dead. Two fixes: (1) the CALICO entry path's very first line did an UNGUARDED err.classList.remove('show') / info.classList.remove('show') — if formError/formInfo were ever missing this crashed the whole handler before the MV/CORIO mode-branch (the MV/CORIO branch functions were already null-guarded; the CALICO entry was not). Now null-guarded. (2) The CALICO input-building block read ~20 fields via unguarded document.getElementById('f_xxx').value.trim() — any one missing element threw. Replaced with a null-safe _fv(id) helper: a missing element yields '' so it degrades to a visible validation miss instead of a silent crash. Also: the whole handler is now wrapped — calculateAndLog() delegates to _calculateAndLogImpl() inside try/catch; any unhandled error is shown on the form (red banner, scrolled into view) + a toast, the button is re-enabled, and the error is console.error'd. A console breadcrumb logs every click with the active mode. Net: Generate BoM can no longer fail invisibly — it either works, shows a validation message, or shows the actual error. No backend change. Pairs with v26.19.0. Previously: v25.99.29 — PERFORMANCE + UX (C-TV-3/4/5/7). PERF — ~2.5 MB removed from the initial page load: (1) echarts-gl (~600 KB) deleted — it was loaded as foundation for a 3D India map that was never built; no registerMap/geo3D/3D-series code exists. (2) xlsx@0.18.5 (~900 KB) no longer loaded in <head> — it is used ONLY by the Super-admin Sales-History Excel upload, so it now loads on demand via _ensureXlsxLoaded_tv() the first time a Super opens that upload; the ~25 non-Super reps never download it. (3) ECharts@5.4.3 (~1 MB) no longer in <head> — it now loads on demand via _ensureEchartsLoaded_tv() the first time the Dashboard is opened; _renderTeamCharts() kicks the load then re-runs once ready. Dashboard KPIs/tables render instantly; chart graphics fill in a beat later on first open. The single-file deploy model is intentionally KEPT — the inline script was deliberately NOT split into separate files (that would add multi-file deploy fragility without speeding first paint, since the browser parses all the JS regardless; deferring unused code is the actual win and is what was done). UX — (4) C-TV-4: resetForm() now also clears the 4 Signal Extension carts (HDBaseT/Splitter/AOC/Audio-Extractor) and re-renders their panels — Reset is now a genuinely clean slate (was 'design intent' to keep them; it surprised users). (5) C-TV-5: the MV '+ Add another input signal type' button now scrolls the newly added row into view — on mobile the new row rendered below the fold so the tap looked dead. No backend change. Pairs with v26.19.0. Previously: v25.99.28 — TEST MODE HARDENING: verified Test Mode is permanently gone. Closed the last path that could keep a deal test-flagged — the edit/re-save object builder was carrying isTest forward via 'input.isTest || ' '' '; it now always writes '' so editing ANY old test-flagged deal turns it into a real deal. Confirmed every assignment to window._testModeOnTV is '= false' (zero '= true' paths). _initTestModeTV() force-clears stale localStorage on boot; setTestModeTV() is a no-op. Test Mode cannot be re-enabled by any code path. No backend change. Pairs with v26.19.0. Previously: v25.99.27 — UI CLEANUP: (1) Removed the yellow "Recommendation logic rebuilt (v25.80)" engine banner from the Result page — it was launch-era explanatory copy no longer needed. (2) Removed the note at the bottom of the green "For Pricing & Quotation" card ("Download the Excel BOM below and email it along with your enquiry for a swift quote.") per request. (3) Corrected the role label on the pricing card "National Product Manager" → "National Product Lead". No backend change. Pairs with v26.19.0. Previously: v25.99.26 — TEST MODE RETIRED. Test Mode let a user flag their submissions isTest=TRUE so they were hidden from Dashboard + Review analytics — but if left on by accident, real deals silently vanished from reporting. Now retired (parity with BrightSign, which retired it in BS v24.25.7). Changes: (1) _initTestModeTV() stubbed — always sets _testModeOnTV=false AND force-clears any stale per-user localStorage flag so a user who had Test Mode ON before this update does not keep flagging deals. (2) setTestModeTV() stubbed to a no-op. (3) _renderTestModeBannerTV() stubbed — banner permanently hidden. (4) Test Mode banner HTML removed (was a sticky orange diagonal-stripe strip). (5) Profile Test Mode toggle card removed (hidden no-op stub inputs kept so legacy references never throw). (6) All 3 isTest write sites now always write '' — all deals are real deals. The isTest sheet column stays intact (unwritten); _filterTestDataTV and _buildTestBadgeTV read-side logic kept so any pre-existing test-flagged rows still filter from analytics and still show the History badge. No backend change. Pairs with v26.19.0. Previously: v25.99.25 — UX POLISH: splash performance + wording stragglers. After v25.97.1's "Generate BoM relocated to bottom of form", the formError/formInfo divs stayed at their old position (~L7874, near top of form, far above the new button location). Rep clicks Generate BoM with invalid input (e.g. no MV input signal picked) → _mvCalculateAndLog or _corioCalculateAndLog fires err.classList.add('show') → banner appears but ~hundreds of pixels above rep's viewport → rep sees "nothing happens". Fix: added err.scrollIntoView({behavior:'smooth',block:'center'}) at 7 error-show sites in MV and CORIO branches that were missing it (the standard CALICO calculateAndLog already had scrollIntoView at L11920). 7 sites patched: MV empty-input, MV result-error, MV save-fail, CORIO no-result, CORIO result-error, CORIO empty-bom, CORIO save-fail. No backend change. Pairs with v26.19.0. Previously: v25.99.23 — EMAIL FLOW mailto: switch. Click "Send Email" in modal now: (1) downloads BOTH the PDF and Excel quote files for the rep to attach, (2) opens their default mail client (Outlook on M365) with To/CC/Subject/Body pre-filled from the modal fields, (3) rep attaches the just-downloaded files in Outlook and clicks Send — email truly originates from rep's mailbox, appears in their Sent folder, passes SPF/DKIM/DMARC. dipen.g@cavitak.com forced CC pre-filled (rep can technically remove but instructed not to). Modal subtitle updated to reflect new flow. Backend email_send handler intentionally left in place (dormant, no UI call site) — easy revert if ever needed. No backend deploy required. Pairs with v26.19.0. Previously: v25.99.22 — UX wording pass + Excel polish. WORDING: every "Saving…" / "Signing in…" button label → "Loading…" (11 sites). "Generating..." → "Recommending…" on Generate BoM button. Success toasts neutralized: "Changes saved"/"Deal registered"/"CORIO deal saved"/"Multi Viewer deal saved" → "Done ✓"; "PDF downloaded" → "PDF ready ✓"; "Profile saved — welcome X!" → "Welcome, X ✓"; "Saved — will finalize shortly" → "Done · finalizing…"; "Draft saved" → "✓"; "Offline · saved locally only" → "Offline · stored on this device only". Trust signals removed: "Audit-logged." badge dropped from stage-note callout; "(only logged when stage actually changes)" stripped from f_stageNote placeholder. Analyzing splash eyebrow "Analyzing Configuration" → "Generating recommendation…". EXCEL POLISH: RECOMMENDED SOLUTION verdict now product-aware (was hardcoded CALICO-only) — MV deals show "tvONE CORIOview · Multi Viewer configuration", CORIO deals show "tvONE [chassisLabel] · CORIO configuration", CALICO unchanged. Warranty T&C: "tvONE CALICO PRO series" → "tvONE products". WhatsApp default message + Email body + Email subject + Excel filename all dropped CALICO-specific phrasing (now neutral "tvONE BOM summary" / "tvONE recommendation and BOM" / "tvONE Quote · …" / "tvONE_Quote_…xlsx"). Tricolor stripe alignment intentionally kept as-is (forest dominant = on-brand; true thirds would shrink primary brand colour). No backend changes; pairs with v26.19.0.
+  const TVONE_FRONTEND_VERSION = '25.99.36';  // v25.99.36 — FINAL BUNDLE. (A) QUOTE FILENAME STANDARDISATION: Excel + PDF downloads now follow tvONE_<ProjectName>_<CaseID>.<ext>. Was inconsistent — PDF used 'tvONE_Quote_<refId>_<proj>.pdf', Excel used 'tvONE_Quote_<client>_<project>_<date>.xlsx'. New _buildQuoteFilenameTV() helper sanitises the project name (non-alphanumerics → '_', trimmed, 40-char cap; 'Quote' fallback) and appends the refId as CaseID (Excel falls back to the quote number if refId absent). Parity with BrightSign v24.45.12 (BS_<ProjectName>_<CaseID>). (B) EXCEL PRICE COLUMNS REMOVED: tvONE has no prices, so the always-empty Unit Price + Line Total columns are removed from the BOM table (main rows + companion items). The 7-column sheet structure is KEPT (header band, meta block, T&C all merge A:G) — only the BOM table drops E/F, with Notes merged across E:G to use the freed width. (C) REQUIREMENTS SUMMARY now reads the real per-signal-type breakdown (window._tvInputBreakdownV2580) so it shows SDI 12G / SDI 3G / HDBaseT / IP / Audio each as their own line — previously non-HDMI inputs were lumped into one vague tile that could miss the user's actual selections. Legacy aggregate fallback kept for very old deals. Pairs with backend v26.19.0 (duplicate-row guard + cleanupDuplicateSubmissions_ONESHOT). Previously: v25.99.35 — DUPLICATE-ROW FIX. Reported: a deal entered once appeared 4x in the dashboard / 2x in History — meaning analytics counted inflated data. Root cause: logToSheet() returned the raw fetch() promise without ever reading the response body or checking resp.ok. The caller's `await` resolved when the request completed — NOT when the row was confirmed written. On a slow or blipped response the await could reject AFTER the sheet write had actually succeeded; the catch-block then called queuePendingSubmission() → the retry wrote a SECOND copy → a retry that also couldn't confirm looped → 3-4 duplicate rows from one entry. Fix: logToSheet() now (a) catches true network failure separately (retryable), (b) checks resp.ok (HTTP failure → retryable), (c) reads the JSON body and treats only a confirmed non-{ok:false} response as success; an explicit server rejection is marked _noRetry so it is never retried. drainPendingQueue() now drops _noRetry items instead of looping them forever. The redundant (and now broken — body already consumed) second resp.json() reads in the MV and CORIO save paths were removed. NOTE: this fixes the common false-failure→retry→duplicate cause; full idempotency (backend dedup on a client-generated submission ID) is a separate backend change. No backend change in this version. Pairs with v26.19.0. Previously: v25.99.34 — QUOTE OUTPUT FIXES (from cross-app Excel/PDF audit). (1) [object Object] BUG: the CORIO PDF chassis heading printed "C7-PRO-1200 — [object Object]" on the customer quote. Cause: it printed reco.model, a field that does not exist on the reco object; and chassisLabel was being set from cRes.chassis.label (the chassis object's text field is `tagline`, there is no `.label`). Fixed: chassisLabel now reads cRes.chassis.tagline (|| .model); PDF + WhatsApp + email headings print reco.chassisLabel and ONLY when it is a non-empty string (never an object). (2) EMPTY TOTALS BLOCK: the tvONE Excel always rendered Subtotal / GST / GRAND TOTAL rows with formulas, but tvONE has NO prices so they computed to 0/blank on every quote; the SUM was also wrong (SUM(F19:F19) covered only the first BOM row, missing companion items). Replaced with a 'Pricing not included' amber note, matching what the PDF already shows. (3) TABLE HEADER PARITY: Unit Price / Line Total Excel headers are now RIGHT-aligned to match BrightSign (were center-aligned). No backend change. Pairs with v26.19.0. Previously: v25.99.33 — CORIO INPUT-CARD BUGFIX: reported — selecting SDI 12G + SDI 3G inputs produced a BOM with NO input card at all. Root cause: the chassis cascade picked the 1U C7-PRO-1200 for any small config (hdmiPortsNeeded<=2 && inputsNeeded<=6). The C7-PRO-1200 is a FIXED chassis with NO expansion slots — its 6 inputs are HDMI-native only. The entire input-card selection block is gated on `chassis === 'C7-PRO-2200'`, so when the 1200 was picked the SDI/HDBaseT/IP input cards were silently dropped — the customer-facing BOM omitted hardware the project actually needs. Fix: the C7-PRO-1200 is now only eligible when EVERY input is HDMI (and no audio-input card is needed). Any SDI / HDBaseT / IP input — or an audio input — forces the 2U C7-PRO-2200, which has the input-card slots. Verified by simulation: bug scenario now picks C7-PRO-2200; all-HDMI small configs still correctly pick the 1200 (no regression); HDBaseT/IP inputs also correctly force the 2U. No backend change. Pairs with v26.19.0. Previously: v25.99.32 — STALE-CACHE FIX: the Profile Gate save (_saveProfileGateTV) mirrored the freshly-entered professionalTitle/email/phone to currentUser but never invalidated window._allUsersTV. The Excel/PDF salesperson + presales lookup reads professionalTitle/phone/email from that cache; if it had been fetched earlier in the session it still held the pre-update (blank-title) row, so a quote referencing that rep showed a stale/blank professional title even right after they filled it in. The save now sets window._allUsersTV = null after a successful profile_update, forcing _fetchAllUsersTV() to re-fetch fresh on the next export. Pairs with BS v24.45.10 (same fix, same reasoning). No backend change. Pairs with v26.19.0. Previously: v25.99.31 — ROOT-CAUSE FIX: Excel + PDF showed the SHORT login name for Sales/Presales person instead of the full name. Reported repeatedly; prior fixes (v25.99.21) addressed the wrong layer (cache-fetch timing) and never worked. ACTUAL root cause: _findUserXL (Excel) and _findUserTV (PDF) matched the user cache on `u.loginName` — a field that does NOT exist on tvONE user objects. tvONE objects use `username` (every other lookup in the file — _resolveLabel, _resolveOwnerNameTV — correctly uses `username`; these two export helpers were ported from BS, which DOES use loginName, without adapting the field name). So .find() ALWAYS missed and both exports fell through to {fullName: loginName}. Fixed both helpers to match on `u.username`. Verified by simulation: old returned 'dipenkumar', fixed returns 'Dipenkumar Gajjar'. CROSS-CHECK also found + fixed 4 dashboard/leaderboard lookups using `window._allUsers` (BS's variable name — never populated in tvONE) with `x.loginName`; switched to `window._allUsersTV` + `x.username`. The 2 remaining u.loginName reads (L23351/23503) are correct — they read _getStateUser() which deliberately aliases loginName=username. PARITY: BS Excel/PDF resolves names correctly via its own _allUsers+loginName (correct for BS's data shape); tvONE now resolves correctly via _allUsersTV+username — user-facing output (full name in Excel + PDF) is now uniform across both apps. No backend change. Pairs with v26.19.0. Previously: v25.99.30 — GENERATE BOM SILENT-FAIL FIX. Reported: "Generate BoM does nothing." Root cause class: calculateAndLog() could throw before any error UI rendered, so the handler died silently and the button appeared dead. Two fixes: (1) the CALICO entry path's very first line did an UNGUARDED err.classList.remove('show') / info.classList.remove('show') — if formError/formInfo were ever missing this crashed the whole handler before the MV/CORIO mode-branch (the MV/CORIO branch functions were already null-guarded; the CALICO entry was not). Now null-guarded. (2) The CALICO input-building block read ~20 fields via unguarded document.getElementById('f_xxx').value.trim() — any one missing element threw. Replaced with a null-safe _fv(id) helper: a missing element yields '' so it degrades to a visible validation miss instead of a silent crash. Also: the whole handler is now wrapped — calculateAndLog() delegates to _calculateAndLogImpl() inside try/catch; any unhandled error is shown on the form (red banner, scrolled into view) + a toast, the button is re-enabled, and the error is console.error'd. A console breadcrumb logs every click with the active mode. Net: Generate BoM can no longer fail invisibly — it either works, shows a validation message, or shows the actual error. No backend change. Pairs with v26.19.0. Previously: v25.99.29 — PERFORMANCE + UX (C-TV-3/4/5/7). PERF — ~2.5 MB removed from the initial page load: (1) echarts-gl (~600 KB) deleted — it was loaded as foundation for a 3D India map that was never built; no registerMap/geo3D/3D-series code exists. (2) xlsx@0.18.5 (~900 KB) no longer loaded in <head> — it is used ONLY by the Super-admin Sales-History Excel upload, so it now loads on demand via _ensureXlsxLoaded_tv() the first time a Super opens that upload; the ~25 non-Super reps never download it. (3) ECharts@5.4.3 (~1 MB) no longer in <head> — it now loads on demand via _ensureEchartsLoaded_tv() the first time the Dashboard is opened; _renderTeamCharts() kicks the load then re-runs once ready. Dashboard KPIs/tables render instantly; chart graphics fill in a beat later on first open. The single-file deploy model is intentionally KEPT — the inline script was deliberately NOT split into separate files (that would add multi-file deploy fragility without speeding first paint, since the browser parses all the JS regardless; deferring unused code is the actual win and is what was done). UX — (4) C-TV-4: resetForm() now also clears the 4 Signal Extension carts (HDBaseT/Splitter/AOC/Audio-Extractor) and re-renders their panels — Reset is now a genuinely clean slate (was 'design intent' to keep them; it surprised users). (5) C-TV-5: the MV '+ Add another input signal type' button now scrolls the newly added row into view — on mobile the new row rendered below the fold so the tap looked dead. No backend change. Pairs with v26.19.0. Previously: v25.99.28 — TEST MODE HARDENING: verified Test Mode is permanently gone. Closed the last path that could keep a deal test-flagged — the edit/re-save object builder was carrying isTest forward via 'input.isTest || ' '' '; it now always writes '' so editing ANY old test-flagged deal turns it into a real deal. Confirmed every assignment to window._testModeOnTV is '= false' (zero '= true' paths). _initTestModeTV() force-clears stale localStorage on boot; setTestModeTV() is a no-op. Test Mode cannot be re-enabled by any code path. No backend change. Pairs with v26.19.0. Previously: v25.99.27 — UI CLEANUP: (1) Removed the yellow "Recommendation logic rebuilt (v25.80)" engine banner from the Result page — it was launch-era explanatory copy no longer needed. (2) Removed the note at the bottom of the green "For Pricing & Quotation" card ("Download the Excel BOM below and email it along with your enquiry for a swift quote.") per request. (3) Corrected the role label on the pricing card "National Product Manager" → "National Product Lead". No backend change. Pairs with v26.19.0. Previously: v25.99.26 — TEST MODE RETIRED. Test Mode let a user flag their submissions isTest=TRUE so they were hidden from Dashboard + Review analytics — but if left on by accident, real deals silently vanished from reporting. Now retired (parity with BrightSign, which retired it in BS v24.25.7). Changes: (1) _initTestModeTV() stubbed — always sets _testModeOnTV=false AND force-clears any stale per-user localStorage flag so a user who had Test Mode ON before this update does not keep flagging deals. (2) setTestModeTV() stubbed to a no-op. (3) _renderTestModeBannerTV() stubbed — banner permanently hidden. (4) Test Mode banner HTML removed (was a sticky orange diagonal-stripe strip). (5) Profile Test Mode toggle card removed (hidden no-op stub inputs kept so legacy references never throw). (6) All 3 isTest write sites now always write '' — all deals are real deals. The isTest sheet column stays intact (unwritten); _filterTestDataTV and _buildTestBadgeTV read-side logic kept so any pre-existing test-flagged rows still filter from analytics and still show the History badge. No backend change. Pairs with v26.19.0. Previously: v25.99.25 — UX POLISH: splash performance + wording stragglers. After v25.97.1's "Generate BoM relocated to bottom of form", the formError/formInfo divs stayed at their old position (~L7874, near top of form, far above the new button location). Rep clicks Generate BoM with invalid input (e.g. no MV input signal picked) → _mvCalculateAndLog or _corioCalculateAndLog fires err.classList.add('show') → banner appears but ~hundreds of pixels above rep's viewport → rep sees "nothing happens". Fix: added err.scrollIntoView({behavior:'smooth',block:'center'}) at 7 error-show sites in MV and CORIO branches that were missing it (the standard CALICO calculateAndLog already had scrollIntoView at L11920). 7 sites patched: MV empty-input, MV result-error, MV save-fail, CORIO no-result, CORIO result-error, CORIO empty-bom, CORIO save-fail. No backend change. Pairs with v26.19.0. Previously: v25.99.23 — EMAIL FLOW mailto: switch. Click "Send Email" in modal now: (1) downloads BOTH the PDF and Excel quote files for the rep to attach, (2) opens their default mail client (Outlook on M365) with To/CC/Subject/Body pre-filled from the modal fields, (3) rep attaches the just-downloaded files in Outlook and clicks Send — email truly originates from rep's mailbox, appears in their Sent folder, passes SPF/DKIM/DMARC. dipen.g@cavitak.com forced CC pre-filled (rep can technically remove but instructed not to). Modal subtitle updated to reflect new flow. Backend email_send handler intentionally left in place (dormant, no UI call site) — easy revert if ever needed. No backend deploy required. Pairs with v26.19.0. Previously: v25.99.22 — UX wording pass + Excel polish. WORDING: every "Saving…" / "Signing in…" button label → "Loading…" (11 sites). "Generating..." → "Recommending…" on Generate BoM button. Success toasts neutralized: "Changes saved"/"Deal registered"/"CORIO deal saved"/"Multi Viewer deal saved" → "Done ✓"; "PDF downloaded" → "PDF ready ✓"; "Profile saved — welcome X!" → "Welcome, X ✓"; "Saved — will finalize shortly" → "Done · finalizing…"; "Draft saved" → "✓"; "Offline · saved locally only" → "Offline · stored on this device only". Trust signals removed: "Audit-logged." badge dropped from stage-note callout; "(only logged when stage actually changes)" stripped from f_stageNote placeholder. Analyzing splash eyebrow "Analyzing Configuration" → "Generating recommendation…". EXCEL POLISH: RECOMMENDED SOLUTION verdict now product-aware (was hardcoded CALICO-only) — MV deals show "tvONE CORIOview · Multi Viewer configuration", CORIO deals show "tvONE [chassisLabel] · CORIO configuration", CALICO unchanged. Warranty T&C: "tvONE CALICO PRO series" → "tvONE products". WhatsApp default message + Email body + Email subject + Excel filename all dropped CALICO-specific phrasing (now neutral "tvONE BOM summary" / "tvONE recommendation and BOM" / "tvONE Quote · …" / "tvONE_Quote_…xlsx"). Tricolor stripe alignment intentionally kept as-is (forest dominant = on-brand; true thirds would shrink primary brand colour). No backend changes; pairs with v26.19.0.
   // v25.99.21 — Fix salesperson/presales footer showing "loginName / — / — / —" instead of full name + role + phone + email. Root cause: _allUsersTV cache wasn't loaded when export was triggered directly from History tab (form-show effect that populates the cache hadn't fired). Two surgical fixes: (1) both exportQuotePDFTV and exportToExcel now await _fetchAllUsersTV() at entry if the cache is empty (~5 lines each). (2) Defensive _findUserTV / _findUserXL fallback: when cache lookup misses AND the missing user IS the currently logged-in user, populate from currentUser instead of returning login-name-as-name. Same fix applied to both PDF and Excel lookup helpers. No backend changes. NOTE: Users sheet rows must still have professionalTitle / phone / email populated for those fields to appear — Dipenkumar's row is missing these in production. Fill in the Users sheet to make role/phone/email populate.
   // v25.99.20 — Cavitak logo + redesigned headers/footers shipped in BOTH Excel and PDF exports. PDF: BS-pattern layout (logo top-left + vertical separator + title block + QUOTE meta top-right) using tvONE forest-green/gold colour palette. Tricolor accent stripe (forest/gold/red) under header. Section headers switched from slate ink to forest-dark. Footer gained Cavitak distributor band (logo + "Cavitak Marketing Pvt Ltd · Authorized tvONE distributor · India") above salesperson contact. Footer text "tvONE CALICO Configurator" corrected to "tvONE Product Selector". Excel Quote tab: rebuilt header — Cavitak logo over A1:B2 + tvONE title + tagline in C-G rows 1-2 + tricolor stripe in row 3, replacing the "CALICO PRO" / "Command every pixel" solid-green band. QUOTATION + Quote No. block preserved at row 4. Footer attribution line upgraded to logo + rich-text distributor band before print-area boundary. Logo files embedded as base64 PNG constants (LOGO_CAVITAK_B64 280x79px ~18KB, LOGO_TVONE_B64 240x61px ~14KB) at top of EXCEL_DESIGN section. Hardcoded base64 chosen over runtime fetch to avoid CORS/404 surface. All image embeds wrapped in try/catch so exports still succeed if image API fails. No backend changes; pairs with v26.19.0.
   // v25.99.19 — loadAuditHistory() micro-cache (60s TTL, module-scoped Map, no localStorage) + AbortController to cancel in-flight fetches on rapid re-clicks. Repeat clicks on same deal's 🕒 Edit History within 60s now skip the ~300ms backend round-trip. Stale-response clobber race (theoretical) fixed by aborting prior fetch when a new one starts. Render path extracted to _renderAuditHistory(refId, audit, sub, body) so cache-hit and fetch-hit share one code path. No backend changes; pairs with v26.19.0.
@@ -11614,13 +11614,29 @@ body.light .signal-card-footer-tv {
     let outputCardInfeasible = false;
 
     // CHASSIS CASCADE
-    if (!userWantsSDI && hdmiPortsNeeded <= 2 && inputsNeeded <= 6) {
+    // v25.99.33 BUGFIX: the 1U C7-PRO-1200 is a FIXED chassis with NO expansion slots —
+    // its 6 inputs are HDMI-native only. SDI / HDBaseT / IP inputs ALWAYS need an input
+    // card, and only the 2U C7-PRO-2200 has slots for those. Previously the cascade
+    // could pick the 1200 for any small config (hdmiPortsNeeded<=2 && inputsNeeded<=6),
+    // even when the customer asked for SDI inputs — and because the input-card block is
+    // gated on `chassis === 'C7-PRO-2200'`, those SDI cards were silently dropped from
+    // the BOM. Now: the 1200 is only eligible when EVERY input is HDMI.
+    const _bdChassis = window._tvInputBreakdownV2580 || null;
+    const _needsInputCardSlots = _bdChassis && (
+      (_bdChassis.sdi12g || 0) + (_bdChassis.sdi3g || 0) +
+      (_bdChassis.hdbt || 0) + (_bdChassis.ip || 0) > 0
+    );
+    const _audioInChassis = _bdChassis && (_bdChassis.audioIn || _bdChassis.audioNeeded);
+    if (!userWantsSDI && !_needsInputCardSlots && !_audioInChassis
+        && hdmiPortsNeeded <= 2 && inputsNeeded <= 6) {
       chassis = 'C7-PRO-1200';
       reasons.push('HDMI output ports: ' + hdmiPortsNeeded + ' — fits C7-PRO-1200 (2 ports native)');
-      reasons.push('Inputs: ' + inputsNeeded + ' — fits C7-PRO-1200 (6 inputs native)');
+      reasons.push('Inputs: ' + inputsNeeded + ' (all HDMI) — fits C7-PRO-1200 (6 inputs native)');
     } else {
       chassis = 'C7-PRO-2200';
       if (userWantsSDI) reasons.push('SDI output required — C7-PRO-2200 (1U does not support SDI)');
+      if (_needsInputCardSlots) reasons.push('Non-HDMI inputs (SDI / HDBaseT / IP) require expansion cards — C7-PRO-2200 (1U fixed chassis has no input slots)');
+      if (_audioInChassis) reasons.push('Audio input card required — C7-PRO-2200 (only the 2U chassis has the input slot for it)');
       if (!userWantsSDI && hdmiPortsNeeded <= 4 && inputsNeeded <= 8) {
         reasons.push('HDMI outputs: ' + hdmiPortsNeeded + ', Inputs: ' + inputsNeeded + ' — fit C7-PRO-2200 native');
       }
@@ -12244,22 +12260,48 @@ body.light .signal-card-footer-tv {
 
   async function logToSheet(submission) {
     if (!WEB_APP_URL) throw new Error('No backend URL configured');
-    // v25.66 (MM3): switched from mode:'no-cors' to mode:'cors' so we can READ the
-    // backend response. Previously the no-cors response was opaque so any silent
-    // server-side rejection (auth, validation, sheet missing) was invisible to UI
-    // — user saw "Saved ✓" while data was lost. Content-Type stays text/plain so
-    // request remains a "simple request" — no preflight needed.
-    // v25.17: added auth fields. v25.66: now actually returning the response.
-    return fetch(WEB_APP_URL, {
-      method: 'POST', mode: 'cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'log',
-        authUsername: currentUser ? currentUser.username : '',
-        authPasswordHash: _authHash || '',
-        submission: submission
-      })
-    });
+    // v25.99.35 — DUPLICATE-ROW FIX. logToSheet previously returned the raw fetch
+    // promise without reading the response. The caller's `await` resolved as soon as
+    // the request completed — but that does NOT confirm the row was written. On a slow
+    // or blipped response the await could still reject AFTER the sheet write succeeded,
+    // so the catch-block queued the submission for retry → the retry wrote a SECOND
+    // copy. A retry that itself couldn't confirm looped → 3-4 duplicate rows from a
+    // single deal entry. Now logToSheet reads the response and only resolves on a
+    // confirmed server "ok"; anything else throws, so the caller's retry logic only
+    // ever fires on a genuine failure.
+    let resp;
+    try {
+      resp = await fetch(WEB_APP_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'log',
+          authUsername: currentUser ? currentUser.username : '',
+          authPasswordHash: _authHash || '',
+          submission: submission
+        })
+      });
+    } catch (netErr) {
+      // True network failure — request never completed. Safe to retry.
+      throw new Error('NETWORK_FAIL: ' + (netErr && netErr.message ? netErr.message : netErr));
+    }
+    if (!resp || !resp.ok) {
+      // HTTP-level failure (5xx, etc). The write almost certainly did not happen.
+      throw new Error('HTTP_FAIL: ' + (resp ? resp.status : 'no response'));
+    }
+    // Read the body. A confirmed { ok:true } is the ONLY success signal.
+    let data = null;
+    try { data = await resp.json(); } catch (_) { data = null; }
+    if (data && data.ok === false) {
+      // Server explicitly rejected (auth/validation). Do NOT retry — retry won't help.
+      const e = new Error('SERVER_REJECT: ' + (data.error || 'rejected'));
+      e._noRetry = true;
+      throw e;
+    }
+    // data.ok === true → confirmed write. data === null (opaque/legacy backend that
+    // didn't return JSON) is treated as success because resp.ok was true and the
+    // request completed — same as the pre-v25.66 behaviour, no worse.
+    return resp;
   }
 
   // =================================================================
@@ -13095,10 +13137,11 @@ body.light .signal-card-footer-tv {
       } else {
         resp = await logToSheet(submission);
       }
-      let data = null;
-      try { data = await resp.json(); } catch(_) { /* opaque/legacy */ }
-      if (data && data.ok === false) { throw new Error(data.error || 'Server rejected submission'); }
-      if (typeof showSync === 'function') showSync('Done ✓', 'success');
+      // v25.99.35 — logToSheet now verifies the response internally and throws on
+      // any failure, so reaching here means a confirmed save. The old re-read of
+      // resp.json() here would throw anyway (the body was already consumed by
+      // logToSheet) — removed.
+      if (typeof showSync === 'function') showSync('Done \u2713', 'success');
 
       // Write ProjectLines
       const _mvBomLines = mvRes.bom.map(function(ln, idx) {
@@ -13322,10 +13365,11 @@ body.light .signal-card-footer-tv {
       } else {
         resp = await logToSheet(submission);
       }
-      let data = null;
-      try { data = await resp.json(); } catch(_) {}
-      if (data && data.ok === false) { throw new Error(data.error || 'Server rejected submission'); }
-      if (typeof showSync === 'function') showSync('Done ✓', 'success');
+      // v25.99.35 — logToSheet now verifies the response internally and throws on
+      // any failure, so reaching here means a confirmed save. The old re-read of
+      // resp.json() here would throw anyway (the body was already consumed by
+      // logToSheet) — removed.
+      if (typeof showSync === 'function') showSync('Done \u2713', 'success');
 
       const _corioBomLines = cRes.bom.map(function(ln, idx) {
         return {
@@ -13352,7 +13396,10 @@ body.light .signal-card-footer-tv {
 
       lastResult = {
         input: input,
-        reco:  { chassis: chassisSku, bom: cRes.bom, corioMode: true, slotsUsed: cRes.slotsUsed, slotsTotal: cRes.slotsTotal, chassisLabel: cRes.chassis.label },
+        // v25.99.34 — chassisLabel was reading cRes.chassis.label, a field that does
+        // NOT exist on the chassis object (the human description field is `tagline`).
+        // That left chassisLabel undefined and the PDF heading printed "[object Object]".
+        reco:  { chassis: chassisSku, bom: cRes.bom, corioMode: true, slotsUsed: cRes.slotsUsed, slotsTotal: cRes.slotsTotal, chassisLabel: (cRes.chassis && (cRes.chassis.tagline || cRes.chassis.model)) || '' },
         submission: submission
       };
       sessionLog.unshift(submission);
@@ -14832,8 +14879,16 @@ body.light .signal-card-footer-tv {
     for (let i = 0; i < q.length; i++) {
       try {
         await logToSheet(q[i].submission);
+        // success — do NOT re-queue (this is the duplicate-prevention point)
       } catch (e) {
-        remaining.push(q[i]);
+        // v25.99.35 — only re-queue genuine, retryable failures. A server-side
+        // rejection (_noRetry) would loop forever and could still write duplicates
+        // if the server actually accepted it — drop it from the queue instead.
+        if (e && e._noRetry) {
+          console.warn('[drainPendingQueue] dropping non-retryable submission:', e.message);
+        } else {
+          remaining.push(q[i]);
+        }
       }
     }
     try { localStorage.setItem(PENDING_QUEUE_KEY, JSON.stringify(remaining)); } catch (e) {}
@@ -15596,24 +15651,33 @@ body.light .signal-card-footer-tv {
     html += '</div>';
 
     // ---- Card 3: Requirements Summary ----
-    const signals = input.signals || 'HDMI';
-    const hasSDI = signals.indexOf('SDI') >= 0;
-    const hasHDBT = signals.indexOf('HDBT') >= 0;
-    const hasIP = signals.indexOf('IP') >= 0;
+    // v25.99.36 — read the real per-signal-type breakdown (the same source the BOM
+    // engine uses) so the summary shows EXACTLY what the customer selected — SDI 12G,
+    // SDI 3G, HDBaseT, IP each as their own line — instead of lumping non-HDMI inputs
+    // into one vague "SDI / Other" tile that could miss the user's actual picks.
+    const _bdSum = window._tvInputBreakdownV2580 || {};
 
     html += '<div class="card">';
     html += '<div class="card-title">Requirements Summary</div>';
     html += '<div class="reco-specs">';
-    // Red only if the port count actually exceeds single-chassis limits (12 HDMI max with output card, 4 SDI max)
+    // Outputs
     html += specCell('HDMI Output Ports', reco.hdmiPortsNeeded, reco.hdmiPortsNeeded > 12);
     if (reco.sdiPortsNeeded > 0) html += specCell('SDI Output Ports', reco.sdiPortsNeeded, reco.sdiPortsNeeded > 4);
+    // Total inputs
     html += specCell('Total Input Sources', input.inputs);
-    if (input.inputs4K) html += specCell('HDMI Inputs @ 4K', input.inputs4K);
-    if (input.inputsFHD) html += specCell('HDMI Inputs @ FHD', input.inputsFHD);
-    const nonHdmi = Math.max(0, input.inputs - (input.inputs4K||0) - (input.inputsFHD||0));
-    if (nonHdmi > 0 && (hasSDI || hasHDBT || hasIP)) {
-      const label = hasSDI ? 'SDI / Other Inputs' : (hasHDBT ? 'HDBaseT / Other Inputs' : 'IP / Other Inputs');
-      html += specCell(label, nonHdmi);
+    // Per-signal-type input breakdown — only show a line if that type was actually requested.
+    if (_bdSum.hdmi4k)  html += specCell('HDMI Inputs @ 4K',  _bdSum.hdmi4k);
+    if (_bdSum.hdmiFhd) html += specCell('HDMI Inputs @ FHD', _bdSum.hdmiFhd);
+    if (_bdSum.sdi12g)  html += specCell('SDI 12G Inputs',    _bdSum.sdi12g);
+    if (_bdSum.sdi3g)   html += specCell('SDI 3G Inputs',     _bdSum.sdi3g);
+    if (_bdSum.hdbt)    html += specCell('HDBaseT Inputs',    _bdSum.hdbt);
+    if (_bdSum.ip)      html += specCell('IP Stream Inputs',  _bdSum.ip);
+    if (_bdSum.audioIn) html += specCell('Audio Input', 'Yes');
+    // Fallback: if the breakdown is unavailable (very old deal), fall back to the
+    // legacy aggregate so the card is never blank.
+    if (!_bdSum.hdmi4k && !_bdSum.hdmiFhd && !_bdSum.sdi12g && !_bdSum.sdi3g && !_bdSum.hdbt && !_bdSum.ip) {
+      if (input.inputs4K)  html += specCell('HDMI Inputs @ 4K', input.inputs4K);
+      if (input.inputsFHD) html += specCell('HDMI Inputs @ FHD', input.inputsFHD);
     }
     if (input.projectorCount) html += specCell('Projectors', input.projectorCount + ' × ' + input.projectorRes);
     if (input.screens.length) html += specCell('LED Screens', input.screens.length);
@@ -15732,6 +15796,22 @@ body.light .signal-card-footer-tv {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
   }
+
+  /* v25.99.36 — Shared quote-filename builder: tvONE_<ProjectName>_<CaseID>.<ext>.
+   * Project names can contain spaces and filename-illegal characters, so they're
+   * sanitised (non-alphanumeric runs → '_', trimmed, capped at 40 chars). Falls back
+   * to 'Quote' if empty. CaseID is the refId. Matches the BrightSign pattern
+   * (BS_Project_CaseID) so both apps name their quotes consistently. */
+  function _buildQuoteFilenameTV(projectName, caseId, ext) {
+    var proj = String(projectName || '').trim()
+      .replace(/[^A-Za-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 40);
+    if (!proj) proj = 'Quote';
+    var caseStr = String(caseId || '').trim().replace(/[^A-Za-z0-9\-]+/g, '') || 'NoRef';
+    return 'tvONE_' + proj + '_' + caseStr + '.' + ext;
+  }
+
   async function exportQuotePDFTV(returnDoc) {
     if (!lastResult) {
       if (returnDoc === true) return null;
@@ -15821,7 +15901,12 @@ body.light .signal-card-footer-tv {
         '<div style="font-size:12px;font-weight:700;color:#064E3B;letter-spacing:0.5px;margin-bottom:8px;">RECOMMENDED CHASSIS</div>' +
         '<div style="height:1px;background:#E2E8F0;margin-bottom:10px;"></div>' +
         '<div style="font-size:14px;font-weight:700;color:#064E3B;margin-bottom:6px;">' +
-          _escapeHtmlTV(reco.chassis) + (reco.model ? ' — ' + _escapeHtmlTV(reco.model) : '') +
+          _escapeHtmlTV(reco.chassis) +
+          // v25.99.34 — was reco.model (a field that doesn't exist on reco — it printed
+          // "[object Object]" on the customer PDF). Use chassisLabel, and ONLY when it
+          // is a non-empty string, never an object.
+          ((typeof reco.chassisLabel === 'string' && reco.chassisLabel.trim())
+            ? ' — ' + _escapeHtmlTV(reco.chassisLabel) : '') +
         '</div>' +
         (reco.reasons && reco.reasons.length ?
           ('<ul style="margin:0;padding-left:18px;font-size:10.5px;color:#475569;line-height:1.5;">' +
@@ -16003,8 +16088,8 @@ body.light .signal-card-footer-tv {
 
     if (returnDoc === true) return doc;
 
-    const safeProj = (input.project || 'project').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
-    doc.save('tvONE_Quote_' + refId + '_' + safeProj + '.pdf');
+    // v25.99.36 — tvONE_<ProjectName>_<CaseID>.pdf (parity with BrightSign).
+    doc.save(_buildQuoteFilenameTV(input.project, refId, 'pdf'));
     if (typeof showSync === 'function') showSync('PDF ready ✓', 'success');
   }
   window.exportQuotePDFTV = exportQuotePDFTV;
@@ -16037,7 +16122,7 @@ body.light .signal-card-footer-tv {
       'Here is the tvONE BOM summary:\n\n' +
       '*Project*: ' + (input.project || '—') + '\n' +
       '*End-user*: ' + (input.endUser || '—') + '\n' +
-      '*Recommended Chassis*: ' + (reco.chassis || '—') + (reco.model ? ' — ' + reco.model : '') + '\n' +
+      '*Recommended Chassis*: ' + (reco.chassis || '—') + ((typeof reco.chassisLabel === 'string' && reco.chassisLabel.trim()) ? ' — ' + reco.chassisLabel : '') + '\n' +  // v25.99.34 — was reco.model ([object Object])
       '*Quote ref*: ' + refId + '\n' +
       '*Valid until*: ' + validUntilStr + '\n\n' +
       'I will share the detailed PDF separately. Pricing will follow per our commercial terms. Let me know if you need any changes.\n\n' +
@@ -16109,7 +16194,7 @@ body.light .signal-card-footer-tv {
       'Please find attached the tvONE recommendation and BOM for your project "' + (input.project || 'Project') + '"' + (input.endUser ? (' at ' + input.endUser) : '') + '.',
       '',
       'Quote ref: ' + refId,
-      'Recommended Chassis: ' + (reco.chassis || '—') + (reco.model ? ' — ' + reco.model : ''),
+      'Recommended Chassis: ' + (reco.chassis || '—') + ((typeof reco.chassisLabel === 'string' && reco.chassisLabel.trim()) ? ' — ' + reco.chassisLabel : ''),  // v25.99.34 — was reco.model ([object Object])
       'Valid until: ' + new Date(Date.now() + 15*24*60*60*1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
       '',
       'Pricing will be shared separately based on commercial terms, volume, and forex at time of order.',
@@ -16318,11 +16403,11 @@ body.light .signal-card-footer-tv {
     ws1.columns = [
       { width: 18 },  // A: label col (QUOTED TO) / # col (BOM - centered)
       { width: 16 },  // B: SKU (on BOM) / merged value (on QUOTED TO)
-      { width: 36 },  // C: Description / merged value continuation
+      { width: 40 },  // C: Description / merged value continuation
       { width: 18 },  // D: label col (PROJECT DETAILS) / Qty col (BOM - centered)
-      { width: 14 },  // E: Unit Price / merged value
-      { width: 16 },  // F: Line Total / merged value continuation
-      { width: 24 }   // G: Notes / merged value continuation
+      { width: 14 },  // E: part of merged Notes span (E:G) on BOM rows
+      { width: 14 },  // F: part of merged Notes span
+      { width: 22 }   // G: part of merged Notes span
     ];
 
     let r = 1;
@@ -16517,20 +16602,28 @@ body.light .signal-card-footer-tv {
       { col: 'B', label: 'SKU' },
       { col: 'C', label: 'Description' },
       { col: 'D', label: 'Qty' },
-      { col: 'E', label: 'Unit Price (₹)' },
-      { col: 'F', label: 'Line Total (₹)' },
       { col: 'G', label: 'Notes' }
     ];
+    // v25.99.36 — tvONE has NO prices, so the Unit Price + Line Total columns (E, F)
+    // are removed from the BOM table. The 7-column sheet structure is KEPT (header
+    // band, meta block, T&C all merge across A:G) — only the BOM table drops E/F.
+    // The Notes header is merged E:G so it spans the freed width.
+    ws1.mergeCells('E' + r + ':G' + r);
     bomCols.forEach(function(c) {
       const cell = ws1.getCell(c.col + r);
       cell.value = c.label;
       cell.font = xlFont({ size: 10, bold: true, color: { argb: XL_WHITE } });
       cell.fill = xlFill(XL_FOREST_DARK);
       cell.alignment = {
-        horizontal: (c.col === 'A' || c.col === 'D' || c.col === 'E' || c.col === 'F') ? 'center' : 'left',
+        horizontal: (c.col === 'A' || c.col === 'D') ? 'center' : 'left',
         vertical: 'middle', indent: 1
       };
       cell.border = { bottom: { style: 'medium', color: { argb: XL_CAVITAK_RED } } };
+    });
+    // E/F header cells (now under the merged Notes label) — paint to match the band.
+    ['E', 'F'].forEach(function(col) {
+      ws1.getCell(col + r).fill = xlFill(XL_FOREST_DARK);
+      ws1.getCell(col + r).border = { bottom: { style: 'medium', color: { argb: XL_CAVITAK_RED } } };
     });
     ws1.getRow(r).height = 22;
     r++;
@@ -16556,29 +16649,15 @@ body.light .signal-card-footer-tv {
       ws1.getCell('D' + r).font = xlFont({ size: 11, bold: true });
       ws1.getCell('D' + r).alignment = { horizontal: 'center', vertical: 'middle' };
 
-      // Unit Price — EDITABLE, soft yellow highlight
-      ws1.getCell('E' + r).value = null;
-      ws1.getCell('E' + r).font = xlFont({ size: 11, bold: true });
-      ws1.getCell('E' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
-      ws1.getCell('E' + r).fill = xlFill(XL_YELLOW_SOFT);
-      ws1.getCell('E' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
-      ws1.getCell('E' + r).border = Object.assign(xlBorders('TB', XL_LINE), {
-        left: { style: 'medium', color: { argb: XL_GOLD } },
-        right: { style: 'medium', color: { argb: XL_GOLD } }
-      });
+      // v25.99.36 — Unit Price / Line Total columns removed (tvONE has no prices).
+      // Notes now spans the freed E:G width.
+      ws1.mergeCells('E' + r + ':G' + r);
+      ws1.getCell('E' + r).value = b.notes || '';
+      ws1.getCell('E' + r).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT }, italic: true });
+      ws1.getCell('E' + r).alignment = { vertical: 'middle', wrapText: true, indent: 1 };
 
-      // Line Total — FORMULA
-      ws1.getCell('F' + r).value = { formula: 'D' + r + '*E' + r, result: 0 };
-      ws1.getCell('F' + r).font = xlFont({ size: 11, bold: true, color: { argb: XL_FOREST_DARK } });
-      ws1.getCell('F' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
-      ws1.getCell('F' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
-
-      ws1.getCell('G' + r).value = b.notes || '';
-      ws1.getCell('G' + r).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT }, italic: true });
-      ws1.getCell('G' + r).alignment = { vertical: 'middle', wrapText: true };
-
-      // Apply zebra background to A, B, C, D, G (skip E which is yellow, F stays white)
-      ['A', 'B', 'C', 'D', 'G'].forEach(function(col) {
+      // Apply zebra background to all visible cells.
+      ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(function(col) {
         if (ws1.getCell(col + r).fill == null || !ws1.getCell(col + r).fill.fgColor) {
           ws1.getCell(col + r).fill = xlFill(zebra);
         }
@@ -16636,30 +16715,14 @@ body.light .signal-card-footer-tv {
         ws1.getCell('D' + r).font = xlFont({ size: 11, bold: true });
         ws1.getCell('D' + r).alignment = { horizontal: 'center', vertical: 'middle' };
 
-        // Unit Price — EDITABLE
-        ws1.getCell('E' + r).value = null;
-        ws1.getCell('E' + r).font = xlFont({ size: 11, bold: true });
-        ws1.getCell('E' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
-        ws1.getCell('E' + r).fill = xlFill(XL_YELLOW_SOFT);
-        ws1.getCell('E' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
-        ws1.getCell('E' + r).border = Object.assign(xlBorders('TB', XL_LINE), {
-          left: { style: 'medium', color: { argb: XL_GOLD } },
-          right: { style: 'medium', color: { argb: XL_GOLD } }
-        });
-
-        // Line Total — FORMULA
-        ws1.getCell('F' + r).value = { formula: 'D' + r + '*E' + r, result: 0 };
-        ws1.getCell('F' + r).font = xlFont({ size: 11, bold: true, color: { argb: XL_FOREST_DARK } });
-        ws1.getCell('F' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
-        ws1.getCell('F' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
-
-        // Family badge as Notes
+        // v25.99.36 — price columns removed; family badge (Notes) spans E:G.
         const famLabel = String(cl.family || '').replace('EXTENDER_', '').toLowerCase();
-        ws1.getCell('G' + r).value = famLabel;
-        ws1.getCell('G' + r).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT }, italic: true });
-        ws1.getCell('G' + r).alignment = { vertical: 'middle', wrapText: true };
+        ws1.mergeCells('E' + r + ':G' + r);
+        ws1.getCell('E' + r).value = famLabel;
+        ws1.getCell('E' + r).font = xlFont({ size: 10, color: { argb: XL_INK_SOFT }, italic: true });
+        ws1.getCell('E' + r).alignment = { vertical: 'middle', wrapText: true, indent: 1 };
 
-        ['A', 'B', 'C', 'D', 'G'].forEach(function(col) {
+        ['A', 'B', 'C', 'D', 'E', 'F', 'G'].forEach(function(col) {
           if (ws1.getCell(col + r).fill == null || !ws1.getCell(col + r).fill.fgColor) {
             ws1.getCell(col + r).fill = xlFill(zebra);
           }
@@ -16678,47 +16741,19 @@ body.light .signal-card-footer-tv {
     ws1.getRow(r).height = 6;
     r++;
 
-    // Subtotal
-    const subtotalRow = r;
-    ws1.mergeCells('A' + r + ':D' + r);
-    ws1.getCell('E' + r).value = 'Subtotal';
-    ws1.getCell('E' + r).font = xlFont({ size: 11, bold: true, color: { argb: XL_INK_SOFT } });
-    ws1.getCell('E' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
-    ws1.getCell('F' + r).value = { formula: 'SUM(F' + bomStartRow + ':F' + bomEndRow + ')', result: 0 };
-    ws1.getCell('F' + r).font = xlFont({ size: 11, bold: true });
-    ws1.getCell('F' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
-    ws1.getCell('F' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
-    ws1.getCell('F' + r).border = xlBorders('T', XL_INK);
-    ws1.getRow(r).height = 22;
-    r++;
-
-    // GST
-    const gstRow = r;
-    ws1.mergeCells('A' + r + ':D' + r);
-    ws1.getCell('E' + r).value = 'GST @ 18%';
-    ws1.getCell('E' + r).font = xlFont({ size: 11, color: { argb: XL_INK_SOFT } });
-    ws1.getCell('E' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
-    ws1.getCell('F' + r).value = { formula: 'F' + subtotalRow + '*0.18', result: 0 };
-    ws1.getCell('F' + r).font = xlFont({ size: 11 });
-    ws1.getCell('F' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
-    ws1.getCell('F' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
-    ws1.getRow(r).height = 20;
-    r++;
-
-    // Grand Total — full-width red band with merged label cell
-    const totalRow = r;
-    ws1.mergeCells('A' + r + ':E' + r);
-    const totalLabelCell = ws1.getCell('A' + r);
-    totalLabelCell.value = 'GRAND TOTAL (₹)';
-    totalLabelCell.font = xlFont({ size: 13, bold: true, color: { argb: XL_WHITE } });
-    totalLabelCell.fill = xlFill(XL_CAVITAK_RED);
-    totalLabelCell.alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
-    ws1.getCell('F' + r).value = { formula: 'F' + subtotalRow + '+F' + gstRow, result: 0 };
-    ws1.getCell('F' + r).font = xlFont({ size: 13, bold: true, color: { argb: XL_WHITE } });
-    ws1.getCell('F' + r).fill = xlFill(XL_CAVITAK_RED);
-    ws1.getCell('F' + r).alignment = { horizontal: 'right', vertical: 'middle', indent: 1 };
-    ws1.getCell('F' + r).numFmt = '#,##0.00;[Red]-#,##0.00;""';
-    ws1.getRow(r).height = 32;
+    // v25.99.34 — tvONE has NO prices. The old code always rendered Subtotal / GST /
+    // GRAND TOTAL rows with formulas (=SUM, =F*0.18) that computed to 0/blank on every
+    // quote — an empty totals block on a customer document. The SUM was also wrong
+    // (SUM(F19:F19) covered only the first BOM row, missing companion items). The PDF
+    // already shows a "Pricing not included" note instead; the Excel now matches.
+    ws1.mergeCells('A' + r + ':G' + r);
+    const _pnCell = ws1.getCell('A' + r);
+    _pnCell.value = 'Pricing not included — Cavitak Marketing will share commercial terms separately based on volume, project specifics, and forex at the time of order.';
+    _pnCell.font = xlFont({ size: 10, italic: true, color: { argb: XL_INK_SOFT } });
+    _pnCell.fill = xlFill('FFFEF9E7');  // soft amber, matches the PDF note band
+    _pnCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true, indent: 1 };
+    _pnCell.border = xlBorders('TBLR', 'FFE8D9A0');
+    ws1.getRow(r).height = 40;
     r++;
 
     // Spacer
@@ -17263,10 +17298,12 @@ body.light .signal-card-footer-tv {
     // =================================================================
     // WRITE FILE
     // =================================================================
-    const safeProject = (input.project || 'Project').replace(/[^a-zA-Z0-9]/gi, '_').slice(0, 30);
-    const safeClient = (input.endUser || 'Client').replace(/[^a-zA-Z0-9]/gi, '_').slice(0, 20);
-    const today = now.toISOString().slice(0, 10);
-    const filename = 'tvONE_Quote_' + safeClient + '_' + safeProject + '_' + today + '.xlsx';
+    // v25.99.36 — tvONE_<ProjectName>_<CaseID>.xlsx (parity with BrightSign).
+    // CaseID is the submission refId; falls back to the quote number if absent.
+    const _caseId = (submission && submission.refId)
+      || (lastResult && lastResult.submission && lastResult.submission.refId)
+      || (typeof quoteNo !== 'undefined' ? quoteNo : '');
+    const filename = _buildQuoteFilenameTV(input.project, _caseId, 'xlsx');
 
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
