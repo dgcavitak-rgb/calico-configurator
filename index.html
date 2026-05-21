@@ -20,26 +20,34 @@
 
 <!--
   ===========================================================
-  tvONE Product Selector — v26.1.7  (hotfix: v26.1.6 backtick bug)
+  tvONE Product Selector — v26.1.8  (UX + engine DOM critical path)
   ===========================================================
   Org:    Cavitak Marketing Pvt Ltd
   Owner:  Dipenkumar (dipen.g@cavitak.com), National Product Lead
   Built:  2026-05-21
 
-  STATUS: v26.1.7 is a critical hotfix for v26.1.6. The v26.1.6
-  patch added an HTML comment with markdown-style backticks
-  inside the wizardHTML JS template literal. Backticks inside
-  template literals close them — the parser then saw a stray
-  getElementById(...) expression and threw SyntaxError at parse
-  time, blanking the entire app. Surfacer caught it (window.
-  onerror fires for SyntaxErrors). Backticks removed, plain
-  text only in the comment now. node --check on RAW (unstripped)
-  extraction confirms parse-clean.
+  STATUS: v26.1.8 ships three coordinated additions per
+  Dipenkumar's Path C decision (production smoke 2026-05-21):
 
-  The original v26.1.6 fix (restoring #screensContainer DOM
-  element + Add Screen button) is preserved. So both:
-   - L10 wizard's missing #screensContainer is fixed
-   - Template literal parses cleanly
+  (1) UX — BoM action bar (Edit / Excel / PDF / WhatsApp /
+      Email) relocated from sticky-top to natural bottom-of-
+      content flow. Per his preference: "WhatsApp Email & all
+      button should be at bottom". CSS .bom-action-bar position
+      sticky → static; DOM order in L9 route swapped (BoM
+      content first, action bar appended last).
+
+  (2) App version pill — small monospace badge fixed just above
+      the bottom nav on every route, reads TVONE_FRONTEND_VERSION.
+      Per his note "app version not displayed in app". The
+      const is now explicitly attached to window so the head-side
+      surfacer can read it reliably for the pill update.
+
+  (3) Engine DOM critical-path — added #formError, #formInfo,
+      #recoOutput, #resultView to v26-quote-form-template.
+      The audit at 23:11 IST identified 228 missing engine
+      getElementById targets vs DOM; this round addresses the
+      4 that block Generate BoM + export. More may surface as
+      smoke continues.
 
   Architecture:
     Single-file HTML + vanilla JS (~15.8K lines / ~782 KB)
@@ -49,9 +57,21 @@
                 (boot() warns if any are unavailable)
 
   Version constant for support:
-    window.TVONE_FRONTEND_VERSION  →  '26.1.7'
+    window.TVONE_FRONTEND_VERSION  →  '26.1.8'
 
   Changelog (since v26.0.0 layered build):
+    v26.1.8  Three additions per Path C of production smoke:
+             (1) BoM action bar moved to bottom — DOM order
+             swap in L9 route + CSS sticky → static.
+             (2) App version pill — fixed-position badge above
+             bottom nav, reads TVONE_FRONTEND_VERSION on load.
+             Const now explicitly attached to window.
+             (3) Engine-critical DOM added to form template:
+             #formError, #formInfo, #recoOutput, #resultView.
+             Addresses 4 of the 228 missing engine DOM IDs
+             identified in the production audit. Specifically
+             unblocks #formError write at L8379 that crashed
+             _calculateAndLogImpl after edit-restore.
     v26.1.7  Hotfix for v26.1.6. The v26.1.6 patch added an HTML
              comment containing markdown-style backticks inside
              the wizardHTML JS template literal. Backticks
@@ -1167,19 +1187,73 @@ html[data-theme="dark"] .card-hover:hover { box-shadow: 0 1px 0 rgba(255,255,255
 .save-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; box-shadow: 0 0 0 0 var(--accent-soft); animation: pulse 2s var(--ease-out) infinite; }
 @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 var(--accent-soft); } 50% { box-shadow: 0 0 0 6px transparent; } }
 
+/* v26.1.8 — Engine feedback surfaces inside form template */
+.form-error, .form-info {
+  display: none;
+  padding: 10px 14px;
+  margin: 12px 0;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  font-family: var(--font-display);
+}
+.form-error {
+  background: rgba(185, 28, 28, 0.06);
+  border: 1px solid rgba(185, 28, 28, 0.22);
+  color: #B91C1C;
+}
+.form-info {
+  background: rgba(15, 118, 110, 0.06);
+  border: 1px solid rgba(15, 118, 110, 0.22);
+  color: #0F766E;
+}
+html[data-theme="dark"] .form-error { color: #FCA5A5; background: rgba(185, 28, 28, 0.10); }
+html[data-theme="dark"] .form-info  { color: #5EEAD4; background: rgba(15, 118, 110, 0.14); }
+.form-error.show, .form-info.show { display: block; }
+
+.form-reco-output { /* engine writes recommendation HTML here */
+  margin: 0;
+}
+.form-reco-output:empty { display: none; }
+
+.form-result-view {
+  margin: 0;
+}
+.form-result-view.hidden { display: none !important; }
+
+/* v26.1.8 — App version pill (visible badge above bottom nav, all routes) */
+.app-version-pill {
+  position: fixed;
+  left: 50%;
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 4px);
+  transform: translateX(-50%);
+  z-index: 12;
+  padding: 3px 9px;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft, #888);
+  background: var(--bg-card, rgba(255,255,255,0.85));
+  border: 0.5px solid var(--border-soft, rgba(0,0,0,0.08));
+  border-radius: 999px;
+  opacity: 0.7;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(8px);
+          backdrop-filter: blur(8px);
+}
+
 /* ============================================================
    L9 — BoM ROUTE VIEW + ACTION BAR
    Sticky action bar with 5 buttons (Back, Excel, PDF, WhatsApp,
    Email). Glass treatment matches the top bar.
    ============================================================ */
 
-/* Sticky action bar — sits below the top bar */
+/* Action bar — natural bottom flow (v26.1.8: moved from top sticky to bottom) */
 .bom-action-bar {
-  position: sticky;
-  top: calc(38px + 60px);  /* below preview toolbar + app top bar */
-  z-index: 18;
-  margin: var(--s-5) calc(var(--s-5) * -1) var(--s-5);
-  padding: var(--s-3) var(--s-5);
+  position: static;
+  margin: var(--s-6) calc(var(--s-5) * -1) var(--s-5);
+  padding: var(--s-4) var(--s-5);
   background: var(--bg-topbar);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
           backdrop-filter: blur(20px) saturate(180%);
@@ -1190,6 +1264,8 @@ html[data-theme="dark"] .card-hover:hover { box-shadow: 0 1px 0 rgba(255,255,255
   gap: var(--s-2);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  flex-wrap: wrap;
+  row-gap: var(--s-2);
 }
 .bom-action-bar::-webkit-scrollbar { display: none; }
 
@@ -1345,6 +1421,22 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
   });
   // Expose a manual surface() for tests / engine asserts
   window.__smokeSurface = function(label, msg, stack){ paint(label || 'manual', msg || '(no message)', stack || ''); };
+
+  // v26.1.8 — Auto-update the version pill once the main script has run
+  // and TVONE_FRONTEND_VERSION is defined. Runs on 'load' to guarantee
+  // both DOM and main-script parse are complete.
+  window.addEventListener('load', function(){
+    try {
+      var pill = document.getElementById('appVersionPill');
+      if (!pill) return;
+      var v = (typeof window.TVONE_FRONTEND_VERSION === 'string') ? window.TVONE_FRONTEND_VERSION : null;
+      // The const isn't on window by default; try a fallback read via a probe.
+      if (!v) {
+        try { v = TVONE_FRONTEND_VERSION; } catch(_) {}
+      }
+      pill.textContent = v ? ('v' + v) : 'v?';
+    } catch(_) {}
+  });
 })();
 </script>
 
@@ -1424,6 +1516,9 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
   </main>
 
   <!-- BOTTOM NAV -->
+  <!-- v26.1.8 — App version pill, sits just above the bottom nav.
+       Auto-updated by the load handler below from TVONE_FRONTEND_VERSION. -->
+  <div class="app-version-pill" id="appVersionPill" aria-label="App version">v…</div>
   <nav class="app-bottomnav">
     <button class="app-bottomnav-item" data-route="/home" onclick="navigate('/home')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
@@ -1821,6 +1916,15 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
     </div>
 
     <!-- ============================================================
+         v26.1.8 — Engine feedback surfaces (validation errors / info)
+         These are hidden by default; engine adds .show class to reveal.
+         Sit just above the Generate BoM button so validation feedback
+         is visible right next to the button the user just tapped.
+         ============================================================ -->
+    <div id="formError" class="form-error" role="alert" aria-live="polite"></div>
+    <div id="formInfo"  class="form-info"  role="status" aria-live="polite"></div>
+
+    <!-- ============================================================
          GENERATE BoM — engine entry point
          ============================================================ -->
     <div class="form-section">
@@ -1839,6 +1943,16 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
         <p class="bom-empty-body">Fill in inputs and outputs above, then tap <strong>Generate BoM →</strong> to see the recommended equipment.</p>
       </div>
     </div>
+
+    <!-- ============================================================
+         v26.1.8 — Engine output write targets (legacy v25.x surfaces)
+         The verbatim engine code expects #recoOutput as its primary
+         "write the recommendation HTML here" target and #resultView
+         as a container it can toggle visibility on after successful
+         generation. Hidden by default; engine populates and reveals.
+         ============================================================ -->
+    <div id="recoOutput" class="form-reco-output" aria-live="polite"></div>
+    <div id="resultView" class="form-result-view hidden"></div>
 
   </form>
 </template>
@@ -1921,7 +2035,25 @@ function setTheme(name) {
    ============================================================ */
 
 /* ---- App version ---- */
-const TVONE_FRONTEND_VERSION = '26.1.7';
+const TVONE_FRONTEND_VERSION = '26.1.8';
+/* v26.1.8 — Three additions on top of v26.1.7's stable hotfixed base:
+   (1) BoM action bar (Edit / Excel / PDF / WhatsApp / Email) moved from
+       sticky-top to natural bottom-of-content flow per Dipenkumar's
+       UX preference. CSS .bom-action-bar position changed from
+       sticky → static; DOM order in L9 route swapped (BoM content
+       first, action bar appended last).
+   (2) App version pill added to the shell, fixed just above the
+       bottom nav, on every route. Reads TVONE_FRONTEND_VERSION via
+       window-attached value (set explicitly because const doesn't
+       auto-attach). Surfacer script wires textContent on 'load'.
+   (3) Critical-path engine DOM elements (#formError, #formInfo,
+       #recoOutput, #resultView) added to the v26-quote-form-template
+       so the engine's validation + recommendation write paths no
+       longer null-target during Generate BoM / edit-restore flows.
+       Path C of 3-way decision (2026-05-21 production smoke).
+   Explicitly expose the const on window so the head-side surfacer
+   can read it without scope-chain assumptions. */
+try { window.TVONE_FRONTEND_VERSION = TVONE_FRONTEND_VERSION; } catch(_) {}
 /* v26.1.7 — Critical hotfix for v26.1.6.
    The v26.1.6 fix that added #screensContainer included an HTML
    comment containing markdown-style backticks around
@@ -15218,7 +15350,10 @@ Router.register('/quote/:refId/bom', (host, params) => {
       <span>Email</span>
     </button>
   `;
-  host.appendChild(actionBar);
+  // v26.1.8 — DOM order: BoM content first, action bar last so buttons
+  // appear at the bottom of the page (per Dipenkumar's UX preference,
+  // 2026-05-21). CSS .bom-action-bar position changed from sticky-top
+  // to natural-bottom flow.
 
   // BoM render target (engine writes here)
   const bomTarget = document.createElement('div');
@@ -15235,6 +15370,8 @@ Router.register('/quote/:refId/bom', (host, params) => {
     </div>
   `;
   host.appendChild(bomTarget);
+  // Action bar last → appears at bottom of content
+  host.appendChild(actionBar);
 
   // Async load: fetch deal, populate hidden form, re-run engine
   (async () => {
