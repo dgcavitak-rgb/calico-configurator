@@ -20,27 +20,26 @@
 
 <!--
   ===========================================================
-  tvONE Product Selector — v26.1.4  (smoke-instrumented)
+  tvONE Product Selector — v26.1.5  (TDZ chain fix)
   ===========================================================
   Org:    Cavitak Marketing Pvt Ltd
   Owner:  Dipenkumar (dipen.g@cavitak.com), National Product Lead
   Built:  2026-05-21
 
-  STATUS: v26.1.4 adds smoke instrumentation on top of v26.1.3's
-  functionally-complete 195-helper port. Hardening additions:
-  (a) global window.onerror + unhandledrejection handler paints a
-  visible red banner at the top of the page with the exact error
-  name and first 8 stack frames — Z Fold smoke is actionable
-  without DevTools attached; (b) _sbDealDelete promoted from
-  undeclared (typeof-guarded) to a logging no-op so the delete
-  code path can't throw. fetchAllSubmissionsForUser_tv remains as
-  in v26.1.3. No engine logic was touched.
+  STATUS: v26.1.5 resolves a top-level const TDZ cascade surfaced
+  by v26.1.4's error surfacer during the first production smoke:
+  `_TV_C2B_OPEN_STAGES` (wave 1) was declared above its
+  dependency `TV_STAGES_OPEN_SET` (wave 2), which itself was
+  above `TV_STAGES_OPEN` (wave 3). Top-level `const`s are
+  TDZ-bound, so file order = execution order. Lifted all three
+  into a pre-resolution block in correct dependency order;
+  originals neutralized to comments. No engine logic touched.
+  Surfacer + _sbDealDelete no-op from v26.1.4 remain in place.
 
-  REMAINING WORK: browser smoke test on Z Fold. Per 2026-05-21
-  session, Dipenkumar chose one-shot deploy (preview OR root, his
-  call) followed by production smoke. If the surfacer paints any
-  banner during the 8-flow run, paste the exact text back and a
-  wave 14 port pass produces v26.1.5.
+  REMAINING WORK: continue 8-flow smoke test. If the surfacer
+  paints another banner, paste the exact text — likely another
+  TDZ chain (mechanical fix) or a missing wave-14 reference
+  (port fix). Both are small.
 
   Architecture:
     Single-file HTML + vanilla JS (~15.8K lines / ~782 KB)
@@ -50,9 +49,19 @@
                 (boot() warns if any are unavailable)
 
   Version constant for support:
-    window.TVONE_FRONTEND_VERSION  →  '26.1.4'
+    window.TVONE_FRONTEND_VERSION  →  '26.1.5'
 
   Changelog (since v26.0.0 layered build):
+    v26.1.5  TDZ chain fix — top-level const cascade
+             `_TV_C2B_OPEN_STAGES → TV_STAGES_OPEN_SET → TV_STAGES_OPEN`
+             was placed across waves 1 → 2 → 3 in WRONG execution
+             order. AST port checked for "is declared" but not
+             "declared before first top-level read". Lifted the
+             three decls into a pre-resolution block (~L3814) in
+             correct dependency order; originals at L3856 / L4549
+             neutralized to comments to avoid redeclaration. No
+             engine logic touched. Surfaced by v26.1.4's red-banner
+             handler during first production smoke at 17:31:55.
     v26.1.4  Smoke instrumentation: (a) global window.onerror +
              unhandledrejection surfacer paints a fixed red banner
              with the exact uncaught-error name + first 8 stack
@@ -1887,7 +1896,21 @@ function setTheme(name) {
    ============================================================ */
 
 /* ---- App version ---- */
-const TVONE_FRONTEND_VERSION = '26.1.4';
+const TVONE_FRONTEND_VERSION = '26.1.5';
+/* v26.1.5 — TDZ chain fix surfaced by v26.1.4's error surfacer.
+   The AST port placed three top-level `const` declarations in
+   the WRONG execution order:
+     L3815: _TV_C2B_OPEN_STAGES = TV_STAGES_OPEN_SET   (wave 1)
+     L3856: TV_STAGES_OPEN_SET  = TV_STAGES_OPEN.reduce(...)  (wave 2)
+     L4549: TV_STAGES_OPEN      = [...]                (wave 3)
+   At top-level, `const`s are TDZ-bound — execution order matters.
+   Lifted all three into a TDZ pre-resolution block just before
+   the original L3815 site, in correct dependency order:
+     TV_STAGES_OPEN → TV_STAGES_OPEN_SET → _TV_C2B_OPEN_STAGES.
+   Originals at L3856 / L4549 neutralized to comments (avoid
+   redeclaration SyntaxError). All three are still single-decl.
+   Note: 3 other usages of TV_STAGES_OPEN_SET (L5066 / L5918 /
+   L6030) live inside function bodies — safe (deferred). */
 /* v26.1.4 — Smoke instrumentation on top of v26.1.3 functionally-
    complete port. Two hardenings: (1) global window.onerror +
    unhandledrejection surfacer paints uncaught errors as a fixed
@@ -3811,8 +3834,19 @@ function _setText(id, t) {
     refreshBulkBar();
   }
 
-/* --- _TV_C2B_OPEN_STAGES (v25.118 L12840-12840, const) --- */
+/* v26.1.5 — TDZ pre-resolution block (lifted from waves 1–3)
+   ============================================================
+   The AST port placed `_TV_C2B_OPEN_STAGES` (wave 1) ABOVE its
+   dependency `TV_STAGES_OPEN_SET` (wave 2), and that one above
+   `TV_STAGES_OPEN` (wave 3). At top-level, `const` declarations
+   are subject to TDZ — execution order matters. Lifting all
+   three here in correct dependency order so the chain resolves
+   on initial script execution. Originals downstream are
+   neutralized to comments to avoid redeclaration. */
+  const TV_STAGES_OPEN     = ['Pre-Qualified','Qualified','Proposal','Negotiation/Review','Awarded','Commit to forcast'];
+  const TV_STAGES_OPEN_SET = TV_STAGES_OPEN.reduce(function(m,s){ m[s]=1; return m; }, {});
   const _TV_C2B_OPEN_STAGES = TV_STAGES_OPEN_SET;  // v25.100.0: 6 Zoho open stages
+/* End TDZ pre-resolution block. */
 
 /* --- _stateToRegionTV (v25.118 L13599-13602, function) --- */
   function _stateToRegionTV(s){
@@ -3853,7 +3887,8 @@ function _setText(id, t) {
   const TV_STAGE_LOST = 'Closed Lost';
 
 /* --- TV_STAGES_OPEN_SET (v25.118 L102-102, const) --- */
-  const TV_STAGES_OPEN_SET = TV_STAGES_OPEN.reduce(function(m,s){ m[s]=1; return m; }, {});
+/* v26.1.5 — Lifted to TDZ pre-resolution block (see ~L3814). Original below neutralized. */
+/*  const TV_STAGES_OPEN_SET = TV_STAGES_OPEN.reduce(function(m,s){ m[s]=1; return m; }, {});  */
 
 /* --- tvNormalizeEntry (v25.118 L124-134, function) --- */
   function tvNormalizeEntry(e){
@@ -4546,7 +4581,8 @@ function _setText(id, t) {
    ============================================================ */
 
 /* --- TV_STAGES_OPEN (v25.118 L99-99, const) --- */
-  const TV_STAGES_OPEN = ['Pre-Qualified','Qualified','Proposal','Negotiation/Review','Awarded','Commit to forcast'];
+/* v26.1.5 — Lifted to TDZ pre-resolution block (see ~L3814). Original below neutralized. */
+/*  const TV_STAGES_OPEN = ['Pre-Qualified','Qualified','Proposal','Negotiation/Review','Awarded','Commit to forcast'];  */
 
 /* --- TV_LEGACY_STAGE_MAP (v25.118 L106-112, const) --- */
   const TV_LEGACY_STAGE_MAP = {
