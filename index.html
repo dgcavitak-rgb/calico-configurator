@@ -20,30 +20,26 @@
 
 <!--
   ===========================================================
-  tvONE Product Selector — v26.1.6  (DOM repair: screensContainer)
+  tvONE Product Selector — v26.1.7  (hotfix: v26.1.6 backtick bug)
   ===========================================================
   Org:    Cavitak Marketing Pvt Ltd
   Owner:  Dipenkumar (dipen.g@cavitak.com), National Product Lead
   Built:  2026-05-21
 
-  STATUS: v26.1.6 fixes a missing DOM element that broke edit-
-  restore for any deal with LED screens saved. The L10 wizard
-  rewrite kept #ledScreensWrap but dropped its inner
-  #screensContainer — engine code (addScreen, initScreens,
-  populateFormFromRow_, draft restore at L7700) all expect that
-  ID. Restored. Also added a minimal "+ Add screen" button so
-  new-deal LED flow can add screens beyond the first.
+  STATUS: v26.1.7 is a critical hotfix for v26.1.6. The v26.1.6
+  patch added an HTML comment with markdown-style backticks
+  inside the wizardHTML JS template literal. Backticks inside
+  template literals close them — the parser then saw a stray
+  getElementById(...) expression and threw SyntaxError at parse
+  time, blanking the entire app. Surfacer caught it (window.
+  onerror fires for SyntaxErrors). Backticks removed, plain
+  text only in the comment now. node --check on RAW (unstripped)
+  extraction confirms parse-clean.
 
-  Surfaced by: production smoke (2026-05-21). The error was
-  caught by the [Edit] try/catch at L10113 — logged as
-  console.error, did NOT trigger window.onerror, so v26.1.4's
-  red banner correctly stayed silent. Note for future smoke:
-  banner-silent does NOT mean problem-silent — console.error
-  messages still need a console check during smoke.
-
-  Smoke progress: Tests 1 (login), 2 (history with real data),
-  edit-modal-open all green prior to this fix. v26.1.6 unblocks
-  Test 6 (Save + edit-restore) for LED deals.
+  The original v26.1.6 fix (restoring #screensContainer DOM
+  element + Add Screen button) is preserved. So both:
+   - L10 wizard's missing #screensContainer is fixed
+   - Template literal parses cleanly
 
   Architecture:
     Single-file HTML + vanilla JS (~15.8K lines / ~782 KB)
@@ -53,9 +49,22 @@
                 (boot() warns if any are unavailable)
 
   Version constant for support:
-    window.TVONE_FRONTEND_VERSION  →  '26.1.6'
+    window.TVONE_FRONTEND_VERSION  →  '26.1.7'
 
   Changelog (since v26.0.0 layered build):
+    v26.1.7  Hotfix for v26.1.6. The v26.1.6 patch added an HTML
+             comment containing markdown-style backticks inside
+             the wizardHTML JS template literal. Backticks
+             inside template literals CLOSE the literal — the
+             parser then hit a stray getElementById(...) and
+             threw SyntaxError at parse time, blanking the app.
+             v26.1.4 surfacer caught it correctly (window.onerror
+             fires for SyntaxErrors too). Backticks removed from
+             the comment, plain text only. Lesson recorded
+             above in the version-constant block: always run
+             node --check on RAW (unstripped) extraction so
+             backticks inside HTML comments inside template
+             literals are not invisibly removed before parse.
     v26.1.6  Missing #screensContainer DOM element. L10 wizard
              rewrite kept #ledScreensWrap but dropped its inner
              #screensContainer div. Four call sites (addScreen,
@@ -1912,7 +1921,27 @@ function setTheme(name) {
    ============================================================ */
 
 /* ---- App version ---- */
-const TVONE_FRONTEND_VERSION = '26.1.6';
+const TVONE_FRONTEND_VERSION = '26.1.7';
+/* v26.1.7 — Critical hotfix for v26.1.6.
+   The v26.1.6 fix that added #screensContainer included an HTML
+   comment containing markdown-style backticks around
+   getElementById('screensContainer'). That HTML comment lives
+   INSIDE a JS template literal (the wizardHTML string at ~L15745).
+   Backticks inside template literals are NOT inert — they CLOSE
+   the literal. So v26.1.6's comment prematurely closed the
+   wizardHTML template and the parser saw a stray
+   getElementById(...) expression with no operator before it,
+   producing "Unexpected identifier 'getElementById'" at parse
+   time. Entire script failed to load. Surfacer caught it
+   correctly (window.onerror fires for SyntaxErrors too).
+   Fix: removed the backticks from the comment.
+
+   Validator hole also fixed: my node --check pipeline was
+   stripping HTML comments before extracting <script> blocks
+   (to avoid <script> tokens inside <!-- --> confusing the
+   regex). That stripping ALSO removed my buggy comment from
+   the JS that node saw. Going forward: always run node --check
+   on the RAW unstripped extraction too. */
 /* v26.1.6 — Missing #screensContainer DOM element fix. Engine code
    (addScreen, initScreens, populateFormFromRow_, and the draft-restore
    path at L7700) all call `getElementById('screensContainer')`. The
@@ -15850,11 +15879,13 @@ Router.register('/profile', (host) => {
 
       <!-- LED screens wrap — appears when Active LED = Yes -->
       <div class="led-screens-wrap" id="ledScreensWrap">
-        <!-- v26.1.6 — screensContainer was missing from the L10 wizard
-             markup, but engine code (addScreen / initScreens /
-             populateFormFromRow_) all do `getElementById('screensContainer')`.
-             Restored here so edit-restore of LED deals + new-deal LED flow
-             both work. Per-screen rows are injected by addScreen(). -->
+        <!-- v26.1.7 — Container restored. (Earlier v26.1.6 attempt put
+             markdown backticks in this comment, which closed the
+             enclosing JS template literal prematurely and made the
+             whole script fail to parse. Plain text only here.)
+             screensContainer was missing from the L10 wizard markup;
+             engine code (addScreen, initScreens, populateFormFromRow_)
+             all do getElementById on screensContainer. Restored. -->
         <div id="screensContainer"></div>
         <button type="button" id="addScreenBtn"
                 onclick="if(typeof addScreen==='function'){addScreen();}else{console.warn('addScreen unavailable');}"
