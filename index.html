@@ -20,7 +20,7 @@
 
 <!--
   ===========================================================
-  tvONE Product Selector — v26.2.1  (polish: icons + labels + Solution Type + SX toggle)
+  tvONE Product Selector — v26.2.2  (hotfix: _sbUsers window-binding race)
   ===========================================================
   Org:    Cavitak Marketing Pvt Ltd
   Owner:  Dipenkumar (dipen.g@cavitak.com), National Product Lead
@@ -77,6 +77,25 @@
     window.TVONE_FRONTEND_VERSION  →  '26.2.0'
 
   Changelog (since v26.0.0 layered build):
+    v26.2.2  Hotfix on v26.2.1 — Sales / Presales dropdowns were
+             empty in production. Root cause: `let _sbUsers = []` at
+             module top does NOT bind to window in JavaScript (only
+             `var` and explicit window.X assignments do). The v26.2.0
+             populator _populateRolesTV reads `window._sbUsers` and
+             always saw `undefined`, regardless of whether the
+             post-login `await _sbLoadUsers()` had resolved. The
+             internal `_sbUsers` array was fine; the window reference
+             never existed. Two-part fix:
+             (1) Expose `window._sbUsers` + `window._sbUsersById` at
+             the declaration site so reads can't see undefined.
+             (2) Re-expose inside _sbLoadUsers after each fetch
+             (reassignment, not mutation, so reference changes).
+             Plus belt-and-braces: if the form is already mounted
+             when _sbLoadUsers resolves, re-run _populateRolesTV()
+             so the user doesn't have to refresh to see populated
+             dropdowns. Surfaced by Dipenkumar's smoke at /quote/new
+             showing the defensive console warning I'd built in
+             specifically to catch exactly this race.
     v26.2.1  Polish pass on top of v26.2.0 architecture reset. Five
              coordinated user-facing changes + one DB hardening:
              (1) Inline SVG icons (lucide-style, 14×14, currentColor
@@ -2277,7 +2296,7 @@ function setTheme(name) {
    ============================================================ */
 
 /* ---- App version ---- */
-const TVONE_FRONTEND_VERSION = '26.2.1';
+const TVONE_FRONTEND_VERSION = '26.2.2';
 /* v26.2.0 — Architecture-first pass (2026-05-22). Stop the patchwork loop;
    align frontend with DB schema as source of truth. Paired with DB migration
    v26_2_0_pipeline_stages_new_canon applied same day.
@@ -2883,6 +2902,11 @@ let   _sbCurrentFullHash  = '';     // Supabase salt+hash, set by _sbLogin
 let   _sbCurrentUserId    = null;   // Supabase user id,   set by _sbLogin
 let   _sbUsers            = [];     // populated by _sbLoadUsers
 let   _sbUsersById        = {};     // populated by _sbLoadUsers (id → user)
+/* v26.2.2 hotfix — `let` doesn't bind to window. Expose the references
+   immediately so reads of window._sbUsers don't see `undefined` before
+   _sbLoadUsers() resolves. _sbLoadUsers will re-assign these to fresh
+   arrays after fetch, then re-expose. */
+try { window._sbUsers = _sbUsers; window._sbUsersById = _sbUsersById; } catch(_){}
 const _sbRefToId          = {};     // display_ref → id cache, set by _sbDealToEntry
 let   _tvC2aLastPeriodKey = '';     // C2A panel throttle state
 let   _tvC2aLastPoaText   = '';     // C2A panel throttle state
@@ -7543,6 +7567,20 @@ Router.register('/debug', (host) => {
       _sbUsers = (r && r.users) || [];
       _sbUsersById = {};
       _sbUsers.forEach(u => { _sbUsersById[u.id] = u; });
+      /* v26.2.2 hotfix — expose on window. `let` declarations at top level
+         don't bind to window, so window._sbUsers was always undefined.
+         _populateRolesTV reads window._sbUsers, so without this it would
+         always see "undefined" no matter how many times _sbLoadUsers ran. */
+      window._sbUsers     = _sbUsers;
+      window._sbUsersById = _sbUsersById;
+      /* If the form is already mounted (e.g. user reloaded /quote/new and
+         _sbLoadUsers raced behind initFormView), re-populate role dropdowns
+         now that data has landed. Safe no-op if form isn't mounted. */
+      if (typeof window._populateRolesTV === 'function' &&
+          document.getElementById('f_salesPerson')) {
+        try { window._populateRolesTV(); }
+        catch(e) { console.error('[v26.2.2] post-load _populateRolesTV failed:', e); }
+      }
     }catch(e){ console.warn('[sb] user_list failed:', e); }
     return _sbUsers;
   }
