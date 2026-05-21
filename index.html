@@ -20,49 +20,79 @@
 
 <!--
   ===========================================================
-  tvONE Product Selector — v26.1.9  (input form pass-1)
+  tvONE Product Selector — v26.2.0  (architecture-first reset)
   ===========================================================
   Org:    Cavitak Marketing Pvt Ltd
   Owner:  Dipenkumar (dipen.g@cavitak.com), National Product Lead
-  Built:  2026-05-21
+  Built:  2026-05-22
 
-  STATUS: v26.1.9 is input-form pass-1 per Dipenkumar's stated
-  priority "Lets do fix Input form first" (2026-05-21 production
-  smoke). Six form-template changes:
+  STATUS: v26.2.0 stops the v26.1.x patchwork loop and aligns the
+  frontend with the Supabase schema as source of truth. Paired with
+  DB migration v26_2_0_pipeline_stages_new_canon applied same day.
 
-  • Stage names → engine canon (8 stages from TV_STAGES_OPEN +
-    WON + LOST). Form was using Discovery/Negotiation/On Hold —
-    none recognized by engine.
-  • Venue type 9 → 21 options (AV-industry specific).
-  • City — converted to <input list> typeahead with 90+ Indian
-    cities in <datalist>. User types "Gwa" → Gwalior shows.
-    Free-text accepted for cities not in the canonical list.
-  • State 7 → 36 (28 states + 8 UTs); names match the engine's
-    STATE_TO_REGION_TV keys so region auto-derives at submit.
-  • City → State auto-link (one-way) via _cityToStateAutoLinkTV
-    on input/change events. Uses data-auto-set sentinel so manual
-    state overrides are preserved.
-  • Stage note field removed.
-  • Output type adds Signal Extension + Multi Viewer options.
+  THE SHIFT: option lists are no longer hardcoded across the form
+  template. Stable lists live in FORM_CONFIG_TV (stages, lead source).
+  Volatile lists (Sales/Presales) come live from window._sbUsers
+  filtered by users.org_function. The form template ships with
+  placeholder-only <option>s; initFormView() injects the real ones
+  at mount.
 
-  DEFERRED to subsequent passes per Dipenkumar's prioritization:
-   - MV sub-wizard UI (engine logic already lifted in v26.1.3)
-   - Video Processor sub-wizard UI (CORIO/CALICO)
-   - LED screen extra fields (panel count, processor, panel make)
-   - "No calculation to export" — engine recalc on edit-restore
-   - Sales/Presales list refinement (awaiting Dipenkumar's spec)
+  Nine coordinated changes (see TVONE_FRONTEND_VERSION block for the
+  full per-change manifest):
+    1. FORM_CONFIG_TV global (stages + lead source)
+    2. TV_LEGACY_STAGE_MAP_V262 (Pre-Qualified → Qualified, etc.)
+    3. _populateStagesTV / _populateLeadSourceTV / _populateRolesTV
+    4. initFormView() calls populator BEFORE bindField loop
+    5. Form template stripped of hardcoded options (4 dropdowns)
+    6. Settings sheet built out (replaces "Phase 4 placeholder")
+    7. Floating version pill removed (now in Settings)
+    8. Sheet max-width 480px (responsive cap on desktop)
+    9. Password show/hide eye toggle on auth screen
+
+  PAIRED DB MIGRATION (applied 2026-05-22, project yhzecukifwnlgowmgkrc):
+    • 8 new canonical stages (Budget Approval + Technical Approval new)
+    • 5 deals + 17 transition refs collapsed Pre-Qualified → Qualified
+    • Negotiation/Review renamed to Negotiation
+    • Pre-Qualified + Commit to forcast rows deleted (zero deals lost)
+
+  DEFERRED to v26.2.1 / v26.3+:
+   - Solution Type section (MV/CALICO/CORIO branch UI)
+   - SX add-on Y/N toggle
+   - Inline SVG icons beside every field
+   - Full layman-label sweep
+   - 228 missing engine DOM IDs (separate audit)
+   - Form schema-driven HTML template (architectural rewrite)
+   - Per-role dashboards (Sales sees own, BU Head sees region, Super sees all)
+   - Live RPC fetch of pipeline_stages (FORM_CONFIG_TV.stages is currently a mirror)
+   - tvONE price integration (deal_value_inr derivation from project_lines)
 
   Architecture:
-    Single-file HTML + vanilla JS (~15.8K lines / ~782 KB)
-    Backend:   Supabase (RPC + Auth)
+    Single-file HTML + vanilla JS (~16.6K lines / ~830 KB)
+    Backend:   Supabase (RPC + Auth) project yhzecukifwnlgowmgkrc
     Hosting:   GitHub Pages — dgcavitak-rgb/calico-configurator
     CDN deps:  ExcelJS 4.4.0 · jsPDF 2.4.0 · html2canvas 1.4.1
                 (boot() warns if any are unavailable)
 
   Version constant for support:
-    window.TVONE_FRONTEND_VERSION  →  '26.1.9'
+    window.TVONE_FRONTEND_VERSION  →  '26.2.0'
 
   Changelog (since v26.0.0 layered build):
+    v26.2.0  Architecture-first reset. Single source of truth
+             (FORM_CONFIG_TV + _sbUsers) replaces hardcoded option
+             lists across the form. Stage canon matches new DB
+             pipeline_stages (Budget Approval + Technical Approval
+             new; Pre-Qualified and Commit to forcast retired).
+             Settings sheet built out from placeholder stub.
+             Floating version pill removed. Sheet max-width 480px
+             on desktop. Password show/hide eye restored on auth.
+             Two surgical layman-label edits per spec: "End customer"
+             → "Client" (field label); "Generate BoM" → "Build quote"
+             (primary CTA + 4 dynamic textContent sites + 3 prereq
+             alert messages). Full label sweep + inline SVG icons
+             still deferred. Paired DB migration
+             v26_2_0_pipeline_stages_new_canon applied same day; all
+             15 tvONE deals + 34 stage transitions preserved across
+             stage renames + collapses.
     v26.1.9  Input form pass-1. Six form-template changes:
              stage names → engine canon (8 stages); venue type
              9 → 21 AV-industry options; city → typeahead input
@@ -702,6 +732,11 @@ html[data-theme="dark"] .card-hover:hover { box-shadow: 0 1px 0 rgba(255,255,255
   z-index: 210;
   max-height: 80vh;
   overflow-y: auto;
+  /* v26.2.0 — Cap width on desktop so the sheet doesn't stretch across wide screens.
+     Below 480px (most phones), left:0/right:0 keeps it full-width as before. */
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .sheet.open { transform: translateY(0); }
 .sheet-handle {
@@ -716,6 +751,43 @@ html[data-theme="dark"] .card-hover:hover { box-shadow: 0 1px 0 rgba(255,255,255
 }
 .sheet-body { color: var(--ink-mid); font-size: var(--t-body-sm); line-height: 1.5; margin-bottom: var(--s-5); }
 .sheet-actions { display: flex; gap: var(--s-3); justify-content: flex-end; }
+
+/* v26.2.0 — Settings sheet body (info rows, divider, footnote, sign-out row) */
+.settings-body { margin-bottom: var(--s-5); }
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--s-3) 0; gap: var(--s-3);
+}
+.settings-row-label {
+  font-size: var(--t-body-sm); color: var(--ink-mid);
+  font-weight: 500; flex-shrink: 0;
+}
+.settings-row-value {
+  font-size: var(--t-body-sm); color: var(--ink-strong);
+  font-weight: 600; text-align: right;
+  font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
+.settings-row-action {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.settings-row-action:hover { background: var(--bg-soft, rgba(0,0,0,0.03)); border-radius: var(--r-md, 6px); }
+.settings-row-action:active { background: var(--bg-pressed, rgba(0,0,0,0.06)); }
+.settings-row-label-danger { color: #c0392b; font-weight: 600; }
+.settings-row-chevron {
+  color: var(--ink-soft, #888); font-size: 18px; flex-shrink: 0;
+  padding-right: var(--s-2);
+}
+.settings-divider {
+  height: 1px; background: var(--border-soft, rgba(0,0,0,0.08));
+  margin: var(--s-2) 0;
+}
+.settings-footnote {
+  font-size: 11px; color: var(--ink-soft, #999);
+  line-height: 1.5; padding: var(--s-2) 0;
+}
 
 /* ============================================================
    11. TOAST
@@ -1067,6 +1139,26 @@ html[data-theme="dark"] .card-hover:hover { box-shadow: 0 1px 0 rgba(255,255,255
 }
 .auth-input:focus { outline: none; background: var(--bg-card); border-color: var(--border-brand); box-shadow: 0 0 0 3px var(--accent-soft); }
 
+/* v26.2.0 — Password show/hide eye toggle */
+.auth-pass-wrap { position: relative; }
+.auth-input-with-eye { padding-right: 44px; }
+.auth-eye-btn {
+  position: absolute;
+  right: 8px; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 0; padding: 0;
+  color: var(--ink-soft, #888); cursor: pointer;
+  border-radius: var(--r-sm);
+  -webkit-tap-highlight-color: transparent;
+}
+.auth-eye-btn:hover { color: var(--ink-mid, #555); background: rgba(0,0,0,0.04); }
+.auth-eye-btn:active { background: rgba(0,0,0,0.08); }
+.auth-eye-icon-closed, .auth-eye-icon-open { display: none; }
+.auth-eye-btn .auth-eye-icon-closed { display: block; }      /* default: password hidden, show "eye-off" */
+.auth-eye-btn.auth-eye-btn-open .auth-eye-icon-closed { display: none; }
+.auth-eye-btn.auth-eye-btn-open .auth-eye-icon-open   { display: block; }
+
 /* --- Avatar drop menu --- */
 /* Avatar drop menu */
 .avatar-menu {
@@ -1234,27 +1326,7 @@ html[data-theme="dark"] .form-info  { color: #5EEAD4; background: rgba(15, 118, 
 }
 .form-result-view.hidden { display: none !important; }
 
-/* v26.1.8 — App version pill (visible badge above bottom nav, all routes) */
-.app-version-pill {
-  position: fixed;
-  left: 50%;
-  bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 4px);
-  transform: translateX(-50%);
-  z-index: 12;
-  padding: 3px 9px;
-  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: var(--ink-soft, #888);
-  background: var(--bg-card, rgba(255,255,255,0.85));
-  border: 0.5px solid var(--border-soft, rgba(0,0,0,0.08));
-  border-radius: 999px;
-  opacity: 0.7;
-  pointer-events: none;
-  -webkit-backdrop-filter: blur(8px);
-          backdrop-filter: blur(8px);
-}
+/* v26.2.0 — .app-version-pill CSS removed. Version now lives in Settings sheet. */
 
 /* ============================================================
    L9 — BoM ROUTE VIEW + ACTION BAR
@@ -1435,21 +1507,8 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
   // Expose a manual surface() for tests / engine asserts
   window.__smokeSurface = function(label, msg, stack){ paint(label || 'manual', msg || '(no message)', stack || ''); };
 
-  // v26.1.8 — Auto-update the version pill once the main script has run
-  // and TVONE_FRONTEND_VERSION is defined. Runs on 'load' to guarantee
-  // both DOM and main-script parse are complete.
-  window.addEventListener('load', function(){
-    try {
-      var pill = document.getElementById('appVersionPill');
-      if (!pill) return;
-      var v = (typeof window.TVONE_FRONTEND_VERSION === 'string') ? window.TVONE_FRONTEND_VERSION : null;
-      // The const isn't on window by default; try a fallback read via a probe.
-      if (!v) {
-        try { v = TVONE_FRONTEND_VERSION; } catch(_) {}
-      }
-      pill.textContent = v ? ('v' + v) : 'v?';
-    } catch(_) {}
-  });
+  // v26.2.0 — Version pill load handler removed. Version now displayed in Settings sheet
+  // (populated on sheet-open by openSheet() reading TVONE_FRONTEND_VERSION).
 })();
 </script>
 
@@ -1473,7 +1532,15 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
     </div>
     <div class="auth-field">
       <label class="auth-label">Password</label>
-      <input class="auth-input" type="password" id="auth-pass" value="cavitak@123" autocomplete="current-password">
+      <!-- v26.2.0 — Password show/hide wrapper with eye toggle -->
+      <div class="auth-pass-wrap">
+        <input class="auth-input auth-input-with-eye" type="password" id="auth-pass" value="cavitak@123" autocomplete="current-password">
+        <button type="button" class="auth-eye-btn" id="auth-eye-btn" aria-label="Show password" onclick="(function(){var p=document.getElementById('auth-pass');var b=document.getElementById('auth-eye-btn');if(!p||!b)return;var hidden=p.type==='password';p.type=hidden?'text':'password';b.setAttribute('aria-label',hidden?'Hide password':'Show password');b.classList.toggle('auth-eye-btn-open',hidden);})()">
+          <!-- eye-closed by default; CSS swaps via .auth-eye-btn-open -->
+          <svg class="auth-eye-icon-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          <svg class="auth-eye-icon-open"   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
     </div>
     <button class="btn btn-primary" style="width: 100%; margin-top: var(--s-3);" onclick="doLogin()">Sign in</button>
     <p style="text-align: center; font-size: 11.5px; color: var(--ink-soft); margin: var(--s-4) 0 0;">
@@ -1529,9 +1596,7 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
   </main>
 
   <!-- BOTTOM NAV -->
-  <!-- v26.1.8 — App version pill, sits just above the bottom nav.
-       Auto-updated by the load handler below from TVONE_FRONTEND_VERSION. -->
-  <div class="app-version-pill" id="appVersionPill" aria-label="App version">v…</div>
+  <!-- v26.2.0 — App version pill removed. Version now lives in Settings sheet. -->
   <nav class="app-bottomnav">
     <button class="app-bottomnav-item" data-route="/home" onclick="navigate('/home')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
@@ -1563,7 +1628,35 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
 <div class="sheet" id="settings-sheet">
   <div class="sheet-handle"></div>
   <h3 class="sheet-title">Settings</h3>
-  <p class="sheet-body">Theme, notifications, sync preferences, and account options will appear here. Phase 4 placeholder.</p>
+  <!-- v26.2.0 — Built out from placeholder. Pure-info sheet for now; theme/notifications wire in v26.3+. -->
+  <div class="settings-body">
+    <div class="settings-row">
+      <div class="settings-row-label">App version</div>
+      <div class="settings-row-value" id="settings-version-display">—</div>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-label">Signed in as</div>
+      <div class="settings-row-value" id="settings-user-display">—</div>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-label">Role</div>
+      <div class="settings-row-value" id="settings-role-display">—</div>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-label">Region</div>
+      <div class="settings-row-value" id="settings-region-display">—</div>
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-row settings-row-action" onclick="closeSheet('settings-sheet'); openSheet('logout-sheet');">
+      <div class="settings-row-label settings-row-label-danger">Sign out</div>
+      <div class="settings-row-chevron">›</div>
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-footnote">
+      Cavitak tvONE Product Selector · Internal tool for Cavitak sales &amp; presales teams.<br>
+      Issues or feedback: contact Dipenkumar (National Product Lead).
+    </div>
+  </div>
   <div class="sheet-actions">
     <button class="btn btn-secondary" onclick="closeSheet('settings-sheet')">Close</button>
   </div>
@@ -1612,7 +1705,7 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
           <div id="dup-project-banner-tv" class="duplicate-banner"></div>
         </div>
         <div class="field">
-          <label class="field-label" for="f_endUser">End customer<span class="required">*</span></label>
+          <label class="field-label" for="f_endUser">Client<span class="required">*</span></label>
           <input class="field-input" id="f_endUser" type="text" placeholder="e.g. Marriott International">
         </div>
         <div class="field-row">
@@ -1733,18 +1826,15 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
           <div class="field">
             <label class="field-label" for="f_stage">Stage<span class="required">*</span></label>
             <select class="field-select" id="f_stage">
-              <option value="">Select…</option>
-              <option>Pre-Qualified</option><option>Qualified</option><option>Proposal</option>
-              <option>Negotiation/Review</option><option>Awarded</option><option>Commit to forcast</option>
-              <option>Closed Won</option><option>Closed Lost</option>
+              <option value="">Select stage</option>
+              <!-- v26.2.0 — populated at runtime from FORM_CONFIG_TV.stages (mirrors public.pipeline_stages). -->
             </select>
           </div>
           <div class="field">
-            <label class="field-label" for="f_leadSource">Lead source<span class="required">*</span></label>
+            <label class="field-label" for="f_leadSource">Came from<span class="required">*</span></label>
             <select class="field-select" id="f_leadSource">
-              <option value="">Select…</option>
-              <option>Inbound — Web</option><option>Inbound — Email</option><option>Outbound</option>
-              <option>Referral</option><option>Partner / SI</option><option>Repeat customer</option>
+              <option value="">Select source</option>
+              <!-- v26.2.0 — populated at runtime from FORM_CONFIG_TV.leadSources. Was 6 options pre-v26.2.0. -->
             </select>
           </div>
         </div>
@@ -1753,16 +1843,15 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
           <div class="field">
             <label class="field-label" for="f_salesPerson">Sales rep<span class="required">*</span></label>
             <select class="field-select" id="f_salesPerson">
-              <option value="">Select…</option>
-              <option>Vipul</option><option>Arvind</option><option>Mohd Faiz</option>
-              <option>Tausif</option><option>Ranjith Kumar</option>
+              <option value="">Select sales</option>
+              <!-- v26.2.0 — populated at runtime from window._sbUsers where org_function='Sales' AND is_active. -->
             </select>
           </div>
           <div class="field">
             <label class="field-label" for="f_presalesPerson">Presales engineer</label>
             <select class="field-select" id="f_presalesPerson">
-              <option value="">Optional</option>
-              <option>Mohit</option><option>Ranjith SR</option><option>Dipenkumar</option>
+              <option value="">Select presales</option>
+              <!-- v26.2.0 — populated at runtime from window._sbUsers where org_function='Presales' AND is_active. -->
             </select>
           </div>
         </div>
@@ -2003,7 +2092,7 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
          GENERATE BoM — engine entry point
          ============================================================ -->
     <div class="form-section">
-      <button type="submit" id="calcBtn" class="btn btn-primary btn-lg" style="width: 100%;">Generate BoM →</button>
+      <button type="submit" id="calcBtn" class="btn btn-primary btn-lg" style="width: 100%;">Build quote →</button>
     </div>
 
     <!-- ============================================================
@@ -2015,7 +2104,7 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
         </div>
         <p class="bom-empty-title">No BoM generated yet</p>
-        <p class="bom-empty-body">Fill in inputs and outputs above, then tap <strong>Generate BoM →</strong> to see the recommended equipment.</p>
+        <p class="bom-empty-body">Fill in inputs and outputs above, then tap <strong>Build quote →</strong> to see the recommended equipment.</p>
       </div>
     </div>
 
@@ -2110,7 +2199,91 @@ function setTheme(name) {
    ============================================================ */
 
 /* ---- App version ---- */
-const TVONE_FRONTEND_VERSION = '26.1.9';
+const TVONE_FRONTEND_VERSION = '26.2.0';
+/* v26.2.0 — Architecture-first pass (2026-05-22). Stop the patchwork loop;
+   align frontend with DB schema as source of truth. Paired with DB migration
+   v26_2_0_pipeline_stages_new_canon applied same day.
+
+   THE SHIFT: stop hardcoding option lists across the form template. Centralize
+   stable lists in FORM_CONFIG_TV (single JS object). Pull volatile lists
+   (Sales/Presales) live from window._sbUsers filtered by org_function. The
+   form template now ships with placeholder-only <option>s; runtime populates
+   them at initFormView().
+
+   CHANGES (9 coordinated, all surgical):
+
+   (1) FORM_CONFIG_TV — new global. Mirrors public.pipeline_stages (8 stages:
+       Qualified, Proposal, Budget Approval, Technical Approval, Negotiation,
+       Awarded, Closed Won, Closed Lost) and defines leadSources (Cavitak, OEM).
+
+   (2) TV_LEGACY_STAGE_MAP_V262 — extends the v25.118 legacy map to cover the
+       v25→v26.2.0 transition: Pre-Qualified→Qualified (per Dipenkumar's "old
+       Qualified" answer 2026-05-22), Negotiation/Review→Negotiation,
+       Commit to forcast→Awarded. Plus pre-v25 (Zoho) names Lead/Opportunity/
+       Order → Qualified/Qualified/Awarded.
+
+   (3) _populateStagesTV / _populateLeadSourceTV / _populateRolesTV — read
+       from FORM_CONFIG_TV (stages, lead sources) and window._sbUsers (sales,
+       presales) and inject <option>s on form mount. Idempotent. Errors caught
+       and console.error'd, never throw.
+
+   (4) initFormView() now calls window._populateFormDropdownsTV() BEFORE the
+       FIELD_IDS bindField loop, so saved values from DraftState match an
+       existing option when restored.
+
+   (5) Form template: stripped 4 hardcoded dropdowns (stage 8 opts, leadSource
+       6 opts, salesPerson 5 opts, presalesPerson 3 opts) → each now just a
+       placeholder. Labels for lead source: "Lead source" → "Came from" per
+       Dipenkumar's layman-language preference (small accommodation; full
+       layman pass deferred to v26.2.1).
+
+   (6) Settings sheet — replaced "Phase 4 placeholder" stub with proper info
+       rows (version, user, role, region, sign-out shortcut, footnote). New
+       CSS block .settings-* (~40 LOC). openSheet('settings-sheet') wrapped
+       to populate values on open from TVONE_FRONTEND_VERSION + window.currentUser.
+
+   (7) Floating version pill — removed. HTML (#appVersionPill), CSS
+       (.app-version-pill, ~20 LOC), and the window.addEventListener('load')
+       hydration handler all deleted. Version display lives in Settings now.
+
+   (8) Sheet max-width — added max-width:480px + auto margins to .sheet base
+       class so the bottom sheets stop spanning the full width of desktop
+       browsers. Still full-width on mobile (≤480px viewport).
+
+   (9) Password show/hide — auth input wrapped in .auth-pass-wrap with eye
+       toggle button. Two SVG icons (eye-off / eye-on) swap via
+       .auth-eye-btn-open class. Inline onclick toggles input type between
+       password ↔ text. Restores a v25.x affordance that was dropped in the
+       L9/L10 shell rebuild.
+
+   PAIRED DB MIGRATION (v26_2_0_pipeline_stages_new_canon, applied 2026-05-22):
+     • Inserted 2 new stages: Budget Approval (seq 3), Technical Approval (seq 4)
+     • Renamed Negotiation/Review → Negotiation (in place)
+     • Repointed 5 deals + 17 stage_transition refs: Pre-Qualified → Qualified
+     • Deleted deprecated rows: Pre-Qualified, Commit to forcast
+     • Re-sequenced via negative-flip trick to dodge unique-seq collisions
+     • All 15 tvONE deals + 34 transitions still reference valid stages
+
+   EXPLICITLY DEFERRED (will live in v26.2.1 / v26.3+):
+     • Solution Type section (MV/CALICO/CORIO branch UI — adding empty section
+       headers without sub-wizards = cosmetic; revisit when wizards exist)
+     • SX add-on Y/N toggle (engine already handles SX as additive companion;
+       UI toggle adds nothing functionally until engine config exposes a knob)
+     • Inline SVG icons beside every field (visual polish)
+     • Full layman-label sweep across all 5 sections
+     • 228 missing engine DOM IDs (separate audit)
+     • Form schema-driven HTML template (architectural rewrite, dedicated session)
+     • MV/CORIO/CALICO sub-wizard internals
+     • Live DB read of pipeline_stages (currently FORM_CONFIG_TV.stages is a
+       mirror; add a pipeline_stages_list RPC if drift becomes a concern)
+
+   Out of caution: if _sbUsers isn't loaded when form mounts (e.g. cold cache
+   on first view), the Sales/Presales dropdowns ship with placeholder only and
+   _populateRolesTV() logs a warning. Re-opening the form once _sbUsers loads
+   will populate them. Not a regression vs v26.1.x, where these were always
+   hardcoded — net improvement.
+*/
+
 /* v26.1.9 — Input-form pass-1 per Dipenkumar's prioritization
    (2026-05-21 production smoke). Six coordinated changes to the
    form template, all surgical, all engine-compatible:
@@ -2219,6 +2392,150 @@ window._cityToStateAutoLinkTV = function _cityToStateAutoLinkTV() {
     }
   } catch(_) { /* never throw from auto-link */ }
 };
+
+/* === v26.2.0 — FORM_CONFIG_TV : single source of truth for form option lists ===
+   Stages mirror the pipeline_stages table (DB is authoritative). If you add a
+   stage to the DB, mirror it here. Lead source is frontend-only; deals.lead_source
+   is a free-text column with no DB constraint.
+   Sales / Presales lists are NOT here — they're pulled live from window._sbUsers
+   (filtered by org_function + is_active) by _populateRolesTV() below.
+   ============================================================================ */
+window.FORM_CONFIG_TV = {
+  stages: [
+    /* mirror of public.pipeline_stages, ordered by seq, post-migration 2026-05-22 */
+    { name: 'Qualified',          open: true,  seq: 1 },
+    { name: 'Proposal',           open: true,  seq: 2 },
+    { name: 'Budget Approval',    open: true,  seq: 3 },
+    { name: 'Technical Approval', open: true,  seq: 4 },
+    { name: 'Negotiation',        open: true,  seq: 5 },
+    { name: 'Awarded',            open: true,  seq: 6 },
+    { name: 'Closed Won',         open: false, seq: 7 },
+    { name: 'Closed Lost',        open: false, seq: 8 }
+  ],
+  leadSources: ['Cavitak', 'OEM']
+};
+
+/* Map legacy stage names (pre-v26.2.0) to the new canon. Used when loading
+   old deal records that may still carry pre-migration stage strings in
+   raw_submission.stage. DB-side stage_id FKs were already repointed by the
+   v26_2_0_pipeline_stages_new_canon migration; this is purely for the text
+   field that some old payloads serialized. */
+window.TV_LEGACY_STAGE_MAP_V262 = {
+  /* pre-v26 (Zoho-era) */
+  'Lead':                'Qualified',
+  'Opportunity':         'Qualified',
+  'Order':               'Awarded',
+  /* v25.x → v26.2.0 */
+  'Pre-Qualified':       'Qualified',
+  'Negotiation/Review':  'Negotiation',
+  'Commit to forcast':   'Awarded'
+};
+
+window._normalizeLegacyStageTV = function _normalizeLegacyStageTV(stageStr) {
+  if (!stageStr) return stageStr;
+  var canonical = String(stageStr).trim();
+  return window.TV_LEGACY_STAGE_MAP_V262[canonical] || canonical;
+};
+
+/* Populate the stage dropdown (#f_stage) from FORM_CONFIG_TV.stages.
+   Called by initFormView(). Idempotent — safe to call repeatedly. */
+window._populateStagesTV = function _populateStagesTV() {
+  var sel = document.getElementById('f_stage');
+  if (!sel) return;
+  var currentVal = sel.value || '';
+  /* keep the placeholder option; flush everything else */
+  var placeholder = sel.querySelector('option[value=""]');
+  sel.innerHTML = '';
+  if (placeholder) sel.appendChild(placeholder);
+  else {
+    var ph = document.createElement('option');
+    ph.value = ''; ph.textContent = 'Select stage';
+    sel.appendChild(ph);
+  }
+  window.FORM_CONFIG_TV.stages.forEach(function(s) {
+    var opt = document.createElement('option');
+    opt.value = s.name;
+    opt.textContent = s.name + (s.open ? '' : ' (closed)');
+    sel.appendChild(opt);
+  });
+  /* Restore prior selection if still valid; otherwise try legacy map */
+  if (currentVal) {
+    var normalized = window._normalizeLegacyStageTV(currentVal);
+    if (window.FORM_CONFIG_TV.stages.some(function(s){ return s.name === normalized; })) {
+      sel.value = normalized;
+    }
+  }
+};
+
+/* Populate the lead-source dropdown (#f_leadSource) — Cavitak / OEM only. */
+window._populateLeadSourceTV = function _populateLeadSourceTV() {
+  var sel = document.getElementById('f_leadSource');
+  if (!sel) return;
+  var currentVal = sel.value || '';
+  sel.innerHTML = '';
+  var ph = document.createElement('option');
+  ph.value = ''; ph.textContent = 'Select source';
+  sel.appendChild(ph);
+  window.FORM_CONFIG_TV.leadSources.forEach(function(src) {
+    var opt = document.createElement('option');
+    opt.value = src; opt.textContent = src;
+    sel.appendChild(opt);
+  });
+  if (currentVal && window.FORM_CONFIG_TV.leadSources.indexOf(currentVal) >= 0) {
+    sel.value = currentVal;
+  }
+};
+
+/* Populate Sales / Presales dropdowns live from window._sbUsers.
+   Filters: is_active !== false AND org_function matches.
+   Sort: by full_name alpha.
+   Falls back gracefully if _sbUsers isn't loaded yet (logs warning, leaves
+   dropdown with just placeholder). */
+window._populateRolesTV = function _populateRolesTV() {
+  var users = (window._sbUsers && Array.isArray(window._sbUsers)) ? window._sbUsers : [];
+  if (!users.length) {
+    console.warn('[v26.2.0] _populateRolesTV: _sbUsers not loaded yet (' +
+                 (typeof window._sbUsers) + '). Dropdowns will show placeholder only.');
+  }
+  function _populate(selId, orgFn) {
+    var sel = document.getElementById(selId);
+    if (!sel) return;
+    var currentVal = sel.value || '';
+    sel.innerHTML = '';
+    var ph = document.createElement('option');
+    ph.value = ''; ph.textContent = 'Select ' + orgFn.toLowerCase();
+    sel.appendChild(ph);
+    users
+      .filter(function(u) {
+        return u && u.is_active !== false && u.org_function === orgFn;
+      })
+      .sort(function(a, b) {
+        return String(a.full_name || a.username || '').localeCompare(String(b.full_name || b.username || ''));
+      })
+      .forEach(function(u) {
+        var opt = document.createElement('option');
+        /* store username as value (stable identifier in raw_submission);
+           UUID id would be cleaner but raw_submission JSON currently keys on
+           username — preserve compat. */
+        opt.value = u.username || u.full_name || '';
+        opt.textContent = u.full_name || u.username || '(unnamed)';
+        /* Tag with region for downstream filtering if needed */
+        if (u.region) opt.setAttribute('data-region', u.region);
+        sel.appendChild(opt);
+      });
+    if (currentVal) sel.value = currentVal;
+  }
+  _populate('f_salesPerson',    'Sales');
+  _populate('f_presalesPerson', 'Presales');
+};
+
+/* Master populate function — called by initFormView(). */
+window._populateFormDropdownsTV = function _populateFormDropdownsTV() {
+  try { window._populateStagesTV(); }      catch(e) { console.error('[v26.2.0] populateStages failed:', e); }
+  try { window._populateLeadSourceTV(); }  catch(e) { console.error('[v26.2.0] populateLeadSource failed:', e); }
+  try { window._populateRolesTV(); }       catch(e) { console.error('[v26.2.0] populateRoles failed:', e); }
+};
+
 /* v26.1.7 — Critical hotfix for v26.1.6.
    The v26.1.6 fix that added #screensContainer included an HTML
    comment containing markdown-style backticks around
@@ -4409,7 +4726,7 @@ function _setText(id, t) {
       const btn = document.getElementById('calcBtn');
       if (!btn) return;
       const isClosed = tvIsClosedStage(sel ? sel.value : '');
-      btn.textContent = isClosed ? 'View Quote →' : 'Generate BoM →';
+      btn.textContent = isClosed ? 'View Quote →' : 'Build quote →';
     } catch (_) { /* defensive — never throw from a label updater */ }
   }
 
@@ -6607,6 +6924,26 @@ function toast(msg, kind) {
 }
 const _openSheets = new Set();
 function openSheet(id) {
+  // v26.2.0 — When settings sheet opens, populate its rows from current app/user state.
+  if (id === 'settings-sheet') {
+    try {
+      var v = document.getElementById('settings-version-display');
+      if (v) v.textContent = (typeof TVONE_FRONTEND_VERSION !== 'undefined' ? TVONE_FRONTEND_VERSION : 'unknown');
+      var u = window.currentUser || {};
+      var nameEl = document.getElementById('settings-user-display');
+      if (nameEl) nameEl.textContent = (u.fullName || u.full_name || u.username || 'Not signed in');
+      var roleEl = document.getElementById('settings-role-display');
+      if (roleEl) {
+        var roleParts = [];
+        if (u.orgFunction || u.org_function) roleParts.push(u.orgFunction || u.org_function);
+        if (u.professionalTitle || u.professional_title) roleParts.push(u.professionalTitle || u.professional_title);
+        if (u.permission_tier === 'super' || u.isSuper) roleParts.push('(Super)');
+        roleEl.textContent = roleParts.length ? roleParts.join(' · ') : '—';
+      }
+      var regionEl = document.getElementById('settings-region-display');
+      if (regionEl) regionEl.textContent = (u.region || '—');
+    } catch (e) { console.error('[v26.2.0] settings populate failed:', e); }
+  }
   document.getElementById(id).classList.add('open');
   document.getElementById(id + '-ov').classList.add('open');
   _openSheets.add(id);
@@ -8471,7 +8808,7 @@ Router.register('/debug', (host) => {
       console.error('[calculateAndLog] unhandled error:', e);
       try {
         const _btn = document.getElementById('calcBtn');
-        if (_btn) { _btn.disabled = false; _btn.textContent = 'Generate BoM \u2192'; }
+        if (_btn) { _btn.disabled = false; _btn.textContent = 'Build quote \u2192'; }
         const _ev = document.getElementById('formError');
         if (_ev) {
           _ev.textContent = '\u26a0 Something went wrong generating the BoM: ' + (e && e.message ? e.message : e) + ' \u00b7 Please screenshot this and send it to Dipenkumar.';
@@ -8950,7 +9287,7 @@ Router.register('/debug', (host) => {
       if (banner) banner.classList.add('hidden');
     }
     calcBtn.disabled = false;
-    calcBtn.textContent = 'Generate BoM →';
+    calcBtn.textContent = 'Build quote →';
 
     // v25.99.25 — Min-wait gate compressed from 2200 → 800ms. Step animation completes at 600ms;
     // 800ms gives a brief moment for the rep to read "done" before transitioning to result.
@@ -9370,7 +9707,7 @@ Router.register('/debug', (host) => {
       };
       sessionLog.unshift(submission);
 
-      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Build quote \u2192'; }
 
       // v25.99.25 — Min-wait compressed from 2200 → 800ms (matches CALICO).
       const _mvElapsedMs = performance.now() - _mvAnalyzingStartedAt;
@@ -9402,7 +9739,7 @@ Router.register('/debug', (host) => {
         }
       }, _mvRemainingDelay);
     } catch (e) {
-      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM →'; }
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Build quote →'; }
       // v25.108.3 — return to the form view first. The save runs while the
       // analyzing splash is showing; without this the splash stayed up and the
       // 'Save failed' banner below was rendered on a hidden view, so a failed
@@ -9595,7 +9932,7 @@ Router.register('/debug', (host) => {
       };
       sessionLog.unshift(submission);
 
-      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM \u2192'; }
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Build quote \u2192'; }
       // v25.99.25 — Min-wait compressed from 2200 → 800ms (matches CALICO/MV).
       const _corioElapsedMs = performance.now() - _corioAnalyzingStartedAt;
       const _corioRemainingDelay = Math.max(0, 800 - _corioElapsedMs);
@@ -9613,7 +9950,7 @@ Router.register('/debug', (host) => {
         }
       }, _corioRemainingDelay);
     } catch (e) {
-      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Generate BoM →'; }
+      if (calcBtn) { calcBtn.disabled = false; calcBtn.textContent = 'Build quote →'; }
       // v25.108.3 — return to the form view first (same fix as the MV path) so a
       // failed save shows its error instead of hanging behind the analyzing splash.
       try { if (typeof showView === 'function') showView('form'); } catch(_) {}
@@ -10730,7 +11067,7 @@ Router.register('/debug', (host) => {
   async function exportQuotePDFTV(returnDoc) {
     if (!lastResult) {
       if (returnDoc === true) return null;
-      alert('No calculation to export. Click Generate BoM first.'); return;
+      alert('No calculation to export. Click Build quote first.'); return;
     }
     if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
       if (returnDoc === true) return null;
@@ -11021,7 +11358,7 @@ Router.register('/debug', (host) => {
 
 /* shareViaWhatsAppTV (whatsapp, L16769-L16810, 42 lines) */
   function shareViaWhatsAppTV() {
-    if (!lastResult) { alert('No calculation to share. Click Generate BoM first.'); return; }
+    if (!lastResult) { alert('No calculation to share. Click Build quote first.'); return; }
     const input = lastResult.input, reco = lastResult.reco, submission = lastResult.submission;
     const refId = (submission && submission.refId) || ('CAL-' + Date.now().toString(36).toUpperCase());
 
@@ -11091,7 +11428,7 @@ Router.register('/debug', (host) => {
 
 /* openEmailModalTV (email, L16841-L16891, 51 lines) */
   function openEmailModalTV() {
-    if (!lastResult) { alert('No calculation to email. Click Generate BoM first.'); return; }
+    if (!lastResult) { alert('No calculation to email. Click Build quote first.'); return; }
     const input = lastResult.input, reco = lastResult.reco, submission = lastResult.submission;
     const refId = (submission && submission.refId) || ('CAL-' + Date.now().toString(36).toUpperCase());
 
@@ -14908,11 +15245,17 @@ function renderFormView(host, { mode, refId }) {
 }
 
 function initFormView() {
+  // v26.2.0 — Populate dropdowns from FORM_CONFIG_TV + _sbUsers BEFORE binding.
+  // Order matters: dropdowns must have their <option>s before bindField restores
+  // saved values (else restored value won't match any option and gets cleared).
+  if (typeof window._populateFormDropdownsTV === 'function') {
+    window._populateFormDropdownsTV();
+  }
   // Bind every FIELD_ID to DraftState
   FIELD_IDS.forEach(bindField);
   // Initial derived totals (in case there was a saved draft)
   recomputeDerivedTotals();
-  console.log('[v26 L4] Form view booted. ' + FIELD_IDS.length + ' fields wired to DraftState.');
+  console.log('[v26.2.0 L4] Form view booted. ' + FIELD_IDS.length + ' fields wired to DraftState.');
 }
 
 function destroyFormView() {
