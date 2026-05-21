@@ -20,34 +20,37 @@
 
 <!--
   ===========================================================
-  tvONE Product Selector — v26.1.8  (UX + engine DOM critical path)
+  tvONE Product Selector — v26.1.9  (input form pass-1)
   ===========================================================
   Org:    Cavitak Marketing Pvt Ltd
   Owner:  Dipenkumar (dipen.g@cavitak.com), National Product Lead
   Built:  2026-05-21
 
-  STATUS: v26.1.8 ships three coordinated additions per
-  Dipenkumar's Path C decision (production smoke 2026-05-21):
+  STATUS: v26.1.9 is input-form pass-1 per Dipenkumar's stated
+  priority "Lets do fix Input form first" (2026-05-21 production
+  smoke). Six form-template changes:
 
-  (1) UX — BoM action bar (Edit / Excel / PDF / WhatsApp /
-      Email) relocated from sticky-top to natural bottom-of-
-      content flow. Per his preference: "WhatsApp Email & all
-      button should be at bottom". CSS .bom-action-bar position
-      sticky → static; DOM order in L9 route swapped (BoM
-      content first, action bar appended last).
+  • Stage names → engine canon (8 stages from TV_STAGES_OPEN +
+    WON + LOST). Form was using Discovery/Negotiation/On Hold —
+    none recognized by engine.
+  • Venue type 9 → 21 options (AV-industry specific).
+  • City — converted to <input list> typeahead with 90+ Indian
+    cities in <datalist>. User types "Gwa" → Gwalior shows.
+    Free-text accepted for cities not in the canonical list.
+  • State 7 → 36 (28 states + 8 UTs); names match the engine's
+    STATE_TO_REGION_TV keys so region auto-derives at submit.
+  • City → State auto-link (one-way) via _cityToStateAutoLinkTV
+    on input/change events. Uses data-auto-set sentinel so manual
+    state overrides are preserved.
+  • Stage note field removed.
+  • Output type adds Signal Extension + Multi Viewer options.
 
-  (2) App version pill — small monospace badge fixed just above
-      the bottom nav on every route, reads TVONE_FRONTEND_VERSION.
-      Per his note "app version not displayed in app". The
-      const is now explicitly attached to window so the head-side
-      surfacer can read it reliably for the pill update.
-
-  (3) Engine DOM critical-path — added #formError, #formInfo,
-      #recoOutput, #resultView to v26-quote-form-template.
-      The audit at 23:11 IST identified 228 missing engine
-      getElementById targets vs DOM; this round addresses the
-      4 that block Generate BoM + export. More may surface as
-      smoke continues.
+  DEFERRED to subsequent passes per Dipenkumar's prioritization:
+   - MV sub-wizard UI (engine logic already lifted in v26.1.3)
+   - Video Processor sub-wizard UI (CORIO/CALICO)
+   - LED screen extra fields (panel count, processor, panel make)
+   - "No calculation to export" — engine recalc on edit-restore
+   - Sales/Presales list refinement (awaiting Dipenkumar's spec)
 
   Architecture:
     Single-file HTML + vanilla JS (~15.8K lines / ~782 KB)
@@ -57,9 +60,19 @@
                 (boot() warns if any are unavailable)
 
   Version constant for support:
-    window.TVONE_FRONTEND_VERSION  →  '26.1.8'
+    window.TVONE_FRONTEND_VERSION  →  '26.1.9'
 
   Changelog (since v26.0.0 layered build):
+    v26.1.9  Input form pass-1. Six form-template changes:
+             stage names → engine canon (8 stages); venue type
+             9 → 21 AV-industry options; city → typeahead input
+             with 90+ city <datalist>; state 7 → 36 (28 + 8 UTs)
+             matching STATE_TO_REGION_TV keys; one-way city → state
+             auto-link via _cityToStateAutoLinkTV; stage note
+             field removed; output type adds Signal Extension +
+             Multi Viewer. Deferred per "fix input form first"
+             prioritization: MV/VP sub-wizards, LED screen extras,
+             edit-restore recalc fix.
     v26.1.8  Three additions per Path C of production smoke:
              (1) BoM action bar moved to bottom — DOM order
              swap in L9 route + CSS sticky → static.
@@ -1617,27 +1630,90 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
             <label class="field-label" for="f_venueType">Venue type<span class="required">*</span></label>
             <select class="field-select" id="f_venueType">
               <option value="">Select…</option>
-              <option>Hospitality</option><option>Corporate</option><option>Retail</option>
-              <option>Education</option><option>Government</option><option>Healthcare</option>
-              <option>House of Worship</option><option>Sports / Entertainment</option><option>Other</option>
+              <option>Auditorium / Performance Hall</option>
+              <option>Boardroom</option>
+              <option>Classroom / Training</option>
+              <option>Command / Control Room</option>
+              <option>Conference Room</option>
+              <option>Corporate Lobby / Reception</option>
+              <option>Corporate Office</option>
+              <option>Education (School / University)</option>
+              <option>Government / Defence</option>
+              <option>Healthcare / Hospital</option>
+              <option>Hospitality / Hotel</option>
+              <option>House of Worship</option>
+              <option>Mall / Showroom</option>
+              <option>Museum / Gallery / Experience Centre</option>
+              <option>Outdoor / Public Display</option>
+              <option>Restaurant / Bar / QSR</option>
+              <option>Retail Storefront</option>
+              <option>Sports / Stadium / Arena</option>
+              <option>Transportation (Airport / Metro / Rail)</option>
+              <option>TV Studio / Broadcast</option>
+              <option>Other</option>
             </select>
           </div>
           <div class="field">
             <label class="field-label" for="f_city">City<span class="required">*</span></label>
-            <select class="field-select" id="f_city">
-              <option value="">Select…</option>
-              <option>Bengaluru</option><option>Mumbai</option><option>Delhi</option>
-              <option>Pune</option><option>Hyderabad</option><option>Chennai</option>
-              <option>Kolkata</option><option>Ahmedabad</option><option>Other</option>
-            </select>
+            <input class="field-input" id="f_city" list="cityListTV"
+                   placeholder="Type or pick…" autocomplete="off"
+                   oninput="if(typeof _cityToStateAutoLinkTV==='function')_cityToStateAutoLinkTV();"
+                   onchange="if(typeof _cityToStateAutoLinkTV==='function')_cityToStateAutoLinkTV();">
+            <datalist id="cityListTV">
+              <option value="Agartala"><option value="Agra"><option value="Ahmedabad">
+              <option value="Aizawl"><option value="Ajmer"><option value="Allahabad">
+              <option value="Amritsar"><option value="Aurangabad"><option value="Bareilly">
+              <option value="Belgaum"><option value="Bengaluru"><option value="Bhavnagar">
+              <option value="Bhilai"><option value="Bhopal"><option value="Bhubaneswar">
+              <option value="Bikaner"><option value="Chandigarh"><option value="Chennai">
+              <option value="Coimbatore"><option value="Cuttack"><option value="Dehradun">
+              <option value="Delhi"><option value="Dhanbad"><option value="Erode">
+              <option value="Faridabad"><option value="Gangtok"><option value="Ghaziabad">
+              <option value="Goa"><option value="Gorakhpur"><option value="Guntur">
+              <option value="Gurugram"><option value="Guwahati"><option value="Gwalior">
+              <option value="Howrah"><option value="Hubli"><option value="Hyderabad">
+              <option value="Imphal"><option value="Indore"><option value="Itanagar">
+              <option value="Jabalpur"><option value="Jaipur"><option value="Jalandhar">
+              <option value="Jammu"><option value="Jamnagar"><option value="Jamshedpur">
+              <option value="Jodhpur"><option value="Kalyan"><option value="Kanpur">
+              <option value="Kavaratti"><option value="Kochi"><option value="Kohima">
+              <option value="Kolhapur"><option value="Kolkata"><option value="Kota">
+              <option value="Lucknow"><option value="Ludhiana"><option value="Madurai">
+              <option value="Mangalore"><option value="Meerut"><option value="Moradabad">
+              <option value="Mumbai"><option value="Mysore"><option value="Nagpur">
+              <option value="Nashik"><option value="Navi Mumbai"><option value="Nellore">
+              <option value="Noida"><option value="Panaji"><option value="Patna">
+              <option value="Pondicherry"><option value="Port Blair"><option value="Pune">
+              <option value="Raipur"><option value="Rajkot"><option value="Ranchi">
+              <option value="Salem"><option value="Saharanpur"><option value="Shillong">
+              <option value="Shimla"><option value="Siliguri"><option value="Solapur">
+              <option value="Srinagar"><option value="Surat"><option value="Thane">
+              <option value="Thiruvananthapuram"><option value="Tirunelveli"><option value="Tiruchirappalli">
+              <option value="Udaipur"><option value="Ujjain"><option value="Vadodara">
+              <option value="Varanasi"><option value="Vijayawada"><option value="Visakhapatnam">
+              <option value="Warangal">
+            </datalist>
           </div>
           <div class="field">
             <label class="field-label" for="f_state">State<span class="required">*</span></label>
             <select class="field-select" id="f_state">
               <option value="">Select…</option>
-              <option>Karnataka</option><option>Maharashtra</option><option>Delhi NCR</option>
-              <option>Telangana</option><option>Tamil Nadu</option><option>West Bengal</option>
-              <option>Gujarat</option><option>Other</option>
+              <option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option>
+              <option>Bihar</option><option>Chhattisgarh</option><option>Goa</option>
+              <option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option>
+              <option>Jharkhand</option><option>Karnataka</option><option>Kerala</option>
+              <option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option>
+              <option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option>
+              <option>Odisha</option><option>Punjab</option><option>Rajasthan</option>
+              <option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option>
+              <option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option>
+              <option>West Bengal</option>
+              <option disabled>──── Union Territories ────</option>
+              <option>Andaman &amp; Nicobar</option><option>Chandigarh</option>
+              <option>Dadra &amp; Nagar Haveli and Daman &amp; Diu</option><option>Delhi</option>
+              <option>Jammu &amp; Kashmir</option><option>Ladakh</option>
+              <option>Lakshadweep</option><option>Puducherry</option>
+              <option>Other</option>
             </select>
           </div>
         </div>
@@ -1658,8 +1734,9 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
             <label class="field-label" for="f_stage">Stage<span class="required">*</span></label>
             <select class="field-select" id="f_stage">
               <option value="">Select…</option>
-              <option>Discovery</option><option>Proposal</option><option>Negotiation</option>
-              <option>Closed Won</option><option>Closed Lost</option><option>On Hold</option>
+              <option>Pre-Qualified</option><option>Qualified</option><option>Proposal</option>
+              <option>Negotiation/Review</option><option>Awarded</option><option>Commit to forcast</option>
+              <option>Closed Won</option><option>Closed Lost</option>
             </select>
           </div>
           <div class="field">
@@ -1671,10 +1748,7 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
             </select>
           </div>
         </div>
-        <div class="field">
-          <label class="field-label" for="f_stageNote">Stage note</label>
-          <textarea class="field-textarea" id="f_stageNote" placeholder="Optional context for the current stage"></textarea>
-        </div>
+        <!-- v26.1.9 — Stage note field removed per request 2026-05-21. -->
         <div class="field-row">
           <div class="field">
             <label class="field-label" for="f_salesPerson">Sales rep<span class="required">*</span></label>
@@ -1852,7 +1926,8 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
           <div class="field">
             <label class="field-label" for="f_outputType">Output type</label>
             <select class="field-select" id="f_outputType">
-              <option>Display(s)</option><option>Projector(s)</option><option>LED wall</option><option>Mixed</option>
+              <option>Display(s)</option><option>Projector(s)</option><option>LED wall</option>
+              <option>Signal Extension</option><option>Multi Viewer</option><option>Mixed</option>
             </select>
           </div>
           <div class="field">
@@ -2035,7 +2110,36 @@ function setTheme(name) {
    ============================================================ */
 
 /* ---- App version ---- */
-const TVONE_FRONTEND_VERSION = '26.1.8';
+const TVONE_FRONTEND_VERSION = '26.1.9';
+/* v26.1.9 — Input-form pass-1 per Dipenkumar's prioritization
+   (2026-05-21 production smoke). Six coordinated changes to the
+   form template, all surgical, all engine-compatible:
+   (1) Stage names → engine canon. Form had Discovery/Proposal/
+       Negotiation/Closed Won/Closed Lost/On Hold — none of which
+       matched TV_STAGES_OPEN. Now uses canonical 8: Pre-Qualified,
+       Qualified, Proposal, Negotiation/Review, Awarded, Commit to
+       forcast, Closed Won, Closed Lost.
+   (2) Venue type 9 → 21 options. AV-industry specific (Auditorium,
+       Boardroom, Control Room, Hospitality, Healthcare, Sports/
+       Stadium, Transportation/Airport, TV Studio, etc.).
+   (3) City — select converted to <input list> typeahead with
+       <datalist id="cityListTV"> of 90+ Indian cities. User can
+       type "Gwa" → matches Gwalior. Free-text input for any city
+       not in the canonical list.
+   (4) State 7 → 36 (28 states + 8 UTs). Names match
+       STATE_TO_REGION_TV keys so existing state→region derivation
+       at submit fires correctly for every option.
+   (5) City → State auto-link (one-way). Inline oninput/onchange
+       on #f_city calls _cityToStateAutoLinkTV which sets #f_state
+       from the 90-entry _CITY_TO_STATE_TV map. Uses data-auto-set
+       sentinel so manual state overrides are preserved.
+   (6) Stage note field removed (Dipenkumar: "remove stage note").
+   (7) Output type adds 'Signal Extension' + 'Multi Viewer' as
+       explicit options (was Display/Projector/LED/Mixed only).
+   Deferred to next pass (Dipenkumar's "fix input form first"):
+   MV sub-wizard, Video Processor sub-wizard, LED screen extra
+   fields, "No calculation to export" engine recalc fix. */
+try { window.TVONE_FRONTEND_VERSION = TVONE_FRONTEND_VERSION; } catch(_) {}
 /* v26.1.8 — Three additions on top of v26.1.7's stable hotfixed base:
    (1) BoM action bar (Edit / Excel / PDF / WhatsApp / Email) moved from
        sticky-top to natural bottom-of-content flow per Dipenkumar's
@@ -2054,6 +2158,67 @@ const TVONE_FRONTEND_VERSION = '26.1.8';
    Explicitly expose the const on window so the head-side surfacer
    can read it without scope-chain assumptions. */
 try { window.TVONE_FRONTEND_VERSION = TVONE_FRONTEND_VERSION; } catch(_) {}
+
+/* v26.1.9 — City → State auto-link (one-way).
+   Lowercase city → canonical state name. State names match
+   STATE_TO_REGION_TV keys (case-insensitive) so the existing
+   state → region derivation still fires at submit time.
+   Wired via inline oninput/onchange on #f_city (see form template).
+   "One-way" means we set state from city; user can still override
+   state manually, and state→city does NOT filter the city list. */
+window._CITY_TO_STATE_TV = {
+  'agartala':'Tripura','agra':'Uttar Pradesh','ahmedabad':'Gujarat',
+  'aizawl':'Mizoram','ajmer':'Rajasthan','allahabad':'Uttar Pradesh',
+  'amritsar':'Punjab','aurangabad':'Maharashtra','bareilly':'Uttar Pradesh',
+  'belgaum':'Karnataka','bengaluru':'Karnataka','bhavnagar':'Gujarat',
+  'bhilai':'Chhattisgarh','bhopal':'Madhya Pradesh','bhubaneswar':'Odisha',
+  'bikaner':'Rajasthan','chandigarh':'Chandigarh','chennai':'Tamil Nadu',
+  'coimbatore':'Tamil Nadu','cuttack':'Odisha','dehradun':'Uttarakhand',
+  'delhi':'Delhi','dhanbad':'Jharkhand','erode':'Tamil Nadu',
+  'faridabad':'Haryana','gangtok':'Sikkim','ghaziabad':'Uttar Pradesh',
+  'goa':'Goa','gorakhpur':'Uttar Pradesh','guntur':'Andhra Pradesh',
+  'gurugram':'Haryana','gurgaon':'Haryana','guwahati':'Assam',
+  'gwalior':'Madhya Pradesh','howrah':'West Bengal','hubli':'Karnataka',
+  'hyderabad':'Telangana','imphal':'Manipur','indore':'Madhya Pradesh',
+  'itanagar':'Arunachal Pradesh','jabalpur':'Madhya Pradesh','jaipur':'Rajasthan',
+  'jalandhar':'Punjab','jammu':'Jammu & Kashmir','jamnagar':'Gujarat',
+  'jamshedpur':'Jharkhand','jodhpur':'Rajasthan','kalyan':'Maharashtra',
+  'kanpur':'Uttar Pradesh','kavaratti':'Lakshadweep','kochi':'Kerala',
+  'kohima':'Nagaland','kolhapur':'Maharashtra','kolkata':'West Bengal',
+  'kota':'Rajasthan','lucknow':'Uttar Pradesh','ludhiana':'Punjab',
+  'madurai':'Tamil Nadu','mangalore':'Karnataka','meerut':'Uttar Pradesh',
+  'moradabad':'Uttar Pradesh','mumbai':'Maharashtra','mysore':'Karnataka',
+  'nagpur':'Maharashtra','nashik':'Maharashtra','navi mumbai':'Maharashtra',
+  'nellore':'Andhra Pradesh','noida':'Uttar Pradesh','panaji':'Goa',
+  'patna':'Bihar','pondicherry':'Puducherry','port blair':'Andaman & Nicobar',
+  'pune':'Maharashtra','raipur':'Chhattisgarh','rajkot':'Gujarat',
+  'ranchi':'Jharkhand','salem':'Tamil Nadu','saharanpur':'Uttar Pradesh',
+  'shillong':'Meghalaya','shimla':'Himachal Pradesh','siliguri':'West Bengal',
+  'solapur':'Maharashtra','srinagar':'Jammu & Kashmir','surat':'Gujarat',
+  'thane':'Maharashtra','thiruvananthapuram':'Kerala','tirunelveli':'Tamil Nadu',
+  'tiruchirappalli':'Tamil Nadu','udaipur':'Rajasthan','ujjain':'Madhya Pradesh',
+  'vadodara':'Gujarat','varanasi':'Uttar Pradesh','vijayawada':'Andhra Pradesh',
+  'visakhapatnam':'Andhra Pradesh','warangal':'Telangana'
+};
+window._cityToStateAutoLinkTV = function _cityToStateAutoLinkTV() {
+  try {
+    var cityEl = document.getElementById('f_city');
+    var stateEl = document.getElementById('f_state');
+    if (!cityEl || !stateEl) return;
+    var city = String(cityEl.value || '').trim().toLowerCase();
+    if (!city) return;
+    var matched = window._CITY_TO_STATE_TV[city];
+    if (matched) {
+      // Only auto-fill if state is empty OR was set by a prior auto-link
+      // (we mark it with data-auto so user manual override is preserved).
+      var prev = stateEl.getAttribute('data-auto-set') || '';
+      if (!stateEl.value || stateEl.value === prev) {
+        stateEl.value = matched;
+        stateEl.setAttribute('data-auto-set', matched);
+      }
+    }
+  } catch(_) { /* never throw from auto-link */ }
+};
 /* v26.1.7 — Critical hotfix for v26.1.6.
    The v26.1.6 fix that added #screensContainer included an HTML
    comment containing markdown-style backticks around
