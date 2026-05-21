@@ -5,18 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#FBFAF8">
 <title>tvONE Product Selector</title>
-<link rel="preconnect" href="https://api.fontshare.com">
+<link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+<link rel="preconnect" href="https://yhzecukifwnlgowmgkrc.supabase.co" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,700&display=swap">
 
 <!-- ============================================================
-     v26.0.1 — Excel / PDF export libraries
-     Pinned CDN versions. Required by exportToExcel (L6/engine)
-     and exportQuotePDFTV (L6/engine). Without these the action
-     bar in L9 BoM view throws ReferenceError on tap.
+     v26.6.1 — Export libraries deferred (perf)
+     ExcelJS / jsPDF / html2canvas are click-time only (Export
+     button in L9 BoM view). `defer` lets them download in parallel
+     with HTML parsing AND execute after DOMContentLoaded — taking
+     ~1.6MB of synchronous JS off the critical render path.
+     The boot-time `checkExportLibs` diagnostic was moved into a
+     DOMContentLoaded listener so it observes the libs AFTER they
+     load (was firing spurious "missing" warnings otherwise).
      ============================================================ -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
 
 <!--
   ===========================================================
@@ -2450,7 +2456,45 @@ function setTheme(name) {
    ============================================================ */
 
 /* ---- App version ---- */
-const TVONE_FRONTEND_VERSION = '26.3.0';
+// ============================================================
+// v26.6.1 — Mobile/desktop perf patches — 2026-05-22
+// ============================================================
+// Zero business-logic change. Three surgical wins:
+//   1. ExcelJS / jsPDF / html2canvas script tags now `defer` — they
+//      were blocking the critical render path with ~1.6MB of JS
+//      that's only used when user taps Export. Now downloads in
+//      parallel with HTML parsing, executes after DOMContentLoaded.
+//   2. <link rel="preconnect"> added for Supabase + cdnjs (DNS+TLS
+//      handshake warmed before first XHR — ~100-300ms saved on
+//      first auth call / first quote action).
+//   3. checkExportLibs diagnostic moved into DOMContentLoaded
+//      handler (was firing spurious "missing" warnings under defer).
+// Expected impact: ~1-2s faster Time-to-Interactive on mobile;
+// faster first Supabase round-trip. No measurable downside.
+// ============================================================
+// v26.6.0 — Signal Extension sub-wizards (SX) — 2026-05-22
+// ============================================================
+// Ports the 4 SX sub-wizards (HDBaseT, Splitter, AOC, AP-536
+// audio extractor) into the v26 layered shell per SX-SPEC-v26.6.0.
+// Catalogs already present at L7617-L7647 (no change).
+// Wires:
+//   - 4 sub-wizard UIs inside sxBody (replaces placeholder)
+//   - 12 cart functions on window (_sxXxxAdd/Remove/Render)
+//   - _sxCollectAllLines aggregator (consumed by 7 existing
+//     call sites in save flows, all using typeof guard)
+//   - _sxRebuildSummary footer renderer
+//   - _onSxToggle synced host-trigger handler (.active class
+//     toggle — does NOT rely on style.display mirror)
+//   - SX Yes/No trigger pills in mvWizardCard + corioWizardCard
+//     (calicoWizardCard pill arrives in v26.5.0)
+// Fixes 2 latent bugs:
+//   - L9847 and L10988 referenced #signalExtensionCard which
+//     doesn't exist in markup (actual ID: #sxWizardCard).
+//     Both repointed.
+// No backend / schema / catalog change. Save/restore already wired
+// via _sbEnrichBlob (L8053) + edit-restore SX block (L10920+).
+// ============================================================
+const TVONE_FRONTEND_VERSION = '26.6.1';
 /* v26.2.0 — Architecture-first pass (2026-05-22). Stop the patchwork loop;
    align frontend with DB schema as source of truth. Paired with DB migration
    v26_2_0_pipeline_stages_new_canon applied same day.
@@ -4638,6 +4682,9 @@ function _setText(id, t) {
       if (typeof window._sxRenderDaCart   === 'function') window._sxRenderDaCart();
       if (typeof window._sxRenderAocCart  === 'function') window._sxRenderAocCart();
       if (typeof window._sxRenderApCart   === 'function') window._sxRenderApCart();
+      // v26.6.0 — Sync trigger pills to 'No' and collapse SX panel
+      if (typeof window._onSxToggle === 'function') window._onSxToggle('no');
+      if (typeof window._sxRebuildSummary === 'function') window._sxRebuildSummary();
     } catch (_) { /* SX panel not loaded yet — fine */ }
     // v25.21: Reset state field's locked styling — city→state lock can leave it disabled
     var _stEl = document.getElementById('f_state');
@@ -7647,6 +7694,429 @@ Router.register('/debug', (host) => {
   };
 
 
+/* ============================================================
+   SX v26.6.0 — Signal Extension sub-wizards
+   ============================================================
+   Catalogs already declared above (SX_HDBT_MAP, SX_DA_MAP,
+   SX_AP_MAP, SX_AOC_CODE, SX_AOC_AVAIL — L7617-L7647).
+   This block adds:
+     - 4 cart globals (idempotent — preserve edit-restore state)
+     - _sxGetVal / _sxSetVal local helpers (avoid name pollution)
+     - 12 sub-wizard functions (Add/Remove/Render × 4)
+     - _sxAocRefreshLengths cascade helper
+     - _sxCollectAllLines aggregator (consumed by save flows)
+     - _sxRebuildSummary footer renderer
+     - _onSxToggle host-trigger sync handler
+   All exposed on window for cross-IIFE access by:
+     - save flows (_mvCalculateAndLog, _calicoCalculateAndLog,
+       _corioCalculateAndLog — call sites use typeof guards)
+     - edit-restore in startEditingSubmission (L10920+)
+     - resetForm cart-clear path (L4633+)
+     - mvWizardCard + corioWizardCard trigger pills (markup below)
+   Catalog source: v25.118 L8000-L8133 + L14013-L14047.
+   ============================================================ */
+
+(function _sxInit() {
+
+  /* Cart globals — idempotent. Edit-restore (L10920+) sets these
+     before this IIFE runs in some paths, so use ??= to avoid
+     wiping out restored state. */
+  window._sxHdbtCart = window._sxHdbtCart || [];
+  window._sxDaCart   = window._sxDaCart   || [];
+  window._sxAocCart  = window._sxAocCart  || [];
+  window._sxApCart   = window._sxApCart   || [];
+
+  /* Local helpers — scoped to this IIFE. No name pollution. */
+  function _sxGetVal(id) {
+    var el = document.getElementById(id);
+    return el ? (el.value || '') : '';
+  }
+  function _sxSetVal(id, v) {
+    var el = document.getElementById(id);
+    if (el) el.value = (v == null ? '' : v);
+  }
+  function _sxEsc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* ============================================================
+     1. HDBaseT extender — kit-when-symmetric pattern
+     Catalog: SX_HDBT_MAP (L7617)
+     ============================================================ */
+
+  function _sxHdbtAdd() {
+    var sigType  = _sxGetVal('sx_hdbtSignalType') || 'Video';
+    var videoRes = _sxGetVal('sx_hdbtVideoRes') || 'FHD';
+    var tx       = parseInt(_sxGetVal('sx_hdbtTx'), 10) || 0;
+    var rx       = parseInt(_sxGetVal('sx_hdbtRx'), 10) || 0;
+    if (tx === 0 && rx === 0) {
+      alert('HDBaseT: set at least one Tx or Rx quantity.');
+      return;
+    }
+    var m = SX_HDBT_MAP[sigType];
+    if (!m) { alert('HDBaseT: unknown signal type ' + sigType); return; }
+    var distLabel = (videoRes === '4K') ? '60m 4K' : '100m FHD';
+    var meta = JSON.stringify({ signalType: sigType, videoRes: videoRes, tx: tx, rx: rx });
+
+    if (tx === rx) {
+      /* Symmetric Tx/Rx → Kit SKU (cheaper than Tx + Rx individually) */
+      window._sxHdbtCart.push({
+        family: 'EXTENDER_HDBASET', category: 'kit',
+        sku: m.kit, qty: tx,
+        description: m.familyLabel + ' Kit (Tx+Rx+2× PSU) · ' + sigType + ' · ' + distLabel,
+        metaJSON: meta
+      });
+    } else {
+      /* Asymmetric → push Tx and Rx separately */
+      if (tx > 0) window._sxHdbtCart.push({
+        family: 'EXTENDER_HDBASET', category: 'tx',
+        sku: m.tx, qty: tx,
+        description: m.familyLabel + ' Transmitter · ' + sigType + ' · ' + distLabel,
+        metaJSON: meta
+      });
+      if (rx > 0) window._sxHdbtCart.push({
+        family: 'EXTENDER_HDBASET', category: 'rx',
+        sku: m.rx, qty: rx,
+        description: m.familyLabel + ' Receiver · ' + sigType + ' · ' + distLabel,
+        metaJSON: meta
+      });
+    }
+    _sxSetVal('sx_hdbtTx', 0);
+    _sxSetVal('sx_hdbtRx', 0);
+    _sxRenderHdbtCart();
+    _sxRebuildSummary();
+  }
+
+  function _sxHdbtRemove(idx) {
+    if (idx >= 0 && idx < window._sxHdbtCart.length) {
+      window._sxHdbtCart.splice(idx, 1);
+      _sxRenderHdbtCart();
+      _sxRebuildSummary();
+    }
+  }
+
+  function _sxRenderHdbtCart() {
+    var el = document.getElementById('sx_hdbtCart');
+    if (!el) return;
+    if (!window._sxHdbtCart.length) {
+      el.innerHTML = '<p class="sx-cart-empty">No HDBaseT extenders added yet.</p>';
+      return;
+    }
+    el.innerHTML = window._sxHdbtCart.map(function(ln, i) {
+      return '<div class="sx-cart-row">' +
+        '<span class="sx-cart-qty">' + _sxEsc(ln.qty) + '×</span> ' +
+        '<span class="sx-cart-sku">' + _sxEsc(ln.sku) + '</span> · ' +
+        '<span class="sx-cart-desc">' + _sxEsc(ln.description) + '</span>' +
+        '<button type="button" class="sx-cart-remove" onclick="_sxHdbtRemove(' + i + ')">remove</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  /* ============================================================
+     2. Splitter (Distribution Amplifier) — qty-merge by SKU
+     Catalog: SX_DA_MAP (L7623)
+     ============================================================ */
+
+  function _sxDaAdd() {
+    var modelKey = _sxGetVal('sx_daModel') || '614';
+    var qty = parseInt(_sxGetVal('sx_daQty'), 10) || 1;
+    if (qty < 1) { alert('Splitter: quantity must be at least 1.'); return; }
+    var spec = SX_DA_MAP[modelKey];
+    if (!spec) return;
+    var existing = window._sxDaCart.find(function(r) { return r.sku === spec.sku; });
+    if (existing) {
+      existing.qty += qty;
+    } else {
+      window._sxDaCart.push({
+        family: 'EXTENDER_SPLITTER', category: 'splitter',
+        sku: spec.sku, qty: qty, description: spec.desc, metaJSON: ''
+      });
+    }
+    _sxSetVal('sx_daQty', 1);
+    _sxRenderDaCart();
+    _sxRebuildSummary();
+  }
+
+  function _sxDaRemove(idx) {
+    if (idx >= 0 && idx < window._sxDaCart.length) {
+      window._sxDaCart.splice(idx, 1);
+      _sxRenderDaCart();
+      _sxRebuildSummary();
+    }
+  }
+
+  function _sxRenderDaCart() {
+    var el = document.getElementById('sx_daCart');
+    if (!el) return;
+    if (!window._sxDaCart.length) {
+      el.innerHTML = '<p class="sx-cart-empty">No splitters added yet.</p>';
+      return;
+    }
+    el.innerHTML = window._sxDaCart.map(function(ln, i) {
+      return '<div class="sx-cart-row">' +
+        '<span class="sx-cart-qty">' + _sxEsc(ln.qty) + '×</span> ' +
+        '<span class="sx-cart-sku">' + _sxEsc(ln.sku) + '</span> · ' +
+        '<span class="sx-cart-desc">' + _sxEsc(ln.description) + '</span>' +
+        '<button type="button" class="sx-cart-remove" onclick="_sxDaRemove(' + i + ')">remove</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  /* ============================================================
+     3. AOC (Active Optical Cable) — signal/jacket → code → length
+     Catalogs: SX_AOC_CODE (L7633) + SX_AOC_AVAIL (L7638)
+     ============================================================ */
+
+  /* Refresh the length dropdown when signal or jacket changes.
+     Wired via onchange in markup below. */
+  function _sxAocRefreshLengths() {
+    var signal = _sxGetVal('sx_aocSignal') || 'HDMI';
+    var jacket = _sxGetVal('sx_aocJacket') || 'Std';
+    var codeMap = SX_AOC_CODE[signal] || {};
+    var code = codeMap[jacket];
+    var avail = (code && SX_AOC_AVAIL[code]) || [];
+    var lenEl = document.getElementById('sx_aocLength');
+    if (!lenEl) return;
+    if (!avail.length) {
+      lenEl.innerHTML = '<option value="">No lengths for this combo</option>';
+      _sxAocUpdateSkuPreview();
+      return;
+    }
+    lenEl.innerHTML = avail.map(function(L) {
+      return '<option value="' + L + '">' + L + 'm</option>';
+    }).join('');
+    _sxAocUpdateSkuPreview();
+  }
+
+  function _sxAocUpdateSkuPreview() {
+    var signal = _sxGetVal('sx_aocSignal') || 'HDMI';
+    var jacket = _sxGetVal('sx_aocJacket') || 'Std';
+    var length = parseInt(_sxGetVal('sx_aocLength'), 10) || 0;
+    var preview = document.getElementById('sx_aocSkuPreview');
+    if (!preview) return;
+    var code = (SX_AOC_CODE[signal] || {})[jacket];
+    if (!code || !length) { preview.textContent = '—'; return; }
+    preview.textContent = 'MG-AOC-' + code + '-' + length + 'M';
+  }
+
+  function _sxAocAdd() {
+    var signal = _sxGetVal('sx_aocSignal') || 'HDMI';
+    var jacket = _sxGetVal('sx_aocJacket') || 'Std';
+    var length = parseInt(_sxGetVal('sx_aocLength'), 10) || 0;
+    var qty    = parseInt(_sxGetVal('sx_aocQty'), 10) || 1;
+    var code = (SX_AOC_CODE[signal] || {})[jacket];
+    if (!code) { alert('AOC: invalid signal/jacket combo.'); return; }
+    var avail = SX_AOC_AVAIL[code] || [];
+    if (avail.indexOf(length) < 0) {
+      alert('AOC: ' + length + 'm not available for ' + signal + ' ' + jacket +
+        '. Available: ' + avail.join(', ') + 'm');
+      return;
+    }
+    if (qty < 1) { alert('AOC: quantity must be at least 1.'); return; }
+    var sku  = 'MG-AOC-' + code + '-' + length + 'M';
+    var desc = signal + ' ' + jacket + ' ' + length + 'm Active Optical Cable';
+    var meta = JSON.stringify({ signal: signal, jacket: jacket, length: length });
+    var existing = window._sxAocCart.find(function(r) { return r.sku === sku; });
+    if (existing) {
+      existing.qty += qty;
+    } else {
+      window._sxAocCart.push({
+        family: 'EXTENDER_AOC', category: 'aoc',
+        sku: sku, qty: qty, description: desc, metaJSON: meta
+      });
+    }
+    _sxSetVal('sx_aocQty', 1);
+    _sxRenderAocCart();
+    _sxRebuildSummary();
+  }
+
+  function _sxAocRemove(idx) {
+    if (idx >= 0 && idx < window._sxAocCart.length) {
+      window._sxAocCart.splice(idx, 1);
+      _sxRenderAocCart();
+      _sxRebuildSummary();
+    }
+  }
+
+  function _sxRenderAocCart() {
+    var el = document.getElementById('sx_aocCart');
+    if (!el) return;
+    if (!window._sxAocCart.length) {
+      el.innerHTML = '<p class="sx-cart-empty">No AOC cables added yet.</p>';
+      return;
+    }
+    el.innerHTML = window._sxAocCart.map(function(ln, i) {
+      return '<div class="sx-cart-row">' +
+        '<span class="sx-cart-qty">' + _sxEsc(ln.qty) + '×</span> ' +
+        '<span class="sx-cart-sku">' + _sxEsc(ln.sku) + '</span> · ' +
+        '<span class="sx-cart-desc">' + _sxEsc(ln.description) + '</span>' +
+        '<button type="button" class="sx-cart-remove" onclick="_sxAocRemove(' + i + ')">remove</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  /* ============================================================
+     4. HDMI Audio Extractor (AP-536) — qty-merge by SKU
+     Catalog: SX_AP_MAP (L7629)
+     ============================================================ */
+
+  function _sxApAdd() {
+    var modelKey = _sxGetVal('sx_apModel') || 'AP-536';
+    var qty = parseInt(_sxGetVal('sx_apQty'), 10) || 1;
+    if (qty < 1) { alert('Audio Extractor: quantity must be at least 1.'); return; }
+    var spec = SX_AP_MAP[modelKey];
+    if (!spec) return;
+    var existing = window._sxApCart.find(function(r) { return r.sku === spec.sku; });
+    if (existing) {
+      existing.qty += qty;
+    } else {
+      window._sxApCart.push({
+        family: 'EXTENDER_AUDIO', category: 'audio_extractor',
+        sku: spec.sku, qty: qty, description: spec.desc, metaJSON: ''
+      });
+    }
+    _sxSetVal('sx_apQty', 1);
+    _sxRenderApCart();
+    _sxRebuildSummary();
+  }
+
+  function _sxApRemove(idx) {
+    if (idx >= 0 && idx < window._sxApCart.length) {
+      window._sxApCart.splice(idx, 1);
+      _sxRenderApCart();
+      _sxRebuildSummary();
+    }
+  }
+
+  function _sxRenderApCart() {
+    var el = document.getElementById('sx_apCart');
+    if (!el) return;
+    if (!window._sxApCart.length) {
+      el.innerHTML = '<p class="sx-cart-empty">No audio extractors added yet.</p>';
+      return;
+    }
+    el.innerHTML = window._sxApCart.map(function(ln, i) {
+      return '<div class="sx-cart-row">' +
+        '<span class="sx-cart-qty">' + _sxEsc(ln.qty) + '×</span> ' +
+        '<span class="sx-cart-sku">' + _sxEsc(ln.sku) + '</span> · ' +
+        '<span class="sx-cart-desc">' + _sxEsc(ln.description) + '</span>' +
+        '<button type="button" class="sx-cart-remove" onclick="_sxApRemove(' + i + ')">remove</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  /* ============================================================
+     5. Aggregator — called by save flows (existing call sites at
+     L4237, L9618, L10046, L10269, L11266, L11360, L11460 — all
+     using typeof window._sxCollectAllLines === 'function' guard).
+     Returns flat array of line entries; save flow appends to
+     project_lines with product_family = entry.family.
+     ============================================================ */
+
+  function _sxCollectAllLines() {
+    var lines = [];
+    var i;
+    for (i = 0; i < (window._sxHdbtCart || []).length; i++) lines.push(window._sxHdbtCart[i]);
+    for (i = 0; i < (window._sxDaCart   || []).length; i++) lines.push(window._sxDaCart[i]);
+    for (i = 0; i < (window._sxAocCart  || []).length; i++) lines.push(window._sxAocCart[i]);
+    for (i = 0; i < (window._sxApCart   || []).length; i++) lines.push(window._sxApCart[i]);
+    return lines;
+  }
+
+  /* ============================================================
+     6. Summary footer — total line count + per-cart breakdown
+     ============================================================ */
+
+  function _sxRebuildSummary() {
+    var el = document.getElementById('sxSummary');
+    if (!el) return;
+    var h = (window._sxHdbtCart || []).length;
+    var d = (window._sxDaCart   || []).length;
+    var a = (window._sxAocCart  || []).length;
+    var p = (window._sxApCart   || []).length;
+    var total = h + d + a + p;
+    if (total === 0) {
+      el.innerHTML = '<p class="sx-summary-empty">No Signal Extension items yet. Add HDBaseT extenders, splitters, AOC cables, or audio extractors above.</p>';
+      return;
+    }
+    el.innerHTML =
+      '<div class="sx-summary-line">' +
+        '<span class="sx-summary-label">Signal Extension items:</span> ' +
+        '<span class="sx-summary-total">' + total + ' line(s)</span> · ' +
+        '<span class="sx-summary-break">HDBaseT ' + h + ' · Splitter ' + d + ' · AOC ' + a + ' · Audio ' + p + '</span>' +
+      '</div>';
+  }
+
+  /* ============================================================
+     7. Host-trigger sync handler — wires MV/CALICO/CORIO Yes/No
+     pills to show/hide the shared sxWizardCard.
+     Uses .active class (CSS .wizard-card.active { display: block }
+     at L16684) — NOT inline display:none. Trigger pills synced via
+     querySelectorAll on .mv-ext-pill, .calico-ext-pill, .corio-ext-pill
+     (calico-ext-pill markup will arrive in v26.5.0 — querySelectorAll
+     gracefully returns 0 nodes today).
+     ============================================================ */
+
+  function _onSxToggle(value /* 'yes' | 'no' */) {
+    value = (value === 'yes') ? 'yes' : 'no';
+
+    /* Sync all 3 host trigger pill groups */
+    var pillSelectors = ['.mv-ext-pill', '.calico-ext-pill', '.corio-ext-pill'];
+    pillSelectors.forEach(function(sel) {
+      document.querySelectorAll(sel).forEach(function(p) {
+        if (p.dataset && p.dataset.value === value) p.classList.add('active');
+        else p.classList.remove('active');
+      });
+    });
+
+    /* Show/hide the shared SX wizard card via .active class */
+    var sxCard = document.getElementById('sxWizardCard');
+    if (sxCard) {
+      if (value === 'yes') sxCard.classList.add('active');
+      else sxCard.classList.remove('active');
+    }
+
+    /* Render fresh content when opening (in case carts populated externally) */
+    if (value === 'yes') {
+      _sxRenderHdbtCart();
+      _sxRenderDaCart();
+      _sxRenderAocCart();
+      _sxRenderApCart();
+      _sxRebuildSummary();
+      _sxAocRefreshLengths();
+    }
+  }
+
+  /* ============================================================
+     Expose on window for cross-IIFE access
+     ============================================================ */
+  window._sxHdbtAdd = _sxHdbtAdd;
+  window._sxHdbtRemove = _sxHdbtRemove;
+  window._sxRenderHdbtCart = _sxRenderHdbtCart;
+  window._sxDaAdd = _sxDaAdd;
+  window._sxDaRemove = _sxDaRemove;
+  window._sxRenderDaCart = _sxRenderDaCart;
+  window._sxAocAdd = _sxAocAdd;
+  window._sxAocRemove = _sxAocRemove;
+  window._sxRenderAocCart = _sxRenderAocCart;
+  window._sxAocRefreshLengths = _sxAocRefreshLengths;
+  window._sxAocUpdateSkuPreview = _sxAocUpdateSkuPreview;
+  window._sxApAdd = _sxApAdd;
+  window._sxApRemove = _sxApRemove;
+  window._sxRenderApCart = _sxRenderApCart;
+  window._sxCollectAllLines = _sxCollectAllLines;
+  window._sxRebuildSummary = _sxRebuildSummary;
+  window._onSxToggle = _onSxToggle;
+
+})();
+/* ============================================================
+   END SX v26.6.0
+   ============================================================ */
+
+
+
   const CORIO_CHASSIS = {
     'C3-503': {
       sku: 'C3-503', label: 'CORIOmaster Micro',
@@ -9844,7 +10314,9 @@ Router.register('/debug', (host) => {
     // The card BODY (sxBody) stays collapsed by default — user opens it manually OR by picking MV "Yes" radio.
     // Was the missing piece: the incomplete-Card-01 branch hides this card, but the complete branch
     // never re-shew it → it stayed hidden forever and MV ext "Yes" had no visible effect.
-    const sxCardEl = document.getElementById('signalExtensionCard');
+    /* v26.6.0 — repoint to actual markup ID #sxWizardCard
+       (was 'signalExtensionCard' which doesn't exist anywhere) */
+    const sxCardEl = document.getElementById('sxWizardCard');
     if (sxCardEl) sxCardEl.style.display = (isMv || isCalico || isCorio) ? '' : 'none';
   }
   /* v26.2.3 — Expose on window so inline onchange handlers on req_type
@@ -10982,15 +11454,11 @@ Router.register('/debug', (host) => {
             if (typeof window._sxRenderApCart === 'function') window._sxRenderApCart();
             if (typeof window._sxRebuildSummary === 'function') window._sxRebuildSummary();
 
-            // Auto-open the Signal Extension card only when this deal has items
+            // v26.6.0 — Auto-open SX panel via _onSxToggle (sets .active class
+            // on #sxWizardCard AND syncs host trigger pills across MV/CALICO/CORIO)
             const hasSxItems = window._sxHdbtCart.length || window._sxAocCart.length || window._sxDaCart.length || window._sxApCart.length;
-            if (hasSxItems) {
-              const sxCard = document.getElementById('signalExtensionCard');
-              const sxBody = document.getElementById('sxBody');
-              if (sxCard && sxBody && sxCard.getAttribute('data-sx-open') !== 'true') {
-                sxCard.setAttribute('data-sx-open', 'true');
-                sxBody.style.display = '';
-              }
+            if (hasSxItems && typeof window._onSxToggle === 'function') {
+              window._onSxToggle('yes');
             }
           }).catch(function(err) {
             console.warn('[Edit] ProjectLines fetch failed (edit still works, just empty wizards):', err);
@@ -16760,6 +17228,156 @@ Router.register('/profile', (host) => {
       display: none;
     }
     .led-screens-wrap.active { display: block; }
+
+    /* ============================================================
+       SX v26.6.0 — Signal Extension sub-wizard styling
+       Mounted inside sxWizardCard's sxBody. Uses existing tokens
+       (--bg-card, --bg-subtle, --ink-strong, --accent, etc).
+       ============================================================ */
+
+    .sx-intro {
+      font-size: var(--t-body-sm); color: var(--ink-mid);
+      margin: 0 0 var(--s-4); line-height: 1.5;
+    }
+
+    .sx-subwiz {
+      background: var(--bg-subtle);
+      border: 0.5px solid var(--border-soft);
+      border-radius: var(--r-sm);
+      padding: var(--s-4);
+      margin-bottom: var(--s-3);
+    }
+    .sx-subwiz:last-of-type { margin-bottom: var(--s-4); }
+
+    .sx-subwiz-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: var(--s-3);
+      gap: var(--s-2); flex-wrap: wrap;
+    }
+    .sx-subwiz-head h4 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: var(--t-body); color: var(--ink-strong); margin: 0;
+    }
+    .sx-subwiz-note {
+      font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
+    }
+
+    .sx-subwiz-body { display: flex; flex-direction: column; gap: var(--s-3); }
+
+    .sx-field-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3);
+    }
+    .sx-field { display: flex; flex-direction: column; gap: 4px; }
+    .sx-field label {
+      font-family: var(--font-mono); font-size: 11px;
+      letter-spacing: var(--ls-eyebrow);
+      text-transform: uppercase; color: var(--ink-soft);
+    }
+    .sx-field select,
+    .sx-field input.sx-stepper {
+      background: var(--bg-card);
+      border: 0.5px solid var(--border-soft);
+      border-radius: var(--r-xs);
+      padding: 8px 10px;
+      font-size: var(--t-body-sm); color: var(--ink-strong);
+      font-family: inherit;
+    }
+    .sx-field select:focus,
+    .sx-field input.sx-stepper:focus {
+      outline: 2px solid var(--accent); outline-offset: -2px;
+    }
+
+    .sx-sku-preview {
+      font-family: var(--font-mono); font-size: 12px;
+      color: var(--ink-mid); margin: 0;
+    }
+    .sx-sku-preview span { color: var(--accent-deep); font-weight: 600; }
+
+    .sx-add-btn {
+      background: var(--accent); color: white;
+      border: none; border-radius: var(--r-sm);
+      padding: 10px 16px;
+      font-family: inherit; font-size: var(--t-body-sm); font-weight: 600;
+      cursor: pointer;
+      transition: background 120ms ease;
+    }
+    .sx-add-btn:hover { background: var(--accent-deep); }
+    .sx-add-btn:active { transform: translateY(1px); }
+
+    .sx-cart {
+      margin-top: var(--s-2);
+      border-top: 0.5px dashed var(--border-soft);
+      padding-top: var(--s-3);
+    }
+    .sx-cart-empty {
+      font-size: var(--t-body-sm); color: var(--ink-soft);
+      margin: 0; font-style: italic;
+    }
+    .sx-cart-row {
+      display: flex; align-items: center; gap: var(--s-2);
+      padding: 6px 0; flex-wrap: wrap;
+      font-size: var(--t-body-sm); color: var(--ink-strong);
+    }
+    .sx-cart-row + .sx-cart-row { border-top: 0.5px solid var(--border-soft); }
+    .sx-cart-qty { font-weight: 600; color: var(--accent-deep); min-width: 30px; }
+    .sx-cart-sku { font-family: var(--font-mono); font-size: 12px; color: var(--ink-strong); }
+    .sx-cart-desc { color: var(--ink-mid); flex: 1; min-width: 160px; }
+    .sx-cart-remove {
+      background: none; border: 0.5px solid var(--border-soft);
+      border-radius: var(--r-xs); padding: 3px 10px;
+      font-family: var(--font-mono); font-size: 11px;
+      color: var(--ink-soft); cursor: pointer;
+      transition: all 120ms ease;
+    }
+    .sx-cart-remove:hover {
+      border-color: var(--accent-deep); color: var(--accent-deep);
+    }
+
+    .sx-summary {
+      margin-top: var(--s-4);
+      padding-top: var(--s-3);
+      border-top: 0.5px solid var(--border-soft);
+    }
+    .sx-summary-empty {
+      font-size: var(--t-body-sm); color: var(--ink-soft);
+      margin: 0; font-style: italic;
+    }
+    .sx-summary-line { font-size: var(--t-body-sm); color: var(--ink-strong); }
+    .sx-summary-label { font-weight: 600; color: var(--ink-strong); }
+    .sx-summary-total { color: var(--accent-deep); font-weight: 600; }
+    .sx-summary-break { color: var(--ink-mid); font-family: var(--font-mono); font-size: 12px; }
+
+    /* Host trigger pill groups (MV, CALICO, CORIO) */
+    .mv-ext-question, .corio-ext-question, .calico-ext-question {
+      display: flex; align-items: center; gap: var(--s-3);
+      margin-top: var(--s-3); padding-top: var(--s-3);
+      border-top: 0.5px solid var(--border-soft);
+      flex-wrap: wrap;
+    }
+    .mv-ext-label, .corio-ext-label, .calico-ext-label {
+      font-family: var(--font-mono); font-size: 11px;
+      letter-spacing: var(--ls-eyebrow);
+      text-transform: uppercase; color: var(--ink-soft);
+    }
+    .pill-group {
+      display: inline-flex; background: var(--bg-subtle);
+      border-radius: var(--r-pill); padding: 3px; gap: 2px;
+    }
+    .pill-group button {
+      background: transparent; border: none;
+      padding: 6px 16px; border-radius: var(--r-pill);
+      font-family: inherit; font-size: var(--t-body-sm); font-weight: 600;
+      color: var(--ink-mid); cursor: pointer;
+      transition: all 120ms ease;
+    }
+    .pill-group button.active {
+      background: var(--accent); color: white;
+    }
+
+    @media (max-width: 520px) {
+      .sx-field-row { grid-template-columns: 1fr; }
+    }
+
   `;
   const style = document.createElement('style');
   style.id = 'v26-l10-styles';
@@ -16840,6 +17458,15 @@ Router.register('/profile', (host) => {
             <span>Fan-filter kit (dusty install)</span>
           </label>
         </div>
+
+        <!-- v26.6.0 — SX trigger (synced across MV / CALICO / CORIO via _onSxToggle) -->
+        <div class="corio-ext-question">
+          <label class="corio-ext-label">Required signal extension?</label>
+          <div class="pill-group">
+            <button type="button" class="corio-ext-pill active" data-value="no"  onclick="window._onSxToggle && window._onSxToggle('no')">No</button>
+            <button type="button" class="corio-ext-pill"        data-value="yes" onclick="window._onSxToggle && window._onSxToggle('yes')">Yes</button>
+          </div>
+        </div>
       </div>
 
       <!-- MV wizard card -->
@@ -16859,6 +17486,15 @@ Router.register('/profile', (host) => {
           </select>
         </div>
 
+        <!-- v26.6.0 — SX trigger (synced across MV / CALICO / CORIO via _onSxToggle) -->
+        <div class="mv-ext-question">
+          <label class="mv-ext-label">Required signal extension?</label>
+          <div class="pill-group">
+            <button type="button" class="mv-ext-pill active" data-value="no"  onclick="window._onSxToggle && window._onSxToggle('no')">No</button>
+            <button type="button" class="mv-ext-pill"        data-value="yes" onclick="window._onSxToggle && window._onSxToggle('yes')">Yes</button>
+          </div>
+        </div>
+
         <div class="wizard-preview" id="mvPreview">
           <p class="wizard-preview-tag">RECOMMENDED MV</p>
           <div class="wizard-preview-chassis" id="mvPreviewChassis">—</div>
@@ -16873,11 +17509,154 @@ Router.register('/profile', (host) => {
           <span class="wizard-tag">collapsible</span>
         </div>
         <div id="sxBody">
-          <!-- Engine populates extender selections here when SX is active -->
-          <p style="color: var(--ink-soft); font-size: var(--t-body-sm); margin: 0;">
-            Engine populates extender selections (HDBaseT, Fiber, AOC, AP-536 audio extractor) here based on input/output distances and signal type.
-          </p>
+          <!-- v26.6.0 — 4 sub-wizards inside the shared SX panel.
+               Catalogs: SX_HDBT_MAP / SX_DA_MAP / SX_AOC_CODE /
+               SX_AOC_AVAIL / SX_AP_MAP (L7617-L7647).
+               Handlers: window._sxXxxAdd / _sxXxxRemove /
+               _sxRenderXxxCart (defined in _sxInit IIFE below catalogs).
+               Triggered via the Yes/No pill in mvWizardCard or
+               corioWizardCard (calicoWizardCard pill arrives v26.5.0). -->
+
+          <p class="sx-intro">Add HDBaseT extenders, HDMI splitters, AOC cables, or HDMI audio extractors to your BoM. Each sub-wizard maintains its own cart; all carts save together with the parent deal.</p>
+
+          <!-- 1. HDBaseT Extenders -->
+          <div class="sx-subwiz" id="sxSubwizHdbt">
+            <div class="sx-subwiz-head">
+              <h4>HDBaseT Extender</h4>
+              <span class="sx-subwiz-note">Magenta HD-One · 100m FHD / 60m 4K</span>
+            </div>
+            <div class="sx-subwiz-body">
+              <div class="sx-field-row">
+                <div class="sx-field">
+                  <label for="sx_hdbtSignalType">Signal type</label>
+                  <select id="sx_hdbtSignalType">
+                    <option value="Video">Video</option>
+                    <option value="Video+Audio">Video + Audio</option>
+                    <option value="Video+Audio+IR+RS232">Video + Audio + IR + RS232</option>
+                  </select>
+                </div>
+                <div class="sx-field">
+                  <label for="sx_hdbtVideoRes">Video resolution</label>
+                  <select id="sx_hdbtVideoRes">
+                    <option value="FHD">FHD (100m)</option>
+                    <option value="4K">4K UHD (60m)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="sx-field-row">
+                <div class="sx-field">
+                  <label for="sx_hdbtTx">Transmitters</label>
+                  <input type="number" id="sx_hdbtTx" min="0" step="1" value="0" class="sx-stepper">
+                </div>
+                <div class="sx-field">
+                  <label for="sx_hdbtRx">Receivers</label>
+                  <input type="number" id="sx_hdbtRx" min="0" step="1" value="0" class="sx-stepper">
+                </div>
+              </div>
+              <button type="button" class="sx-add-btn" onclick="window._sxHdbtAdd && window._sxHdbtAdd()">+ Add HDBaseT extender to BoM</button>
+              <div class="sx-cart" id="sx_hdbtCart"><p class="sx-cart-empty">No HDBaseT extenders added yet.</p></div>
+            </div>
+          </div>
+
+          <!-- 2. HDMI Splitter (Distribution Amplifier) -->
+          <div class="sx-subwiz" id="sxSubwizSplitter">
+            <div class="sx-subwiz-head">
+              <h4>HDMI Splitter</h4>
+              <span class="sx-subwiz-note">Magenta MG-DA · 4K60 · HDCP 2.2 + downscaling</span>
+            </div>
+            <div class="sx-subwiz-body">
+              <div class="sx-field-row">
+                <div class="sx-field">
+                  <label for="sx_daModel">Model</label>
+                  <select id="sx_daModel">
+                    <option value="612">1×2 — MG-DA-612</option>
+                    <option value="614" selected>1×4 — MG-DA-614</option>
+                    <option value="618">1×8 — MG-DA-618</option>
+                  </select>
+                </div>
+                <div class="sx-field">
+                  <label for="sx_daQty">Quantity</label>
+                  <input type="number" id="sx_daQty" min="1" step="1" value="1" class="sx-stepper">
+                </div>
+              </div>
+              <button type="button" class="sx-add-btn" onclick="window._sxDaAdd && window._sxDaAdd()">+ Add splitter to BoM</button>
+              <div class="sx-cart" id="sx_daCart"><p class="sx-cart-empty">No splitters added yet.</p></div>
+            </div>
+          </div>
+
+          <!-- 3. AOC (Active Optical Cable) -->
+          <div class="sx-subwiz" id="sxSubwizAoc">
+            <div class="sx-subwiz-head">
+              <h4>AOC Cable</h4>
+              <span class="sx-subwiz-note">Magenta MG-AOC · 4K60 4:4:4 over fiber</span>
+            </div>
+            <div class="sx-subwiz-body">
+              <div class="sx-field-row">
+                <div class="sx-field">
+                  <label for="sx_aocSignal">Signal</label>
+                  <select id="sx_aocSignal" onchange="window._sxAocRefreshLengths && window._sxAocRefreshLengths()">
+                    <option value="HDMI" selected>HDMI</option>
+                    <option value="DisplayPort">DisplayPort</option>
+                  </select>
+                </div>
+                <div class="sx-field">
+                  <label for="sx_aocJacket">Jacket</label>
+                  <select id="sx_aocJacket" onchange="window._sxAocRefreshLengths && window._sxAocRefreshLengths()">
+                    <option value="Std" selected>Std</option>
+                    <option value="Plenum">Plenum</option>
+                    <option value="LSZH">LSZH</option>
+                    <option value="Armored">Armored</option>
+                  </select>
+                </div>
+              </div>
+              <div class="sx-field-row">
+                <div class="sx-field">
+                  <label for="sx_aocLength">Length</label>
+                  <select id="sx_aocLength" onchange="window._sxAocUpdateSkuPreview && window._sxAocUpdateSkuPreview()">
+                    <option value="10">10m</option>
+                  </select>
+                </div>
+                <div class="sx-field">
+                  <label for="sx_aocQty">Quantity</label>
+                  <input type="number" id="sx_aocQty" min="1" step="1" value="1" class="sx-stepper">
+                </div>
+              </div>
+              <p class="sx-sku-preview">SKU: <span id="sx_aocSkuPreview">—</span></p>
+              <button type="button" class="sx-add-btn" onclick="window._sxAocAdd && window._sxAocAdd()">+ Add AOC cable to BoM</button>
+              <div class="sx-cart" id="sx_aocCart"><p class="sx-cart-empty">No AOC cables added yet.</p></div>
+            </div>
+          </div>
+
+          <!-- 4. HDMI Audio Extractor -->
+          <div class="sx-subwiz" id="sxSubwizAudio">
+            <div class="sx-subwiz-head">
+              <h4>HDMI Audio Extractor</h4>
+              <span class="sx-subwiz-note">AP-536 · de-embeds audio to analog L/R + S/PDIF</span>
+            </div>
+            <div class="sx-subwiz-body">
+              <div class="sx-field-row">
+                <div class="sx-field">
+                  <label for="sx_apModel">Model</label>
+                  <select id="sx_apModel">
+                    <option value="AP-536">AP-536</option>
+                  </select>
+                </div>
+                <div class="sx-field">
+                  <label for="sx_apQty">Quantity</label>
+                  <input type="number" id="sx_apQty" min="1" step="1" value="1" class="sx-stepper">
+                </div>
+              </div>
+              <button type="button" class="sx-add-btn" onclick="window._sxApAdd && window._sxApAdd()">+ Add audio extractor to BoM</button>
+              <div class="sx-cart" id="sx_apCart"><p class="sx-cart-empty">No audio extractors added yet.</p></div>
+            </div>
+          </div>
+
+          <!-- Summary footer — total line count + per-cart breakdown -->
+          <div class="sx-summary" id="sxSummary">
+            <p class="sx-summary-empty">No Signal Extension items yet. Add HDBaseT extenders, splitters, AOC cables, or audio extractors above.</p>
+          </div>
         </div>
+
       </div>
 
       <!-- LED screens wrap — appears when Active LED = Yes -->
@@ -17011,21 +17790,21 @@ const goBack = Router.goBack;
    BOOT
    ============================================================ */
 (function boot() {
-  // v26.0.1 — CDN dependency presence check.
-  // exportToExcel / exportQuotePDFTV live in the L6 verbatim engine
-  // and assume these globals exist. If any is missing, the action bar
-  // in L9 BoM view will throw on tap. Surface it at boot instead.
-  (function checkExportLibs() {
+  // v26.6.1 — CDN dependency check moved into DOMContentLoaded.
+  // Export libs are deferred (head), so they're not ready at inline-
+  // script execution time. DOMContentLoaded fires AFTER deferred
+  // scripts execute, so this is the correct hook.
+  document.addEventListener('DOMContentLoaded', function checkExportLibs() {
     const missing = [];
     if (typeof window.ExcelJS === 'undefined') missing.push('ExcelJS (4.4.0)');
     if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) missing.push('jsPDF (2.4.0)');
     if (typeof window.html2canvas !== 'function') missing.push('html2canvas (1.4.1)');
     if (missing.length) {
-      console.warn('[v26.1.2] export libs not loaded — BoM action bar will fail. Missing:', missing.join(', '));
+      console.warn('[v26.6.1] export libs not loaded — BoM action bar will fail. Missing:', missing.join(', '));
     } else {
-      console.log('[v26.1.2] ready · ExcelJS 4.4.0 · jsPDF 2.4.0 · html2canvas 1.4.1');
+      console.log('[v26.6.1] ready · ExcelJS 4.4.0 · jsPDF 2.4.0 · html2canvas 1.4.1');
     }
-  })();
+  });
 
   // Restore app + theme preference
   const savedApp = localStorage.getItem('v26.app') || 'tvone';
