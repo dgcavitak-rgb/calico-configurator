@@ -20,7 +20,7 @@
 
 <!--
   ===========================================================
-  tvONE Product Selector — v26.2.2  (hotfix: _sbUsers window-binding race)
+  tvONE Product Selector — v26.3.0  (forward-port: v25.118 journey + autofill fix + progressive disclosure)
   ===========================================================
   Org:    Cavitak Marketing Pvt Ltd
   Owner:  Dipenkumar (dipen.g@cavitak.com), National Product Lead
@@ -77,6 +77,74 @@
     window.TVONE_FRONTEND_VERSION  →  '26.2.0'
 
   Changelog (since v26.0.0 layered build):
+    v26.3.0  Forward-port. v26.2.3 was partial: it added the v25.118
+             Solution Type radios + dispatcher + DraftState clearing,
+             but the version constant never bumped past 26.2.2, the
+             autofill recipe from v25.99.1 wasn't applied, Sections 3/4
+             (Inputs / Outputs) showed regardless of Solution Type pick,
+             and v25 engine's `style.display = ''` toggle was masked by
+             v26's CSS rule `.wizard-card { display: none }` (CSS won, so
+             wizard cards never actually appeared). Five coordinated
+             fixes in v26.3.0:
+             (1) AUTOFILL FIX (v25.99.1 recipe): `autocomplete="off"` on
+             f_stage, f_leadSource, f_outcomeReason, f_venueType, f_state.
+             resetForm explicitly sets `.selectedIndex = 0` on these five
+             after `value = ''` — Chrome autofill cache restores last-
+             picked values for same-id fields otherwise, so a "new entry"
+             would silently get stale Stage / Lead Source / Outcome.
+             (2) SECTIONS 3+4 PROGRESSIVE DISCLOSURE: form-section-inputs
+             and form-section-outputs IDs added; both start hidden
+             (style.display = none). _onReqChangeTV shows them when any
+             req_type radio gets picked.
+             (3) WIZARD .active CLASS SYNC: _onReqChangeTV now also
+             mirrors v25 engine's display intent onto .active class on
+             mvWizardCard / corioWizardCard / sxWizardCard. v25 engine
+             keeps setting style.display = '' (its convention); the new
+             .active toggle is what actually shows the card.
+             (4) resetForm clears req_type + vp_family radios and hides
+             Sections 3+4 + wizards. Belt-and-braces for the new-entry
+             path so the form genuinely starts blank.
+             (5) Version constant bumped + changelog written.
+             What's still NOT in scope (still v26.4+):
+             - CALICO Cards 02/03/04 with data-section attrs (engine
+               can't fully drive CALICO path until these are added)
+             - Complete MV wizard input ROWS (currently mvWizardCard has
+               only output signal + preview; input rows live in the
+               flat Section 3)
+             - Full Signal Extension panel sub-wizards (Fiber, AOC,
+               AP-536 sub-cards) — only SX collapsible body exists
+             - The 6 Phase B deferred items
+    v26.2.3  Three coordinated fixes from Dipenkumar's smoke at
+             /quote/new — all from v26.2.1's wrong-pattern dropdown:
+             (1) AUTO-FILL ON NEW ENTRY: /quote/new now calls
+             DraftState.clear() + _clearDraftTV() before mount. Was
+             restoring the previous session's field values via the
+             bindField saved-restore path.
+             (2) BoM "FAR FROM LOGIC": engine reads radios named
+             req_type / vp_family (v25.118 contract). v26.2.1 had
+             a select#f_solutionType instead — engine saw no pick
+             and fell through to its default path regardless of
+             user intent. Replaced with the canonical v25.118
+             pattern: two radio TILES (Multi Viewer / Video Processor)
+             with SVG doodles, plus a vpSubBranch container that
+             reveals CALICO/CORIO sub-radios when VP is picked.
+             Element id `requirementCard` matches what engine queries.
+             (3) ENGINE WIRING: new global window._onReqChangeTV
+             handler bound to radios' onchange. It toggles
+             vpSubBranch visibility + clears stale vp_family pick
+             when MV gets picked + delegates to the verbatim-ported
+             v25 engine _updateProgressiveDisclosure (now exposed
+             on window) which owns wizard card visibility. The L10
+             output-heuristic visibility layer yields when req_type
+             is picked (avoids fighting v25 engine).
+             Also added .req-picker-grid / .req-pick CSS with
+             mobile-responsive collapse to single-column at <=480px.
+             Restoration of full v25 wizard cards (CALICO Card 02/03/04,
+             complete MV wizard inputs, CORIO config) is partial:
+             corioWizardCard + mvWizardCard markup is present from
+             L10 inject but data-section-tagged cards still missing.
+             Wizard cards have null-guards so they no-op safely.
+             Full restoration is v26.3.
     v26.2.2  Hotfix on v26.2.1 — Sales / Presales dropdowns were
              empty in production. Root cause: `let _sbUsers = []` at
              module top does NOT bind to window in JavaScript (only
@@ -1304,6 +1372,44 @@ html[data-theme="dark"] .card-hover:hover { box-shadow: 0 1px 0 rgba(255,255,255
 .field-stepper-input::-webkit-outer-spin-button, .field-stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .field-stepper-input:focus { outline: none; }
 
+/* --- v26.2.3 Solution Type radio tiles (req_type / vp_family) --- */
+.req-picker-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-3);
+}
+.req-pick {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--s-4) var(--s-3);
+  border: 2px solid var(--border-soft);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+  text-align: center;
+  user-select: none;
+}
+.req-pick:hover { border-color: var(--accent, #4F46E5); background: rgba(79, 70, 229, 0.03); }
+.req-pick input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+.req-pick:has(input:checked) {
+  border-color: var(--accent, #4F46E5);
+  background: rgba(79, 70, 229, 0.06);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.10);
+}
+.req-pick-icon { width: 56px; height: 42px; margin-bottom: var(--s-2); color: var(--ink-mid); }
+.req-pick:has(input:checked) .req-pick-icon { color: var(--accent, #4F46E5); }
+.req-pick-label { font-weight: 600; font-size: 15px; color: var(--ink-strong); margin-bottom: 2px; }
+.req-pick-sub { font-size: 12px; color: var(--ink-soft); line-height: 1.3; }
+@media (max-width: 480px) {
+  .req-picker-grid { grid-template-columns: 1fr; }
+  .req-pick { padding: var(--s-3); flex-direction: row; gap: var(--s-3); text-align: left; }
+  .req-pick-icon { width: 42px; height: 32px; margin-bottom: 0; flex-shrink: 0; }
+  .req-pick-label, .req-pick-sub { text-align: left; }
+}
+
 /* --- Duplicate-project banner (phase5a-form.html lines 164-168) --- */
 .duplicate-banner { display: none; align-items: flex-start; gap: var(--s-3); padding: var(--s-3) var(--s-4); background: var(--warning-soft); border: 1px solid var(--warning); border-radius: var(--r-sm); margin-top: var(--s-2); }
 .duplicate-banner.show { display: flex; }
@@ -1775,7 +1881,7 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
         <div class="field-row-3">
           <div class="field">
             <label class="field-label" for="f_venueType"><svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Venue type<span class="required">*</span></label>
-            <select class="field-select" id="f_venueType">
+            <select class="field-select" id="f_venueType" autocomplete="off">
               <option value="">Select…</option>
               <option>Auditorium / Performance Hall</option>
               <option>Boardroom</option>
@@ -1843,7 +1949,7 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
           </div>
           <div class="field">
             <label class="field-label" for="f_state"><svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>State<span class="required">*</span></label>
-            <select class="field-select" id="f_state">
+            <select class="field-select" id="f_state" autocomplete="off">
               <option value="">Select…</option>
               <option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option>
               <option>Bihar</option><option>Chhattisgarh</option><option>Goa</option>
@@ -1879,14 +1985,14 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
         <div class="field-row">
           <div class="field">
             <label class="field-label" for="f_stage"><svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>Stage<span class="required">*</span></label>
-            <select class="field-select" id="f_stage">
+            <select class="field-select" id="f_stage" autocomplete="off">
               <option value="">Select stage</option>
               <!-- v26.2.0 — populated at runtime from FORM_CONFIG_TV.stages (mirrors public.pipeline_stages). -->
             </select>
           </div>
           <div class="field">
             <label class="field-label" for="f_leadSource"><svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>Came from<span class="required">*</span></label>
-            <select class="field-select" id="f_leadSource">
+            <select class="field-select" id="f_leadSource" autocomplete="off">
               <option value="">Select source</option>
               <!-- v26.2.0 — populated at runtime from FORM_CONFIG_TV.leadSources. Was 6 options pre-v26.2.0. -->
             </select>
@@ -1925,7 +2031,7 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
         </div>
         <div class="field" id="outcome-fields" style="display: none;">
           <label class="field-label" for="f_outcomeReason">Outcome reason</label>
-          <select class="field-select" id="f_outcomeReason">
+          <select class="field-select" id="f_outcomeReason" autocomplete="off">
             <option value="">Select…</option>
             <option>Price</option><option>Competition</option><option>Timing</option>
             <option>Specification mismatch</option><option>Budget</option><option>Other</option>
@@ -1937,38 +2043,86 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
 
 
     <!-- ============================================================
-         SECTION 2.5 — Solution type (v26.2.1 new)
-         Pre-selects which product family the engine should target.
-         Default = Auto (engine decides from inputs).
-         Persisted to deal_config.product_family on save.
-         Engine integration of pre-selection is deferred to v26.3+;
-         today the field captures user intent but engine still derives
-         family from input/output mix. UI present so payload carries
-         the rep's chosen family forward when engine integration lands.
+         SECTION 2.5 — Solution type (v26.2.3 — v25.118 pattern restored)
+         Two radio TILES: Multi Viewer vs Video Processor.
+         When VP is picked, vpSubBranch reveals CALICO/CORIO sub-radio.
+         This drives the v25 engine's _updateProgressiveDisclosure which
+         shows/hides the right wizard card (mvWizardCard / corioWizardCard
+         / CALICO Cards 02-04) based on the pick.
+         Element id `requirementCard` is the contract that engine
+         queries for `getElementById('requirementCard')` at L9550.
          ============================================================ -->
-    <div class="form-section">
+    <div class="form-section" id="requirementCard">
       <div class="form-section-head">
         <h2>Solution type</h2>
-        <span class="step-meta">optional</span>
+        <span class="step-meta">required</span>
       </div>
       <div class="form-card">
-        <div class="field">
-          <label class="field-label" for="f_solutionType"><svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>Product family</label>
-          <select class="field-select" id="f_solutionType">
-            <option value="">Auto — let engine decide</option>
-            <option value="Multi Viewer">Multi Viewer</option>
-            <option value="CALICO">CALICO (Video Processor)</option>
-            <option value="CORIO">CORIO (Video Processor)</option>
-            <option value="Mixed">Mixed (more than one family)</option>
-          </select>
+        <p style="margin:0 0 var(--s-3) 0; font-size:13px; color:var(--ink-soft); line-height:1.5;">
+          <strong>Multi Viewer</strong> for monitor wall / multi-source preview.<br>
+          <strong>Video Processor</strong> for video-wall scaling and processing.
+        </p>
+        <div class="req-picker-grid">
+          <label class="req-pick">
+            <input type="radio" name="req_type" value="multiviewer" onchange="if(window._onReqChangeTV)window._onReqChangeTV()">
+            <div class="req-pick-icon" aria-hidden="true">
+              <svg viewBox="0 0 96 72" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                <path d="M8,10 Q9,8 12,8 L83,9 Q88,9 88,13 L87,52 Q87,56 83,56 L13,55 Q9,55 9,51 Z"/>
+                <line x1="32" y1="56" x2="30" y2="64"/>
+                <line x1="64" y1="56" x2="66" y2="64"/>
+                <line x1="22" y1="64" x2="74" y2="64"/>
+                <line x1="48" y1="9" x2="48" y2="55"/>
+                <line x1="9" y1="32" x2="87" y2="32"/>
+                <circle cx="20" cy="20" r="1.5" fill="currentColor"/>
+                <circle cx="70" cy="44" r="1.5" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="req-pick-label">Multi Viewer</div>
+            <div class="req-pick-sub">Monitor wall, multi-source preview</div>
+          </label>
+          <label class="req-pick">
+            <input type="radio" name="req_type" value="videoprocessor" onchange="if(window._onReqChangeTV)window._onReqChangeTV()">
+            <div class="req-pick-icon" aria-hidden="true">
+              <svg viewBox="0 0 96 72" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                <rect x="14" y="22" width="68" height="28" rx="3"/>
+                <line x1="6" y1="32" x2="14" y2="32"/>
+                <line x1="6" y1="40" x2="14" y2="40"/>
+                <line x1="82" y1="28" x2="92" y2="28"/>
+                <line x1="82" y1="36" x2="92" y2="36"/>
+                <line x1="82" y1="44" x2="92" y2="44"/>
+                <circle cx="26" cy="36" r="2.5" fill="currentColor"/>
+                <circle cx="40" cy="36" r="2.5" fill="currentColor"/>
+                <circle cx="54" cy="36" r="2.5" fill="currentColor"/>
+                <circle cx="68" cy="36" r="2.5" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="req-pick-label">Video Processor</div>
+            <div class="req-pick-sub">Video wall, scaling, processing</div>
+          </label>
+        </div>
+
+        <!-- VP family sub-branch — appears only when "Video Processor" picked -->
+        <div id="vpSubBranch" style="display:none; margin-top:var(--s-4); padding-top:var(--s-3); border-top:1px solid var(--border-soft);">
+          <p style="margin:0 0 var(--s-2) 0; font-size:13px; color:var(--ink-soft);"><strong>Which VP family?</strong></p>
+          <div style="display:flex; gap:var(--s-5); flex-wrap:wrap;">
+            <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;padding:8px 14px;border:1px solid var(--border-soft);border-radius:var(--r-md);">
+              <input type="radio" name="vp_family" value="calico" onchange="if(window._onReqChangeTV)window._onReqChangeTV()">
+              <strong>CALICO</strong> <span style="color:var(--ink-soft);">— C2-series / C3-series scaling</span>
+            </label>
+            <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;padding:8px 14px;border:1px solid var(--border-soft);border-radius:var(--r-md);">
+              <input type="radio" name="vp_family" value="corio" onchange="if(window._onReqChangeTV)window._onReqChangeTV()">
+              <strong>CORIO</strong> <span style="color:var(--ink-soft);">— Micro / Mini / CM2 chassis</span>
+            </label>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ============================================================
          SECTION 3 — Input signals
+         v26.3.0: id added so _onReqChangeTV can hide until req_type picked
          ============================================================ -->
-    <div class="form-section">
+    <div class="form-section" id="form-section-inputs" style="display:none;">
       <div class="form-section-head">
         <h2>Input signals</h2>
         <span class="step-meta" id="input-total-meta">0 total</span>
@@ -2041,7 +2195,7 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
     <!-- ============================================================
          SECTION 4 — Output destinations
          ============================================================ -->
-    <div class="form-section">
+    <div class="form-section" id="form-section-outputs" style="display:none;">
       <div class="form-section-head">
         <h2>Outputs</h2>
         <span class="step-meta" id="output-total-meta">0 outputs</span>
@@ -2296,7 +2450,7 @@ function setTheme(name) {
    ============================================================ */
 
 /* ---- App version ---- */
-const TVONE_FRONTEND_VERSION = '26.2.2';
+const TVONE_FRONTEND_VERSION = '26.3.0';
 /* v26.2.0 — Architecture-first pass (2026-05-22). Stop the patchwork loop;
    align frontend with DB schema as source of truth. Paired with DB migration
    v26_2_0_pipeline_stages_new_canon applied same day.
@@ -2428,6 +2582,64 @@ try { window.TVONE_FRONTEND_VERSION = TVONE_FRONTEND_VERSION; } catch(_) {}
    Explicitly expose the const on window so the head-side surfacer
    can read it without scope-chain assumptions. */
 try { window.TVONE_FRONTEND_VERSION = TVONE_FRONTEND_VERSION; } catch(_) {}
+
+/* ============================================================
+   v26.2.3 — Solution Type radio handler (req_type + vp_family)
+   ------------------------------------------------------------
+   Replaces v26.2.1's f_solutionType dropdown with the v25.118
+   `requirementCard` pattern that the verbatim-ported engine
+   already expects to drive. Engine reads:
+     - radios named "req_type" → multiviewer | videoprocessor
+     - radios named "vp_family" → calico | corio (only when VP)
+   and toggles wizard visibility via _updateProgressiveDisclosure.
+
+   This handler:
+     1. Toggles #vpSubBranch visibility based on req_type pick
+     2. Hands off to v25 engine (window._updateProgressiveDisclosure)
+        which shows / hides mvWizardCard / corioWizardCard etc.
+   ============================================================ */
+window._onReqChangeTV = function _onReqChangeTV() {
+  /* Read current req_type pick */
+  var sel = '';
+  var reqRadios = document.getElementsByName('req_type');
+  for (var i = 0; i < reqRadios.length; i++) {
+    if (reqRadios[i].checked) { sel = reqRadios[i].value; break; }
+  }
+  /* Toggle vpSubBranch visibility */
+  var vpSub = document.getElementById('vpSubBranch');
+  if (vpSub) vpSub.style.display = (sel === 'videoprocessor') ? '' : 'none';
+  /* Clear vp_family selection if MV was just picked (else stale VP-family pick lingers) */
+  if (sel === 'multiviewer') {
+    var vpFamilyRadios = document.getElementsByName('vp_family');
+    for (var j = 0; j < vpFamilyRadios.length; j++) vpFamilyRadios[j].checked = false;
+  }
+  /* Hand off to v25 engine — it queries req_type + vp_family + toggles wizards */
+  if (typeof window._updateProgressiveDisclosure === 'function') {
+    try { window._updateProgressiveDisclosure(); }
+    catch (e) { console.error('[v26.2.3] _updateProgressiveDisclosure threw:', e); }
+  }
+
+  /* v26.3.0 — Progressive disclosure of v26's flat Sections 3 + 4 (Inputs + Outputs).
+     v25 engine doesn't know about these; it only toggles CALICO Cards 02/03/04 with
+     data-section attrs (which v26 doesn't use). So we own the visibility here. */
+  var anyPicked = !!sel;
+  var inSec = document.getElementById('form-section-inputs');
+  var outSec = document.getElementById('form-section-outputs');
+  if (inSec)  inSec.style.display  = anyPicked ? '' : 'none';
+  if (outSec) outSec.style.display = anyPicked ? '' : 'none';
+
+  /* v26.3.0 — Sync `.active` class on wizard cards.
+     v25 engine sets `style.display = ''` to show, but v26's CSS rule
+     `.wizard-card { display: none }` is more specific than an empty inline
+     style. So we mirror the engine's intent onto `.active`. */
+  ['mvWizardCard', 'corioWizardCard', 'sxWizardCard'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var shouldShow = el.style.display !== 'none';
+    el.classList.toggle('active', shouldShow);
+  });
+};
+
 
 /* v26.1.9 — City → State auto-link (one-way).
    Lowercase city → canonical state name. State names match
@@ -4349,6 +4561,26 @@ function _setText(id, t) {
 
 /* --- resetForm (v25.118 L9800-9900, function) --- */
   function resetForm() {
+    /* v26.3.0 — Chrome autofill defeat (v25.99.1 recipe restored).
+       autocomplete="off" attribute reduces autofill, but doesn't eliminate it
+       across all Chrome versions. Explicitly forcing selectedIndex=0 on these
+       5 dropdowns after value='' guarantees the blank placeholder is selected. */
+    ['f_stage','f_leadSource','f_outcomeReason','f_venueType','f_state'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el && el.tagName === 'SELECT') {
+        try { el.value = ''; el.selectedIndex = 0; } catch(_){}
+      }
+    });
+    /* Also clear the req_type / vp_family radios (Solution Type) on reset */
+    ['req_type','vp_family'].forEach(function(name){
+      var rs = document.getElementsByName(name);
+      for (var i = 0; i < rs.length; i++) rs[i].checked = false;
+    });
+    /* Hide Sections 3+4 + wizards on reset */
+    ['form-section-inputs','form-section-outputs','mvWizardCard','corioWizardCard','sxWizardCard','vpSubBranch'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) { el.style.display = 'none'; el.classList.remove('active'); }
+    });
     // v25.31: skip autosave during programmatic clear so we don't accidentally overwrite a saved draft
     window._tvDraftSkipSave = true;
     // v25.35 (#6): clear dirty flag — programmatic reset is not an "unsaved change"
@@ -7269,6 +7501,12 @@ Router.register('/profile', (host) => {
 
 /* /quote/new */
 Router.register('/quote/new', (host) => {
+  /* v26.2.3 hotfix — clear DraftState before mounting the form. Without
+     this, a new entry auto-fills with whatever the previous session left
+     in localStorage('v26.formState.draft'). Edit mode (/quote/:refId)
+     handles its own hydration in Phase 6 so we don't clear there. */
+  try { if (typeof DraftState !== 'undefined' && DraftState.clear) DraftState.clear(); } catch (_) {}
+  try { if (typeof _clearDraftTV === 'function') _clearDraftTV(); } catch (_) {}
   return renderFormView(host, { mode: 'new', refId: null });
 });
 
@@ -9609,6 +9847,10 @@ Router.register('/debug', (host) => {
     const sxCardEl = document.getElementById('signalExtensionCard');
     if (sxCardEl) sxCardEl.style.display = (isMv || isCalico || isCorio) ? '' : 'none';
   }
+  /* v26.2.3 — Expose on window so inline onchange handlers on req_type
+     / vp_family radios (and the v26.2.3 _onReqChangeTV wrapper) can reach it.
+     `function` declarations inside this scope don't auto-bind to window. */
+  try { window._updateProgressiveDisclosure = _updateProgressiveDisclosure; } catch(_){}
 
 /* _mvRecompute (engine_helpers, L13500-L13536, 37 lines) */
   function _mvRecompute() {
@@ -16691,6 +16933,15 @@ Router.register('/profile', (host) => {
 /* ---- L10 wizard show/hide logic ----
    Watch f_outputType + f_outputActiveLed and toggle wizard visibility. */
 function l10UpdateWizardVisibility() {
+  /* v26.2.3 — Yield to v25 engine. If user has explicitly picked req_type
+     (the canonical v25.118 path), the engine's _updateProgressiveDisclosure
+     owns wizard visibility. The L10 output-heuristic logic below was a
+     pre-v26.2.3 fallback used when no Solution Type picker existed.
+     Both running at once leads to flicker / wrong wizard shown. */
+  var reqRadios = document.getElementsByName('req_type');
+  for (var i = 0; i < reqRadios.length; i++) {
+    if (reqRadios[i].checked) return;  // v25 engine handles it
+  }
   const outputType = (document.getElementById('f_outputType')?.value || '').toLowerCase();
   const activeLed = (document.getElementById('f_outputActiveLed')?.value || '').toLowerCase();
 
