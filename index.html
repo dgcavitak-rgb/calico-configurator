@@ -20,26 +20,30 @@
 
 <!--
   ===========================================================
-  tvONE Product Selector — v26.1.5  (TDZ chain fix)
+  tvONE Product Selector — v26.1.6  (DOM repair: screensContainer)
   ===========================================================
   Org:    Cavitak Marketing Pvt Ltd
   Owner:  Dipenkumar (dipen.g@cavitak.com), National Product Lead
   Built:  2026-05-21
 
-  STATUS: v26.1.5 resolves a top-level const TDZ cascade surfaced
-  by v26.1.4's error surfacer during the first production smoke:
-  `_TV_C2B_OPEN_STAGES` (wave 1) was declared above its
-  dependency `TV_STAGES_OPEN_SET` (wave 2), which itself was
-  above `TV_STAGES_OPEN` (wave 3). Top-level `const`s are
-  TDZ-bound, so file order = execution order. Lifted all three
-  into a pre-resolution block in correct dependency order;
-  originals neutralized to comments. No engine logic touched.
-  Surfacer + _sbDealDelete no-op from v26.1.4 remain in place.
+  STATUS: v26.1.6 fixes a missing DOM element that broke edit-
+  restore for any deal with LED screens saved. The L10 wizard
+  rewrite kept #ledScreensWrap but dropped its inner
+  #screensContainer — engine code (addScreen, initScreens,
+  populateFormFromRow_, draft restore at L7700) all expect that
+  ID. Restored. Also added a minimal "+ Add screen" button so
+  new-deal LED flow can add screens beyond the first.
 
-  REMAINING WORK: continue 8-flow smoke test. If the surfacer
-  paints another banner, paste the exact text — likely another
-  TDZ chain (mechanical fix) or a missing wave-14 reference
-  (port fix). Both are small.
+  Surfaced by: production smoke (2026-05-21). The error was
+  caught by the [Edit] try/catch at L10113 — logged as
+  console.error, did NOT trigger window.onerror, so v26.1.4's
+  red banner correctly stayed silent. Note for future smoke:
+  banner-silent does NOT mean problem-silent — console.error
+  messages still need a console check during smoke.
+
+  Smoke progress: Tests 1 (login), 2 (history with real data),
+  edit-modal-open all green prior to this fix. v26.1.6 unblocks
+  Test 6 (Save + edit-restore) for LED deals.
 
   Architecture:
     Single-file HTML + vanilla JS (~15.8K lines / ~782 KB)
@@ -49,9 +53,21 @@
                 (boot() warns if any are unavailable)
 
   Version constant for support:
-    window.TVONE_FRONTEND_VERSION  →  '26.1.5'
+    window.TVONE_FRONTEND_VERSION  →  '26.1.6'
 
   Changelog (since v26.0.0 layered build):
+    v26.1.6  Missing #screensContainer DOM element. L10 wizard
+             rewrite kept #ledScreensWrap but dropped its inner
+             #screensContainer div. Four call sites (addScreen,
+             initScreens, populateFormFromRow_, draft restore
+             L7700) all did getElementById('screensContainer')
+             and got null — .insertAdjacentHTML / .innerHTML
+             threw. Restored the div inside ledScreensWrap, plus
+             a minimal "+ Add screen" button. Surfaced by edit-
+             restore on two real LED deals during production
+             smoke. Error was try/catch-caught so v26.1.4
+             surfacer didn't paint (correctly — only uncaught
+             errors trigger window.onerror).
     v26.1.5  TDZ chain fix — top-level const cascade
              `_TV_C2B_OPEN_STAGES → TV_STAGES_OPEN_SET → TV_STAGES_OPEN`
              was placed across waves 1 → 2 → 3 in WRONG execution
@@ -1896,7 +1912,19 @@ function setTheme(name) {
    ============================================================ */
 
 /* ---- App version ---- */
-const TVONE_FRONTEND_VERSION = '26.1.5';
+const TVONE_FRONTEND_VERSION = '26.1.6';
+/* v26.1.6 — Missing #screensContainer DOM element fix. Engine code
+   (addScreen, initScreens, populateFormFromRow_, and the draft-restore
+   path at L7700) all call `getElementById('screensContainer')`. The
+   L10 wizard rewrite kept the parent `#ledScreensWrap` but dropped
+   the inner `#screensContainer` div, so every call returned null
+   and `.insertAdjacentHTML` / `.innerHTML` threw. Restored
+   `<div id="screensContainer"></div>` inside ledScreensWrap + a
+   minimal "+ Add screen" button so new-deal LED flow has a way to
+   add screens beyond initScreens' first row. Caught by the [Edit]
+   try/catch at L10113 (logged as console.error, didn't fire
+   window.onerror — so v26.1.4 surfacer correctly stayed silent).
+   No engine logic touched. */
 /* v26.1.5 — TDZ chain fix surfaced by v26.1.4's error surfacer.
    The AST port placed three top-level `const` declarations in
    the WRONG execution order:
@@ -15822,10 +15850,22 @@ Router.register('/profile', (host) => {
 
       <!-- LED screens wrap — appears when Active LED = Yes -->
       <div class="led-screens-wrap" id="ledScreensWrap">
-        <!-- Engine populates LED screen rows here when f_outputActiveLed = Yes -->
-        <p style="color: var(--ink-soft); font-size: var(--t-body-sm); margin: 0;">
-          LED wall configuration (pixel pitch, panel count, processor) appears here once active.
-        </p>
+        <!-- v26.1.6 — screensContainer was missing from the L10 wizard
+             markup, but engine code (addScreen / initScreens /
+             populateFormFromRow_) all do `getElementById('screensContainer')`.
+             Restored here so edit-restore of LED deals + new-deal LED flow
+             both work. Per-screen rows are injected by addScreen(). -->
+        <div id="screensContainer"></div>
+        <button type="button" id="addScreenBtn"
+                onclick="if(typeof addScreen==='function'){addScreen();}else{console.warn('addScreen unavailable');}"
+                style="margin-top:12px; padding:9px 16px; border-radius:8px;
+                       border:1px solid rgba(255,255,255,0.18);
+                       background:rgba(255,255,255,0.04);
+                       color:var(--ink, #fff); font-family:inherit;
+                       font-size:13px; font-weight:600; cursor:pointer;
+                       letter-spacing:0.2px;">
+          + Add screen
+        </button>
       </div>
     </div>
   `;
