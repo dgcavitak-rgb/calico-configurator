@@ -60,7 +60,7 @@
   <main>
     <div class="stripe"><span class="a"></span><span class="b"></span><span class="c"></span></div>
     <h1>tvONE Product Selector <span class="pill" id="vpill">…</span></h1>
-    <p class="sub">Sessions 1–3 — CATALOG + RECOMMEND (calico, mv, corio). Store, UI, exports ship in later sessions.</p>
+    <p class="sub">Sessions 1–4 — CATALOG + RECOMMEND + STORE. UI and exports ship in later sessions.</p>
 
     <section class="card" id="status-card">
       <h2>Boot status</h2>
@@ -71,6 +71,8 @@
       <div class="row"><span class="k">CATALOG.sx.types</span><span class="v" id="r-sx">—</span></div>
       <div class="row"><span class="k">Object.isFrozen(CATALOG)</span><span class="v" id="r-frozen">—</span></div>
       <div class="row"><span class="k">RECOMMEND</span><span class="v" id="r-recommend">—</span></div>
+      <div class="row"><span class="k">STORE</span><span class="v" id="r-store">—</span></div>
+      <div class="row"><span class="k">STORE.currentUser()</span><span class="v" id="r-user">—</span></div>
     </section>
 
     <section class="card">
@@ -81,6 +83,16 @@
       </p>
       <button id="btn-smoke" type="button">Run smoke</button>
       <pre id="smoke-out" hidden></pre>
+    </section>
+
+    <section class="card">
+      <h2>STORE smoke gate</h2>
+      <p style="margin:0 0 10px;font-size:13px;color:var(--fg-soft);">
+        Live round-trip against Supabase using the <code>_smoketest</code> account.
+        Runs login → save → load → list → soft-delete → restore. Requires network.
+      </p>
+      <button id="btn-store-smoke" type="button">Run STORE smoke</button>
+      <pre id="store-smoke-out" hidden></pre>
     </section>
 
     <section class="card">
@@ -95,7 +107,15 @@ RECOMMEND.calico({ inputs: { hdmi4k: 3 }, outputs: { display: 2 } })
 RECOMMEND.mv({ inputs: [{signal:'FHD HDMI',qty:4}], outputSignal:'4K HDMI' })
 RECOMMEND.corio({ inputs: { 'HDMI 4K 2-in': 2 }, outputs: { 'HDMI 4K': 2 } })
 
-__smoke()</pre>
+await STORE.login({ username: '_smoketest', password: 'cavitak@123' })
+STORE.currentUser()
+await STORE.saveDeal({ project: 'demo', stage: 'Discovery', customer_name: 'X' })
+await STORE.listDeals({ limit: 10 })
+await STORE.loadDeal('TV-12345678')
+await STORE.deleteDeal('TV-12345678')
+
+__smoke()
+await __smokeStore()</pre>
     </section>
   </main>
 
@@ -376,7 +396,7 @@ __smoke()</pre>
     };
 
     return deepFreeze({
-      version: 'v27.0.0-alpha.3',
+      version: 'v27.0.0-alpha.4',
       constants,
       calico,
       mv,
@@ -1092,6 +1112,279 @@ __smoke()</pre>
   console.log('RECOMMEND ready: calico, mv, corio');
 
   /* ============================================================
+     STORE (Session 4 of v27 rebuild)
+     Thin JS wrapper over the existing Supabase RPC layer.
+     NO new SQL: backend was already built out in this DB (48 RPCs
+     in public schema, RLS enabled with zero policies — direct table
+     access denied; all CRUD via security-definer RPCs).
+
+     Auth recipe (mirrors BS frontend, confirmed 2026-05-22):
+       1. salt = await rpc('user_login_salt', {p_username})
+       2. hash = sha256Hex(password.trim() + salt)        ← pw-then-salt
+       3. { ok, user } = await rpc('user_login', {p_username, p_password_hash: hash})
+     Server-side is algorithm-agnostic — it just string-compares stored
+     password_hash to the client-computed value (after trim()).
+
+     Session model: user object cached in localStorage under 'v27.session'.
+     No server-side tokens. Every protected RPC takes actor_user_id as
+     a parameter (validated server-side); STORE auto-fills it from cache.
+
+     SPEC §6 contract (display_ref replaces SPEC's "refId" naming):
+       await STORE.login({username, password})
+       const r    = await STORE.saveDeal({ project, stage, customer_name, ... })
+       const back = await STORE.loadDeal(r.display_ref)
+       const list = await STORE.listDeals()
+       await STORE.deleteDeal(r.display_ref)
+     ============================================================ */
+  const STORE = (function() {
+
+    const SUPABASE_URL = 'https://yhzecukifwnlgowmgkrc.supabase.co';
+    // Publishable key (sb_publishable_*) — public by design, safe to embed in client.
+    // Independently rotatable; not the service_role key.
+    const SUPABASE_KEY = 'sb_publishable_Rex8QiypJkVmJz2r7UPGtg_3-l1yy1u';
+    const STORAGE_KEY  = 'v27.session';
+    const REF_PREFIX   = 'TV-';
+    const REF_DIGITS   = 8;
+    const APP_TAG      = 'tvone';
+
+    let _user = null;
+    const _listeners = new Set();
+
+    /* ---------- crypto ---------- */
+
+    // sha256(text) → lowercase hex string. Uses WebCrypto SubtleCrypto.
+    async function sha256Hex(text) {
+      const enc = new TextEncoder().encode(String(text));
+      const buf = await crypto.subtle.digest('SHA-256', enc);
+      const arr = new Uint8Array(buf);
+      let s = '';
+      for (let i = 0; i < arr.length; i++) s += arr[i].toString(16).padStart(2, '0');
+      return s;
+    }
+
+    function randomHex(bytes) {
+      const arr = new Uint8Array(bytes);
+      crypto.getRandomValues(arr);
+      let s = '';
+      for (let i = 0; i < arr.length; i++) s += arr[i].toString(16).padStart(2, '0');
+      return s;
+    }
+
+    function randomDigits(n) {
+      const arr = new Uint8Array(n * 2);   // overdraw, modulo bias is acceptable for ref IDs
+      crypto.getRandomValues(arr);
+      let s = '';
+      for (let i = 0; i < arr.length && s.length < n; i++) s += (arr[i] % 10).toString();
+      return s.slice(0, n);
+    }
+
+    /* ---------- transport ---------- */
+
+    async function rpc(name, args) {
+      let res;
+      try {
+        res = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + name, {
+          method: 'POST',
+          headers: {
+            'apikey':        SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'Content-Type':  'application/json',
+            'Accept':        'application/json'
+          },
+          body: JSON.stringify(args || {})
+        });
+      } catch (e) {
+        throw new Error('rpc ' + name + ' network error: ' + (e && e.message || e));
+      }
+      const text = await res.text();
+      let json = null;
+      if (text) {
+        try { json = JSON.parse(text); }
+        catch (_) { /* non-JSON; leave json null, use raw text in error */ }
+      }
+      if (!res.ok) {
+        const msg = (json && (json.message || json.error || json.hint)) ||
+                    text || ('http ' + res.status);
+        throw new Error('rpc ' + name + ' failed: ' + msg);
+      }
+      return json;
+    }
+
+    /* ---------- session ---------- */
+
+    function fireAuthChange() {
+      for (const cb of _listeners) {
+        try { cb(_user); }
+        catch (e) { console.error('STORE.onAuthChange handler threw:', e); }
+      }
+    }
+
+    // Boot: restore user from localStorage if present. Pure local check;
+    // does not call the server (no session token to validate).
+    (function bootRestore() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) _user = JSON.parse(raw);
+      } catch (_) { _user = null; }
+    })();
+
+    async function login(opts) {
+      const o = opts || {};
+      const username = String(o.username || '').trim().toLowerCase();
+      const password = String(o.password || '').trim();
+      if (!username || !password) {
+        throw new Error('username and password required');
+      }
+      const saltResp = await rpc('user_login_salt', { p_username: username });
+      // Server returns {salt: ''} on miss to prevent username enumeration —
+      // we treat empty salt same as a wrong password (generic failure).
+      if (!saltResp || !saltResp.salt) {
+        throw new Error('Incorrect username or password');
+      }
+      const hash = await sha256Hex(password + saltResp.salt);
+      const r = await rpc('user_login', {
+        p_username:      username,
+        p_password_hash: hash
+      });
+      if (!r || r.ok !== true) {
+        throw new Error((r && r.error) || 'Incorrect username or password');
+      }
+      _user = r.user;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(_user)); } catch (_) {}
+      fireAuthChange();
+      return _user;
+    }
+
+    function logout() {
+      _user = null;
+      try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+      fireAuthChange();
+    }
+
+    function currentUser() { return _user; }
+
+    function onAuthChange(cb) {
+      if (typeof cb !== 'function') throw new Error('onAuthChange requires a function');
+      _listeners.add(cb);
+      return function unsubscribe() { _listeners.delete(cb); };
+    }
+
+    async function changePassword(opts) {
+      if (!_user) throw new Error('not logged in');
+      const o = opts || {};
+      const oldPw = String(o.oldPassword || '').trim();
+      const newPw = String(o.newPassword || '').trim();
+      if (!oldPw || !newPw) throw new Error('oldPassword and newPassword required');
+
+      const saltResp = await rpc('user_login_salt', { p_username: _user.username });
+      if (!saltResp || !saltResp.salt) throw new Error('account state error — re-login');
+
+      const oldHash = await sha256Hex(oldPw + saltResp.salt);
+      const newSalt = randomHex(16);                       // 32-char hex, parity with prod
+      const newHash = await sha256Hex(newPw + newSalt);
+
+      const r = await rpc('user_change_password', {
+        p_username:          _user.username,
+        p_old_password_hash: oldHash,
+        p_new_salt:          newSalt,
+        p_new_password_hash: newHash
+      });
+      if (!r || r.ok !== true) {
+        throw new Error((r && r.error) || 'change password failed');
+      }
+      // Update cached must_change so the Profile gate clears
+      _user = Object.assign({}, _user, { must_change: false });
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(_user)); } catch (_) {}
+      fireAuthChange();
+      return true;
+    }
+
+    /* ---------- deals ---------- */
+
+    function genDisplayRef() {
+      return REF_PREFIX + randomDigits(REF_DIGITS);
+    }
+
+    function isUniqueViolation(err) {
+      const m = String(err && err.message || '').toLowerCase();
+      return m.indexOf('duplicate') >= 0 || m.indexOf('unique') >= 0 ||
+             m.indexOf('display_ref') >= 0;
+    }
+
+    async function saveDeal(payload) {
+      if (!_user) throw new Error('not logged in');
+      if (!payload || typeof payload !== 'object') throw new Error('payload required');
+
+      const base = Object.assign({}, payload, {
+        actor_user_id: _user.id,
+        app:           APP_TAG
+      });
+
+      // Edit path — id present, use existing display_ref on server
+      if (base.id) {
+        return rpc('deal_save', { p_payload: base });
+      }
+
+      // New deal — generate display_ref, retry on the (1-in-100M) collision
+      let lastErr = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const enriched = Object.assign({}, base, { display_ref: genDisplayRef() });
+        try {
+          return await rpc('deal_save', { p_payload: enriched });
+        } catch (e) {
+          lastErr = e;
+          if (!isUniqueViolation(e)) throw e;
+        }
+      }
+      throw lastErr || new Error('saveDeal failed after retries');
+    }
+
+    async function loadDeal(displayRef) {
+      if (!displayRef) throw new Error('displayRef required');
+      return rpc('deal_get', { p_deal_id: null, p_display_ref: String(displayRef) });
+    }
+
+    async function listDeals(opts) {
+      const o = opts || {};
+      return rpc('deal_list', {
+        p_app:              APP_TAG,
+        p_limit:            (o.limit != null ? o.limit : 50),
+        p_offset:           (o.offset || 0),
+        p_include_deleted:  !!o.includeDeleted
+      });
+    }
+
+    async function deleteDeal(displayRef) {
+      if (!_user) throw new Error('not logged in');
+      if (!displayRef) throw new Error('displayRef required');
+      return rpc('entry_soft_delete', {
+        p_ref_id: String(displayRef),
+        p_actor:  _user.id
+      });
+    }
+
+    async function restoreDeal(displayRef) {
+      if (!_user) throw new Error('not logged in');
+      if (!displayRef) throw new Error('displayRef required');
+      return rpc('entry_restore', {
+        p_ref_id: String(displayRef),
+        p_actor:  _user.id
+      });
+    }
+
+    return Object.freeze({
+      // auth
+      login, logout, currentUser, onAuthChange, changePassword,
+      // deals
+      saveDeal, loadDeal, listDeals, deleteDeal, restoreDeal,
+      // internals exposed for debug only
+      _rpc: rpc, _sha256Hex: sha256Hex
+    });
+  })();
+
+  console.log('STORE ready: login, save, load, list, delete');
+
+  /* ============================================================
      __smoke() — Session 1 smoke gate
      Implements SPEC §6 checks. Console-callable; also wired to
      the Run smoke button on the page.
@@ -1116,8 +1409,8 @@ __smoke()</pre>
       }
     }
 
-    check('CATALOG.version === "v27.0.0-alpha.3"',
-      () => CATALOG.version === 'v27.0.0-alpha.3' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.0.0-alpha.4"',
+      () => CATALOG.version === 'v27.0.0-alpha.4' || 'got: ' + CATALOG.version);
 
     check('Object.isFrozen(CATALOG)',
       () => Object.isFrozen(CATALOG) === true || 'not frozen');
@@ -1555,6 +1848,13 @@ __smoke()</pre>
     $('r-sx').textContent = '[' + CATALOG.sx.types.join(', ') + ']';
     $('r-frozen').textContent = Object.isFrozen(CATALOG) ? 'true' : 'false';
     $('r-recommend').textContent = Object.keys(RECOMMEND).join(', ');
+    $('r-store').textContent = ['login','saveDeal','loadDeal','listDeals','deleteDeal']
+      .filter(k => typeof STORE[k] === 'function').length + ' / 5 methods · frozen=' + Object.isFrozen(STORE);
+    const u = STORE.currentUser();
+    $('r-user').textContent = u ? (u.username + ' (' + u.permission_tier + ')') : 'not logged in';
+    STORE.onAuthChange(function(user) {
+      $('r-user').textContent = user ? (user.username + ' (' + user.permission_tier + ')') : 'not logged in';
+    });
   })();
 
   // Smoke button → render results inline
@@ -1566,6 +1866,156 @@ __smoke()</pre>
     el.innerHTML = '<span class="' + cls + '">' +
       r.lines.map(l => l.replace(/^✓/, '✓').replace(/^✗/, '✗')).join('\n') +
       '\n\n' + r.pass + ' passed, ' + r.fail + ' failed</span>';
+  });
+
+  /* ============================================================
+     __smokeStore() — Session 4 smoke gate (async, network-live)
+     Round-trips: login → save → load → list → delete → list-deleted → restore
+     Uses the _smoketest account (created server-side 2026-05-22).
+     ============================================================ */
+  window.__smokeStore = async function() {
+    const out = [];
+    let pass = 0, fail = 0;
+
+    async function check(label, fn) {
+      try {
+        const result = await fn();
+        if (result === true) { out.push('✓ ' + label); pass++; }
+        else { out.push('✗ ' + label + '  → ' + JSON.stringify(result)); fail++; }
+      } catch (e) {
+        out.push('✗ ' + label + '  → THREW: ' + (e && e.message || String(e)));
+        fail++;
+      }
+    }
+
+    // Start clean — logout in case a prior session was cached
+    STORE.logout();
+
+    await check('STORE.login({_smoketest, cavitak@123}) returns user with id+username',
+      async () => {
+        const u = await STORE.login({ username: '_smoketest', password: 'cavitak@123' });
+        return (u && u.username === '_smoketest' && typeof u.id === 'string')
+          || ('got: ' + JSON.stringify(u));
+      });
+
+    await check('STORE.currentUser() reflects logged-in user after login',
+      () => {
+        const u = STORE.currentUser();
+        return (u && u.username === '_smoketest') || ('got: ' + JSON.stringify(u));
+      });
+
+    let ref = null;
+    await check('STORE.saveDeal(...) returns display_ref starting with "TV-"',
+      async () => {
+        const r = await STORE.saveDeal({
+          project:         'v27 smoke',
+          stage:           'Discovery',
+          customer_name:   'Smoke Customer',
+          partner_name:    'Smoke Partner',
+          city:            'Ahmedabad',
+          state:           'Gujarat',
+          venue_type:      'Corporate',
+          status:          'saved',
+          budget:          'Pending',
+          deal_source:     'smoke',
+          lead_source:     'smoke',
+          notes:           'created by __smokeStore at ' + new Date().toISOString(),
+          raw_submission:  { source: '__smokeStore', v: CATALOG.version },
+          lines: [{
+            product_family:    'CALICO',
+            sku:               'C7-PRO-1200',
+            description:       'CALICO PRO 1U',
+            model_no:          'C7-PRO-1200',
+            qty:               1,
+            unit_price_inr:    0,
+            line_discount_pct: 0
+          }]
+        });
+        ref = r && r.display_ref;
+        return (typeof ref === 'string' && ref.indexOf('TV-') === 0)
+          || ('got: ' + JSON.stringify(r));
+      });
+
+    await check('STORE.loadDeal(ref) returns the saved deal with lines',
+      async () => {
+        if (!ref) return 'no ref from save';
+        const d = await STORE.loadDeal(ref);
+        if (!d || d.display_ref !== ref) return 'shape mismatch: ' + JSON.stringify(d).slice(0, 200);
+        if (d.project !== 'v27 smoke') return 'project mismatch: ' + d.project;
+        if (!Array.isArray(d.lines) || d.lines.length !== 1) return 'lines: ' + JSON.stringify(d.lines);
+        if (d.lines[0].sku !== 'C7-PRO-1200') return 'sku: ' + d.lines[0].sku;
+        return true;
+      });
+
+    await check('STORE.listDeals() includes the saved deal',
+      async () => {
+        const r = await STORE.listDeals({ limit: 50 });
+        if (!r || !Array.isArray(r.rows)) return 'bad shape: ' + JSON.stringify(r).slice(0, 200);
+        const found = r.rows.find(x => x.display_ref === ref);
+        return !!found || ('not in ' + r.rows.length + ' rows');
+      });
+
+    await check('STORE.deleteDeal(ref) soft-deletes',
+      async () => {
+        const r = await STORE.deleteDeal(ref);
+        return (r && r.ok === true) || ('got: ' + JSON.stringify(r));
+      });
+
+    await check('STORE.listDeals() (default) excludes soft-deleted',
+      async () => {
+        const r = await STORE.listDeals({ limit: 50 });
+        const found = r.rows.find(x => x.display_ref === ref);
+        return !found || 'still visible after delete';
+      });
+
+    await check('STORE.listDeals({includeDeleted:true}) shows soft-deleted',
+      async () => {
+        const r = await STORE.listDeals({ limit: 50, includeDeleted: true });
+        const found = r.rows.find(x => x.display_ref === ref);
+        return !!found || 'not visible with includeDeleted';
+      });
+
+    await check('STORE.restoreDeal(ref) brings it back',
+      async () => {
+        const r = await STORE.restoreDeal(ref);
+        return (r && r.ok === true) || ('got: ' + JSON.stringify(r));
+      });
+
+    await check('STORE.deleteDeal(ref) again — final cleanup',
+      async () => {
+        const r = await STORE.deleteDeal(ref);
+        return (r && r.ok === true) || ('got: ' + JSON.stringify(r));
+      });
+
+    await check('STORE.logout() clears currentUser',
+      () => {
+        STORE.logout();
+        return STORE.currentUser() === null || 'still: ' + JSON.stringify(STORE.currentUser());
+      });
+
+    const summary = '\n' + pass + ' passed, ' + fail + ' failed (STORE)';
+    return { pass, fail, lines: out, summary, ok: fail === 0, ref };
+  };
+
+  // STORE smoke button → run async, render inline
+  document.getElementById('btn-store-smoke').addEventListener('click', async function() {
+    const btn = this;
+    const el = document.getElementById('store-smoke-out');
+    btn.disabled = true;
+    el.hidden = false;
+    el.innerHTML = '<span class="warn">running…</span>';
+    try {
+      const r = await window.__smokeStore();
+      const cls = r.ok ? 'ok' : (r.fail > 0 ? 'err' : 'warn');
+      el.innerHTML = '<span class="' + cls + '">' +
+        r.lines.map(l => l.replace(/^✓/, '✓').replace(/^✗/, '✗')).join('\n') +
+        '\n\n' + r.pass + ' passed, ' + r.fail + ' failed</span>';
+    } catch (e) {
+      el.innerHTML = '<span class="err">smoke harness threw: ' +
+        (e && e.message || String(e)) + '</span>';
+    } finally {
+      btn.disabled = false;
+    }
   });
   </script>
 </body>
