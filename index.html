@@ -874,7 +874,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.0.0-alpha.9.0',
+      version: 'v27.0.0-alpha.9.1',
       constants,
       calico,
       mv,
@@ -2482,8 +2482,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.0.0-alpha.9.0"',
-      () => CATALOG.version === 'v27.0.0-alpha.9.0' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.0.0-alpha.9.1"',
+      () => CATALOG.version === 'v27.0.0-alpha.9.1' || 'got: ' + CATALOG.version);
 
     check('Object.isFrozen(CATALOG)',
       () => Object.isFrozen(CATALOG) === true || 'not frozen');
@@ -5743,6 +5743,12 @@
       setFieldError,
       // alpha.7.4: APP.wizSave needs the same payload-builder used by autosave
       buildSavePayload,
+      // alpha.9.1: APP exposes these to __smokeIntegration. APP's IIFE has no
+      // closure access to UI internals (different scope), so route via UI's
+      // public API. Underscore prefix marks "for internal smoke use only".
+      _SOFT_FIELDS:        SOFT_FIELDS,
+      _STRUCTURAL_FIELDS:  STRUCTURAL_FIELDS,
+      _STRUCTURED_COLS:    STRUCTURED_COLS,
       // helpers
       esc, fmtINR, debounce,
       // smoke renderer
@@ -6106,10 +6112,17 @@
       // straight in is safe.
       recoForDeal: computeReco,
       // alpha.9.0 \u2014 internals exposed for __smokeIntegration only.
-      _buildSavePayload:   buildSavePayload,
-      _SOFT_FIELDS:        SOFT_FIELDS,
-      _STRUCTURAL_FIELDS:  STRUCTURAL_FIELDS,
-      _STRUCTURED_COLS:    STRUCTURED_COLS
+      // alpha.9.1 \u2014 the bare identifiers `buildSavePayload`, `SOFT_FIELDS`,
+      // `STRUCTURAL_FIELDS`, `STRUCTURED_COLS` are NOT in APP's closure (all
+      // defined inside the UI IIFE, lines 3154/3163/3250/3260). The alpha.9.0
+      // expose throws ReferenceError at IIFE-tail. Route through UI.<name>:
+      // UI's IIFE completes at line ~5757 before APP starts at ~5777, so
+      // UI.<name> resolves cleanly here. Mirrors the working pattern at the
+      // earlier `UI.buildSavePayload(d)` call site.
+      _buildSavePayload:   UI.buildSavePayload,
+      _SOFT_FIELDS:        UI._SOFT_FIELDS,
+      _STRUCTURAL_FIELDS:  UI._STRUCTURAL_FIELDS,
+      _STRUCTURED_COLS:    UI._STRUCTURED_COLS
     };
   })();
 
@@ -6907,43 +6920,44 @@
   APP.start();
 
   /* ============================================================
-     End of v27.0.0-alpha.9.0
-     (Session 9 surface 1/N: __smokeIntegration() shipped.
-      18 data-layer integration checks:
-       - APP internals contract (_buildSavePayload + field arrays)
-       - buildSavePayload null safety + field routing
-       - SOFT vs STRUCTURAL classification invariants
-       - Server-managed field stripping (created_at, deleted_at, etc.)
-       - id/display_ref preservation (edit path)
-       - Round-trip preservation (deal \u2192 payload \u2192 reconstruct)
-         \u2014 CRITICAL: catches the raw_submission bug class
-       - Lines persistence gotcha #3 (preserve deal.lines, prefer reco)
-       - Chassis prepend logic (no duplicates)
-       - recoForDeal dispatch for CALICO / MV / CORIO
+     End of v27.0.0-alpha.9.1
+     (alpha.9.1 \u2014 hotfix on top of alpha.9.0.
 
-      No external dependencies. Synchronous. Run via __smokeIntegration().
+      BUG: alpha.9.0 deploy threw at module-init time:
+        Uncaught ReferenceError: buildSavePayload is not defined
+          at index.html:6109:28
+          at index.html:6114:5  (APP IIFE tail)
+        CATALOG/RECOMMEND/STORE/EXPORT "ready" logs fired clean;
+        UI module init never completed (mount/start never reached).
 
-      Smoke totals:
-       __smoke()             \u2192 47
-       __smokeStore()        \u2192 11
-       __smokeUI()           \u2192 40
-       __smokeExport()       \u2192 10
-       __smokeIntegration()  \u2192 18  (NEW)
-       TOTAL sync            = 126
-       __smokeExportAsync()  \u2192  5  (network, run ONCE from Cavitak)
-       TOTAL with async      = 131
+      ROOT CAUSE: APP's IIFE return block tried to expose four
+      symbols (buildSavePayload, SOFT_FIELDS, STRUCTURAL_FIELDS,
+      STRUCTURED_COLS) as bare identifiers, but all four are
+      defined inside the UI IIFE \u2014 not in APP's closure. UI's
+      public API at line ~5747 only re-exported buildSavePayload;
+      the other three weren't exposed at all. node --check from
+      Session 9 didn't catch this: a ReferenceError to an undefined
+      symbol is a runtime failure, not a syntax error.
 
-      \u26A0 CODE FREEZE FROM CLAUDE SIDE.
-      All remaining Session 9 work happens on Dipenkumar's side:
-       - Deploy alpha.9.0 to GitHub Pages
-       - Run __smokeExportAsync() once from Cavitak network
-       - Real-device matrix (iPhone Safari, Android Chrome, iPad)
-       - Lighthouse audit on production URL
-       - A11y walkthrough (keyboard, screen reader, 44px tap targets)
+      FIX (5 edits, all in this file):
+       1. UI return block: also expose _SOFT_FIELDS,
+          _STRUCTURAL_FIELDS, _STRUCTURED_COLS.
+       2. APP return block: route all four through UI.<name>.
+          Mirrors the working pattern at the earlier
+          `UI.buildSavePayload(d)` call site.
+       3. CATALOG.version: alpha.9.0 \u2192 alpha.9.1.
+       4. Smoke version assertion: matching bump.
+       5. This changelog entry.
 
-      Any bugs surfaced from real-device testing become alpha.9.1+
-      in a FRESH chat (this one is 9 surfaces deep \u2014 cumulative
-      context risk per SPEC \u00a78).)
+      Smoke contract unchanged (126 sync + 5 async = 131).
+      APP._buildSavePayload etc. surface remains stable
+      \u2014 only the underlying wiring changed.
+
+      LESSON FOR v27.1 BACKLOG: extend the validation gauntlet
+      to load index.html headlessly (jsdom + a stub for DOM
+      APIs) so module-init ReferenceErrors fail loudly before
+      a push to GitHub Pages. node --check on the script block
+      is necessary but not sufficient.)
      ============================================================ */
   </script>
 </body>
