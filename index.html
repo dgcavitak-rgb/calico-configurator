@@ -687,7 +687,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.0.0-alpha.6.3',
+      version: 'v27.0.0-alpha.7.0',
       constants,
       calico,
       mv,
@@ -1700,8 +1700,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.0.0-alpha.6.3"',
-      () => CATALOG.version === 'v27.0.0-alpha.6.3' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.0.0-alpha.7.0"',
+      () => CATALOG.version === 'v27.0.0-alpha.7.0' || 'got: ' + CATALOG.version);
 
     check('Object.isFrozen(CATALOG)',
       () => Object.isFrozen(CATALOG) === true || 'not frozen');
@@ -2328,13 +2328,24 @@
                            'Dipenkumar'];
     const PRESALES_TEAM = ['Mohit', 'Ranjith SR', 'Dipenkumar'];
 
-    // SX editorial labels per SPEC §3.1. UI-only mapping — CATALOG.sx.types
-    // remains the v26-preserved source of truth.
+    // SX editorial labels — locked alpha.7.0 to match real CATALOG.sx products.
+    // Previous labels (HDMI/SDI/AP-536/AVIP) were fictional carryovers from a
+    // stale planning doc and didn't reflect what CATALOG.sx.{hdbt,da,ap,aoc}
+    // actually contains. Reps were seeing misleading category names.
+    //
+    // ID alignment (hdmi/sdi/ap536/avip → hdbt/da/ap/aoc) deferred to the
+    // cosmetic session — safe since deals are wiped pre-launch (SPEC §1.2).
+    //
+    // CATALOG mapping:
+    //   id='hdmi'  → CATALOG.sx.hdbt  (HD-One DX / LX kits with TX/RX)
+    //   id='sdi'   → CATALOG.sx.da    (MG-DA-612/614/618 splitters)
+    //   id='ap536' → CATALOG.sx.ap    (AP-536 audio extractor)
+    //   id='avip'  → CATALOG.sx.aoc   (8 codes: HDMI/DP × Std/Plenum/LSZH/Armored)
     const SX_EDITORIAL = [
-      { id:'hdmi',   label:'HDMI',    hint:'HDMI signal extension (HDBaseT-based)' },
-      { id:'sdi',    label:'SDI',     hint:'SDI signal extension (AOC-based)' },
-      { id:'ap536',  label:'AP-536',  hint:'AP-536 HDMI distribution amplifier' },
-      { id:'avip',   label:'AVIP',    hint:'AV-over-IP video distribution (v27.1)' }
+      { id:'hdmi',   label:'HDBaseT Extender',     hint:'HDBaseT TX/RX kits for HDMI over Cat6 (HD-One DX / LX)' },
+      { id:'sdi',    label:'HDMI Splitter',        hint:'Distribution amplifier (1\u00d72 / 1\u00d74 / 1\u00d78)' },
+      { id:'ap536',  label:'Audio Extractor (AP-536)', hint:'HDMI audio de-embedder to analog L/R + S/PDIF' },
+      { id:'avip',   label:'AOC Cables',           hint:'Active Optical Cable (HDMI / DisplayPort, multiple jackets and lengths)' }
     ];
 
     const STEP_TITLES = [
@@ -2808,21 +2819,126 @@
        VIEW: Quote ref stub (Session 7 placeholder)
        ============================================================ */
 
-    function showQuoteStub(refId) {
+    /* ============================================================
+       VIEW: Saved deal (one-page layout — alpha.7.0 skeleton)
+
+       Loading flow:
+         showSavedDeal(refId) ──┐
+                                ├─ render loading skeleton
+                                ├─ STORE.loadDeal(refId)  (async)
+                                ├─ on success → render deal (alpha.7.1+)
+                                └─ on error   → render error state with Back link
+
+       Race guard:
+         User may tap a saved deal then immediately navigate back to Home before
+         loadDeal resolves. We track the active refId in _activeSavedDealRefId;
+         if it changes between dispatch and resolve, we drop the render.
+
+       Layout (alpha.7.0): minimal — banner saying "BoM + editor land in alpha.7.1"
+       Layout (alpha.7.1+): BoM hero · sticky action bar · sticky chip nav ·
+                            accordion sections (Project context, Solution type,
+                            Inputs & outputs, LED [if hasLed], SX [if hasSx])
+       ============================================================ */
+
+    let _activeSavedDealRefId = null;
+
+    function showSavedDeal(refId) {
       showChrome(true);
       updateNavActive('#/history');
-      setRoot(
-        '<div class="v">' +
+      _activeSavedDealRefId = refId;
+
+      // 1. Render loading skeleton immediately so the user sees activity.
+      setRoot(renderSavedDealLoading(refId));
+
+      // 2. Kick off the async load. Late resolutions are dropped via the
+      //    race guard so they don't paint over a different view.
+      STORE.loadDeal(refId).then(function(deal) {
+        if (_activeSavedDealRefId !== refId) return;  // user navigated away
+        if (!deal) {
+          setRoot(renderSavedDealNotFound(refId));
+          return;
+        }
+        setRoot(renderSavedDealLoaded(deal));
+      }).catch(function(err) {
+        if (_activeSavedDealRefId !== refId) return;
+        setRoot(renderSavedDealError(refId, err));
+      });
+    }
+
+    function renderSavedDealLoading(refId) {
+      return '<div class="v">' +
+          '<div class="h1">Saved deal</div>' +
+          '<div class="small mono soft" style="margin:-6px 0 16px">' + esc(refId) + '</div>' +
+          '<div class="card" style="text-align:center; padding:24px 16px">' +
+            '<div class="spinner" aria-hidden="true"></div>' +
+            '<div class="small muted" style="margin-top:10px">Loading deal\u2026</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    function renderSavedDealNotFound(refId) {
+      return '<div class="v">' +
+          '<div class="h1">Deal not found</div>' +
+          '<div class="small mono soft" style="margin:-6px 0 16px">' + esc(refId) + '</div>' +
+          '<div class="banner warn">' +
+            '<strong>No deal matches this reference.</strong> ' +
+            'It may have been deleted, or the link may be malformed. ' +
+            'Check the History view for current deals.' +
+          '</div>' +
+          '<div style="margin-top:16px">' +
+            '<button class="btn" type="button" data-nav="#/history">Back to History</button>' +
+            ' <button class="btn btn-ghost" type="button" data-nav="#/home">Home</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    function renderSavedDealError(refId, err) {
+      const msg = (err && err.message) ? err.message : String(err || 'Unknown error');
+      return '<div class="v">' +
+          '<div class="h1">Couldn\u2019t load deal</div>' +
+          '<div class="small mono soft" style="margin:-6px 0 16px">' + esc(refId) + '</div>' +
+          '<div class="banner err">' +
+            '<strong>Load failed:</strong> ' + esc(msg) +
+          '</div>' +
+          '<div style="margin-top:16px">' +
+            '<button class="btn" type="button" data-action="saved-retry" data-ref="' + esc(refId) + '">Try again</button>' +
+            ' <button class="btn btn-ghost" type="button" data-nav="#/history">Back to History</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    function renderSavedDealLoaded(deal) {
+      // alpha.7.0 — minimal success render. Surfaces the data is there and the
+      // route works end-to-end. Real layout (BoM hero · accordion · autosave)
+      // ships in alpha.7.1.
+      const refId = (deal && (deal.display_ref || deal.ref || deal.id)) || '\u2014';
+      const project = (deal && deal.project) || '\u2014';
+      const customer = (deal && deal.customer_name) || '\u2014';
+      const stage = (deal && deal.stage) || '\u2014';
+      const lineCount = (deal && Array.isArray(deal.lines)) ? deal.lines.length : 0;
+      const screenCount = (deal && Array.isArray(deal.screens)) ? deal.screens.length : 0;
+      return '<div class="v">' +
           '<div class="h1">Saved deal</div>' +
           '<div class="small mono soft" style="margin:-6px 0 16px">' + esc(refId) + '</div>' +
           '<div class="banner info">' +
-            '<strong>One-page saved-deal view ships in Session 7.</strong> ' +
-            'For now this route shows the deal reference only \u2014 full layout ' +
-            '(BoM hero + accordion editor + autosave + Rebuild) lands next session.' +
+            '<strong>Deal loaded.</strong> Full one-page layout ' +
+            '(BoM hero + accordion editor + autosave + Rebuild) lands in alpha.7.1. ' +
+            'This skeleton confirms the route, load, and race-guard paths work.' +
           '</div>' +
-          '<button class="btn btn-ghost" type="button" data-nav="#/history">Back to History</button>' +
-        '</div>'
-      );
+          '<section class="card" style="margin-top:14px">' +
+            '<div class="h3">Quick summary</div>' +
+            '<div class="kv-grid" style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin-top:8px">' +
+              '<div class="small muted">Project</div><div class="small">' + esc(project) + '</div>' +
+              '<div class="small muted">Customer</div><div class="small">' + esc(customer) + '</div>' +
+              '<div class="small muted">Stage</div><div class="small">' + esc(stage) + '</div>' +
+              '<div class="small muted">Lines</div><div class="small">' + lineCount + '</div>' +
+              '<div class="small muted">Screens</div><div class="small">' + screenCount + '</div>' +
+            '</div>' +
+          '</section>' +
+          '<div style="margin-top:16px">' +
+            '<button class="btn btn-ghost" type="button" data-nav="#/history">Back to History</button>' +
+          '</div>' +
+        '</div>';
     }
 
     /* ============================================================
@@ -3612,6 +3728,15 @@
           return;
         }
 
+        // Saved-deal "Try again" button — re-dispatches showSavedDeal with the
+        // refId from data-ref. Avoids touching the hash (which wouldn't re-fire
+        // if the user is already on #/quote/<ref>).
+        if (action === 'saved-retry') {
+          const ref = t.getAttribute('data-ref') || '';
+          if (ref) showSavedDeal(ref);
+          return;
+        }
+
         // Smoke buttons
         // All three handlers toast a summary so the result survives even if
         // the smoke causes a view change (e.g. STORE smoke ends in logout
@@ -3761,7 +3886,7 @@
     return {
       mount, toast, openSheet, closeSheet,
       showLogin, showForcePw,
-      showHome, showHistory, showProfile, showQuoteStub, showWizard,
+      showHome, showHistory, showProfile, showSavedDeal, showWizard,
       updateNavActive, showChrome,
       // expose for APP
       getWizardData: () => wizardData,
@@ -3868,9 +3993,9 @@
         return;
       }
       if (hash.indexOf('#/quote/') === 0) {
-        // #/quote/TV-XXXXXXXX → saved-deal stub (Session 7)
+        // #/quote/TV-XXXXXXXX → saved-deal view (alpha.7.0 skeleton, full layout alpha.7.1+)
         const refId = hash.substring('#/quote/'.length);
-        UI.showQuoteStub(refId);
+        UI.showSavedDeal(refId);
         return;
       }
       // Fallback
@@ -4306,7 +4431,8 @@
   APP.start();
 
   /* ============================================================
-     End of v27.0.0-alpha.6.3 (Sessions 5 + 6 + smoke-harness boolean hotfix)
+     End of v27.0.0-alpha.7.0
+     (Session 7 surface 1/6: showSavedDeal skeleton + locked SX labels)
      ============================================================ */
   </script>
 </body>
