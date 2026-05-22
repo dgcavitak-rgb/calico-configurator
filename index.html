@@ -2457,6 +2457,29 @@ function setTheme(name) {
 
 /* ---- App version ---- */
 // ============================================================
+// v26.6.2 — CRITICAL hotfix — 2026-05-22
+// ============================================================
+// Six fixes addressing post-v26.6.1 production reports:
+//   A. CRITICAL: deal_save / deal_get 400 "unknown or missing
+//      actor_user_id" — _sbCurrentUserId was never restored on
+//      session rehydrate (page reload kept user logged in via
+//      FormState but lost the Supabase UUID needed for RPC auth).
+//      Fix: persist user.id on currentUser, restore at boot.
+//      Defensive throw in payload builder catches future regressions.
+//   B. MV mode was leaking CALICO Input + Output sections — MV
+//      uses its own UI inside mvWizardCard (Fix C). CALICO sections
+//      now hidden when req_type = multiviewer.
+//   C. MV input UI implemented: 3-field layout (Input Signal Type ·
+//      Input Count · Output Signal) per MV-SPEC-v26.4.0 §3 and the
+//      v25 reference. Engine wiring (_mvInputRows + _mvRecompute)
+//      already existed since v25 — just needed the UI.
+//   D. SX qty steppers converted from native number-input arrows to
+//      explicit ± buttons (.field-stepper pattern, consistent with
+//      existing CALICO input steppers).
+//   E. MV CSS — wizard-intro paragraph, mv-field-row 3-col grid,
+//      field-help notes, cap label, mobile breakpoint.
+//   F. Version bump + this changelog.
+// ============================================================
 // v26.6.1 — Mobile/desktop perf patches — 2026-05-22
 // ============================================================
 // Zero business-logic change. Three surgical wins:
@@ -2494,7 +2517,7 @@ function setTheme(name) {
 // No backend / schema / catalog change. Save/restore already wired
 // via _sbEnrichBlob (L8053) + edit-restore SX block (L10920+).
 // ============================================================
-const TVONE_FRONTEND_VERSION = '26.6.1';
+const TVONE_FRONTEND_VERSION = '26.6.2';
 /* v26.2.0 — Architecture-first pass (2026-05-22). Stop the patchwork loop;
    align frontend with DB schema as source of truth. Paired with DB migration
    v26_2_0_pipeline_stages_new_canon applied same day.
@@ -2663,14 +2686,17 @@ window._onReqChangeTV = function _onReqChangeTV() {
     catch (e) { console.error('[v26.2.3] _updateProgressiveDisclosure threw:', e); }
   }
 
-  /* v26.3.0 — Progressive disclosure of v26's flat Sections 3 + 4 (Inputs + Outputs).
-     v25 engine doesn't know about these; it only toggles CALICO Cards 02/03/04 with
-     data-section attrs (which v26 doesn't use). So we own the visibility here. */
+  /* v26.3.0 + v26.6.2 — Progressive disclosure of CALICO flat Sections 3 + 4.
+     CALICO inputs/outputs sections must NOT show for MV — MV has its own
+     input UI inside mvWizardCard (see Fix C below). User report: MV mode
+     was bleeding CALICO per-signal-type input steppers into the form. */
   var anyPicked = !!sel;
+  var isMvMode = (sel === 'multiviewer');
+  var showCalicoSections = anyPicked && !isMvMode;
   var inSec = document.getElementById('form-section-inputs');
   var outSec = document.getElementById('form-section-outputs');
-  if (inSec)  inSec.style.display  = anyPicked ? '' : 'none';
-  if (outSec) outSec.style.display = anyPicked ? '' : 'none';
+  if (inSec)  inSec.style.display  = showCalicoSections ? '' : 'none';
+  if (outSec) outSec.style.display = showCalicoSections ? '' : 'none';
 
   /* v26.3.0 — Sync `.active` class on wizard cards.
      v25 engine sets `style.display = ''` to show, but v26's CSS rule
@@ -8115,6 +8141,38 @@ Router.register('/debug', (host) => {
    END SX v26.6.0
    ============================================================ */
 
+/* ============================================================
+   v26.6.2 — MV input wiring
+   3-field UI (Input Signal Type · Input Count · Output Signal)
+   feeds window._mvInputRows + triggers _mvRecompute().
+   Engine already exists (_mvRecompute at L10328, recommendMWP at L10144).
+   Cap auto-updates on signal-type change per MV_QTY_CAP (L7605).
+   ============================================================ */
+window._mvOnInputChange = function _mvOnInputChange() {
+  try {
+    var sigEl = document.getElementById('mv_inputSignalType');
+    var qtyEl = document.getElementById('mv_inputCount');
+    var capEl = document.getElementById('mv_capLabel');
+    if (!sigEl || !qtyEl) return;
+    var sig = sigEl.value || '';
+    /* Dynamic cap per signal type — driven by MV_QTY_CAP catalog */
+    var cap = (typeof MV_QTY_CAP !== 'undefined' && MV_QTY_CAP[sig]) ? MV_QTY_CAP[sig] : 8;
+    qtyEl.max = cap;
+    var cur = parseInt(qtyEl.value, 10) || 0;
+    if (cur > cap) { qtyEl.value = cap; cur = cap; }
+    if (capEl) capEl.textContent = 'max ' + cap;
+    /* Populate _mvInputRows single-row (MV is always single-signal-type per spec) */
+    window._mvInputRows = sig ? [{ signal: sig, qty: cur }] : [];
+    /* Trigger preview recompute (only fires when _mvMode is true) */
+    if (typeof _mvRecompute === 'function') {
+      try { _mvRecompute(); } catch(e) { console.warn('[v26.6.2] _mvRecompute threw:', e); }
+    }
+  } catch(e) {
+    console.warn('[v26.6.2] _mvOnInputChange threw:', e);
+  }
+};
+
+
 
 
   const CORIO_CHASSIS = {
@@ -8312,6 +8370,7 @@ Router.register('/debug', (host) => {
     if(!u) return null;
     const role = (u.permission_tier==='super') ? 'Super' : (u.org_function || 'Sales');
     return {
+      id:u.id,                                                     // v26.6.2 — preserve Supabase UUID for actor_user_id restore on page reload
       username:u.username, fullName:u.full_name, name:u.full_name,
       email:u.email||'', phone:u.phone||'', role:role,
       professionalTitle:u.professional_title||'', region:u.region||'',
@@ -8446,6 +8505,13 @@ Router.register('/debug', (host) => {
                 : sub.outputType==='CORIOview' ? 'Multi Viewer'
                 : 'CALICO';
     const close = String(sub.close||'').trim();
+    // v26.6.2 — Defensive guard. Without this, a null actor_user_id silently
+    // builds a 400-bound payload, gets queued, retries 5×, and surfaces only as
+    // a console error. Fail fast instead — the queue retry loop is not a
+    // recoverable path for missing auth state.
+    if (!_sbCurrentUserId) {
+      throw new Error('Save blocked: your session lost its user id. Please sign out and sign back in to restore it.');
+    }
     const p = {
       actor_user_id:_sbCurrentUserId,
       app:'tvone',
@@ -8904,6 +8970,7 @@ Router.register('/debug', (host) => {
       // Reseat session
       _authHash = stored.authHash;
       currentUser = {
+        id: data.user.id || '',                                  // v26.6.2 — preserve UUID for actor_user_id
         username: data.user.username,
         name: data.user.fullName,
         fullName: data.user.fullName,
@@ -16470,6 +16537,7 @@ window.doLogin = async function doLogin_v26() {
       // theme bootstrap, requireAuth_tv re-confirm modal) work.
       const sheetUser = res.user || {};
       currentUser = {
+        id:                sheetUser.id || '',                                            // v26.6.2 — Supabase UUID for actor_user_id (persists in FormState)
         username:          sheetUser.username || u,
         name:              sheetUser.fullName || sheetUser.name || u,
         fullName:          sheetUser.fullName || sheetUser.name || u,
@@ -17378,6 +17446,32 @@ Router.register('/profile', (host) => {
       .sx-field-row { grid-template-columns: 1fr; }
     }
 
+    /* v26.6.2 — MV wizard intro + 3-field row layout */
+    .wizard-intro {
+      font-size: var(--t-body-sm); color: var(--ink-mid);
+      margin: 0 0 var(--s-4); line-height: 1.5;
+    }
+    .mv-field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--s-4);
+      margin-bottom: var(--s-3);
+    }
+    .mv-field { display: flex; flex-direction: column; gap: 6px; }
+    .mv-count-row {
+      display: flex; align-items: center; gap: var(--s-2);
+    }
+    .mv-cap-label {
+      font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
+    }
+    .field-help {
+      font-size: 11.5px; color: var(--ink-soft);
+      margin: 4px 0 0; line-height: 1.4;
+    }
+    @media (max-width: 720px) {
+      .mv-field-row { grid-template-columns: 1fr; }
+    }
+
   `;
   const style = document.createElement('style');
   style.id = 'v26-l10-styles';
@@ -17476,14 +17570,53 @@ Router.register('/profile', (host) => {
           <span class="wizard-tag" id="mvPreviewTag">—</span>
         </div>
 
-        <div class="field">
-          <label class="field-label" for="mv_outputSignal">MV output signal</label>
-          <select class="field-select" id="mv_outputSignal">
-            <option value="">Auto</option>
-            <option value="hdmi">HDMI</option>
-            <option value="sdi">SDI</option>
-            <option value="hdmi+sdi">HDMI + SDI</option>
-          </select>
+        <p class="wizard-intro">Pick your input signal type and quantity, and your output signal. The wizard recommends the right CORIOview chassis (or MWP-MTO if your configuration is custom).</p>
+
+        <!-- v26.6.2 — MV 3-field input layout (per MV-SPEC-v26.4.0 §3 + v25 reference) -->
+        <div class="mv-field-row">
+
+          <!-- Input Signal Type -->
+          <div class="field mv-field">
+            <label class="field-label" for="mv_inputSignalType">Input signal type ✓</label>
+            <select class="field-select" id="mv_inputSignalType" onchange="window._mvOnInputChange && window._mvOnInputChange()">
+              <option value="">— pick one —</option>
+              <option value="DVI-U">DVI-U</option>
+              <option value="FHD HDMI">FHD HDMI</option>
+              <option value="4K HDMI">4K HDMI</option>
+              <option value="3G-SDI">3G-SDI</option>
+              <option value="HD-SDI">HD-SDI</option>
+              <option value="HDBaseT">HDBaseT</option>
+              <option value="AVIP">AVIP</option>
+            </select>
+            <p class="field-help">Single signal type only. For mixed signal projects, contact tvONE for custom build.</p>
+          </div>
+
+          <!-- Input Count (qty stepper with dynamic cap) -->
+          <div class="field mv-field">
+            <label class="field-label" for="mv_inputCount">Input count <span id="mv_inputCountCheck"></span></label>
+            <div class="mv-count-row">
+              <div class="field-stepper">
+                <button type="button" class="field-stepper-btn" onclick="stepField('mv_inputCount',-1); window._mvOnInputChange && window._mvOnInputChange()">−</button>
+                <input class="field-stepper-input" id="mv_inputCount" type="number" value="0" min="0" max="8" oninput="window._mvOnInputChange && window._mvOnInputChange()">
+                <button type="button" class="field-stepper-btn" onclick="stepField('mv_inputCount',1); window._mvOnInputChange && window._mvOnInputChange()">+</button>
+              </div>
+              <span class="mv-cap-label" id="mv_capLabel">max 8</span>
+            </div>
+            <p class="field-help">Quantity cap depends on signal type. DVI-U / 4K HDMI / HDBaseT / AVIP cap at 4; FHD HDMI / SDI cap at 8.</p>
+          </div>
+
+          <!-- Output Signal (4 options — HDMI 1080p dropped per spec) -->
+          <div class="field mv-field">
+            <label class="field-label" for="mv_outputSignal">Output signal ✓</label>
+            <select class="field-select" id="mv_outputSignal" onchange="window._mvOnInputChange && window._mvOnInputChange()">
+              <option value="4K HDMI">4K HDMI</option>
+              <option value="DVI-I">DVI-I</option>
+              <option value="3G SDI">3G SDI</option>
+              <option value="HDBaseT">HDBaseT</option>
+            </select>
+            <p class="field-help">Single output module. Non-4K-HDMI outputs route to MWP-MTO.</p>
+          </div>
+
         </div>
 
         <!-- v26.6.0 — SX trigger (synced across MV / CALICO / CORIO via _onSxToggle) -->
@@ -17546,11 +17679,11 @@ Router.register('/profile', (host) => {
               <div class="sx-field-row">
                 <div class="sx-field">
                   <label for="sx_hdbtTx">Transmitters</label>
-                  <input type="number" id="sx_hdbtTx" min="0" step="1" value="0" class="sx-stepper">
+                  <div class="field-stepper"><button type="button" class="field-stepper-btn" onclick="stepField('sx_hdbtTx',-1)">−</button><input class="field-stepper-input" id="sx_hdbtTx" type="number" value="0" min="0"><button type="button" class="field-stepper-btn" onclick="stepField('sx_hdbtTx',1)">+</button></div>
                 </div>
                 <div class="sx-field">
                   <label for="sx_hdbtRx">Receivers</label>
-                  <input type="number" id="sx_hdbtRx" min="0" step="1" value="0" class="sx-stepper">
+                  <div class="field-stepper"><button type="button" class="field-stepper-btn" onclick="stepField('sx_hdbtRx',-1)">−</button><input class="field-stepper-input" id="sx_hdbtRx" type="number" value="0" min="0"><button type="button" class="field-stepper-btn" onclick="stepField('sx_hdbtRx',1)">+</button></div>
                 </div>
               </div>
               <button type="button" class="sx-add-btn" onclick="window._sxHdbtAdd && window._sxHdbtAdd()">+ Add HDBaseT extender to BoM</button>
@@ -17576,7 +17709,7 @@ Router.register('/profile', (host) => {
                 </div>
                 <div class="sx-field">
                   <label for="sx_daQty">Quantity</label>
-                  <input type="number" id="sx_daQty" min="1" step="1" value="1" class="sx-stepper">
+                  <div class="field-stepper"><button type="button" class="field-stepper-btn" onclick="stepField('sx_daQty',-1)">−</button><input class="field-stepper-input" id="sx_daQty" type="number" value="1" min="1"><button type="button" class="field-stepper-btn" onclick="stepField('sx_daQty',1)">+</button></div>
                 </div>
               </div>
               <button type="button" class="sx-add-btn" onclick="window._sxDaAdd && window._sxDaAdd()">+ Add splitter to BoM</button>
@@ -17618,7 +17751,7 @@ Router.register('/profile', (host) => {
                 </div>
                 <div class="sx-field">
                   <label for="sx_aocQty">Quantity</label>
-                  <input type="number" id="sx_aocQty" min="1" step="1" value="1" class="sx-stepper">
+                  <div class="field-stepper"><button type="button" class="field-stepper-btn" onclick="stepField('sx_aocQty',-1)">−</button><input class="field-stepper-input" id="sx_aocQty" type="number" value="1" min="1"><button type="button" class="field-stepper-btn" onclick="stepField('sx_aocQty',1)">+</button></div>
                 </div>
               </div>
               <p class="sx-sku-preview">SKU: <span id="sx_aocSkuPreview">—</span></p>
@@ -17643,7 +17776,7 @@ Router.register('/profile', (host) => {
                 </div>
                 <div class="sx-field">
                   <label for="sx_apQty">Quantity</label>
-                  <input type="number" id="sx_apQty" min="1" step="1" value="1" class="sx-stepper">
+                  <div class="field-stepper"><button type="button" class="field-stepper-btn" onclick="stepField('sx_apQty',-1)">−</button><input class="field-stepper-input" id="sx_apQty" type="number" value="1" min="1"><button type="button" class="field-stepper-btn" onclick="stepField('sx_apQty',1)">+</button></div>
                 </div>
               </div>
               <button type="button" class="sx-add-btn" onclick="window._sxApAdd && window._sxApAdd()">+ Add audio extractor to BoM</button>
@@ -17815,6 +17948,16 @@ const goBack = Router.goBack;
   // Check auth state
   const state = FormState.get();
   if (state.user) {
+    // v26.6.2 CRITICAL — Restore _sbCurrentUserId from persisted FormState.
+    // Without this, every deal_save / deal_get after a page reload fails 400
+    // with "unknown or missing actor_user_id" until the user re-logs.
+    // Root cause: _sbCurrentUserId was only set inside _sbLogin() (L7865) but
+    // not in the FormState rehydrate path (boot reads localStorage, never re-
+    // calls _sbLogin). Now id is persisted on the currentUser object (A1-A3)
+    // and reseated here at boot.
+    if (state.user.id) {
+      try { _sbCurrentUserId = state.user.id; } catch(_) {}
+    }
     showApp();
   } else {
     showAuth();
