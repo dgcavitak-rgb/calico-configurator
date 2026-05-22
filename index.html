@@ -396,7 +396,7 @@ await __smokeStore()</pre>
     };
 
     return deepFreeze({
-      version: 'v27.0.0-alpha.4',
+      version: 'v27.0.0-alpha.4.1',
       constants,
       calico,
       mv,
@@ -1409,8 +1409,8 @@ await __smokeStore()</pre>
       }
     }
 
-    check('CATALOG.version === "v27.0.0-alpha.4"',
-      () => CATALOG.version === 'v27.0.0-alpha.4' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.0.0-alpha.4.1"',
+      () => CATALOG.version === 'v27.0.0-alpha.4.1' || 'got: ' + CATALOG.version);
 
     check('Object.isFrozen(CATALOG)',
       () => Object.isFrozen(CATALOG) === true || 'not frozen');
@@ -1909,7 +1909,7 @@ await __smokeStore()</pre>
       async () => {
         const r = await STORE.saveDeal({
           project:         'v27 smoke',
-          stage:           'Discovery',
+          stage:           'Qualified',     // ← seq=1 entry stage per pipeline_stages
           customer_name:   'Smoke Customer',
           partner_name:    'Smoke Partner',
           city:            'Ahmedabad',
