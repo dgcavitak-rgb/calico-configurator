@@ -2218,15 +2218,17 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
       </div>
       <div class="form-card">
         <!-- v26.2.1 — SX add-on Y/N. Default N. When checked, engine appends Signal
-             Extension companion items (already in engine logic; UI surfaces user choice). -->
+             Extension companion items (already in engine logic; UI surfaces user choice).
+             v26.6.7 — radios were never wired to _onSxToggle. Clicking Yes did nothing
+             beyond setting the radio. Now syncs with the shared SX wizard card. -->
         <div class="field">
           <label class="field-label" for="f_sxAddOn_no" style="cursor:default; user-select:none;"><svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Add Signal Extension companion items <span style="font-weight:400;color:var(--ink-soft);font-size:0.9em;margin-left:4px;">(optional)</span></label>
           <div style="display:flex; gap:16px; margin-top:6px;">
             <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;">
-              <input type="radio" name="f_sxAddOn" id="f_sxAddOn_no"  value="no" checked> No
+              <input type="radio" name="f_sxAddOn" id="f_sxAddOn_no"  value="no" checked onchange="window._onSxToggle && window._onSxToggle(this.value)"> No
             </label>
             <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;">
-              <input type="radio" name="f_sxAddOn" id="f_sxAddOn_yes" value="yes"> Yes — add SX line items
+              <input type="radio" name="f_sxAddOn" id="f_sxAddOn_yes" value="yes" onchange="window._onSxToggle && window._onSxToggle(this.value)"> Yes — add SX line items
             </label>
           </div>
         </div>
@@ -2471,6 +2473,79 @@ function setTheme(name) {
 
 /* ---- App version ---- */
 // ============================================================
+// v26.6.7 — Post-deploy bug sweep: 5 issues from live smoke — 2026-05-22
+// ============================================================
+// After v26.6.6 deployed live (Settings panel + console boot log both
+// reading 26.6.6), Dipenkumar smoke-tested on iPad Pro + mobile and
+// surfaced 5 bugs. Some are latent regressions only exposed now that
+// LED Screens section is actually visible/usable. Others are real
+// post-deploy bugs.
+//
+// 5 fixes:
+//   A. collectScreens TypeError at L3929 — calling .value on null
+//      when screenCount is ahead of the DOM. Cascaded into the
+//      "[v25.80.2] updateTotals deferred: Cannot read properties of
+//      null" warning spam visible all over the console. Now wraps
+//      each resW/resH/pitch lookup in null-check + continue.
+//
+//   B. deal_save failed: invalid stage Pre-Qualified — backend stage
+//      "Pre-Qualified" was retired in v26.2.0 migration (renamed to
+//      "Qualified"). Frontend never fully updated. Four stale refs:
+//        - L8811 save payload default: 'Pre-Qualified' → now applies
+//          _normalizeLegacyStageTV() (which already maps it →
+//          Qualified, just was never wired to the save write path)
+//          and defaults to 'Qualified' for blank stages.
+//        - L4825 form reset re-apply: 'Pre-Qualified' → 'Qualified'.
+//        - L5821 and L5064 stale refs LEFT IN per user "keep as
+//          legacy option"; legacy map still translates on read.
+//      Save path now sanitises before sending — old saves load
+//      cleanly (legacy map kicks in on read), new saves never send
+//      retired values.
+//
+//   C. CALICO selected → BOM showed CORIOview MWP-8H-1Y — engine
+//      ran MV path instead of CALICO. Root cause not pinpointed from
+//      code trace alone. Added DIAGNOSTIC TRAP at the save branch
+//      (L10033) — logs _mvMode, _corioMode, req_type, vp_family,
+//      and chosen branch at every submit. Next save repro will pin
+//      down whether the flags were stale, race-set, or whether
+//      _updateProgressiveDisclosure missed an update. NOT a fix —
+//      a trap.
+//
+//   D. Edit-restore Screen 2 appears, Screen 1 lost — race between
+//      _onActiveLedToggleTV (auto-init Screen 1 on LED=Yes) and
+//      populateFormFromRow_'s screens rebuild loop. Edit-restore
+//      sets f_outputActiveLed='Yes' → onchange fires auto-init →
+//      then forEach loop adds another Screen → screenCount and
+//      DOM diverge. Fix: window._editRestoreInProgress flag set
+//      at populateFormFromRow_ entry, cleared at exit; auto-init
+//      skipped while flag is true; _onActiveLedToggleTV re-fired
+//      explicitly at end of restore to sync visibility.
+//
+//   E. SX Yes radio click did nothing — radios at L2226-2229 had no
+//      onchange handler. _onSxToggle exists and works (wired to the
+//      .mv-ext-pill button inside mvWizardCard) but the Outputs-
+//      section trigger radios were never connected when v26.6.0
+//      shipped proper SX sub-wizards. Fix: 2 onchange handlers
+//      added, calling window._onSxToggle(this.value).
+//
+// Smoke test:
+//   1. Console boot reads `[v26.6.7] ready`.
+//   2. Save a draft → no 400 "invalid stage", no actor_user_id 400.
+//   3. Outputs → click SX Yes radio → SX wizard card opens with
+//      HDBT / Splitter / AOC / AP-536 sub-wizards visible. Click No
+//      → SX card collapses.
+//   4. Active LED=Yes → LED Screens section shows with Screen 1
+//      auto-init. Open saved deal with screens in edit mode → only
+//      Screen 1 (or however many were saved), no orphan Screen 2.
+//   5. Console no longer spammed with "[v25.80.2] updateTotals
+//      deferred" warnings on every interaction.
+//   6. NEW deal with Video Processor → CALICO + save → check
+//      console for `[v26.6.7 routing-trap]` log entry. If branch
+//      reads `CALICO` and BoM is C7-PRO-xxxx, routing is healthy.
+//      If branch reads `MV` despite vp_family=calico, paste that
+//      log line into the next session — it'll pin down Bug C's
+//      root cause.
+// ============================================================
 // v26.6.6 — LED Screens visibility actual fix + version-string sync — 2026-05-22
 // ============================================================
 // v26.6.5 reported LED Screens fixed but live smoke (Dipenkumar, iPad
@@ -2631,7 +2706,7 @@ function setTheme(name) {
 // No backend / schema / catalog change. Save/restore already wired
 // via _sbEnrichBlob (L8053) + edit-restore SX block (L10920+).
 // ============================================================
-const TVONE_FRONTEND_VERSION = '26.6.6';
+const TVONE_FRONTEND_VERSION = '26.6.7';
 /* v26.2.0 — Architecture-first pass (2026-05-22). Stop the patchwork loop;
    align frontend with DB schema as source of truth. Paired with DB migration
    v26_2_0_pipeline_stages_new_canon applied same day.
@@ -3926,9 +4001,18 @@ function _setText(id, t) {
   function collectScreens() {
     const screens = [];
     for (let i = 1; i <= screenCount; i++) {
-      const rW = parseInt(document.getElementById('resW-' + i).value) || 0;
-      const rH = parseInt(document.getElementById('resH-' + i).value) || 0;
-      const pitch = parseFloat(document.getElementById('pitch-' + i).value) || 0;
+      // v26.6.7 — null-guard. screenCount can be ahead of the DOM during edit-restore
+      // race conditions (see _onActiveLedToggleTV auto-init vs populateFormFromRow_
+      // screen-loop). Without this guard, .value on null throws an uncaught TypeError
+      // inside calculateAndLog → cascades into "updateTotals deferred" warnings every
+      // change. Skip slots whose elements aren't in the DOM; let the loop continue.
+      const wEl = document.getElementById('resW-' + i);
+      const hEl = document.getElementById('resH-' + i);
+      const pEl = document.getElementById('pitch-' + i);
+      if (!wEl || !hEl || !pEl) continue;
+      const rW = parseInt(wEl.value) || 0;
+      const rH = parseInt(hEl.value) || 0;
+      const pitch = parseFloat(pEl.value) || 0;
       const pixels = rW * rH;
       const is4K = rW >= 3840 || rH >= 2160 || pixels >= 8000000;
       // Per-screen port math: each screen gets its own ceiling (ports never shared across screens)
@@ -4819,10 +4903,13 @@ function _setText(id, t) {
       var el = document.getElementById(id);
       if (el && el.tagName === 'SELECT') el.selectedIndex = 0;
     });
-    // v25.100.0: After the autofill-defeat reset, re-apply Stage = "Pre-Qualified" (first
-    // Zoho stage) as the project default. Users can change if needed.
+    // v25.100.0: After the autofill-defeat reset, re-apply Stage as the project default.
+    // v26.6.7 — was 'Pre-Qualified' (retired in v26.2.0 backend migration → renamed
+    // to 'Qualified'). Apps Script deal_save backend rejects 'Pre-Qualified' with
+    // 400 "invalid stage Pre-Qualified". Default now 'Qualified'; the legacy map
+    // at L2917 still translates Pre-Qualified→Qualified on read for old data.
     var _stEl_lead = document.getElementById('f_stage');
-    if (_stEl_lead) _stEl_lead.value = 'Pre-Qualified';
+    if (_stEl_lead) _stEl_lead.value = 'Qualified';
     // v25.99.16 (B6): reset MV input rows to single empty row, and clear the live result.
     window._mvInputRows = [{ signal: '', qty: 1 }];
     window._mvLastResult = null;
@@ -5093,10 +5180,11 @@ function _setText(id, t) {
     wrap.style.display = isYes ? 'block' : 'none';
     // First time the section opens, make sure at least one Screen row exists.
     // initScreens is idempotent — it clears + adds one row.
-    if (isYes) {
+    // v26.6.7 — SKIP auto-init during edit-restore (see active twin).
+    if (isYes && !window._editRestoreInProgress) {
       const container = document.getElementById('screensContainer');
       if (container && !container.firstChild && typeof addScreen === 'function') {
-        try { addScreen(); } catch(e) { console.warn('[v26.6.6] addScreen on LED toggle failed:', e); }
+        try { addScreen(); } catch(e) { console.warn('[v26.6.7] addScreen on LED toggle failed:', e); }
       }
     }
   };
@@ -8808,7 +8896,18 @@ window._mvOnInputChange = function _mvOnInputChange() {
 
 /* _sbSubmissionToPayload (supabase_deal, L9915-L9980, 66 lines) */
   function _sbSubmissionToPayload(sub, lines, includeRaw){
-    const stage = sub.stage || 'Pre-Qualified';
+    // v26.6.7 — apply the legacy stage normalizer at the save write path.
+    // The map exists at L2917 (Pre-Qualified→Qualified, Negotiation/Review→
+    // Negotiation, Commit to forcast→Awarded). It's exercised in 4 read
+    // paths but was never wired into the save payload — that's why
+    // "Pre-Qualified" was reaching the backend (which retired the stage
+    // in the v26.2.0 migration) and getting rejected with 400 "invalid
+    // stage Pre-Qualified". Default also changed from 'Pre-Qualified'
+    // (retired) to 'Qualified' for forms saved with empty stage.
+    var _rawStage = sub.stage || 'Qualified';
+    const stage = (typeof window._normalizeLegacyStageTV === 'function')
+      ? window._normalizeLegacyStageTV(_rawStage)
+      : _rawStage;
     const fam   = sub.outputType==='CORIO' ? 'CORIO'
                 : sub.outputType==='CORIOview' ? 'Multi Viewer'
                 : 'CALICO';
@@ -10030,6 +10129,26 @@ window._mvOnInputChange = function _mvOnInputChange() {
     // The CALICO calculateAndLog flow below (Card 02-04 validation, screen-count,
     // input-port math, etc.) doesn't apply to a CORIOview project, so we branch
     // here at the top and never touch the CALICO logic.
+
+    // v26.6.7 — DIAGNOSTIC TRAP for Bug C (CALICO selected → MV engine ran).
+    // User reported saving a deal with vp_family=calico but BOM rendered as
+    // CORIOview MWP-8H-1Y. Couldn't reproduce from code trace alone — flag
+    // state at the exact submit moment is what we need. Log all relevant
+    // flags so next save lets us see which branch fired and why.
+    try {
+      var _reqState = '', _vpState = '';
+      var _reqR = document.getElementsByName('req_type');
+      for (var _ri = 0; _ri < _reqR.length; _ri++) if (_reqR[_ri].checked) { _reqState = _reqR[_ri].value; break; }
+      var _vpR = document.getElementsByName('vp_family');
+      for (var _vi = 0; _vi < _vpR.length; _vi++) if (_vpR[_vi].checked) { _vpState = _vpR[_vi].value; break; }
+      console.log('[v26.6.7 routing-trap]',
+        '_mvMode=', !!window._mvMode,
+        '_corioMode=', !!window._corioMode,
+        'req_type=', _reqState || '(none)',
+        'vp_family=', _vpState || '(none)',
+        '→ branch=', window._mvMode ? 'MV' : (window._corioMode ? 'CORIO' : 'CALICO'));
+    } catch (_diagErr) { /* never let diagnostics break save */ }
+
     if (window._mvMode) {
       return _mvCalculateAndLog();
     }
@@ -11890,6 +12009,17 @@ window._mvOnInputChange = function _mvOnInputChange() {
 
 /* populateFormFromRow_ (edit_restore, L15430-L15550, 121 lines) */
   function populateFormFromRow_(r) {
+    // v26.6.7 — edit-restore race-condition guard. _onActiveLedToggleTV (the
+    // Active LED wall? Yes/No handler at L5093 / L15707) auto-inits a blank
+    // Screen 1 when its container is empty + LED=Yes. During edit-restore,
+    // populateFormFromRow_ sets f_outputActiveLed='Yes' BEFORE the screens
+    // rebuild loop runs. The Yes onchange fires _onActiveLedToggleTV → sees
+    // cleared container → auto-adds Screen 1. Then the rebuild loop adds
+    // Screen 2 (because screenCount=1 already). User sees "Screen 2" with
+    // empty fields and Screen 1 with stale data, or vice versa depending on
+    // timing. Setting this flag tells _onActiveLedToggleTV to skip auto-init;
+    // edit-restore handles screen population explicitly anyway.
+    window._editRestoreInProgress = true;
     // v25.99.25 — Known-orphan IDs are legacy fields removed from the form but still
     // referenced by the edit-restore code for backward compat with old saved rows.
     // Silently skip them instead of console.warn — keeps the console clean for real errors.
@@ -12009,6 +12139,11 @@ window._mvOnInputChange = function _mvOnInputChange() {
     }
     // Trigger form-wide totals recalc
     try { if (typeof updateTotals === 'function') updateTotals(); } catch (e) { console.warn('[Edit] updateTotals failed:', e.message); }
+    // v26.6.7 — clear edit-restore guard + re-run _onActiveLedToggleTV explicitly
+    // so the LED wrap visibility reflects the now-restored Active LED value.
+    // (Skipped during restore so it didn't race with the screens loop above.)
+    window._editRestoreInProgress = false;
+    try { if (typeof window._onActiveLedToggleTV === 'function') window._onActiveLedToggleTV(); } catch (_) {}
   }
 
 /* _commitQuickStageTV (supabase_deal, L15909-L15935, 27 lines) */
@@ -15707,10 +15842,13 @@ async function restoreEntry_tv(refId) {
     wrap.style.display = isYes ? 'block' : 'none';
     // First time the section opens, make sure at least one Screen row exists.
     // initScreens is idempotent — it clears + adds one row.
-    if (isYes) {
+    // v26.6.7 — SKIP auto-init when edit-restore is in progress. populateFormFromRow_
+    // handles its own screen rebuild from the saved row; auto-init here races
+    // with it, producing duplicate/orphaned screen rows.
+    if (isYes && !window._editRestoreInProgress) {
       const container = document.getElementById('screensContainer');
       if (container && !container.firstChild && typeof addScreen === 'function') {
-        try { addScreen(); } catch(e) { console.warn('[v26.6.6] addScreen on LED toggle failed:', e); }
+        try { addScreen(); } catch(e) { console.warn('[v26.6.7] addScreen on LED toggle failed:', e); }
       }
     }
   };
@@ -18317,9 +18455,9 @@ const goBack = Router.goBack;
     if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) missing.push('jsPDF (2.4.0)');
     if (typeof window.html2canvas !== 'function') missing.push('html2canvas (1.4.1)');
     if (missing.length) {
-      console.warn('[v26.6.6] export libs not loaded — BoM action bar will fail. Missing:', missing.join(', '));
+      console.warn('[v26.6.7] export libs not loaded — BoM action bar will fail. Missing:', missing.join(', '));
     } else {
-      console.log('[v26.6.6] ready · ExcelJS 4.4.0 · jsPDF 2.4.0 · html2canvas 1.4.1');
+      console.log('[v26.6.7] ready · ExcelJS 4.4.0 · jsPDF 2.4.0 · html2canvas 1.4.1');
     }
   });
 
