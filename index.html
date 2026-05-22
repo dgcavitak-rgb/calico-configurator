@@ -2471,6 +2471,36 @@ function setTheme(name) {
 
 /* ---- App version ---- */
 // ============================================================
+// v26.6.6 — LED Screens visibility actual fix + version-string sync — 2026-05-22
+// ============================================================
+// v26.6.5 reported LED Screens fixed but live smoke (Dipenkumar, iPad
+// Pro 1024px) showed picking Active LED wall=Yes STILL produced no
+// screens block. Root cause: line 15667 set `wrap.style.display = ''`
+// (empty string) to "show" the wrap. Empty string only clears any
+// INLINE style — it does not override CSS rules. v26.6.5 also added
+// a CSS default `.led-screens-wrap { display: none }` at line ~17590,
+// which then took effect once inline was cleared → wrap stayed hidden.
+// v25.118 origin had no such CSS default, so `''` worked there but
+// regressed in v26 layered shell. Fix: set `wrap.style.display =
+// 'block'` explicitly, which beats CSS rule regardless of order.
+//
+// 3 edits:
+//   1. Line ~15667 (the ACTIVE _onActiveLedToggleTV definition):
+//      `isYes ? '' : 'none'` → `isYes ? 'block' : 'none'`
+//   2. Line ~5058 (the DEAD-CODE first _onActiveLedToggleTV defn —
+//      overwritten by line ~15658 via last-window-assign-wins, same
+//      family as the two-formatINR pattern from BrightSign): same
+//      one-character fix, plus header note flagging the duplicate.
+//   3. Lines ~18280/18282 boot log strings: were hardcoded '[v26.6.1]'
+//      since the perf-defer patch and never re-bumped. Settings panel
+//      correctly read TVONE_FRONTEND_VERSION but console log diverged.
+//      Threw off live triage. Now reads '[v26.6.6]'.
+//
+// Smoke test: open /quote/new → Outputs section → Active LED wall? =
+// Yes → LED Screens form-section must appear below with "+ Add screen"
+// + "− Remove last" + one auto-initialized screen row. Toggle back to
+// No → must hide cleanly. Console boot log must read `[v26.6.6] ready`.
+// ============================================================
 // v26.6.5 — LED Screens visibility + unwanted fields hidden — 2026-05-22
 // ============================================================
 // 5 fixes:
@@ -2601,7 +2631,7 @@ function setTheme(name) {
 // No backend / schema / catalog change. Save/restore already wired
 // via _sbEnrichBlob (L8053) + edit-restore SX block (L10920+).
 // ============================================================
-const TVONE_FRONTEND_VERSION = '26.6.5';
+const TVONE_FRONTEND_VERSION = '26.6.6';
 /* v26.2.0 — Architecture-first pass (2026-05-22). Stop the patchwork loop;
    align frontend with DB schema as source of truth. Paired with DB migration
    v26_2_0_pipeline_stages_new_canon applied same day.
@@ -5045,7 +5075,10 @@ function _setText(id, t) {
 /* --- GROUPS (v25.118 L13605-13605, const) --- */
   const GROUPS = ['leadSource','region','state','salesPerson','presalesPerson','endUser','consultant'];
 
-/* --- _onActiveLedToggleTV (v25.118 L17192-17201, window-assign) --- */
+/* --- _onActiveLedToggleTV (v25.118 L17192-17201, window-assign) ---
+   NOTE (v26.6.6): This is the FIRST of two identical definitions of
+   _onActiveLedToggleTV. The active one is at line ~15658 (last
+   window-assign wins). Keeping both in sync defensively. */
   window._onActiveLedToggleTV = function() {
     const sel = document.getElementById('f_outputActiveLed');
     const wrap = document.getElementById('ledScreensWrap');
@@ -5055,13 +5088,15 @@ function _setText(id, t) {
     // The old strict-equality 'yes' check would never match → LED Screens
     // section stayed hidden forever, which is what the user reported.
     const isYes = String(sel.value || '').trim().toLowerCase() === 'yes';
-    wrap.style.display = isYes ? '' : 'none';
+    // v26.6.6 — see note at line ~15667. CSS default `.led-screens-wrap
+    // { display: none }` defeats `wrap.style.display = ''`; set 'block'.
+    wrap.style.display = isYes ? 'block' : 'none';
     // First time the section opens, make sure at least one Screen row exists.
     // initScreens is idempotent — it clears + adds one row.
     if (isYes) {
       const container = document.getElementById('screensContainer');
       if (container && !container.firstChild && typeof addScreen === 'function') {
-        try { addScreen(); } catch(e) { console.warn('[v26.6.5] addScreen on LED toggle failed:', e); }
+        try { addScreen(); } catch(e) { console.warn('[v26.6.6] addScreen on LED toggle failed:', e); }
       }
     }
   };
@@ -15664,13 +15699,18 @@ async function restoreEntry_tv(refId) {
     // The old strict-equality 'yes' check would never match → LED Screens
     // section stayed hidden forever, which is what the user reported.
     const isYes = String(sel.value || '').trim().toLowerCase() === 'yes';
-    wrap.style.display = isYes ? '' : 'none';
+    // v26.6.6 — was `isYes ? '' : 'none'`. Empty string clears inline style,
+    // which then exposes the CSS default `.led-screens-wrap { display: none }`
+    // at line ~17590 → wrap stayed hidden. v25.118 origin had no such CSS
+    // default, so `''` worked there. Set `'block'` explicitly to win
+    // regardless of CSS rule precedence.
+    wrap.style.display = isYes ? 'block' : 'none';
     // First time the section opens, make sure at least one Screen row exists.
     // initScreens is idempotent — it clears + adds one row.
     if (isYes) {
       const container = document.getElementById('screensContainer');
       if (container && !container.firstChild && typeof addScreen === 'function') {
-        try { addScreen(); } catch(e) { console.warn('[v26.6.5] addScreen on LED toggle failed:', e); }
+        try { addScreen(); } catch(e) { console.warn('[v26.6.6] addScreen on LED toggle failed:', e); }
       }
     }
   };
@@ -18277,9 +18317,9 @@ const goBack = Router.goBack;
     if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) missing.push('jsPDF (2.4.0)');
     if (typeof window.html2canvas !== 'function') missing.push('html2canvas (1.4.1)');
     if (missing.length) {
-      console.warn('[v26.6.1] export libs not loaded — BoM action bar will fail. Missing:', missing.join(', '));
+      console.warn('[v26.6.6] export libs not loaded — BoM action bar will fail. Missing:', missing.join(', '));
     } else {
-      console.log('[v26.6.1] ready · ExcelJS 4.4.0 · jsPDF 2.4.0 · html2canvas 1.4.1');
+      console.log('[v26.6.6] ready · ExcelJS 4.4.0 · jsPDF 2.4.0 · html2canvas 1.4.1');
     }
   });
 
