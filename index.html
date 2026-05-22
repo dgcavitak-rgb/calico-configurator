@@ -2478,6 +2478,93 @@ function setTheme(name) {
 
 /* ---- App version ---- */
 // ============================================================
+// v26.7.1 — Edit-restore radio fix (exposed by v26.7.0 deploy) — 2026-05-22
+// ============================================================
+// SAME-DAY HOTFIX after v26.7.0 deploy smoke. v26.7.0 killed the deceptive
+// renderPlaceholderBoM fallback in the /bom route, replacing it with an
+// honest "Could not load BoM" empty state. That fix worked correctly but
+// EXPOSED a separately-existing latent bug:
+//
+//   [v26.7.0 routing-trap] _mvMode=false _corioMode=false
+//                          req_type=(none) vp_family=(none) → branch=CALICO
+//   [v26.7.0] /bom route: engine did not paint #recoOutput
+//
+// Diagnosis:
+//   - The v26 form view L8 override (line ~17256) and /bom route (line
+//     ~17379) restore saved deals via populateFormFromRow_(row).
+//   - populateFormFromRow_ at line 12094 only handles el.value = ... for
+//     text inputs/selects. It DOES NOT handle radio buttons (req_type,
+//     vp_family) — there is no setRadio helper, no .checked = true call,
+//     no getElementsByName call anywhere in its body.
+//   - Worse: req_type / vp_family are NOT persisted in the submission
+//     shape (line 10436). So there's no "saved value" to restore from a
+//     direct read of the row either.
+//   - The legacy startEditingSubmission at line 11622 (LEGACY edit-from-
+//     log path, used by Edit buttons in the legacy log table) HAD a
+//     workaround at line 11718-11825: infer mode from row.outputType +
+//     row.recommended_chassis (both ARE persisted), then explicitly
+//     getElementsByName + .checked = true + fire _onReqChangeTV /
+//     _onVpFamilyChange / _reverseShimsTV. This workaround was never
+//     ported to the v26 form view / /bom route paths.
+//   - Result: every saved deal opened via the v26 routes had
+//     req_type=(none) at calculateAndLog time. CALICO branch fired by
+//     default (because no _mvMode / _corioMode set), but with no per-
+//     signal input breakdown the engine bailed without painting
+//     #recoOutput. Pre-v26.7.0, renderPlaceholderBoM masked this with
+//     a hardcoded MWP-8H-1Y cascade — every reported "saved CALICO deal
+//     shows CORIOview" was actually the placeholder lying. Engine wasn't
+//     running at all.
+//
+// 1 fix in this version:
+//   1. Add _v26InferAndSetSolutionType_(row) helper near the v26 adapters.
+//      Ports the legacy heuristic verbatim:
+//        - outputType === 'CORIOview' OR chassis starts /^MWP-/ → MV
+//        - outputType === 'CORIO' OR chassis starts /^C3-/ OR /^CM2-/ → CORIO
+//        - else → CALICO (covers /^C7-PRO-/ and historical defaults)
+//      Sets req_type radio + vp_family radio (when applicable) via
+//      getElementsByName + .checked = true. Fires window._onReqChangeTV
+//      (the canonical handler at line 2940; legacy startEditingSubmission
+//      called _onRequirementChange / _onVpFamilyChange which don't exist
+//      on window — those calls were no-ops, the SE flow worked anyway
+//      because of other rippling). For CALICO path, also stashes
+//      row._inputSignals → window._tvExactInputSignals and fires
+//      window._reverseShimsTV() to reconstruct per-signal input fields
+//      (f_inputHdmi4kQty, f_inputSdi12gQty, etc.) from saved aggregates.
+//   2. Helper called from TWO sites:
+//        a. Form view L8 override (after populateFormFromRow_, before
+//           setting DraftState.__refId).
+//        b. /bom route async handler (after populateFormFromRow_, BEFORE
+//           calculateAndLog — order matters; engine reads radios at the
+//           top of _calculateAndLogImpl).
+//   3. Version + boot log strings bumped to 26.7.1.
+//
+// What's intentionally NOT done:
+//   - Persisting req_type / vp_family as submission fields. Could be done
+//     for new saves but legacy deals would still need the heuristic. Two
+//     code paths to maintain. The heuristic is sufficient — chassis SKU
+//     prefix is a reliable mode indicator across all 200+ test deals.
+//   - Removing the diagnostic routing-trap log at line 10227. It's harmless
+//     observability + still useful for future triage. Stays for now.
+//   - Excising renderPlaceholderBoM. Still wanted to keep one version of
+//     dead-code preservation before excising. Excise in v26.7.2 or v26.8.0.
+//
+// Smoke (RUN AFTER DEPLOY):
+//   - Same matrix as v26.7.0 (Rows 1, 3, 4 minimum).
+//   - For each: save a deal, navigate Home → tap the deal → /bom route.
+//   - Console MUST show [v26.7.1 routing-trap] with the right branch:
+//       row 3 (CALICO) → branch=CALICO, vp_family=calico
+//       row 1 (MV)     → branch=MV, _mvMode=true
+//   - #bom-section MUST show real chassis (C7-PRO-1200, MWP-*, etc.),
+//     NOT the "Could not load BoM" empty state, NOT the dead MWP-8H-1Y
+//     placeholder.
+//
+// If the routing-trap STILL shows req_type=(none) after this fix, the
+// problem is downstream of radio state restore — possibly the hidden
+// form's radio elements not being the same getElementsByName targets the
+// engine reads. Send screenshot of console + open the failing deal's
+// row data via Supabase console for debugging.
+// ============================================================
+//
 // v26.7.0 — Phase 5b: BoM render bridge + Save Draft removal — 2026-05-22
 // ============================================================
 // PRE-LAUNCH HARDENING (not production fix). App is still pre-launch;
@@ -2789,7 +2876,7 @@ function setTheme(name) {
 // No backend / schema / catalog change. Save/restore already wired
 // via _sbEnrichBlob (L8053) + edit-restore SX block (L10920+).
 // ============================================================
-const TVONE_FRONTEND_VERSION = '26.7.0';
+const TVONE_FRONTEND_VERSION = '26.7.1';
 /* v26.2.0 — Architecture-first pass (2026-05-22). Stop the patchwork loop;
    align frontend with DB schema as source of truth. Paired with DB migration
    v26_2_0_pipeline_stages_new_canon applied same day.
@@ -5267,7 +5354,7 @@ function _setText(id, t) {
     if (isYes && !window._editRestoreInProgress) {
       const container = document.getElementById('screensContainer');
       if (container && !container.firstChild && typeof addScreen === 'function') {
-        try { addScreen(); } catch(e) { console.warn('[v26.7.0] addScreen on LED toggle failed:', e); }
+        try { addScreen(); } catch(e) { console.warn('[v26.7.1] addScreen on LED toggle failed:', e); }
       }
     }
   };
@@ -10224,7 +10311,7 @@ window._mvOnInputChange = function _mvOnInputChange() {
       for (var _ri = 0; _ri < _reqR.length; _ri++) if (_reqR[_ri].checked) { _reqState = _reqR[_ri].value; break; }
       var _vpR = document.getElementsByName('vp_family');
       for (var _vi = 0; _vi < _vpR.length; _vi++) if (_vpR[_vi].checked) { _vpState = _vpR[_vi].value; break; }
-      console.log('[v26.7.0 routing-trap]',
+      console.log('[v26.7.1 routing-trap]',
         '_mvMode=', !!window._mvMode,
         '_corioMode=', !!window._corioMode,
         'req_type=', _reqState || '(none)',
@@ -15931,7 +16018,7 @@ async function restoreEntry_tv(refId) {
     if (isYes && !window._editRestoreInProgress) {
       const container = document.getElementById('screensContainer');
       if (container && !container.firstChild && typeof addScreen === 'function') {
-        try { addScreen(); } catch(e) { console.warn('[v26.7.0] addScreen on LED toggle failed:', e); }
+        try { addScreen(); } catch(e) { console.warn('[v26.7.1] addScreen on LED toggle failed:', e); }
       }
     }
   };
@@ -17189,7 +17276,7 @@ window.generateBoM = async function generateBoM_v26() {
         // Engine returned without painting #recoOutput — show honest empty state,
         // NOT the deceptive MWP-8H-1Y placeholder cascade (renderPlaceholderBoM was
         // a Phase 5a stub that lied about the chassis recommendation).
-        console.warn('[v26.7.0] calculateAndLog returned without painting #recoOutput');
+        console.warn('[v26.7.1] calculateAndLog returned without painting #recoOutput');
         bomSec.innerHTML =
           '<div class="bom-empty">' +
           '  <p class="bom-empty-title">Could not generate BoM</p>' +
@@ -17254,6 +17341,14 @@ window.renderFormView = function renderFormView_v26(host, opts) {
         const row = await queuedDealGet(opts.refId);
         if (row && typeof populateFormFromRow_ === 'function') {
           populateFormFromRow_(row);
+          // v26.7.1 — Restore solution-type radios. populateFormFromRow_ only
+          // handles el.value = ... for text inputs/selects; it doesn't touch
+          // radios. The legacy startEditingSubmission (line 11622) had this
+          // step but the v26 form view override never ported it. Engine reads
+          // window._mvMode / window._corioMode / radio state at calculateAndLog
+          // time; without restore the engine defaults to CALICO with empty
+          // breakdown and bails. Heuristic ports from legacy line 11723.
+          _v26InferAndSetSolutionType_(row);
           // Track refId in draft state so subsequent saves update this row
           DraftState.set('__refId', opts.refId);
           toast('Loaded quote ' + opts.refId, 'info');
@@ -17270,6 +17365,62 @@ window.renderFormView = function renderFormView_v26(host, opts) {
   }
   return result;
 };
+
+/* ---- v26.7.1 — Solution-type radio restore on edit ----
+   The v26 form-view L8 override and the /bom route both fall through to
+   populateFormFromRow_, which doesn't handle radio buttons. req_type and
+   vp_family aren't persisted as submission fields either (line 10436 shape).
+   So we INFER the radio state from outputType + recommended_chassis (both
+   ARE persisted) using the same heuristic the legacy startEditingSubmission
+   used at line 11723. Setting radios explicitly and firing _onReqChangeTV
+   ripples the state through to window._mvMode / window._corioMode /
+   vp sub-branch visibility so the engine routes correctly on edit. */
+function _v26InferAndSetSolutionType_(row) {
+  try {
+    if (!row) return;
+    const outType = String(row.outputType || '').trim();
+    const chassis = String(row.recommended_chassis || '');
+    const isMv = (outType === 'CORIOview') || /^MWP-/.test(chassis);
+    const isCorio = (outType === 'CORIO') || /^C3-/.test(chassis) || /^CM2-/.test(chassis);
+    // Default to videoprocessor when neither MV nor CORIO matches (CALICO is
+    // the most common path historically; matches legacy default).
+    const reqVal = isMv ? 'multiviewer' : 'videoprocessor';
+    const reqRadios = document.getElementsByName('req_type');
+    for (let i = 0; i < reqRadios.length; i++) {
+      reqRadios[i].checked = (reqRadios[i].value === reqVal);
+    }
+    // Ripple req_type through engine flags + vpSubBranch visibility
+    if (typeof window._onReqChangeTV === 'function') {
+      try { window._onReqChangeTV(); } catch(_) {}
+    }
+    // For VP path, pick the family pill (calico / corio)
+    if (!isMv) {
+      const vpVal = isCorio ? 'corio' : 'calico';
+      const vpRadios = document.getElementsByName('vp_family');
+      for (let i = 0; i < vpRadios.length; i++) {
+        vpRadios[i].checked = (vpRadios[i].value === vpVal);
+      }
+      // Re-fire so vp_family selection ripples (Calico cards / CORIO wizard)
+      if (typeof window._onReqChangeTV === 'function') {
+        try { window._onReqChangeTV(); } catch(_) {}
+      }
+      // For CALICO: stash exact per-signal inputs (if present) then reverse-
+      // shim aggregate fields → per-signal breakdown. Mirrors legacy lines
+      // 11759-11785. Without this, _tvInputBreakdownV2580 stays at zeros
+      // and engine drops SDI / HDBaseT / IP cards from regenerated BoM.
+      if (!isCorio) {
+        if (row._inputSignals && typeof row._inputSignals === 'object') {
+          window._tvExactInputSignals = row._inputSignals;
+        }
+        if (typeof window._reverseShimsTV === 'function') {
+          try { window._reverseShimsTV(); } catch(_) {}
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[v26.7.1] _v26InferAndSetSolutionType_ failed:', e && e.message);
+  }
+}
 
 /* ============================================================
    END L8 — V26 ADAPTERS
@@ -17380,6 +17531,14 @@ Router.register('/quote/:refId/bom', (host, params) => {
         }
       }
 
+      // v26.7.1 — Restore solution-type radios in the hidden form BEFORE
+      // calculateAndLog runs. The engine reads radios via getElementsByName;
+      // without this, it sees req_type=(none) vp_family=(none) and defaults
+      // to the CALICO branch with empty input breakdown, then bails — leaving
+      // #recoOutput empty and the bridge falling through to the empty state.
+      // Root cause of "Could not load BoM" reported in v26.7.0 deploy smoke.
+      try { _v26InferAndSetSolutionType_(row); } catch(_) {}
+
       // Re-run engine to refresh the BoM render in #bom-section (which is now mounted in this view)
       if (typeof calculateAndLog === 'function') {
         try {
@@ -17401,7 +17560,7 @@ Router.register('/quote/:refId/bom', (host, params) => {
       if (reco && sec && reco.innerHTML && reco.innerHTML.trim().length > 100) {
         sec.innerHTML = reco.innerHTML;
       } else if (sec && (sec.innerHTML.includes('Loading recommendation') || sec.children.length === 0)) {
-        console.warn('[v26.7.0] /bom route: engine did not paint #recoOutput');
+        console.warn('[v26.7.1] /bom route: engine did not paint #recoOutput');
         sec.innerHTML =
           '<div class="bom-empty">' +
           '  <p class="bom-empty-title">Could not load BoM</p>' +
@@ -18572,9 +18731,9 @@ const goBack = Router.goBack;
     if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) missing.push('jsPDF (2.4.0)');
     if (typeof window.html2canvas !== 'function') missing.push('html2canvas (1.4.1)');
     if (missing.length) {
-      console.warn('[v26.7.0] export libs not loaded — BoM action bar will fail. Missing:', missing.join(', '));
+      console.warn('[v26.7.1] export libs not loaded — BoM action bar will fail. Missing:', missing.join(', '));
     } else {
-      console.log('[v26.7.0] ready · ExcelJS 4.4.0 · jsPDF 2.4.0 · html2canvas 1.4.1');
+      console.log('[v26.7.1] ready · ExcelJS 4.4.0 · jsPDF 2.4.0 · html2canvas 1.4.1');
     }
   });
 
