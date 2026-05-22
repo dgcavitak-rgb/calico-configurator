@@ -2192,6 +2192,7 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
         </div>
         <!-- Hidden computed totals (Phase 5b: engine reads these) -->
         <input type="hidden" id="f_inputs" value="0">
+        <input type="hidden" id="f_stageNote" value=""> <!-- v26.6.3: legacy field, kept hidden to satisfy edit-restore setVal -->
         <input type="hidden" id="f_inputs4K" value="0">
         <input type="hidden" id="f_inputsFHD" value="0">
         <input type="hidden" id="f_signals" value="0">
@@ -2457,6 +2458,34 @@ function setTheme(name) {
 
 /* ---- App version ---- */
 // ============================================================
+// v26.6.3 — Dashboard wired to Supabase — 2026-05-22
+// ============================================================
+// Replaces the hardcoded placeholder content on /home and /history
+// that's been in production since the v26 layered shell landed.
+// The "2 quotes pending review · ₹18.4L pipeline" line + the 3 deal
+// cards (Marriott / Phoenix / Infosys) were literal HTML strings —
+// never wired to deal_list RPC.
+//
+// What's real now:
+//   /home  — fetches via _sbFetchLog() at view-mount; computes:
+//            · Quotes sent this week (created_at within 7 days)
+//            · Pipeline value (sum of open-stage dealValueINR)
+//            · Active count (chip in This Week card)
+//            · Pending review (status === 'saved'|'pending')
+//            · Recent quotes (top 5 by timestamp desc)
+//   /history — fetches via _sbFetchLog(), sorts newest-first, lists all
+//
+// Helpers added: _escDash, _fmtInrLakhsCr, _fmtInrFull, _relTime,
+//   _isThisWeek, _isOpenStage, _isWonStage, _isPendingReview,
+//   _stageChipClass, _initialsFromProject, _renderDashboardStats,
+//   _renderDashboardRecent, _renderHistoryList
+//
+// Also folded in from v26.6.2 deferred:
+//   - f_stageNote hidden field (suppresses "[Edit] Missing form field" warning)
+//
+// Empty states handled — new users see "No quotes yet. Tap + below."
+// Error states handled — network failures show inline fallback.
+// ============================================================
 // v26.6.2 — CRITICAL hotfix — 2026-05-22
 // ============================================================
 // Six fixes addressing post-v26.6.1 production reports:
@@ -2517,7 +2546,7 @@ function setTheme(name) {
 // No backend / schema / catalog change. Save/restore already wired
 // via _sbEnrichBlob (L8053) + edit-restore SX block (L10920+).
 // ============================================================
-const TVONE_FRONTEND_VERSION = '26.6.2';
+const TVONE_FRONTEND_VERSION = '26.6.3';
 /* v26.2.0 — Architecture-first pass (2026-05-22). Stop the patchwork loop;
    align frontend with DB schema as source of truth. Paired with DB migration
    v26_2_0_pipeline_stages_new_canon applied same day.
@@ -7412,103 +7441,257 @@ function showApp() {
    VIEWS — each route is a function that renders into a host element
    ============================================================ */
 
-/* /home */
+/* /home — v26.6.3 wired to Supabase deal_list */
 Router.register('/home', (host) => {
   const user = FormState.get().user;
+  const firstName = (user && user.fullName) ? user.fullName.split(' ')[0] : '';
+  const hh = new Date().getHours();
+  const greet = hh < 12 ? 'Good morning' : (hh < 17 ? 'Good afternoon' : 'Good evening');
+
+  // 1. Render skeleton immediately (with loading placeholders)
   host.innerHTML = `
     <div class="page-header">
       <span class="page-header-eyebrow">Home</span>
-      <h1>Good afternoon${user ? ', ' + user.fullName.split(' ')[0] : ''}.</h1>
-      <p>2 quotes pending review · 1 close this week · pipeline: ₹ 18.4 L</p>
+      <h1>${greet}${firstName ? ', ' + _escDash(firstName) : ''}.</h1>
+      <p id="dash-summary" style="color: var(--ink-soft);">Loading your pipeline…</p>
     </div>
 
     <div class="card" style="margin-bottom: var(--s-4);">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-3);">
         <h2 style="font-family: var(--font-display); font-weight: 600; font-size: var(--t-h2); margin: 0; letter-spacing: var(--ls-h1); color: var(--ink-strong);">This week</h2>
-        <span class="chip chip-accent">3 active</span>
+        <span class="chip chip-accent" id="dash-active-chip">— active</span>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3);">
         <div>
           <div style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600;">Quotes sent</div>
-          <div style="font-family: var(--font-num); font-weight: 700; font-size: 24px; color: var(--ink-strong); margin-top: 4px;">5</div>
+          <div id="dash-quotes-sent" style="font-family: var(--font-num); font-weight: 700; font-size: 24px; color: var(--ink-strong); margin-top: 4px;">—</div>
         </div>
         <div>
           <div style="font-size: 11px; color: var(--ink-soft); letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600;">Pipeline value</div>
-          <div style="font-family: var(--font-num); font-weight: 700; font-size: 24px; color: var(--ink-strong); margin-top: 4px;">₹ 18.4 L</div>
+          <div id="dash-pipeline-value" style="font-family: var(--font-num); font-weight: 700; font-size: 24px; color: var(--ink-strong); margin-top: 4px;">—</div>
         </div>
       </div>
     </div>
 
     <h2 style="font-family: var(--font-display); font-weight: 600; font-size: var(--t-h2); margin: var(--s-6) 0 var(--s-3); letter-spacing: var(--ls-h1); color: var(--ink-strong);">Recent quotes</h2>
-    <div class="placeholder-list">
-      <div class="card" onclick="navigate('/quote/MARWHT-2024-Q3-001')">
-        <div class="card-mark">CL</div>
-        <div class="card-body">
-          <p class="card-title">Marriott Whitefield lobby <span class="chip chip-warning" style="margin-left: 4px;">Proposal</span></p>
-          <p class="card-meta">Bengaluru · ₹ 6,42,000 · 2 days ago</p>
-        </div>
-      </div>
-      <div class="card" onclick="navigate('/quote/PHOENIX-2024-Q3-018')">
-        <div class="card-mark">CM</div>
-        <div class="card-body">
-          <p class="card-title">Phoenix Mall control room <span class="chip chip-success" style="margin-left: 4px;">Won</span></p>
-          <p class="card-meta">Mumbai · ₹ 12,80,000 · 5 days ago</p>
-        </div>
-      </div>
-      <div class="card" onclick="navigate('/quote/INFOPK-2024-Q3-027')">
-        <div class="card-mark">MV</div>
-        <div class="card-body">
-          <p class="card-title">Infosys Pune campus signage</p>
-          <p class="card-meta">Pune · ₹ 4,20,000 · 1 week ago</p>
-        </div>
-      </div>
+    <div class="placeholder-list" id="dash-recent-list">
+      <p style="color: var(--ink-soft); padding: var(--s-3); font-size: var(--t-body-sm);">Loading your recent quotes…</p>
     </div>
   `;
-  return {
-    leave: () => { /* cleanup if needed */ }
-  };
+
+  // 2. Fetch real data and update DOM
+  (async function _loadDash() {
+    try {
+      const deals = (typeof _sbFetchLog === 'function') ? await _sbFetchLog() : [];
+      _renderDashboardStats(deals);
+      _renderDashboardRecent(deals);
+    } catch (err) {
+      console.warn('[v26.6.3] dashboard fetch failed:', err);
+      const sum = document.getElementById('dash-summary');
+      if (sum) sum.textContent = 'Couldn\'t load your pipeline — refresh or check your connection.';
+      const list = document.getElementById('dash-recent-list');
+      if (list) list.innerHTML = '<p style="color: var(--ink-soft); padding: var(--s-3); font-size: var(--t-body-sm);">Recent quotes unavailable.</p>';
+    }
+  })();
+
+  return { leave: () => {} };
 });
 
-/* /history */
+/* v26.6.3 — Dashboard helpers (used by /home) */
+function _escDash(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+function _fmtInrLakhsCr(n) {
+  // ₹ formatting in Indian style — Lakhs (L) for 1L+, Cr for 1Cr+
+  if (!n || n < 1) return '₹ 0';
+  if (n >= 1e7)  return '₹ ' + (n/1e7).toFixed(2).replace(/\.?0+$/, '') + ' Cr';
+  if (n >= 1e5)  return '₹ ' + (n/1e5).toFixed(2).replace(/\.?0+$/, '') + ' L';
+  if (n >= 1000) return '₹ ' + (n/1000).toFixed(1).replace(/\.?0+$/, '') + 'K';
+  return '₹ ' + Math.round(n).toLocaleString('en-IN');
+}
+
+function _fmtInrFull(n) {
+  if (!n || n < 1) return '₹ 0';
+  return '₹ ' + Math.round(n).toLocaleString('en-IN');
+}
+
+function _relTime(ts) {
+  if (!ts) return '';
+  const t = new Date(ts).getTime();
+  if (!t || isNaN(t)) return '';
+  const diff = (Date.now() - t) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + ' min ago';
+  if (diff < 86400) return Math.floor(diff/3600) + ' hr ago';
+  if (diff < 86400*2) return 'yesterday';
+  if (diff < 86400*7) return Math.floor(diff/86400) + ' days ago';
+  if (diff < 86400*30) return Math.floor(diff/(86400*7)) + ' week' + (Math.floor(diff/(86400*7)) > 1 ? 's' : '') + ' ago';
+  if (diff < 86400*365) return Math.floor(diff/(86400*30)) + ' mo ago';
+  return Math.floor(diff/(86400*365)) + ' yr ago';
+}
+
+function _isThisWeek(ts) {
+  if (!ts) return false;
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return false;
+  const now = new Date();
+  // Week = last 7 days (rolling). Simpler + matches user intuition better than ISO week.
+  return (now.getTime() - d.getTime()) <= 7 * 86400 * 1000;
+}
+
+function _isOpenStage(stage) {
+  const s = String(stage || '').toLowerCase().trim();
+  // "Open" = anything not Closed Won / Closed Lost
+  return s && s.indexOf('closed won') < 0 && s.indexOf('closed lost') < 0 && s !== 'won' && s !== 'lost';
+}
+
+function _isWonStage(stage) {
+  const s = String(stage || '').toLowerCase().trim();
+  return s === 'closed won' || s === 'won';
+}
+
+function _isPendingReview(deal) {
+  // Treat 'saved' (not yet viewed/confirmed) AND status === 'pending' as pending review
+  const st = String(deal.status || '').toLowerCase().trim();
+  return st === 'saved' || st === 'pending';
+}
+
+function _stageChipClass(stage) {
+  const s = String(stage || '').toLowerCase();
+  if (s.indexOf('won') >= 0)       return 'chip chip-success';
+  if (s.indexOf('lost') >= 0)      return 'chip';
+  if (s.indexOf('negotiation')>=0) return 'chip chip-accent';
+  if (s.indexOf('proposal') >= 0)  return 'chip chip-warning';
+  if (s.indexOf('qualified') >= 0) return 'chip';
+  return 'chip';
+}
+
+function _initialsFromProject(project) {
+  const words = String(project || '').trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return '—';
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
+function _renderDashboardStats(deals) {
+  /* Compute stats — guard against malformed rows */
+  const arr = Array.isArray(deals) ? deals : [];
+  const sentThisWeek = arr.filter(d => _isThisWeek(d.timestamp)).length;
+  const openDeals    = arr.filter(d => _isOpenStage(d.stage));
+  const pipelineValue= openDeals.reduce((s,d) => s + (Number(d.dealValueINR)||0), 0);
+  const pendingCount = arr.filter(_isPendingReview).length;
+  const activeCount  = openDeals.length;
+
+  /* "Close this week" — deals whose close month is the current month
+     (we don't have day-of-month, only YYYY-MM in `close` field). */
+  const nowMonth = new Date().toISOString().slice(0,7);
+  const closeThisWeek = arr.filter(d => d.close === nowMonth && _isOpenStage(d.stage)).length;
+
+  /* Compose summary line */
+  const sumEl = document.getElementById('dash-summary');
+  if (sumEl) {
+    const parts = [];
+    if (pendingCount > 0)   parts.push(pendingCount + ' quote' + (pendingCount===1?'':'s') + ' pending review');
+    if (closeThisWeek > 0)  parts.push(closeThisWeek + ' close this month');
+    if (pipelineValue > 0)  parts.push('pipeline: ' + _fmtInrLakhsCr(pipelineValue));
+    sumEl.textContent = parts.length ? parts.join(' · ') : 'No active deals yet — your dashboard fills in as you save quotes.';
+  }
+
+  /* Stats cards */
+  const sentEl = document.getElementById('dash-quotes-sent');
+  if (sentEl) sentEl.textContent = sentThisWeek;
+
+  const pipeEl = document.getElementById('dash-pipeline-value');
+  if (pipeEl) pipeEl.textContent = _fmtInrLakhsCr(pipelineValue);
+
+  const activeChip = document.getElementById('dash-active-chip');
+  if (activeChip) activeChip.textContent = activeCount + ' active';
+}
+
+function _renderDashboardRecent(deals) {
+  const list = document.getElementById('dash-recent-list');
+  if (!list) return;
+  const arr = Array.isArray(deals) ? deals.slice() : [];
+  /* Sort by timestamp desc, take top 5 */
+  arr.sort((a,b) => new Date(b.timestamp||0) - new Date(a.timestamp||0));
+  const top = arr.slice(0, 5);
+  if (!top.length) {
+    list.innerHTML = '<p style="color: var(--ink-soft); padding: var(--s-3); font-size: var(--t-body-sm);">No quotes yet. Tap <strong>+</strong> below to create your first.</p>';
+    return;
+  }
+  list.innerHTML = top.map(d => {
+    const initials = _initialsFromProject(d.project);
+    const cityBit  = d.city ? _escDash(d.city) + ' · ' : '';
+    const valBit   = d.dealValueINR ? _fmtInrFull(d.dealValueINR) + ' · ' : '';
+    const ago      = _relTime(d.timestamp);
+    const stage    = String(d.stage || '').trim();
+    const stageChip = stage ? '<span class="' + _stageChipClass(stage) + '" style="margin-left: 4px;">' + _escDash(stage) + '</span>' : '';
+    const refId    = d.refId || '';
+    return '<div class="card" onclick="navigate(\'/quote/' + _escDash(refId) + '\')">' +
+           '  <div class="card-mark">' + _escDash(initials) + '</div>' +
+           '  <div class="card-body">' +
+           '    <p class="card-title">' + _escDash(d.project || '(untitled)') + stageChip + '</p>' +
+           '    <p class="card-meta">' + cityBit + valBit + ago + '</p>' +
+           '  </div>' +
+           '</div>';
+  }).join('');
+}
+
+/* /history — v26.6.3 wired to Supabase deal_list */
 Router.register('/history', (host) => {
   host.innerHTML = `
     <div class="page-header">
       <span class="page-header-eyebrow">Quotes</span>
       <h1>All quotes</h1>
-      <p>Filter by stage, date, value. Search by customer or SKU.</p>
+      <p id="hist-summary" style="color: var(--ink-soft);">Loading…</p>
     </div>
-    <div class="placeholder-list">
-      <div class="card" onclick="navigate('/quote/MARWHT-2024-Q3-001')">
-        <div class="card-mark">CL</div>
-        <div class="card-body">
-          <p class="card-title">Marriott Whitefield lobby</p>
-          <p class="card-meta">Bengaluru · ₹ 6,42,000 · Proposal</p>
-        </div>
-      </div>
-      <div class="card" onclick="navigate('/quote/PHOENIX-2024-Q3-018')">
-        <div class="card-mark">CM</div>
-        <div class="card-body">
-          <p class="card-title">Phoenix Mall control room</p>
-          <p class="card-meta">Mumbai · ₹ 12,80,000 · Closed Won</p>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-mark">XT</div>
-        <div class="card-body">
-          <p class="card-title">Taj Bandra hospitality network</p>
-          <p class="card-meta">Mumbai · ₹ 8,90,000 · Negotiation</p>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-mark">LS</div>
-        <div class="card-body">
-          <p class="card-title">Forum Mall — wayfinding refresh</p>
-          <p class="card-meta">Bengaluru · ₹ 2,75,000 · Discovery</p>
-        </div>
-      </div>
+    <div class="placeholder-list" id="hist-list">
+      <p style="color: var(--ink-soft); padding: var(--s-3); font-size: var(--t-body-sm);">Loading your quotes…</p>
     </div>
   `;
+  (async function _loadHist() {
+    try {
+      const deals = (typeof _sbFetchLog === 'function') ? await _sbFetchLog() : [];
+      _renderHistoryList(deals);
+    } catch (err) {
+      console.warn('[v26.6.3] history fetch failed:', err);
+      const sum = document.getElementById('hist-summary');
+      if (sum) sum.textContent = 'Couldn\'t load — refresh or check your connection.';
+      const list = document.getElementById('hist-list');
+      if (list) list.innerHTML = '<p style="color: var(--ink-soft); padding: var(--s-3); font-size: var(--t-body-sm);">Quotes unavailable.</p>';
+    }
+  })();
 });
+
+function _renderHistoryList(deals) {
+  const list = document.getElementById('hist-list');
+  const sum  = document.getElementById('hist-summary');
+  if (!list) return;
+  const arr = Array.isArray(deals) ? deals.slice() : [];
+  arr.sort((a,b) => new Date(b.timestamp||0) - new Date(a.timestamp||0));
+  if (sum) sum.textContent = arr.length + ' quote' + (arr.length === 1 ? '' : 's') + ' total · sorted newest first';
+  if (!arr.length) {
+    list.innerHTML = '<p style="color: var(--ink-soft); padding: var(--s-3); font-size: var(--t-body-sm);">No quotes yet. Tap <strong>+</strong> below to create your first.</p>';
+    return;
+  }
+  list.innerHTML = arr.map(d => {
+    const initials = _initialsFromProject(d.project);
+    const cityBit  = d.city ? _escDash(d.city) + ' · ' : '';
+    const valBit   = d.dealValueINR ? _fmtInrFull(d.dealValueINR) + ' · ' : '';
+    const stage    = String(d.stage || '').trim() || '(stage unset)';
+    const refId    = d.refId || '';
+    return '<div class="card" onclick="navigate(\'/quote/' + _escDash(refId) + '\')">' +
+           '  <div class="card-mark">' + _escDash(initials) + '</div>' +
+           '  <div class="card-body">' +
+           '    <p class="card-title">' + _escDash(d.project || '(untitled)') + '</p>' +
+           '    <p class="card-meta">' + cityBit + valBit + _escDash(stage) + '</p>' +
+           '  </div>' +
+           '</div>';
+  }).join('');
+}
 
 /* /team */
 Router.register('/team', (host) => {
