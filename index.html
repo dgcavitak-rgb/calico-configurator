@@ -2395,15 +2395,20 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
 </template>
 
 <template id="v26-savebar-template">
-<!-- Sticky save bar -->
+<!-- Sticky save bar
+     v26.7.0 — Save draft button removed. Autosave (debounced _saveDraftTV →
+     _sbDealSave / queuedDealSave) writes every change to Supabase ~1s after
+     each field edit. The button was redundant and visually confused with
+     Generate BoM (Dipenkumar UX feedback, 2026-05-22). The "Auto-saved · just
+     now" status remains as the sole save indicator. Cancel kept for explicit
+     back navigation. -->
 <div class="save-bar">
   <div class="save-bar-inner">
     <div class="save-bar-status">
       <span class="save-dot"></span>
       <span id="save-status-text">Auto-saved · just now</span>
     </div>
-    <button class="btn btn-secondary" onclick="window.history.back()">Cancel</button>
-    <button class="btn btn-primary" onclick="confirmAndSave()">Save draft</button>
+    <button class="btn btn-secondary" onclick="window.history.back()">Back</button>
   </div>
 </div>
 </template>
@@ -2473,6 +2478,84 @@ function setTheme(name) {
 
 /* ---- App version ---- */
 // ============================================================
+// v26.7.0 — Phase 5b: BoM render bridge + Save Draft removal — 2026-05-22
+// ============================================================
+// PRE-LAUNCH HARDENING (not production fix). App is still pre-launch;
+// this version closes the visible-button vs real-engine gap that the
+// v26.6.7 diagnostic routing-trap exposed.
+//
+// Discovery (v26.6.7 routing-trap log proved this):
+//   - Engine routing & compute were healthy. CALICO/MV/CORIO branches
+//     fired correctly, lastResult populated correctly.
+//   - But /bom route + form view showed "CORIOview MWP-8H-1Y" for every
+//     CALICO deal. Cause was NOT routing — it was a DOM contract mismatch.
+//   - Engine renderers (renderResult @ 4453, _mvRenderResult @ 12275,
+//     _corioRenderResult @ 12368) all write to legacy #recoOutput.
+//   - v26 shell (L8 generateBoM_v26 + L9 /bom route) checks #bom-section.
+//   - These are sibling elements in the form template (lines 2374 + 2391),
+//     but NOTHING bridged engine output across. So:
+//       Form view: real BoM in #recoOutput + stale "No BoM yet" empty
+//                  state in #bom-section, side by side.
+//       /bom route: engine paints to #recoOutput inside the OFFSCREEN
+//                  hidden injected form. Visible #bom-section stays at
+//                  "Loading recommendation…". Fallback fired
+//                  renderPlaceholderBoM() whose hardcoded cascade at
+//                  line 16495 returned MWP-8H-1Y regardless of family.
+//                  THIS was the visible bug on saved CALICO deals.
+//
+// 4 fixes:
+//   1. Bridge #recoOutput → #bom-section after calculateAndLog resolves.
+//      Two call sites: L8 generateBoM_v26 (form view path, line ~17091),
+//      L9 /bom route handler (line ~17284). Single ~15-line pattern each.
+//
+//   2. Kill renderPlaceholderBoM as a fallback. Its hardcoded heuristic
+//      (inp<=6 ? MWP-8H-1Y : inp<=12 ? C7-PRO-2200 : CORIOmaster2) lies
+//      about the recommendation on customer-quote-bound surfaces. Replaced
+//      with honest empty-state "Could not generate BoM" message. Function
+//      itself stays defined for now (less risky than excising) but never
+//      called. Remove function entirely in v26.7.1+ after smoke.
+//
+//   3. Remove Save Draft button from the sticky save bar (line 2406).
+//      Per Dipenkumar UX feedback: "save draft and generate bom button
+//      confused" — both were prominent primary actions but Save Draft
+//      was redundant. Autosave (_saveDraftTV → queuedDealSave, debounced
+//      ~1s after each field edit) already writes every change to Supabase.
+//      The "Auto-saved · just now" status remains as the sole save
+//      indicator. Cancel button retained for explicit back-navigation
+//      (renamed "Back" for clarity since the autosave behavior means
+//      there's nothing to cancel anymore).
+//
+//   4. Version + boot log strings bumped: TVONE_FRONTEND_VERSION = '26.7.0',
+//      5 console.log/warn prefixes updated. Comment block historical
+//      references kept as-is (changelog provenance).
+//
+// What's INTENTIONALLY NOT changed:
+//   - Engine routing & compute (proven healthy by v26.6.7 routing-trap;
+//     don't touch what works).
+//   - calculateAndLog or any of its callees (still paint to #recoOutput;
+//     the bridge layer adapts, the engine stays untouched).
+//   - confirmAndSave_v26 wire-up at line 17114 (still defined, no longer
+//     callable from any visible button — function preserved for
+//     hypothetical future re-introduction or for any window.confirmAndSave
+//     call sites that we may have missed).
+//   - Autosave path (debounced bindField listeners → _saveDraftTV →
+//     queuedDealSave) — already worked, remains the source of truth.
+//   - Exports (Excel/PDF/WhatsApp/Email). They read lastResult @ line 3404
+//     (module-scoped), not DOM, so they were always shipping real data.
+//     §10 Q1 from HANDOFF-v26.6.7-pre-launch.md is answered: exports OK.
+//
+// Smoke matrix to run after deploy (per handoff §4.4):
+//   Row 1: MV — 4× HDMI 4K → 2 Display 4K, no LED. Expect MWP-4Hi-1Y or
+//          MWP-8H-1Y depending on engine selection. NO placeholder MWP.
+//   Row 3: CALICO — 3× HDMI 4K → 2 Display 4K, no LED. Expect C7-PRO-1200.
+//   Row 4: CALICO — 2× HDMI 4K + 1× SDI 12G → 2 Display 4K + LED 4K wall.
+//          Expect C7-PRO-2200 + SDI input card + Pixie pro.
+// Each row tested twice — once via /quote/new, once via edit-restore.
+//
+// Bug C from the v26.6.7 routing-trap is now FULLY resolved (was diagnosed,
+// not fixed, in v26.6.7).
+// ============================================================
+//
 // v26.6.7 — Post-deploy bug sweep: 5 issues from live smoke — 2026-05-22
 // ============================================================
 // After v26.6.6 deployed live (Settings panel + console boot log both
@@ -2706,7 +2789,7 @@ function setTheme(name) {
 // No backend / schema / catalog change. Save/restore already wired
 // via _sbEnrichBlob (L8053) + edit-restore SX block (L10920+).
 // ============================================================
-const TVONE_FRONTEND_VERSION = '26.6.7';
+const TVONE_FRONTEND_VERSION = '26.7.0';
 /* v26.2.0 — Architecture-first pass (2026-05-22). Stop the patchwork loop;
    align frontend with DB schema as source of truth. Paired with DB migration
    v26_2_0_pipeline_stages_new_canon applied same day.
@@ -5184,7 +5267,7 @@ function _setText(id, t) {
     if (isYes && !window._editRestoreInProgress) {
       const container = document.getElementById('screensContainer');
       if (container && !container.firstChild && typeof addScreen === 'function') {
-        try { addScreen(); } catch(e) { console.warn('[v26.6.7] addScreen on LED toggle failed:', e); }
+        try { addScreen(); } catch(e) { console.warn('[v26.7.0] addScreen on LED toggle failed:', e); }
       }
     }
   };
@@ -10141,7 +10224,7 @@ window._mvOnInputChange = function _mvOnInputChange() {
       for (var _ri = 0; _ri < _reqR.length; _ri++) if (_reqR[_ri].checked) { _reqState = _reqR[_ri].value; break; }
       var _vpR = document.getElementsByName('vp_family');
       for (var _vi = 0; _vi < _vpR.length; _vi++) if (_vpR[_vi].checked) { _vpState = _vpR[_vi].value; break; }
-      console.log('[v26.6.7 routing-trap]',
+      console.log('[v26.7.0 routing-trap]',
         '_mvMode=', !!window._mvMode,
         '_corioMode=', !!window._corioMode,
         'req_type=', _reqState || '(none)',
@@ -15848,7 +15931,7 @@ async function restoreEntry_tv(refId) {
     if (isYes && !window._editRestoreInProgress) {
       const container = document.getElementById('screensContainer');
       if (container && !container.firstChild && typeof addScreen === 'function') {
-        try { addScreen(); } catch(e) { console.warn('[v26.6.7] addScreen on LED toggle failed:', e); }
+        try { addScreen(); } catch(e) { console.warn('[v26.7.0] addScreen on LED toggle failed:', e); }
       }
     }
   };
@@ -17089,17 +17172,36 @@ window.generateBoM = async function generateBoM_v26() {
     if (typeof calculateAndLog === 'function') {
       toast('Generating recommendation…', 'info');
       const result = await calculateAndLog();
-      // Engine renders into its own targets; if BoM section is empty, log warning
+
+      // v26.7.0 — Bridge engine output (#recoOutput) → v26 shell target (#bom-section).
+      // The engine renderers (renderResult / _mvRenderResult / _corioRenderResult,
+      // lines 4453, 12275, 12368) write to the legacy #recoOutput surface. The v26
+      // shell's BoM region is #bom-section. These sibling elements sit in the form
+      // template (lines 2374 + 2391) but nothing was copying engine output across.
+      // Result: form view showed real BoM in #recoOutput but stale "No BoM generated
+      // yet" empty state in #bom-section; /bom route fell back to renderPlaceholderBoM
+      // which hardcoded MWP-8H-1Y regardless of family. Now bridged here.
+      const reco = document.getElementById('recoOutput');
       const bomSec = document.getElementById('bom-section');
-      if (bomSec && bomSec.children.length === 0) {
-        console.warn('[v26 L8] calculateAndLog returned without rendering — falling back to placeholder');
-        renderPlaceholderBoM();
+      if (reco && bomSec && reco.innerHTML && reco.innerHTML.trim().length > 100) {
+        bomSec.innerHTML = reco.innerHTML;
+      } else if (bomSec && (!reco || !reco.innerHTML || reco.innerHTML.trim().length === 0)) {
+        // Engine returned without painting #recoOutput — show honest empty state,
+        // NOT the deceptive MWP-8H-1Y placeholder cascade (renderPlaceholderBoM was
+        // a Phase 5a stub that lied about the chassis recommendation).
+        console.warn('[v26.7.0] calculateAndLog returned without painting #recoOutput');
+        bomSec.innerHTML =
+          '<div class="bom-empty">' +
+          '  <p class="bom-empty-title">Could not generate BoM</p>' +
+          '  <p class="bom-empty-body">The engine ran but produced no output. ' +
+          '  Please re-check the inputs/outputs and tap Build quote again. ' +
+          '  If this persists, screenshot the form and send to Dipenkumar.</p>' +
+          '</div>';
       }
     } else {
       v26.error('engine-missing', new Error('calculateAndLog not defined'), {
-        userMessage: 'Engine not loaded — using placeholder.'
+        userMessage: 'Engine not loaded — please refresh and try again.'
       });
-      renderPlaceholderBoM();
     }
   } catch (err) {
     v26.error('generateBoM', err, {
@@ -17287,10 +17389,25 @@ Router.register('/quote/:refId/bom', (host, params) => {
         }
       }
 
-      // If engine didn't render (missing DOM targets for sub-wizards etc), fall back to placeholder
+      // v26.7.0 — Bridge engine output (#recoOutput in hidden injected form) →
+      // visible #bom-section in this route. The engine renderers write to
+      // #recoOutput; the v26 shell renders #bom-section. Without this bridge,
+      // every CALICO deal fell through to renderPlaceholderBoM whose hardcoded
+      // cascade (line 16495) returned MWP-8H-1Y regardless of family — the
+      // root cause of "saved deals show CORIOview MWP-8H-1Y" reported on
+      // 2026-05-22. Placeholder fallback removed; honest empty state on miss.
+      const reco = document.getElementById('recoOutput');
       const sec = document.getElementById('bom-section');
-      if (sec && (sec.innerHTML.includes('Loading recommendation') || sec.children.length === 0)) {
-        renderPlaceholderBoM();
+      if (reco && sec && reco.innerHTML && reco.innerHTML.trim().length > 100) {
+        sec.innerHTML = reco.innerHTML;
+      } else if (sec && (sec.innerHTML.includes('Loading recommendation') || sec.children.length === 0)) {
+        console.warn('[v26.7.0] /bom route: engine did not paint #recoOutput');
+        sec.innerHTML =
+          '<div class="bom-empty">' +
+          '  <p class="bom-empty-title">Could not load BoM</p>' +
+          '  <p class="bom-empty-body">The engine could not rebuild this quote. ' +
+          '  Open the quote from Home, edit any field to refresh, then return here.</p>' +
+          '</div>';
       }
     } catch (err) {
       v26.error('bom-load', err, {
@@ -18455,9 +18572,9 @@ const goBack = Router.goBack;
     if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) missing.push('jsPDF (2.4.0)');
     if (typeof window.html2canvas !== 'function') missing.push('html2canvas (1.4.1)');
     if (missing.length) {
-      console.warn('[v26.6.7] export libs not loaded — BoM action bar will fail. Missing:', missing.join(', '));
+      console.warn('[v26.7.0] export libs not loaded — BoM action bar will fail. Missing:', missing.join(', '));
     } else {
-      console.log('[v26.6.7] ready · ExcelJS 4.4.0 · jsPDF 2.4.0 · html2canvas 1.4.1');
+      console.log('[v26.7.0] ready · ExcelJS 4.4.0 · jsPDF 2.4.0 · html2canvas 1.4.1');
     }
   });
 
