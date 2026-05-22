@@ -687,7 +687,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.0.0-alpha.6.2',
+      version: 'v27.0.0-alpha.6.3',
       constants,
       calico,
       mv,
@@ -1700,8 +1700,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.0.0-alpha.6.2"',
-      () => CATALOG.version === 'v27.0.0-alpha.6.2' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.0.0-alpha.6.3"',
+      () => CATALOG.version === 'v27.0.0-alpha.6.3' || 'got: ' + CATALOG.version);
 
     check('Object.isFrozen(CATALOG)',
       () => Object.isFrozen(CATALOG) === true || 'not frozen');
@@ -4145,7 +4145,7 @@
     const d1 = UI.defaultWizard(); d1.step = 1;
     let v = UI.validateStep(d1);
     check('Step 1 validation: empty form fails with project + customer_name errors',
-      () => !v.ok && v.errors.project && v.errors.customer_name || 'errors: ' + JSON.stringify(v.errors));
+      () => (!v.ok && !!v.errors.project && !!v.errors.customer_name) || 'errors: ' + JSON.stringify(v.errors));
     d1.project = 'Test'; d1.customer_name = 'X';
     v = UI.validateStep(d1);
     check('Step 1 validation: project + customer + default stage passes',
@@ -4155,7 +4155,7 @@
     const d2 = UI.defaultWizard(); d2.step = 2;
     v = UI.validateStep(d2);
     check('Step 2 validation: no solutionType fails',
-      () => !v.ok && v.errors.solutionType || 'errors: ' + JSON.stringify(v.errors));
+      () => (!v.ok && !!v.errors.solutionType) || 'errors: ' + JSON.stringify(v.errors));
     d2.solutionType = 'calico';
     v = UI.validateStep(d2);
     check('Step 2 validation: solutionType=calico passes',
@@ -4165,7 +4165,7 @@
     const d3 = UI.defaultWizard(); d3.step = 3; d3.solutionType = 'calico';
     v = UI.validateStep(d3);
     check('Step 3 CALICO validation: all zeros fails with calico_io error',
-      () => !v.ok && v.errors.calico_io || 'errors: ' + JSON.stringify(v.errors));
+      () => (!v.ok && !!v.errors.calico_io) || 'errors: ' + JSON.stringify(v.errors));
     d3.calico_inputs.hdmi4k = 3; d3.calico_outputs.display = 2;
     v = UI.validateStep(d3);
     check('Step 3 CALICO validation: 3 HDMI 4K in + 2 display out passes',
@@ -4175,7 +4175,7 @@
     const d3mv = UI.defaultWizard(); d3mv.step = 3; d3mv.solutionType = 'mv';
     v = UI.validateStep(d3mv);
     check('Step 3 MV validation: empty inputs fails',
-      () => !v.ok && v.errors.mv_io || 'errors: ' + JSON.stringify(v.errors));
+      () => (!v.ok && !!v.errors.mv_io) || 'errors: ' + JSON.stringify(v.errors));
     d3mv.mv_inputs = [{ signal: 'FHD HDMI', qty: 4 }];
     d3mv.mv_outputSignal = '4K HDMI';
     v = UI.validateStep(d3mv);
@@ -4186,7 +4186,7 @@
     const d4 = UI.defaultWizard(); d4.step = 4; d4.hasLed = true;
     v = UI.validateStep(d4);
     check('Step 4 validation: hasLed=true with no screens fails',
-      () => !v.ok && v.errors.screens || 'errors: ' + JSON.stringify(v.errors));
+      () => (!v.ok && !!v.errors.screens) || 'errors: ' + JSON.stringify(v.errors));
     d4.screens = [{ w: 1920, h: 1080 }];
     v = UI.validateStep(d4);
     check('Step 4 validation: one 1920x1080 screen passes',
@@ -4196,7 +4196,7 @@
     const d5 = UI.defaultWizard(); d5.step = 5; d5.hasSx = true;
     v = UI.validateStep(d5);
     check('Step 5 validation: hasSx=true with all zero qty fails',
-      () => !v.ok && v.errors.sx || 'errors: ' + JSON.stringify(v.errors));
+      () => (!v.ok && !!v.errors.sx) || 'errors: ' + JSON.stringify(v.errors));
     d5.sx_data.hdmi = 2;
     v = UI.validateStep(d5);
     check('Step 5 validation: hasSx with hdmi=2 passes',
@@ -4306,7 +4306,7 @@
   APP.start();
 
   /* ============================================================
-     End of v27.0.0-alpha.6.2 (Sessions 5 + 6 + smoke output hotfix)
+     End of v27.0.0-alpha.6.3 (Sessions 5 + 6 + smoke-harness boolean hotfix)
      ============================================================ */
   </script>
 </body>
