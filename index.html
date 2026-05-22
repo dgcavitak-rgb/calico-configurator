@@ -17378,6 +17378,11 @@ window.renderFormView = function renderFormView_v26(host, opts) {
 function _v26InferAndSetSolutionType_(row) {
   try {
     if (!row) return;
+    // v26.7.1 — Clear any stale per-signal stash from a previous deal BEFORE
+    // possibly setting a fresh one below. Without this, opening Deal A (rich
+    // _inputSignals blob), then Deal B (no blob), made Deal B's engine read
+    // Deal A's stale per-signal counts. Mirrors legacy line 11774 defensive null.
+    window._tvExactInputSignals = null;
     const outType = String(row.outputType || '').trim();
     const chassis = String(row.recommended_chassis || '');
     const isMv = (outType === 'CORIOview') || /^MWP-/.test(chassis);
