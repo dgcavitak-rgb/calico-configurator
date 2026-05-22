@@ -1452,9 +1452,18 @@ html[data-theme="dark"] .card-hover:hover { box-shadow: 0 1px 0 rgba(255,255,255
 
 /* --- Save bar (sticky bottom) (phase5a-form.html lines 196-201) --- */
 /* Save bar */
-.save-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; background: var(--bg-topbar); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border-top: 0.5px solid var(--border-soft); padding: var(--s-3) var(--s-5) calc(var(--s-3) + env(safe-area-inset-bottom)); }
+.save-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; background: var(--bg-topbar); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border-top: 0.5px solid var(--border-soft); padding: var(--s-4) var(--s-5) calc(var(--s-4) + env(safe-area-inset-bottom)); }
+/* v26.6.4 — comfortable save bar: more vertical padding, larger tap targets
+   (44px min — Apple HIG), gap between buttons, primary button takes precedence */
 .save-bar-inner { max-width: 720px; margin: 0 auto; display: flex; align-items: center; gap: var(--s-3); }
 .save-bar-status { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--s-2); font-size: 11.5px; color: var(--ink-soft); }
+.save-bar .btn { min-height: 44px; padding-left: var(--s-4); padding-right: var(--s-4); }
+.save-bar .btn-primary { min-width: 130px; font-weight: 600; }
+@media (max-width: 480px) {
+  .save-bar-inner { flex-wrap: wrap; }
+  .save-bar-status { flex-basis: 100%; margin-bottom: var(--s-2); font-size: 11px; }
+  .save-bar .btn { flex: 1; }
+}
 .save-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; box-shadow: 0 0 0 0 var(--accent-soft); animation: pulse 2s var(--ease-out) infinite; }
 @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 var(--accent-soft); } 50% { box-shadow: 0 0 0 6px transparent; } }
 
@@ -2318,9 +2327,10 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
     <input type="hidden" id="f_close" value="">
 
     <!-- ============================================================
-         SECTION 5 — Notes
+         SECTION 5 — Notes (v26.6.4: id added so wizard injection
+         inserts wizards BEFORE this section, not between sections.)
          ============================================================ -->
-    <div class="form-section">
+    <div class="form-section" id="form-section-notes">
       <div class="form-section-head">
         <h2>Notes</h2>
         <span class="step-meta">optional</span>
@@ -2458,6 +2468,29 @@ function setTheme(name) {
 
 /* ---- App version ---- */
 // ============================================================
+// v26.6.4 — UX cleanup — 2026-05-22
+// ============================================================
+// Fixes 4 user-reported issues from v26.6.3 deploy:
+//   1. SX panel always shows (regardless of Yes/No pill state). Root:
+//      sxWizardCard was in the auto-active list of v26.3.0's progressive-
+//      disclosure mirror, AND v26.6.0's "fix" to repoint signalExtensionCard
+//      doubled-down on the auto-show. Fix: remove sxWizardCard from both
+//      auto-active paths. _onSxToggle is now the only source of truth.
+//   2. Sales / Presales dropdowns empty after page reload. Root: _sbLoadUsers
+//      only fires inside _sbLogin(); session-rehydrate path didn't call it,
+//      so window._sbUsers stayed empty. Fix: boot now fires _sbLoadUsers()
+//      when restoring session — _populateRolesTV re-runs internally once
+//      users land.
+//   3. Notes section was between Solution Type and Configuration wizard.
+//      Root: wizard injection targeted #calcBtn's section, which is BELOW
+//      Notes in the template, so wizards landed under Notes. Fix: target
+//      the Notes section directly via new id="form-section-notes". Order
+//      is now: Solution Type → Configuration → Notes → Build quote.
+//   4. Save Draft / Cancel buttons cramped + small. Fix: 44px min-height
+//      tap targets (Apple HIG), primary button width emphasis, mobile-wrap
+//      layout for narrow screens.
+// Plus: MV wizard intro trimmed from 32 → 16 words.
+// ============================================================
 // v26.6.3 — Dashboard wired to Supabase — 2026-05-22
 // ============================================================
 // Replaces the hardcoded placeholder content on /home and /history
@@ -2546,7 +2579,7 @@ function setTheme(name) {
 // No backend / schema / catalog change. Save/restore already wired
 // via _sbEnrichBlob (L8053) + edit-restore SX block (L10920+).
 // ============================================================
-const TVONE_FRONTEND_VERSION = '26.6.3';
+const TVONE_FRONTEND_VERSION = '26.6.4';
 /* v26.2.0 — Architecture-first pass (2026-05-22). Stop the patchwork loop;
    align frontend with DB schema as source of truth. Paired with DB migration
    v26_2_0_pipeline_stages_new_canon applied same day.
@@ -2727,11 +2760,12 @@ window._onReqChangeTV = function _onReqChangeTV() {
   if (inSec)  inSec.style.display  = showCalicoSections ? '' : 'none';
   if (outSec) outSec.style.display = showCalicoSections ? '' : 'none';
 
-  /* v26.3.0 — Sync `.active` class on wizard cards.
-     v25 engine sets `style.display = ''` to show, but v26's CSS rule
-     `.wizard-card { display: none }` is more specific than an empty inline
-     style. So we mirror the engine's intent onto `.active`. */
-  ['mvWizardCard', 'corioWizardCard', 'sxWizardCard'].forEach(function(id) {
+  /* v26.3.0 + v26.6.4 — Sync `.active` class on wizard cards.
+     sxWizardCard intentionally OMITTED — its visibility is owned by
+     _onSxToggle() (user clicks Yes/No pill). Was previously auto-
+     activating here, which made the SX panel always visible regardless
+     of the trigger pill state. */
+  ['mvWizardCard', 'corioWizardCard'].forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
     var shouldShow = el.style.display !== 'none';
@@ -10564,10 +10598,12 @@ window._mvOnInputChange = function _mvOnInputChange() {
     // The card BODY (sxBody) stays collapsed by default — user opens it manually OR by picking MV "Yes" radio.
     // Was the missing piece: the incomplete-Card-01 branch hides this card, but the complete branch
     // never re-shew it → it stayed hidden forever and MV ext "Yes" had no visible effect.
-    /* v26.6.0 — repoint to actual markup ID #sxWizardCard
-       (was 'signalExtensionCard' which doesn't exist anywhere) */
-    const sxCardEl = document.getElementById('sxWizardCard');
-    if (sxCardEl) sxCardEl.style.display = (isMv || isCalico || isCorio) ? '' : 'none';
+    /* v26.6.4 — DO NOT auto-show sxWizardCard. Its visibility is owned
+       by _onSxToggle (user clicks "Required signal extension? Yes").
+       v26.6.0 had repointed the broken signalExtensionCard ref here, but
+       that caused the SX panel to always show whenever any solution type
+       was picked. The repoint was wrong; the original signalExtensionCard
+       container was never built. Default = hidden, expand on Yes. */
   }
   /* v26.2.3 — Expose on window so inline onchange handlers on req_type
      / vp_family radios (and the v26.2.3 _onReqChangeTV wrapper) can reach it.
@@ -17753,7 +17789,7 @@ Router.register('/profile', (host) => {
           <span class="wizard-tag" id="mvPreviewTag">—</span>
         </div>
 
-        <p class="wizard-intro">Pick your input signal type and quantity, and your output signal. The wizard recommends the right CORIOview chassis (or MWP-MTO if your configuration is custom).</p>
+        <p class="wizard-intro">Pick signal type, count, and output — the wizard picks the right CORIOview chassis or MWP-MTO.</p>
 
         <!-- v26.6.2 — MV 3-field input layout (per MV-SPEC-v26.4.0 §3 + v25 reference) -->
         <div class="mv-field-row">
@@ -18003,19 +18039,26 @@ Router.register('/profile', (host) => {
   // The form template's content is a DocumentFragment; we need to find
   // the right node to insert before.
   const content = tpl.content;
-  // The "GENERATE BoM" section is identified by the submit button
+  // v26.6.4 — Insert wizards BEFORE the Notes section so order reads:
+  //   Solution Type → wizards (Configuration) → Notes → Generate BoM
+  // Was: Notes appeared BETWEEN Solution Type and Configuration because
+  // the injection target was #calcBtn's section (Generate BoM), which
+  // sits AFTER Notes in the template, so wizards landed below Notes.
+  const notesSection = content.querySelector('#form-section-notes');
   const submitBtn = content.querySelector('#calcBtn');
-  if (submitBtn) {
-    const submitSection = submitBtn.closest('.form-section');
-    if (submitSection && submitSection.parentNode) {
-      const wrapper = document.createElement('div');
-      wrapper.innerHTML = wizardHTML;
-      // Insert each top-level child before the submit section
-      while (wrapper.firstChild) {
-        submitSection.parentNode.insertBefore(wrapper.firstChild, submitSection);
-      }
-      console.log('[L10] wizard markup injected into form template (before submit)');
+  let anchorEl = null;
+  if (notesSection && notesSection.parentNode) {
+    anchorEl = notesSection;
+  } else if (submitBtn) {
+    anchorEl = submitBtn.closest('.form-section');  // legacy fallback
+  }
+  if (anchorEl && anchorEl.parentNode) {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = wizardHTML;
+    while (wrapper.firstChild) {
+      anchorEl.parentNode.insertBefore(wrapper.firstChild, anchorEl);
     }
+    console.log('[L10] wizard markup injected before ' + (anchorEl === notesSection ? 'Notes section' : 'submit section'));
   } else {
     // Fallback — append at the end
     const wrapper = document.createElement('div');
@@ -18134,12 +18177,18 @@ const goBack = Router.goBack;
     // v26.6.2 CRITICAL — Restore _sbCurrentUserId from persisted FormState.
     // Without this, every deal_save / deal_get after a page reload fails 400
     // with "unknown or missing actor_user_id" until the user re-logs.
-    // Root cause: _sbCurrentUserId was only set inside _sbLogin() (L7865) but
-    // not in the FormState rehydrate path (boot reads localStorage, never re-
-    // calls _sbLogin). Now id is persisted on the currentUser object (A1-A3)
-    // and reseated here at boot.
     if (state.user.id) {
       try { _sbCurrentUserId = state.user.id; } catch(_) {}
+    }
+    // v26.6.4 — Trigger _sbLoadUsers() on session rehydrate so the Sales/
+    // Presales dropdowns populate. _sbLoadUsers was only called inside
+    // _sbLogin(), so a page reload while logged in left _sbUsers empty.
+    // Fire-and-forget — _sbLoadUsers re-runs _populateRolesTV internally
+    // (L8528) once the user list lands, which catches the dropdowns
+    // whether the form is already mounted or not.
+    if (typeof _sbLoadUsers === 'function') {
+      try { _sbLoadUsers().catch(function(e){ console.warn('[v26.6.4] _sbLoadUsers at boot failed:', e); }); }
+      catch(_) {}
     }
     showApp();
   } else {
