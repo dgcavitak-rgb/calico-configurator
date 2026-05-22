@@ -687,7 +687,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.0.0-alpha.6.1',
+      version: 'v27.0.0-alpha.6.2',
       constants,
       calico,
       mv,
@@ -1700,8 +1700,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.0.0-alpha.6.1"',
-      () => CATALOG.version === 'v27.0.0-alpha.6.1' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.0.0-alpha.6.2"',
+      () => CATALOG.version === 'v27.0.0-alpha.6.2' || 'got: ' + CATALOG.version);
 
     check('Object.isFrozen(CATALOG)',
       () => Object.isFrozen(CATALOG) === true || 'not frozen');
@@ -3613,25 +3613,36 @@
         }
 
         // Smoke buttons
+        // All three handlers toast a summary so the result survives even if
+        // the smoke causes a view change (e.g. STORE smoke ends in logout
+        // and the auth guard re-routes to #/login, wiping the dev pre).
         if (action === 'run-smoke') {
           const r = window.__smoke();
           renderSmokeOutput(r);
+          const lvl = r.ok ? 'ok' : (r.fail > 0 ? 'err' : 'warn');
+          toast('Sync smoke: ' + r.pass + ' passed, ' + r.fail + ' failed', lvl);
           return;
         }
         if (action === 'run-store-smoke') {
+          if (!confirm('STORE smoke runs a full auth round-trip and will sign you out at the end. Continue?')) return;
           actEl.disabled = true;
           const el = $('dev-smoke-out');
           if (el) { el.hidden = false; el.innerHTML = '<span class="warn-ln">running\u2026</span>'; }
           window.__smokeStore().then(r => {
-            renderSmokeOutput(r);
+            // If still on Profile, render in-pre; otherwise toast only.
+            if ($('dev-smoke-out')) renderSmokeOutput(r);
+            const lvl = r.ok ? 'ok' : (r.fail > 0 ? 'err' : 'warn');
+            toast('STORE smoke: ' + r.pass + ' passed, ' + r.fail + ' failed', lvl);
           }).catch(e => {
-            if (el) el.innerHTML = '<span class="err-ln">harness threw: ' + esc(e && e.message || String(e)) + '</span>';
+            toast('STORE smoke harness threw: ' + esc(e && e.message || String(e)), 'err');
           }).finally(() => { actEl.disabled = false; });
           return;
         }
         if (action === 'run-ui-smoke') {
           const r = window.__smokeUI();
           renderSmokeOutput(r);
+          const lvl = r.ok ? 'ok' : (r.fail > 0 ? 'err' : 'warn');
+          toast('UI smoke: ' + r.pass + ' passed, ' + r.fail + ' failed', lvl);
           return;
         }
       });
@@ -4261,31 +4272,21 @@
         return v !== '' || 'got: empty';
       });
 
-    /* ---- Chrome hidden on login (regression check, alpha.6.1 hotfix) ----
-       The first iPad smoke of alpha.6 caught topbar + bottom-nav leaking
-       onto the login screen because display:flex outranked [hidden]. The
-       global `[hidden] { display: none !important }` rule fixes it; this
-       check makes sure we don't reintroduce it. */
-    check('Login chrome hidden: tricolor + topbar + bottom-nav have display:none when showLogin is active',
+    /* ---- Chrome hidden on login (regression check, alpha.6.1 hotfix;
+       rewritten in alpha.6.2 to be non-destructive — the original called
+       UI.showLogin() mid-smoke which wiped view-root and broke output
+       rendering. This version uses a transient probe element instead. */
+    check('CSS [hidden] rule beats display:flex on chrome elements',
       () => {
-        // Render login synchronously and check computed styles.
-        const stash = location.hash;
-        try {
-          UI.showLogin();
-          const els = ['tricolor','topbar','bottom-nav'];
-          for (const id of els) {
-            const el = document.getElementById(id);
-            if (!el) return 'missing element: ' + id;
-            const cs = getComputedStyle(el);
-            if (cs.display !== 'none') return id + ' computed display: ' + cs.display + ' (expected none)';
-          }
-          return true;
-        } finally {
-          // Restore route — if user was logged in, put them back where they were
-          if (STORE.currentUser()) {
-            location.hash = stash || '#/home';
-          }
-        }
+        const probe = document.createElement('div');
+        probe.className = 'topbar';
+        probe.hidden = true;
+        probe.style.position = 'absolute';
+        probe.style.left = '-99999px';
+        document.body.appendChild(probe);
+        const display = getComputedStyle(probe).display;
+        document.body.removeChild(probe);
+        return display === 'none' || 'got: ' + display + ' (expected none)';
       });
 
     return {
@@ -4305,7 +4306,7 @@
   APP.start();
 
   /* ============================================================
-     End of v27.0.0-alpha.6.1 (Sessions 5 + 6 + chrome-hidden hotfix)
+     End of v27.0.0-alpha.6.2 (Sessions 5 + 6 + smoke output hotfix)
      ============================================================ */
   </script>
 </body>
