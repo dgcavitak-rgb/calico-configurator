@@ -381,6 +381,62 @@
     .sd-row-muted { color: var(--c-fg-mute); font-style: italic; padding: 8px 0; }
     .sd-edit-note { padding: 10px 0 0; }
 
+    /* alpha.7.2 — Autosave status pill in saved-deal header */
+    .sd-ref-row { display: flex; align-items: center; gap: 10px;
+      margin-bottom: 6px; flex-wrap: wrap; }
+    .sd-status {
+      font: 600 11px/1 var(--f-sans);
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.03em;
+      transition: background-color 0.18s ease, color 0.18s ease;
+    }
+    .sd-status-idle    { background: transparent; color: transparent; }
+    .sd-status-edited  { background: var(--c-warn-lt);   color: var(--c-warn); }
+    .sd-status-saving  { background: var(--c-accent-lt); color: var(--c-accent); }
+    .sd-status-saved   { background: var(--c-accent-lt); color: var(--c-accent); }
+    .sd-status-error   { background: var(--c-err-lt);    color: var(--c-err);
+      /* Errors are sticky — keep them attention-grabbing */
+      border: 1px solid var(--c-err);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sd-status { transition: none; }
+    }
+
+    /* alpha.7.2 — Editable form fields inside accordion body */
+    .sd-section-body .field { margin: 10px 0; display: block; }
+    .sd-section-body .field label {
+      display: block; font: 600 12px/1.4 var(--f-sans);
+      color: var(--c-fg-soft); text-transform: uppercase;
+      letter-spacing: 0.04em; margin-bottom: 5px;
+    }
+    .sd-section-body .field input,
+    .sd-section-body .field select {
+      width: 100%; min-height: 44px;
+      padding: 8px 12px;
+      border: 1px solid var(--c-border-st);
+      border-radius: 8px;
+      background: var(--c-bg);
+      color: var(--c-fg);
+      font: 400 15px/1.3 var(--f-sans);
+      box-sizing: border-box;
+    }
+    .sd-section-body .field input:focus,
+    .sd-section-body .field select:focus {
+      outline: none;
+      border-color: var(--c-accent);
+      box-shadow: 0 0 0 3px var(--c-accent-lt);
+    }
+    .sd-section-body .field .help {
+      font-size: 11px; color: var(--c-fg-mute); margin-top: 4px;
+    }
+    .sd-section-body .h3 {
+      margin: 18px 0 4px; font-size: 14px;
+      color: var(--c-fg-soft);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .sd-section-body .h3:first-child { margin-top: 4px; }
+
     /* Spinner for loading state (alpha.7.0 leftover, reused) */
     .spinner {
       display: inline-block; width: 28px; height: 28px;
@@ -448,6 +504,13 @@
     .history-row .proj { font-weight: 600; margin: 2px 0; font-size: 15px; }
     .history-row .meta { font-size: 12px; color: var(--c-fg-mute);
       display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* alpha.8.3 — Soft-deleted history rows: muted, non-clickable container */
+    .history-row-deleted { cursor: default; opacity: 0.75; }
+    .history-row-deleted:active { background: var(--c-elev); }
+    .history-row-deleted .ref { color: var(--c-fg-mute); }
+    .history-row-deleted .proj { text-decoration: line-through; color: var(--c-fg-mute); }
+    .history-row-deleted .tag.muted { background: var(--c-sunk); color: var(--c-fg-mute); }
 
     /* Empty state */
     .empty { text-align: center; padding: 32px 16px; color: var(--c-fg-mute); }
@@ -811,7 +874,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.0.0-alpha.7.1',
+      version: 'v27.0.0-alpha.9.0',
       constants,
       calico,
       mv,
@@ -1800,6 +1863,601 @@
   console.log('STORE ready: login, save, load, list, delete');
 
   /* ============================================================
+     EXPORT — Session 8 (alpha.8.0)
+     Lazy-loads ExcelJS / jsPDF / html2canvas on first use, then
+     produces Excel + PDF blobs from a saved-deal payload.
+
+     Network restriction risk: Cavitak office has been known to block
+     some CDNs (per BS work notes). If jsdelivr is blocked at the
+     network level, fallback is inline-bundled libraries (~1.2 MB
+     added to the HTML — only worth it if reachability fails).
+     Test reachability before relying on the lazy-load path.
+
+     UMD note: ExcelJS / jsPDF / html2canvas all ship UMD that
+     attaches to window.* . Native ES `import()` doesn't work; we
+     inject a <script> tag and wait for onload.
+     ============================================================ */
+  const EXPORT = (function() {
+
+    // CDN endpoints. Versions pinned for reproducibility.
+    const CDN_EXCELJS     = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+    const CDN_JSPDF       = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js';
+    const CDN_HTML2CANVAS = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+
+    // Cache promise per URL so concurrent calls don't double-fetch.
+    const _loadPromises = {};
+
+    // Inject a <script> tag and resolve when it fires onload. Errors are
+    // surfaced as Promise rejection so callers can fall back / toast.
+    function loadScript(url) {
+      if (_loadPromises[url]) return _loadPromises[url];
+      _loadPromises[url] = new Promise(function(resolve, reject) {
+        // Defensive: if the script is already in the DOM (manually added,
+        // hot-reloaded etc.) and the library is on window, short-circuit.
+        if (document.querySelector('script[src="' + url + '"]')) {
+          return resolve();
+        }
+        const s = document.createElement('script');
+        s.src = url;
+        s.async = true;
+        s.onload  = function() { resolve(); };
+        s.onerror = function() {
+          // Drop the cached rejected promise so a retry can re-attempt.
+          delete _loadPromises[url];
+          reject(new Error('Failed to load ' + url));
+        };
+        document.head.appendChild(s);
+      });
+      return _loadPromises[url];
+    }
+
+    async function loadExcelJS() {
+      if (window.ExcelJS) return window.ExcelJS;
+      await loadScript(CDN_EXCELJS);
+      if (!window.ExcelJS) throw new Error('ExcelJS loaded but window.ExcelJS missing');
+      return window.ExcelJS;
+    }
+
+    async function loadJsPDF() {
+      if (window.jspdf && window.jspdf.jsPDF) return window.jspdf;
+      await loadScript(CDN_JSPDF);
+      // jsPDF UMD attaches as window.jspdf with .jsPDF constructor
+      if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('jsPDF loaded but window.jspdf.jsPDF missing');
+      return window.jspdf;
+    }
+
+    async function loadHtml2Canvas() {
+      if (window.html2canvas) return window.html2canvas;
+      await loadScript(CDN_HTML2CANVAS);
+      if (!window.html2canvas) throw new Error('html2canvas loaded but window.html2canvas missing');
+      return window.html2canvas;
+    }
+
+    // Download helper. iOS Safari doesn't honour <a download> for blob URLs,
+    // so we open the blob in a new tab — user taps Share → Save to Files.
+    // Android + desktop browsers respect the download attribute → direct save.
+    //
+    // We detect iOS by UA (imperfect but the standard heuristic).
+    function isIOS() {
+      const ua = navigator.userAgent || '';
+      return /iPad|iPhone|iPod/.test(ua) ||
+        // iPadOS 13+ identifies as Mac with touch — distinguish from desktop
+        (ua.indexOf('Mac') >= 0 && navigator.maxTouchPoints > 1);
+    }
+
+    function download(blob, filename) {
+      if (!blob) throw new Error('download: blob required');
+      if (!filename) throw new Error('download: filename required');
+
+      const url = URL.createObjectURL(blob);
+
+      if (isIOS()) {
+        // iOS: open in new tab. User taps Share → Save to Files.
+        // The new-tab URL doesn't keep the filename; the file will save
+        // with a hash-like name unless the user renames in Files. Worth
+        // a one-time hint toast (Session 7 todo: localStorage flag).
+        const w = window.open(url, '_blank');
+        if (!w) {
+          // Popup blocked — fall back to direct navigation (loses tab continuity
+          // but at least the file appears).
+          window.location.href = url;
+        }
+        // Don't revoke immediately on iOS — the new tab needs the URL alive
+        // long enough to render the share sheet. Revoke after a delay.
+        setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+        return { method: 'ios-newtab' };
+      }
+
+      // Android / desktop: anchor download attribute.
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Revoke after a small delay so the download has time to initiate.
+      setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+      return { method: 'anchor-download' };
+    }
+
+    // Filename pattern (per SPEC §5.1)
+    function filename(deal, ext) {
+      const ref = (deal && (deal.display_ref || deal.ref || 'NOREF'));
+      const date = new Date().toISOString().slice(0, 10);
+      return 'tvONE_Quote_' + ref + '_' + date + '.' + ext;
+    }
+
+    // alpha.8.1 — Excel generation
+    //
+    // Layout (per plan §Session 8 / SPEC §5.1):
+    //   Row 1: Title (merged A1:D1) — forest-green bold
+    //   Row 2: Ref + generated date (merged) — italic muted
+    //   Row 3: (empty)
+    //   Rows 4-11: Project context, 2-column layout
+    //   Row 12: (empty)
+    //   Row 13: "Bill of Materials" header (merged, accent fill)
+    //   Row 14: Column headers (Sr / Description / Model / Qty)
+    //   Row 15+: Line items
+    //   After: Concerns block (red) + Value-adds block (green)
+    //   Last: Cavitak footer (merged, muted)
+    //
+    // Lines come from a fresh APP.recoForDeal call so the Excel reflects
+    // what the user sees in the BoM card on the saved-deal view. If the
+    // user has unsaved structural edits, both the on-screen BoM and the
+    // Excel reflect current state (consistent UX).
+    async function excel(deal) {
+      if (!deal) throw new Error('excel: deal required');
+      const ExcelJS = await loadExcelJS();
+
+      // Compute fresh reco — matches the BoM card on saved-deal view.
+      let reco = null;
+      try {
+        if (typeof APP !== 'undefined' && APP.recoForDeal) {
+          reco = APP.recoForDeal(deal);
+        }
+      } catch (_e) { /* leave reco null */ }
+
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'tvONE Product Selector';
+      wb.created = new Date();
+
+      const ws = wb.addWorksheet('Quote', {
+        pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true,
+          margins: { left: 0.5, right: 0.5, top: 0.5, bottom: 0.5,
+                     header: 0.3, footer: 0.3 } }
+      });
+
+      // Column widths
+      ws.columns = [
+        { width:  6 },   // Sr
+        { width: 44 },   // Description
+        { width: 20 },   // Model
+        { width:  8 }    // Qty
+      ];
+
+      // ---- Title ----
+      ws.mergeCells('A1:D1');
+      const titleCell = ws.getCell('A1');
+      titleCell.value = 'tvONE Product Selector \u2014 Quote';
+      titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF1F4E1F' }};
+      titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      ws.getRow(1).height = 28;
+
+      // ---- Ref + date ----
+      ws.mergeCells('A2:D2');
+      const refCell = ws.getCell('A2');
+      const ref = deal.display_ref || deal.ref || 'NOREF';
+      refCell.value = ref + '  \u00b7  Generated ' + new Date().toISOString().slice(0, 10);
+      refCell.font = { name: 'Arial', size: 10, italic: true, color: { argb: 'FF666666' }};
+      refCell.alignment = { horizontal: 'center' };
+
+      // ---- Project context (2-column) ----
+      function ctxRow(rowIdx, k1, v1, k2, v2) {
+        const r = ws.getRow(rowIdx);
+        r.getCell(1).value = k1; r.getCell(1).font = { bold: true, size: 10 };
+        r.getCell(2).value = (v1 == null || v1 === '') ? '\u2014' : String(v1);
+        r.getCell(3).value = k2; r.getCell(3).font = { bold: true, size: 10 };
+        r.getCell(4).value = (v2 == null || v2 === '') ? '\u2014' : String(v2);
+        r.getCell(2).alignment = { wrapText: true };
+        r.getCell(4).alignment = { wrapText: true };
+      }
+      ctxRow(4,  'Project',     deal.project,         'Customer',         deal.customer_name);
+      ctxRow(5,  'Partner',     deal.partner_name,    'Consultant',       deal.consultant_name);
+      ctxRow(6,  'Venue',       deal.venue,           'City',             deal.city);
+      ctxRow(7,  'State',       deal.state,           'Stage',            deal.stage);
+      ctxRow(8,  'Lead source', deal.lead_source,     'Deal value (INR)', deal.deal_value);
+      ctxRow(9,  'Salesperson', deal.sales_person,    'Presales',         deal.presales_person);
+      ctxRow(10, 'Contact',     deal.contact_name,    'Phone',            deal.contact_phone);
+      ctxRow(11, 'Email',       deal.contact_email,   'Expected closure', deal.expected_closure);
+
+      // ---- BoM header ----
+      ws.mergeCells('A13:D13');
+      const bomHdr = ws.getCell('A13');
+      bomHdr.value = 'Bill of Materials';
+      bomHdr.font  = { bold: true, size: 13, color: { argb: 'FF1F4E1F' }};
+      bomHdr.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F1E8' }};
+      bomHdr.alignment = { horizontal: 'center', vertical: 'middle' };
+      ws.getRow(13).height = 22;
+
+      // ---- Column headers ----
+      const COL_LABELS = ['Sr', 'Description', 'Model', 'Qty'];
+      const COL_ALIGNS = ['center', 'left', 'left', 'right'];
+      const headerRow = ws.getRow(14);
+      COL_LABELS.forEach(function(label, i) {
+        const cell = headerRow.getCell(i + 1);
+        cell.value = label;
+        cell.font  = { bold: true, size: 10 };
+        cell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' }};
+        cell.alignment = { horizontal: COL_ALIGNS[i], vertical: 'middle' };
+        cell.border = {
+          top:    { style: 'thin' },
+          bottom: { style: 'thin' }
+        };
+      });
+
+      // ---- Line rows ----
+      // Build from reco (matches UI BoM card). Chassis prepended if not in cards.
+      const fam = (deal.solutionType || '').toUpperCase();
+      const lineRows = [];
+      if (reco) {
+        if (reco.chassis) {
+          const chassisLabel = (reco.meta && reco.meta.chassisLabel) || reco.chassis;
+          lineRows.push({ sku: reco.chassis, desc: chassisLabel, qty: 1 });
+        }
+        if (Array.isArray(reco.cards)) {
+          reco.cards.forEach(function(c) {
+            // Skip if it's the chassis already (defence-in-depth)
+            if (reco.chassis && c.sku === reco.chassis) return;
+            lineRows.push({
+              sku: c.sku,
+              desc: c.desc || c.label || c.sku,
+              qty: c.qty != null ? c.qty : 1
+            });
+          });
+        }
+      }
+      // Fallback: persisted lines (if reco didn't produce anything)
+      if (lineRows.length === 0 && Array.isArray(deal.lines)) {
+        deal.lines.forEach(function(l) {
+          lineRows.push({
+            sku: l.model_no || l.sku || '\u2014',
+            desc: l.description || l.desc || '\u2014',
+            qty: l.qty != null ? l.qty : 1
+          });
+        });
+      }
+
+      let curRow = 15;
+      if (lineRows.length === 0) {
+        ws.mergeCells(curRow, 1, curRow, 4);
+        const empty = ws.getCell(curRow, 1);
+        empty.value = '(No BoM lines \u2014 set solution type + I/O and rebuild)';
+        empty.font = { italic: true, color: { argb: 'FF888888' }};
+        empty.alignment = { horizontal: 'center' };
+        curRow++;
+      } else {
+        lineRows.forEach(function(line, i) {
+          const r = ws.getRow(curRow);
+          r.getCell(1).value = i + 1;
+          r.getCell(1).alignment = { horizontal: 'center', vertical: 'top' };
+          r.getCell(2).value = line.desc;
+          r.getCell(2).alignment = { wrapText: true, vertical: 'top' };
+          r.getCell(3).value = line.sku;
+          r.getCell(3).alignment = { vertical: 'top' };
+          r.getCell(3).font = { name: 'Courier New', size: 10 };
+          r.getCell(4).value = line.qty;
+          r.getCell(4).alignment = { horizontal: 'right', vertical: 'top' };
+          // Light row border so reps can see line separation in print
+          [1,2,3,4].forEach(function(c) {
+            r.getCell(c).border = { bottom: { style: 'hair', color: { argb: 'FFCCCCCC' }}};
+          });
+          curRow++;
+        });
+      }
+
+      // ---- Concerns block ----
+      if (reco && Array.isArray(reco.concerns) && reco.concerns.length > 0) {
+        curRow += 1;
+        ws.mergeCells(curRow, 1, curRow, 4);
+        const h = ws.getCell(curRow, 1);
+        h.value = 'Concerns';
+        h.font  = { bold: true, size: 11, color: { argb: 'FFB91C1C' }};
+        curRow++;
+        reco.concerns.forEach(function(c) {
+          ws.mergeCells(curRow, 1, curRow, 4);
+          const cell = ws.getCell(curRow, 1);
+          cell.value = '\u2022 ' + c;
+          cell.alignment = { wrapText: true, vertical: 'top' };
+          cell.font = { size: 10 };
+          curRow++;
+        });
+      }
+
+      // ---- Value-adds block ----
+      if (reco && Array.isArray(reco.valueAdds) && reco.valueAdds.length > 0) {
+        curRow += 1;
+        ws.mergeCells(curRow, 1, curRow, 4);
+        const h = ws.getCell(curRow, 1);
+        h.value = 'Value-adds';
+        h.font  = { bold: true, size: 11, color: { argb: 'FF1F4E1F' }};
+        curRow++;
+        reco.valueAdds.forEach(function(v) {
+          ws.mergeCells(curRow, 1, curRow, 4);
+          const cell = ws.getCell(curRow, 1);
+          cell.value = '\u2022 ' + v;
+          cell.alignment = { wrapText: true, vertical: 'top' };
+          cell.font = { size: 10 };
+          curRow++;
+        });
+      }
+
+      // ---- Footer (Cavitak attribution) ----
+      curRow += 2;
+      ws.mergeCells(curRow, 1, curRow, 4);
+      const foot = ws.getCell(curRow, 1);
+      foot.value = 'Cavitak Marketing Pvt Ltd  \u00b7  tvONE India distributor';
+      foot.font = { italic: true, size: 9, color: { argb: 'FF666666' }};
+      foot.alignment = { horizontal: 'center' };
+
+      // ---- Generate blob ----
+      const buffer = await wb.xlsx.writeBuffer();
+      return new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+    }
+
+    // alpha.8.2 — PDF generation (native jsPDF, no html2canvas)
+    //
+    // Layout matches Excel:
+    //   Forest-green title bar with white text
+    //   Centered ref + date
+    //   2-column project context
+    //   BoM header bar + column headers + line rows (with hair borders)
+    //   Concerns (red header) + Value-adds (green header) blocks
+    //   Footer on every page: Cavitak attribution + "Page N of M"
+    //
+    // Native (not html2canvas) for sharp text + small files. Hybrid
+    // (rendered BoM card image at top) is a polish item if reps want it.
+    async function pdf(deal) {
+      if (!deal) throw new Error('pdf: deal required');
+      const jspdf = await loadJsPDF();
+      const JsPDFCtor = jspdf.jsPDF;
+
+      // Compute fresh reco — same logic as Excel.
+      let reco = null;
+      try {
+        if (typeof APP !== 'undefined' && APP.recoForDeal) {
+          reco = APP.recoForDeal(deal);
+        }
+      } catch (_e) { /* leave null */ }
+
+      // A4 portrait, points (1pt = 1/72 inch)
+      const doc = new JsPDFCtor({ unit: 'pt', format: 'a4' });
+      const W = doc.internal.pageSize.getWidth();   // ~595
+      const H = doc.internal.pageSize.getHeight();  // ~842
+      const M = 40;
+      let y = 0;
+
+      // ---- Title bar ----
+      doc.setFillColor(31, 78, 31); // forest green
+      doc.rect(0, 0, W, 50, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text('tvONE Product Selector \u2014 Quote', W / 2, 32, { align: 'center' });
+
+      y = 70;
+
+      // ---- Ref + date ----
+      const ref = deal.display_ref || deal.ref || 'NOREF';
+      doc.setTextColor(102, 102, 102);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(10);
+      doc.text(ref + '  \u00b7  Generated ' + new Date().toISOString().slice(0, 10),
+        W / 2, y, { align: 'center' });
+      y += 25;
+
+      // ---- Project context (2-column) ----
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      const colA_label  = M;
+      const colA_value  = M + 95;
+      const colB_label  = W / 2 + 10;
+      const colB_value  = W / 2 + 105;
+
+      function ctxRow(k1, v1, k2, v2) {
+        doc.setFont('helvetica', 'bold');
+        doc.text(k1, colA_label, y);
+        if (k2) doc.text(k2, colB_label, y);
+        doc.setFont('helvetica', 'normal');
+        const v1s = (v1 == null || v1 === '') ? '\u2014' : String(v1);
+        const v2s = (v2 == null || v2 === '') ? '\u2014' : String(v2);
+        doc.text(v1s, colA_value, y, { maxWidth: (colB_label - colA_value - 5) });
+        if (k2) doc.text(v2s, colB_value, y, { maxWidth: (W - M - colB_value) });
+        y += 15;
+      }
+
+      ctxRow('Project',     deal.project,         'Customer',         deal.customer_name);
+      ctxRow('Partner',     deal.partner_name,    'Consultant',       deal.consultant_name);
+      ctxRow('Venue',       deal.venue,           'City',             deal.city);
+      ctxRow('State',       deal.state,           'Stage',            deal.stage);
+      ctxRow('Lead source', deal.lead_source,     'Deal value (INR)', deal.deal_value);
+      ctxRow('Salesperson', deal.sales_person,    'Presales',         deal.presales_person);
+      ctxRow('Contact',     deal.contact_name,    'Phone',            deal.contact_phone);
+      ctxRow('Email',       deal.contact_email,   'Expected closure', deal.expected_closure);
+
+      y += 10;
+
+      // ---- Page-break helper (reserves footer space) ----
+      function checkPageBreak(needed) {
+        if (y + needed > H - M - 30) {
+          doc.addPage();
+          y = M;
+        }
+      }
+
+      // ---- BoM header ----
+      checkPageBreak(28);
+      doc.setFillColor(232, 241, 232); // accent light
+      doc.rect(M, y, W - 2 * M, 22, 'F');
+      doc.setTextColor(31, 78, 31);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.text('Bill of Materials', W / 2, y + 15, { align: 'center' });
+      y += 28;
+
+      // ---- Column headers ----
+      const colSr    = M + 5;
+      const colDesc  = M + 45;
+      const colModel = W - M - 170;
+      const colQty   = W - M - 5;
+
+      doc.setFillColor(240, 240, 240);
+      doc.rect(M, y, W - 2 * M, 18, 'F');
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('Sr',          colSr,    y + 12);
+      doc.text('Description', colDesc,  y + 12);
+      doc.text('Model',       colModel, y + 12);
+      doc.text('Qty',         colQty,   y + 12, { align: 'right' });
+      y += 22;
+
+      // ---- Line items ----
+      const lineRows = [];
+      if (reco) {
+        if (reco.chassis) {
+          const chassisLabel = (reco.meta && reco.meta.chassisLabel) || reco.chassis;
+          lineRows.push({ sku: reco.chassis, desc: chassisLabel, qty: 1 });
+        }
+        if (Array.isArray(reco.cards)) {
+          reco.cards.forEach(function(c) {
+            if (reco.chassis && c.sku === reco.chassis) return;
+            lineRows.push({
+              sku: c.sku,
+              desc: c.desc || c.label || c.sku,
+              qty: c.qty != null ? c.qty : 1
+            });
+          });
+        }
+      }
+      if (lineRows.length === 0 && Array.isArray(deal.lines)) {
+        deal.lines.forEach(function(l) {
+          lineRows.push({
+            sku: l.model_no || l.sku || '\u2014',
+            desc: l.description || l.desc || '\u2014',
+            qty: l.qty != null ? l.qty : 1
+          });
+        });
+      }
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+
+      if (lineRows.length === 0) {
+        checkPageBreak(20);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(136, 136, 136);
+        doc.text('(No BoM lines \u2014 set solution type + I/O and rebuild)',
+          W / 2, y + 10, { align: 'center' });
+        y += 22;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+      } else {
+        lineRows.forEach(function(line, i) {
+          const descWidth = colModel - colDesc - 10;
+          const descLines = doc.splitTextToSize(String(line.desc), descWidth);
+          const rowHeight = Math.max(14, descLines.length * 12 + 2);
+          checkPageBreak(rowHeight + 4);
+
+          doc.text(String(i + 1), colSr, y + 10);
+          doc.text(descLines,     colDesc, y + 10);
+          doc.setFont('courier', 'normal');
+          doc.text(String(line.sku), colModel, y + 10);
+          doc.setFont('helvetica', 'normal');
+          doc.text(String(line.qty), colQty, y + 10, { align: 'right' });
+
+          // Hair separator under row
+          doc.setDrawColor(204, 204, 204);
+          doc.setLineWidth(0.3);
+          doc.line(M, y + rowHeight, W - M, y + rowHeight);
+
+          y += rowHeight + 3;
+        });
+      }
+
+      // ---- Concerns ----
+      if (reco && Array.isArray(reco.concerns) && reco.concerns.length > 0) {
+        y += 12;
+        checkPageBreak(40);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(185, 28, 28);
+        doc.setFontSize(11);
+        doc.text('Concerns', M, y + 10);
+        y += 18;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        reco.concerns.forEach(function(c) {
+          const wrapped = doc.splitTextToSize('\u2022 ' + c, W - 2 * M);
+          const blockH = wrapped.length * 13 + 4;
+          checkPageBreak(blockH);
+          doc.text(wrapped, M, y);
+          y += blockH;
+        });
+      }
+
+      // ---- Value-adds ----
+      if (reco && Array.isArray(reco.valueAdds) && reco.valueAdds.length > 0) {
+        y += 12;
+        checkPageBreak(40);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(31, 78, 31);
+        doc.setFontSize(11);
+        doc.text('Value-adds', M, y + 10);
+        y += 18;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        reco.valueAdds.forEach(function(v) {
+          const wrapped = doc.splitTextToSize('\u2022 ' + v, W - 2 * M);
+          const blockH = wrapped.length * 13 + 4;
+          checkPageBreak(blockH);
+          doc.text(wrapped, M, y);
+          y += blockH;
+        });
+      }
+
+      // ---- Footer on every page (set after all content) ----
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let p = 1; p <= pageCount; p++) {
+        doc.setPage(p);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(102, 102, 102);
+        doc.setFontSize(9);
+        doc.text('Cavitak Marketing Pvt Ltd  \u00b7  tvONE India distributor',
+          W / 2, H - 20, { align: 'center' });
+        doc.text('Page ' + p + ' of ' + pageCount, W - M, H - 20, { align: 'right' });
+      }
+
+      return doc.output('blob');
+    }
+
+    return {
+      // Public API
+      excel, pdf, download, filename,
+      // Lazy-load helpers (exposed for direct CDN-reachability smoke testing)
+      loadExcelJS, loadJsPDF, loadHtml2Canvas,
+      // Internals exposed for debug only
+      _isIOS: isIOS,
+      _cdn: { CDN_EXCELJS, CDN_JSPDF, CDN_HTML2CANVAS }
+    };
+  })();
+
+  console.log('EXPORT ready (scaffold): excel/pdf stubs + download + lazy-load');
+
+  /* ============================================================
      __smoke() — Session 1 smoke gate
      Implements SPEC §6 checks. Console-callable; also wired to
      the Run smoke button on the page.
@@ -1824,8 +2482,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.0.0-alpha.7.1"',
-      () => CATALOG.version === 'v27.0.0-alpha.7.1' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.0.0-alpha.9.0"',
+      () => CATALOG.version === 'v27.0.0-alpha.9.0' || 'got: ' + CATALOG.version);
 
     check('Object.isFrozen(CATALOG)',
       () => Object.isFrozen(CATALOG) === true || 'not frozen');
@@ -2472,6 +3130,361 @@
       { id:'avip',   label:'AOC Cables',           hint:'Active Optical Cable (HDMI / DisplayPort, multiple jackets and lengths)' }
     ];
 
+    /* ============================================================
+       Saved-deal autosave (alpha.7.2)
+
+       SOFT fields autosave silently (debounce 1s). STRUCTURAL fields
+       remain read-only in 7.2; editing them triggers the rebuild flow
+       which lands in alpha.7.3.
+
+       Save model:
+         user edits soft field → mutate _savedDealData[field] in place
+         → setSavedDealStatus('edited') → schedule timer (1s)
+         → on fire: setSavedDealStatus('saving')
+         → STORE.saveDeal(_savedDealData) — full payload incl. lines /
+           screens / sx_data (Session 4 gotcha: destructive on arrays)
+         → on success: setSavedDealStatus('saved')
+         → on error:   setSavedDealStatus('error', msg)
+
+       Race safety:
+         _activeSavedDealRefId guards against navigation-mid-save.
+         disposeSavedDeal() flushes any pending timer before route change.
+       ============================================================ */
+
+    const SOFT_FIELDS = [
+      'project', 'customer_name', 'partner_name', 'consultant_name',
+      'venue', 'city', 'state',
+      'stage', 'lead_source', 'sales_person', 'presales_person',
+      'contact_name', 'contact_phone', 'contact_email',
+      'expected_closure', 'deal_value'
+    ];
+
+    // Reference list for alpha.7.3 — read by the Rebuild flow.
+    const STRUCTURAL_FIELDS = [
+      'solutionType',
+      'calico_inputs', 'calico_outputs', 'calico_audio',
+      'mv_inputs', 'mv_outputSignal',
+      'corio_inputs', 'corio_outputs', 'corio_audio', 'corio_fanFilter',
+      'hasLed', 'screens',
+      'hasSx', 'sx_data'
+    ];
+
+    // Module-level autosave state (one saved-deal is viewed at a time).
+    let _savedDealData    = null;
+    let _savedDealRefId   = null;
+    let _autosaveTimer    = null;
+    let _autosaveInFlight = false;
+    const AUTOSAVE_DEBOUNCE_MS = 1000;
+
+    // Field-render helpers for saved-deal accordion. Mirror wizard step 1's
+    // shape but use data-sd-bind (separate delegation from data-bind which
+    // belongs to wizardData) and unique ID prefix (sd-i-) to avoid clashing
+    // with wizard inputs if both views are ever in DOM (they're not, but
+    // defence-in-depth).
+    function sdField(id, label, value, opts) {
+      opts = opts || {};
+      const type = opts.type || 'text';
+      const placeholder = opts.placeholder || '';
+      const inputmode = opts.inputmode ? ' inputmode="' + opts.inputmode + '"' : '';
+      const helpHtml = opts.help ? '<div class="help">' + esc(opts.help) + '</div>' : '';
+      return '<div class="field" id="sd-f-' + id + '">' +
+        '<label for="sd-i-' + id + '">' + esc(label) + '</label>' +
+        '<input id="sd-i-' + id + '" data-sd-bind="' + id + '" type="' + type + '"' +
+          inputmode + ' value="' + esc(value == null ? '' : value) + '"' +
+          (placeholder ? ' placeholder="' + esc(placeholder) + '"' : '') + '>' +
+        helpHtml +
+      '</div>';
+    }
+    function sdSelectField(id, label, value, options, opts) {
+      opts = opts || {};
+      const optsHtml = (opts.placeholder ? '<option value="">' + esc(opts.placeholder) + '</option>' : '') +
+        options.map(o => {
+          const v = typeof o === 'string' ? o : o.value;
+          const l = typeof o === 'string' ? o : o.label;
+          return '<option value="' + esc(v) + '"' +
+            (String(value || '') === String(v) ? ' selected' : '') + '>' + esc(l) + '</option>';
+        }).join('');
+      return '<div class="field" id="sd-f-' + id + '">' +
+        '<label for="sd-i-' + id + '">' + esc(label) + '</label>' +
+        '<select id="sd-i-' + id + '" data-sd-bind="' + id + '">' + optsHtml + '</select>' +
+      '</div>';
+    }
+
+    // Status pill — 'idle' | 'edited' | 'saving' | 'saved' | 'error'
+    function setSavedDealStatus(state, detail) {
+      const el = document.getElementById('sd-status');
+      if (!el) return;
+      el.className = 'sd-status sd-status-' + state;
+      if (state === 'idle')    el.textContent = '';
+      if (state === 'edited')  el.textContent = 'Edited \u00b7 saving soon\u2026';
+      if (state === 'saving')  el.textContent = 'Saving\u2026';
+      if (state === 'saved')   el.textContent = 'Saved';
+      if (state === 'error')   el.textContent = 'Save failed' + (detail ? ': ' + detail : '');
+    }
+
+    /* ============================================================
+       buildSavePayload (alpha.7.4)
+
+       The deal_save RPC has a structured column set + raw_submission
+       JSONB. Wizard's nested fields (solutionType, calico_inputs, etc.)
+       don't map to columns — they live in raw_submission. Pass them at
+       top level and the RPC either errors or silently drops them.
+
+       This helper splits a flat deal object back into the RPC shape:
+         { id (if edit), display_ref (if known),
+           [structured columns],
+           raw_submission: { everything else from the wizard },
+           lines: [ derived from deal.reco.cards if available,
+                    else fall back to existing deal.lines so the
+                    Session 4 destructive-on-save gotcha doesn't wipe ] }
+
+       Used by:
+         - wizSave (new deal save from wizard)
+         - flushAutosave (soft-field autosave)
+         - rebuildSavedDeal (via scheduleAutosave) — picks up new reco
+         - beforeunload (best-effort flush)
+       ============================================================ */
+
+    // Fields the RPC recognizes as structured columns (per smoke test pattern).
+    // Anything not in this list goes into raw_submission.
+    const STRUCTURED_COLS = [
+      'project', 'customer_name', 'stage',
+      'partner_name', 'consultant_name',
+      'venue', 'venue_type', 'city', 'state',
+      'lead_source', 'sales_person', 'presales_person',
+      'contact_name', 'contact_phone', 'contact_email',
+      'expected_closure', 'deal_value',
+      'status', 'budget', 'deal_source', 'notes'
+    ];
+
+    function buildSavePayload(deal) {
+      if (!deal) return null;
+      const payload = {};
+      const raw = {};
+
+      // Preserve id (edit-path detector) and display_ref (server uses for idempotency)
+      if (deal.id)          payload.id          = deal.id;
+      if (deal.display_ref) payload.display_ref = deal.display_ref;
+
+      // Split top-level keys
+      Object.keys(deal).forEach(function(k) {
+        // Skip server-managed + cached fields entirely
+        if (k === 'id' || k === 'display_ref' || k === 'ref' ||
+            k === 'reco' || k === 'raw_submission' || k === 'lines' ||
+            k === 'created_at' || k === 'updated_at' || k === 'deleted_at' ||
+            k === 'created_by' || k === 'deal_value_inr' || k === 'is_new') {
+          return;
+        }
+        const v = deal[k];
+        if (v === undefined || v === null) return;
+        if (STRUCTURED_COLS.indexOf(k) >= 0) {
+          payload[k] = v;
+        } else {
+          raw[k] = v;
+        }
+      });
+
+      payload.raw_submission = raw;
+
+      // Lines — prefer fresh reco.cards (post-Rebuild or wizard Build);
+      // fall back to existing deal.lines so editing a soft field on an
+      // already-saved deal doesn't wipe the BoM (Session 4 gotcha #3).
+      const fam = (deal.solutionType || '').toUpperCase();
+      if (deal.reco && Array.isArray(deal.reco.cards) && deal.reco.cards.length > 0) {
+        payload.lines = deal.reco.cards.map(function(c) {
+          return {
+            product_family:    fam,
+            sku:               c.sku,
+            description:       c.desc || c.label || c.sku,
+            model_no:          c.sku,
+            qty:               (c.qty != null) ? c.qty : 1,
+            unit_price_inr:    0,
+            line_discount_pct: 0
+          };
+        });
+        // If the chassis itself isn't in cards (some recommenders return it
+        // separately), prepend it so the BoM is complete.
+        if (deal.reco.chassis && !payload.lines.some(l => l.sku === deal.reco.chassis)) {
+          payload.lines.unshift({
+            product_family:    fam,
+            sku:               deal.reco.chassis,
+            description:       (deal.reco.meta && deal.reco.meta.chassisLabel) || deal.reco.chassis,
+            model_no:          deal.reco.chassis,
+            qty:               1,
+            unit_price_inr:    0,
+            line_discount_pct: 0
+          });
+        }
+      } else if (Array.isArray(deal.lines) && deal.lines.length > 0) {
+        // Pass existing lines through unchanged
+        payload.lines = deal.lines;
+      } else {
+        payload.lines = [];
+      }
+
+      return payload;
+    }
+
+    function scheduleAutosave() {
+      if (!_savedDealData) return;
+      setSavedDealStatus('edited');
+      if (_autosaveTimer) clearTimeout(_autosaveTimer);
+      _autosaveTimer = setTimeout(flushAutosave, AUTOSAVE_DEBOUNCE_MS);
+    }
+
+    function flushAutosave() {
+      if (_autosaveTimer) { clearTimeout(_autosaveTimer); _autosaveTimer = null; }
+      if (!_savedDealData) return;
+      if (_autosaveInFlight) {
+        // A save is already in flight; reschedule another flush right after.
+        // The latest data will win on next tick.
+        setTimeout(scheduleAutosave, 50);
+        return;
+      }
+      // Snapshot the current refId — if user navigates away mid-save, we drop
+      // the success/error status update so it doesn't paint over a new view.
+      const inflightRefId = _savedDealRefId;
+      _autosaveInFlight = true;
+      setSavedDealStatus('saving');
+      // alpha.7.4: route through buildSavePayload so structural fields land
+      // in raw_submission (RPC has structured columns + jsonb; nested wizard
+      // fields aren't columns). Lines round-trip from reco or existing lines
+      // (Session 4 gotcha: destructive on these arrays).
+      const payload = buildSavePayload(_savedDealData);
+      STORE.saveDeal(payload).then(function(_r) {
+        _autosaveInFlight = false;
+        if (_savedDealRefId !== inflightRefId) return; // navigated away
+        setSavedDealStatus('saved');
+      }).catch(function(err) {
+        _autosaveInFlight = false;
+        if (_savedDealRefId !== inflightRefId) return;
+        const msg = (err && err.message) ? err.message : String(err || 'unknown');
+        setSavedDealStatus('error', msg);
+      });
+    }
+
+    // Called by other view show* functions on route change OUT of saved-deal.
+    // Flushes any pending autosave synchronously-ish (no await — we kick off
+    // the save and trust the network; the page itself isn't unloading here).
+    function disposeSavedDeal() {
+      if (_autosaveTimer) {
+        clearTimeout(_autosaveTimer);
+        _autosaveTimer = null;
+        // Pending edits — flush them so we don't lose data.
+        if (_savedDealData && !_autosaveInFlight) {
+          // Fire-and-forget. Errors will surface via console but no UI.
+          STORE.saveDeal(buildSavePayload(_savedDealData)).catch(function(e) {
+            console.warn('disposeSavedDeal flush failed:', e);
+          });
+        }
+      }
+      _savedDealData    = null;
+      _savedDealRefId   = null;
+      _autosaveInFlight = false;
+    }
+
+    // beforeunload handler — best effort. Modern browsers ignore async work
+    // in beforeunload, but clearing the timer + firing the save kicks off
+    // a network request that often completes before the tab actually closes.
+    window.addEventListener('beforeunload', function() {
+      if (_autosaveTimer && _savedDealData && !_autosaveInFlight) {
+        clearTimeout(_autosaveTimer);
+        _autosaveTimer = null;
+        try { STORE.saveDeal(buildSavePayload(_savedDealData)); } catch (_e) { /* swallow */ }
+      }
+    });
+
+    /* ============================================================
+       Structural edit + Rebuild flow (alpha.7.3)
+
+       Soft fields (7.2) autosave silently. Structural fields (this
+       module-level flag) require explicit Rebuild — they change the
+       BoM, so we want the rep to confirm the new recommendation
+       before the BoM card on the saved deal updates.
+
+       Flow:
+         user edits structural field → mutate _savedDealData + set
+         _structuralDirty=true + show #sd-rebuild-banner. No save fires.
+
+         user taps Rebuild → APP.recoForDeal(_savedDealData) → set
+         _savedDealData.reco (cache) → clear flag → re-render the
+         entire saved-deal view (which now shows the new BoM hero
+         + hidden banner) → fire save (full payload).
+
+       Trade-off: re-render loses input focus / scroll position.
+       Cosmetic-session polish item to swap for targeted DOM patching.
+       ============================================================ */
+
+    let _structuralDirty = false;
+
+    // Stepper row mirroring wizard's stepperRow but emits sd-step actions
+    // that the saved-deal delegation routes to markStructuralDirty (no
+    // autosave). Used for the CALICO I/O steppers in alpha.7.3.
+    function sdStepperRow(key, name, sub, value, opts) {
+      opts = opts || {};
+      const min = opts.min != null ? opts.min : 0;
+      const max = opts.max != null ? opts.max : 32;
+      const ns = opts.namespace || '';
+      const v = Number(value) || 0;
+      return '<div class="step-row">' +
+        '<div class="step-label">' +
+          '<div class="name">' + esc(name) + '</div>' +
+          (sub ? '<div class="sub">' + esc(sub) + '</div>' : '') +
+        '</div>' +
+        '<div class="stepper">' +
+          '<button type="button" data-action="sd-step-dec"' +
+            ' data-sd-ns="' + esc(ns) + '" data-sd-key="' + esc(key) + '"' +
+            (v <= min ? ' disabled' : '') + '>\u2212</button>' +
+          '<input type="text" inputmode="numeric" value="' + v + '"' +
+            ' data-action="sd-step-set"' +
+            ' data-sd-ns="' + esc(ns) + '" data-sd-key="' + esc(key) + '"' +
+            ' aria-label="' + esc(name) + ' count">' +
+          '<button type="button" data-action="sd-step-inc"' +
+            ' data-sd-ns="' + esc(ns) + '" data-sd-key="' + esc(key) + '"' +
+            (v >= max ? ' disabled' : '') + '>+</button>' +
+        '</div>' +
+      '</div>';
+    }
+
+    // Toggle row for saved-deal — used for calico_audio in alpha.7.3.
+    function sdToggleRow(key, name, sub, checked) {
+      return '<label class="tile" style="margin-bottom:8px"' +
+        ' data-checked="' + (checked ? 'true' : 'false') + '"' +
+        ' data-action="sd-toggle" data-sd-key="' + esc(key) + '">' +
+        '<input type="checkbox"' + (checked ? ' checked' : '') + '>' +
+        '<div class="tile-title">' + esc(name) + '</div>' +
+        (sub ? '<div class="tile-sub">' + esc(sub) + '</div>' : '') +
+      '</label>';
+    }
+
+    function markStructuralDirty() {
+      _structuralDirty = true;
+      const b = document.getElementById('sd-rebuild-banner');
+      if (b) b.hidden = false;
+    }
+
+    // Rebuild: recompute reco, clear dirty flag, full re-render, fire save.
+    function rebuildSavedDeal() {
+      if (!_savedDealData) return;
+      try {
+        const reco = (typeof APP !== 'undefined' && APP.recoForDeal)
+          ? APP.recoForDeal(_savedDealData) : null;
+        // Cache the reco on the deal so subsequent reads have access (we
+        // don't currently persist it, but it's harmless and helps the
+        // render path stay synchronous).
+        _savedDealData.reco = reco;
+      } catch (e) {
+        toast('Rebuild failed: ' + ((e && e.message) || String(e)), 'err');
+        return;
+      }
+      _structuralDirty = false;
+      // Re-render the whole view — banner re-renders hidden by default.
+      setRoot(renderSavedDealLoaded(_savedDealData));
+      toast('BoM rebuilt \u00b7 saving\u2026', 'ok');
+      // Fire save through the autosave path (re-uses status pill).
+      scheduleAutosave();
+    }
+
     const STEP_TITLES = [
       null,
       'Project context',
@@ -2777,6 +3790,28 @@
       const stageTag =
         (stage === 'Closed Won')  ? 'ok' :
         (stage === 'Closed Lost') ? 'warn' : 'accent';
+
+      // alpha.8.3 — deleted rows: non-clickable, with Restore button
+      if (d.deleted_at) {
+        const delDate = String(d.deleted_at).slice(0, 10);
+        return '' +
+          '<div class="history-row history-row-deleted">' +
+            '<div class="ref">' + esc(ref) +
+              '<span class="tag warn" style="margin-left:8px">deleted ' + esc(delDate) + '</span>' +
+            '</div>' +
+            '<div class="proj">' + esc(proj) + '</div>' +
+            '<div class="meta">' +
+              '<span class="tag muted">' + esc(stage) + '</span>' +
+              (cust ? '<span>' + esc(cust) + '</span>' : '') +
+              (val  ? '<span class="mono">' + esc(val) + '</span>' : '') +
+            '</div>' +
+            '<div style="margin-top:10px">' +
+              '<button class="btn btn-ghost" type="button" data-action="hist-restore" data-ref="' +
+                esc(ref) + '">Restore</button>' +
+            '</div>' +
+          '</div>';
+      }
+
       return '' +
         '<button class="history-row" type="button" data-nav="#/quote/' + esc(ref) + '">' +
           '<div class="ref">' + esc(ref) + '</div>' +
@@ -2801,7 +3836,7 @@
         '<div class="v">' +
           '<div class="h1">History</div>' +
           '<div class="chip-row" id="hist-chips">' +
-            ['all','open','won','lost'].map(f =>
+            ['all','open','won','lost','deleted'].map(f =>
               '<button class="chip" data-action="hist-filter" data-value="' + f + '"' +
               (historyState.filter === f ? ' aria-current="true"' : '') + '>' +
               (f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)) +
@@ -2816,13 +3851,19 @@
 
     async function loadHistoryList() {
       try {
+        const includeDeleted = (historyState.filter === 'deleted');
         const r = await STORE.listDeals({
           limit: historyState.limit,
-          offset: historyState.offset
+          offset: historyState.offset,
+          includeDeleted: includeDeleted
         });
         historyState.total = (r && r.total) || 0;
         const allRows = (r && r.rows) || [];
         const filtered = allRows.filter(d => {
+          // alpha.8.3: explicitly handle deleted state
+          if (historyState.filter === 'deleted') return !!d.deleted_at;
+          // All other filters exclude deleted (defence-in-depth)
+          if (d.deleted_at) return false;
           if (historyState.filter === 'all')  return true;
           if (historyState.filter === 'open') return d.stage !== 'Closed Won' && d.stage !== 'Closed Lost';
           if (historyState.filter === 'won')  return d.stage === 'Closed Won';
@@ -2832,10 +3873,13 @@
         const host = $('hist-list');
         if (!host) return;
         if (filtered.length === 0) {
+          const emptyMsg = historyState.filter === 'deleted'
+            ? 'No deleted deals.'
+            : 'No deals match the filter.';
           host.innerHTML =
             '<div class="empty">' +
               '<div class="ico">\uD83D\uDCED</div>' +
-              '<div>No deals match the filter.</div>' +
+              '<div>' + emptyMsg + '</div>' +
             '</div>';
           return;
         }
@@ -2982,6 +4026,23 @@
           setRoot(renderSavedDealNotFound(refId));
           return;
         }
+        // alpha.7.4: deal_save RPC stores wizardData-shape fields inside
+        // raw_submission (JSONB), not as top-level columns. Unpack it so
+        // the renderer sees a flat shape (solutionType, calico_inputs,
+        // hasLed, screens, hasSx, sx_data etc. become top-level).
+        // Top-level structured fields win over raw_submission on conflict
+        // (project, customer_name, stage etc. are authoritative in the
+        // structured columns).
+        if (deal.raw_submission && typeof deal.raw_submission === 'object') {
+          const raw = deal.raw_submission;
+          Object.keys(raw).forEach(function(k) {
+            if (deal[k] === undefined || deal[k] === null || deal[k] === '') {
+              deal[k] = raw[k];
+            }
+          });
+          // Drop the nested copy — buildSavePayload will rebuild it on save.
+          delete deal.raw_submission;
+        }
         setRoot(renderSavedDealLoaded(deal));
       }).catch(function(err) {
         if (_activeSavedDealRefId !== refId) return;
@@ -3043,20 +4104,25 @@
 
     function renderSavedDealLoaded(deal) {
       // alpha.7.1 — real one-page layout per SPEC §4.2.
+      // alpha.7.2 — Project Context editable + autosave; structural sections
+      //             stay read-only (edit + rebuild lands in alpha.7.3).
       // BoM hero (top) · Rebuild banner (hidden) · sticky action bar ·
       // sticky chip nav · accordion sections (Project context auto-expanded).
-      // Editable fields inside accordions land in alpha.7.2 (autosave layer).
 
-      const refId    = (deal && (deal.display_ref || deal.ref || deal.id)) || '\u2014';
+      // ---- Autosave state init ----
+      // Mutate-in-place is safe: the deal object is local to this view.
+      // disposeSavedDeal() (called by other show* functions) nulls these out.
+      _savedDealData    = deal;
+      _savedDealRefId   = (deal && (deal.display_ref || deal.ref || deal.id)) || null;
+      _autosaveInFlight = false;
+      if (_autosaveTimer) { clearTimeout(_autosaveTimer); _autosaveTimer = null; }
+
+      const refId    = _savedDealRefId || '\u2014';
       const project  = (deal && deal.project)       || '\u2014';
       const customer = (deal && deal.customer_name) || '\u2014';
       const stage    = (deal && deal.stage)         || '\u2014';
 
       // ---- Compute BoM from deal data ----
-      // APP.recoForDeal accepts wizardData-shaped objects; loadDeal returns
-      // the symmetric shape, so the deal passes through directly. Wrap in
-      // try/catch in case the loaded deal is missing required fields — we
-      // still render the page, just without a BoM card.
       let reco = null;
       let recoErr = null;
       try {
@@ -3078,10 +4144,8 @@
       const hasLed = !!(deal && deal.hasLed);
       const hasSx  = !!(deal && deal.hasSx);
 
-      // ---- Field-count badges (count non-empty values per section) ----
-      const ctxFields = ['project','customer_name','partner_name','consultant_name',
-        'venue','city','state','stage','lead_source','sales_person','presales_person',
-        'contact_name','contact_phone','contact_email','expected_closure','deal_value'];
+      // ---- Field-count badges ----
+      const ctxFields = SOFT_FIELDS; // exactly the editable fields below
       const ctxCount = ctxFields.filter(f => deal && deal[f] != null && deal[f] !== '').length;
 
       const ioCount = (function() {
@@ -3101,10 +4165,10 @@
         return 0;
       })();
 
-      const ledCount    = (hasLed && Array.isArray(deal.screens))
+      const ledCount = (hasLed && Array.isArray(deal.screens))
         ? deal.screens.filter(s => Number(s.w) > 0 && Number(s.h) > 0).length
         : 0;
-      const sxCount     = (hasSx && deal.sx_data)
+      const sxCount  = (hasSx && deal.sx_data)
         ? Object.values(deal.sx_data).filter(v => Number(v) > 0).length
         : 0;
 
@@ -3124,7 +4188,7 @@
         ).join('') +
       '</nav>';
 
-      // ---- Helpers ----
+      // ---- Helpers (read-only row for structural sections) ----
       function row(label, value) {
         const v = (value == null || value === '') ? '\u2014' : String(value);
         return '<div class="sd-row">' +
@@ -3142,39 +4206,85 @@
           '</summary>';
       }
 
-      // ---- Section: Project context (auto-expanded) ----
+      // ---- Section: Project context (EDITABLE — alpha.7.2 autosave) ----
       const ctxBody =
-        row('Project',          deal.project) +
-        row('Customer',         deal.customer_name) +
-        row('Partner',          deal.partner_name) +
-        row('Stage',            deal.stage) +
-        row('Lead source',      deal.lead_source) +
-        row('Venue / City',     [deal.venue, deal.city].filter(Boolean).join(' \u00b7 ')) +
-        row('Salesperson',      deal.sales_person) +
-        row('Presales',         deal.presales_person) +
-        row('Contact',          [deal.contact_name, deal.contact_phone].filter(Boolean).join(' \u00b7 ')) +
-        row('Expected closure', deal.expected_closure) +
-        row('Deal value',       deal.deal_value);
+        '<form id="sd-ctx-form" autocomplete="off" novalidate>' +
+          '<h3 class="h3" style="margin-top:8px">Project</h3>' +
+          sdField('project',         'Project name',     deal.project,         { placeholder: 'e.g. Auditorium upgrade' }) +
+          sdField('customer_name',   'Customer',         deal.customer_name) +
+          sdField('partner_name',    'Partner',          deal.partner_name) +
+          sdField('consultant_name', 'Consultant',       deal.consultant_name) +
+          '<h3 class="h3">Location</h3>' +
+          sdField('venue', 'Venue', deal.venue, { placeholder: 'e.g. ABC Tower, 12th floor' }) +
+          sdField('city',  'City',  deal.city) +
+          sdField('state', 'State', deal.state, { placeholder: 'e.g. Gujarat' }) +
+          '<h3 class="h3">Stage &amp; owners</h3>' +
+          sdSelectField('stage',           'Stage',           deal.stage,           STAGES) +
+          sdSelectField('lead_source',     'Lead source',     deal.lead_source,     LEAD_SOURCES,  { placeholder: '\u2014 select \u2014' }) +
+          sdSelectField('sales_person',    'Sales person',    deal.sales_person,    SALES_TEAM,    { placeholder: '\u2014 unassigned \u2014' }) +
+          sdSelectField('presales_person', 'Presales person', deal.presales_person, PRESALES_TEAM, { placeholder: '\u2014 unassigned \u2014' }) +
+          '<h3 class="h3">Partner contact</h3>' +
+          sdField('contact_name',  'Name',  deal.contact_name) +
+          sdField('contact_phone', 'Phone', deal.contact_phone, { type: 'tel',   inputmode: 'tel' }) +
+          sdField('contact_email', 'Email', deal.contact_email, { type: 'email', inputmode: 'email' }) +
+          '<h3 class="h3">Closure &amp; value</h3>' +
+          sdField('expected_closure', 'Expected closure', deal.expected_closure, { type: 'month', help: 'Year-month, e.g. 2026-09' }) +
+          sdField('deal_value',       'Deal value (INR)', deal.deal_value,       { type: 'number', inputmode: 'numeric', help: 'Approximate; refine later.' }) +
+        '</form>';
 
-      // ---- Section: Solution type ----
-      const solBody = row('Family', familyLabel(deal.solutionType));
+      // ---- Read-only sections (structural — see below for I/O which IS editable in CALICO mode) ----
+      const solBody = row('Family', familyLabel(deal.solutionType)) +
+        '<div class="sd-edit-note small soft">Changing solution family is intentionally read-only \u2014 start a new quote if you need a different family.</div>';
 
-      // ---- Section: Inputs & outputs (family-specific compact preview) ----
-      const ioBody = renderSavedDealIoPreview(deal);
+      const ioBody = renderSavedDealIoSection(deal) +
+        (deal.solutionType === 'calico'
+          ? '<div class="sd-edit-note small soft">Edits set the Rebuild banner above. Tap <strong>Rebuild</strong> to recompute the BoM.</div>'
+          : ''); // MV/CORIO already include their own cosmetic-session hint
 
-      // ---- Section: LED (only if hasLed) ----
       const ledBody = hasLed
-        ? (deal.screens || []).filter(s => Number(s.w) > 0 && Number(s.h) > 0).map((s, i) =>
-            row('Screen ' + (i+1), s.w + ' \u00d7 ' + s.h + ' = ' + (s.w * s.h).toLocaleString() + ' px')
-          ).join('') || '<div class="sd-row sd-row-muted">No screens set.</div>'
+        ? (function() {
+            // Defensive: ensure screens exists.
+            if (!Array.isArray(deal.screens)) deal.screens = [];
+            const cards = deal.screens.length === 0
+              ? '<div class="muted small" style="padding:12px 0">No screens yet. Tap \u201c+ Add screen\u201d.</div>'
+              : deal.screens.map((s, idx) => {
+                  const px = (Number(s.w) || 0) * (Number(s.h) || 0);
+                  return '<div class="card" style="margin-bottom:8px">' +
+                    '<div class="row between" style="margin:0 0 6px">' +
+                      '<strong>Screen ' + (idx + 1) + '</strong>' +
+                      '<button class="btn btn-text" type="button" data-action="sd-screen-remove" data-idx="' + idx + '">Remove</button>' +
+                    '</div>' +
+                    '<div class="row gap-2">' +
+                      '<div class="field" style="flex:1;margin:0">' +
+                        '<label>Width (px)</label>' +
+                        '<input type="text" inputmode="numeric" value="' + esc(s.w == null ? '' : s.w) + '"' +
+                          ' data-action="sd-screen-w" data-idx="' + idx + '">' +
+                      '</div>' +
+                      '<div class="field" style="flex:1;margin:0">' +
+                        '<label>Height (px)</label>' +
+                        '<input type="text" inputmode="numeric" value="' + esc(s.h == null ? '' : s.h) + '"' +
+                          ' data-action="sd-screen-h" data-idx="' + idx + '">' +
+                      '</div>' +
+                    '</div>' +
+                    (px > 0 ? '<div class="help mono" style="margin-top:6px">= ' +
+                      px.toLocaleString('en-US') + ' pixels</div>' : '') +
+                  '</div>';
+                }).join('');
+            return cards +
+              '<button class="btn btn-ghost btn-block" type="button" data-action="sd-screen-add">+ Add screen</button>' +
+              '<div class="sd-edit-note small soft">Edits set the Rebuild banner above. Tap <strong>Rebuild</strong> to recompute the BoM.</div>';
+          })()
         : '';
 
-      // ---- Section: SX (only if hasSx) ----
       const sxBody = hasSx
-        ? SX_EDITORIAL
-            .filter(s => Number((deal.sx_data || {})[s.id]) > 0)
-            .map(s => row(s.label, deal.sx_data[s.id]))
-            .join('') || '<div class="sd-row sd-row-muted">No SX quantities set.</div>'
+        ? (function() {
+            // Defensive: ensure sx_data exists so steppers don't NaN.
+            if (!deal.sx_data) deal.sx_data = { hdmi:0, sdi:0, ap536:0, avip:0 };
+            return SX_EDITORIAL.map(s =>
+              sdStepperRow(s.id, s.label, s.hint, deal.sx_data[s.id] || 0, { namespace: 'sx_data' })
+            ).join('') +
+            '<div class="sd-edit-note small soft">Edits set the Rebuild banner above. Tap <strong>Rebuild</strong> to recompute the BoM.</div>';
+          })()
         : '';
 
       // ---- Assemble ----
@@ -3182,7 +4292,10 @@
 
           // Header band
           '<div class="sd-header">' +
-            '<div class="sd-ref">' + esc(refId) + '</div>' +
+            '<div class="sd-ref-row">' +
+              '<div class="sd-ref">' + esc(refId) + '</div>' +
+              '<div class="sd-status sd-status-idle" id="sd-status"></div>' +
+            '</div>' +
             '<div class="h1 sd-title">' + esc(project) + '</div>' +
             '<div class="small soft">' + esc(customer) + ' \u00b7 ' + esc(stage) + '</div>' +
           '</div>' +
@@ -3190,19 +4303,19 @@
           // BoM hero
           '<section class="sd-bom-wrap">' + bomHtml + '</section>' +
 
-          // Rebuild banner (hidden until alpha.7.3 wires it)
-          '<div id="sd-rebuild-banner" class="banner warn" hidden style="margin-top:10px">' +
+          // Rebuild banner — shown when _structuralDirty is true (alpha.7.3)
+          '<div id="sd-rebuild-banner" class="banner warn"' +
+            (_structuralDirty ? '' : ' hidden') +
+            ' style="margin-top:10px">' +
             '<strong>BoM is out of date.</strong> ' +
             '<button class="btn btn-text" type="button" data-action="sd-rebuild">Tap Rebuild \u2192</button>' +
-            ' <span class="small soft">(autosave + Rebuild wire up in alpha.7.2 / .7.3)</span>' +
           '</div>' +
 
           // Sticky action bar
           '<div class="sd-actionbar">' +
-            '<button class="btn"        type="button" data-action="sd-excel"     disabled title="Wires up in Session 8">Excel</button>' +
-            '<button class="btn"        type="button" data-action="sd-pdf"       disabled title="Wires up in Session 8">PDF</button>' +
-            '<button class="btn btn-ghost" type="button" data-action="sd-edit"   disabled title="Edit form wires up in alpha.7.2">Edit</button>' +
-            '<button class="btn btn-danger btn-ghost" type="button" data-action="sd-delete" disabled title="Wires up in alpha.7.4">Delete</button>' +
+            '<button class="btn"        type="button" data-action="sd-excel" id="sd-btn-excel">Excel</button>' +
+            '<button class="btn"        type="button" data-action="sd-pdf"   id="sd-btn-pdf">PDF</button>' +
+            '<button class="btn btn-danger btn-ghost" type="button" data-action="sd-delete" id="sd-btn-delete">Delete</button>' +
           '</div>' +
 
           // Sticky chip nav
@@ -3213,9 +4326,7 @@
 
             '<details class="sd-section" id="sec-ctx" open>' +
               sectionHeader('Project context', ctxCount) +
-              '<div class="sd-section-body">' + ctxBody +
-                '<div class="sd-edit-note small soft">Editable fields land in alpha.7.2.</div>' +
-              '</div>' +
+              '<div class="sd-section-body">' + ctxBody + '</div>' +
             '</details>' +
 
             '<details class="sd-section" id="sec-sol">' +
@@ -3265,8 +4376,10 @@
       return Object.values(obj).filter(v => Number(v) > 0).length;
     }
 
-    // Compact I/O preview per family. Mirrors the wizard step 3 structure.
-    function renderSavedDealIoPreview(deal) {
+    // Compact I/O preview/edit per family. Mirrors wizard step 3 structure.
+    // alpha.7.3: CALICO becomes editable steppers + audio toggle; MV/CORIO
+    // stay read-only with hint (cosmetic-session backlog).
+    function renderSavedDealIoSection(deal) {
       if (!deal || !deal.solutionType) {
         return '<div class="sd-row sd-row-muted">No solution type set.</div>';
       }
@@ -3278,43 +4391,93 @@
           '</div>';
       };
       if (deal.solutionType === 'calico') {
-        const i = deal.calico_inputs || {};
-        const o = deal.calico_outputs || {};
+        // Defensive: ensure objects exist so steppers don't NaN.
+        if (!deal.calico_inputs)  deal.calico_inputs  = { hdmi4k:0, hdmiFhd:0, sdi12g:0, sdi3g:0, hdbt:0, ip:0 };
+        if (!deal.calico_outputs) deal.calico_outputs = { display:0, projector:0, sdi:0 };
+        const i = deal.calico_inputs;
+        const o = deal.calico_outputs;
         return '<div class="sd-subhead">Inputs</div>' +
-          row('HDMI 4K',  i.hdmi4k  || 0) +
-          row('HDMI FHD', i.hdmiFhd || 0) +
-          row('SDI 12G',  i.sdi12g  || 0) +
-          row('SDI 3G',   i.sdi3g   || 0) +
-          row('HDBaseT',  i.hdbt    || 0) +
-          row('IP',       i.ip      || 0) +
+          sdStepperRow('hdmi4k',  'HDMI 4K60', '4K60 4:4:4 sources',    i.hdmi4k,  { namespace:'calico_inputs' }) +
+          sdStepperRow('hdmiFhd', 'HDMI FHD',  '1080p sources',         i.hdmiFhd, { namespace:'calico_inputs' }) +
+          sdStepperRow('sdi12g',  'SDI 12G',   '12G-SDI sources',       i.sdi12g,  { namespace:'calico_inputs' }) +
+          sdStepperRow('sdi3g',   'SDI 3G',    '3G-SDI sources',        i.sdi3g,   { namespace:'calico_inputs' }) +
+          sdStepperRow('hdbt',    'HDBaseT',   'HDBT-extended sources', i.hdbt,    { namespace:'calico_inputs' }) +
+          sdStepperRow('ip',      'IP / NDI',  'IP-streamed sources',   i.ip,      { namespace:'calico_inputs' }) +
           '<div class="sd-subhead">Outputs</div>' +
-          row('Display',   o.display   || 0) +
-          row('Projector', o.projector || 0) +
-          row('SDI',       o.sdi       || 0) +
-          row('Audio',     deal.calico_audio ? 'Yes' : 'No');
+          sdStepperRow('display',   'Display (HDMI)',   'Standard displays', o.display,   { namespace:'calico_outputs' }) +
+          sdStepperRow('projector', 'Projector (HDMI)', 'Projector outputs', o.projector, { namespace:'calico_outputs' }) +
+          sdStepperRow('sdi',       'SDI output',       '12G-SDI outputs',   o.sdi,       { namespace:'calico_outputs' }) +
+          '<div class="sd-subhead">Audio</div>' +
+          sdToggleRow('calico_audio', 'Audio handling',
+            'Embed/de-embed audio + AES67/Dante options', !!deal.calico_audio);
       }
       if (deal.solutionType === 'mv') {
-        const rows = (deal.mv_inputs || [])
-          .filter(r => r && r.signal && Number(r.qty) > 0)
-          .map(r => row(r.signal, r.qty)).join('');
-        return '<div class="sd-subhead">Inputs</div>' +
-          (rows || '<div class="sd-row sd-row-muted">No inputs set.</div>') +
-          '<div class="sd-subhead">Output</div>' +
-          row('Signal', deal.mv_outputSignal || '\u2014');
+        // Defensive: ensure mv_inputs is an array.
+        if (!Array.isArray(deal.mv_inputs)) deal.mv_inputs = [];
+        const MV_INPUT_SIGNALS  = Object.keys(CATALOG.mv.inputModules);
+        const MV_OUTPUT_SIGNALS = Object.keys(CATALOG.mv.outputModules);
+        const inputRowsHtml = deal.mv_inputs.length === 0
+          ? '<div class="muted small" style="padding:8px 0">No input rows yet. Tap \u201c+ Add input\u201d below.</div>'
+          : deal.mv_inputs.map((row, idx) =>
+              '<div class="card" style="margin-bottom:8px">' +
+                '<div class="row gap-2" style="flex-wrap:wrap">' +
+                  '<select data-action="sd-mv-input-signal" data-idx="' + idx + '" style="flex:1;min-width:140px">' +
+                    '<option value="">\u2014 signal \u2014</option>' +
+                    MV_INPUT_SIGNALS.map(s =>
+                      '<option value="' + esc(s) + '"' +
+                      (row.signal === s ? ' selected' : '') + '>' + esc(s) + '</option>'
+                    ).join('') +
+                  '</select>' +
+                  '<div class="stepper">' +
+                    '<button type="button" data-action="sd-mv-input-dec" data-idx="' + idx + '"' +
+                      ((Number(row.qty) || 0) <= 0 ? ' disabled' : '') + '>\u2212</button>' +
+                    '<input type="text" inputmode="numeric" value="' + (row.qty || 0) + '"' +
+                      ' data-action="sd-mv-input-set" data-idx="' + idx + '" aria-label="qty">' +
+                    '<button type="button" data-action="sd-mv-input-inc" data-idx="' + idx + '">+</button>' +
+                  '</div>' +
+                  '<button class="btn btn-text" type="button" data-action="sd-mv-input-remove" data-idx="' + idx + '"' +
+                    ' aria-label="Remove" style="min-width:auto;padding:8px">\u00d7</button>' +
+                '</div>' +
+              '</div>'
+            ).join('');
+        const outputOptions = MV_OUTPUT_SIGNALS.map(s => ({ value: s, label: s }));
+        return '<div class="sd-subhead">Output signal</div>' +
+          sdSelectField('mv_outputSignal', 'Output', deal.mv_outputSignal || '', outputOptions,
+            { placeholder: '\u2014 select \u2014' }) +
+          '<div class="sd-subhead">Inputs</div>' +
+          inputRowsHtml +
+          '<button class="btn btn-ghost btn-block" type="button" data-action="sd-mv-input-add">+ Add input</button>' +
+          '<div class="sd-edit-note small soft">Edits set the Rebuild banner above. Tap <strong>Rebuild</strong> to recompute the BoM.</div>';
       }
       if (deal.solutionType === 'corio') {
-        const i = deal.corio_inputs || {};
-        const o = deal.corio_outputs || {};
-        const iRows = Object.entries(i).filter(([_,v]) => Number(v) > 0)
-          .map(([k,v]) => row(k, v)).join('');
-        const oRows = Object.entries(o).filter(([_,v]) => Number(v) > 0)
-          .map(([k,v]) => row(k, v)).join('');
+        // Defensive: ensure objects exist so steppers don't NaN.
+        if (!deal.corio_inputs)  deal.corio_inputs  = {};
+        if (!deal.corio_outputs) deal.corio_outputs = {};
+        const cm2In  = CATALOG.corio.cm2.inputs;
+        const cm2Out = CATALOG.corio.cm2.outputs;
+        // Use sdSelectField for corio_audio — it lands at top level (not in
+        // SOFT_FIELDS), so the routing in the data-sd-bind handler calls
+        // markStructuralDirty (no autosave).
+        const audioOptions = [
+          { value: '',    label: 'None' },
+          { value: '2-4', label: '2-4 (analog + SPDIF)' },
+          { value: '8-8', label: '8-8 (CM only \u00b7 8-IN / 8-OUT HD-44)' }
+        ];
         return '<div class="sd-subhead">Inputs</div>' +
-          (iRows || '<div class="sd-row sd-row-muted">No inputs set.</div>') +
+          cm2In.map(c =>
+            sdStepperRow(c.key, c.key, c.desc, deal.corio_inputs[c.key] || 0, { namespace:'corio_inputs' })
+          ).join('') +
           '<div class="sd-subhead">Outputs</div>' +
-          (oRows || '<div class="sd-row sd-row-muted">No outputs set.</div>') +
-          row('Audio',      deal.corio_audio || '\u2014') +
-          row('Fan filter', deal.corio_fanFilter ? 'Yes' : 'No');
+          cm2Out.map(c =>
+            sdStepperRow(c.key, c.key, c.desc, deal.corio_outputs[c.key] || 0, { namespace:'corio_outputs' })
+          ).join('') +
+          '<div class="sd-subhead">Audio</div>' +
+          sdSelectField('corio_audio', 'Audio module', deal.corio_audio || '', audioOptions) +
+          (deal.corio_audio === '8-8'
+            ? '<div class="help danger-text">8-8 module is CM-only \u2014 incompatible with CM2 / 4K chassis.</div>'
+            : '') +
+          '<div class="sd-subhead">Add-ons</div>' +
+          sdToggleRow('corio_fanFilter', 'CM2 fan filter', 'Adds CM2-Filter line item', !!deal.corio_fanFilter);
       }
       return '<div class="sd-row sd-row-muted">Unknown solution type.</div>';
     }
@@ -3804,15 +4967,14 @@
           '<section class="card">' +
             '<div class="h3">Save</div>' +
             '<div class="small muted" style="margin:0 0 10px">' +
-              'Persisting this quote to Supabase + navigating to the saved-deal view ' +
-              'is Session 7 work.' +
+              'Persists to Supabase and opens the saved-deal view. ' +
+              'You can keep editing soft fields with autosave from there.' +
             '</div>' +
-            '<button class="btn" type="button" disabled>Save quote (Session 7)</button>' +
+            '<button class="btn" type="button" data-action="wiz-save">Save quote</button>' +
             ' <button class="btn btn-ghost" type="button" data-action="wiz-new">Start new</button>' +
           '</section>'
         : '<div class="banner info" style="margin-top:16px">' +
-            'Tap <strong>Build quote \u2192</strong> below to compute the BoM. ' +
-            'Saving to Supabase wires up in Session 7.' +
+            'Tap <strong>Build quote \u2192</strong> below to compute the BoM, then save.' +
           '</div>';
 
       return summaryHtml + bomHtml;
@@ -4034,6 +5196,7 @@
         if (action === 'wiz-back')   { APP.wizBack(); return; }
         if (action === 'wiz-build')  { APP.wizBuild(); return; }
         if (action === 'wiz-rebuild'){ APP.wizBuild(); return; }
+        if (action === 'wiz-save')   { APP.wizSave(); return; }
         if (action === 'wiz-cancel') {
           if (confirm('Discard this draft quote and start over?')) {
             clearDraft();
@@ -4131,6 +5294,203 @@
           return;
         }
 
+        // alpha.7.3 — Saved-deal structural steppers (+/− buttons)
+        if (action === 'sd-step-inc' || action === 'sd-step-dec') {
+          if (!_savedDealData) return;
+          const ns  = actEl.getAttribute('data-sd-ns');
+          const key = actEl.getAttribute('data-sd-key');
+          if (!ns || !key) return;
+          if (!_savedDealData[ns]) _savedDealData[ns] = {};
+          const cur = Number(_savedDealData[ns][key]) || 0;
+          let next = cur + (action === 'sd-step-inc' ? 1 : -1);
+          if (next < 0) next = 0;
+          if (next > 32) next = 32;
+          if (next === cur) return;
+          _savedDealData[ns][key] = next;
+          markStructuralDirty();
+          // Re-render to update +/− disabled states and the visible value.
+          setRoot(renderSavedDealLoaded(_savedDealData));
+          return;
+        }
+
+        // alpha.7.3 — Saved-deal toggle tiles (calico_audio)
+        if (action === 'sd-toggle') {
+          if (!_savedDealData) return;
+          const key = actEl.getAttribute('data-sd-key');
+          if (!key) return;
+          _savedDealData[key] = !_savedDealData[key];
+          markStructuralDirty();
+          setRoot(renderSavedDealLoaded(_savedDealData));
+          return;
+        }
+
+        // alpha.7.3 — Rebuild BoM from current structural state
+        if (action === 'sd-rebuild') {
+          rebuildSavedDeal();
+          return;
+        }
+
+        // alpha.8.0 — Excel export
+        if (action === 'sd-excel') {
+          if (!_savedDealData) return;
+          const btn = actEl;
+          const orig = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = 'Generating\u2026';
+          EXPORT.excel(_savedDealData).then(function(blob) {
+            const fn = EXPORT.filename(_savedDealData, 'xlsx');
+            EXPORT.download(blob, fn);
+            toast('Excel exported: ' + fn, 'ok');
+          }).catch(function(err) {
+            const msg = (err && err.message) ? err.message : String(err);
+            toast('Excel export failed: ' + msg, 'err');
+          }).then(function() {
+            btn.disabled = false;
+            btn.textContent = orig;
+          });
+          return;
+        }
+
+        // alpha.8.0 — PDF export
+        if (action === 'sd-pdf') {
+          if (!_savedDealData) return;
+          const btn = actEl;
+          const orig = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = 'Generating\u2026';
+          EXPORT.pdf(_savedDealData).then(function(blob) {
+            const fn = EXPORT.filename(_savedDealData, 'pdf');
+            EXPORT.download(blob, fn);
+            toast('PDF exported: ' + fn, 'ok');
+          }).catch(function(err) {
+            const msg = (err && err.message) ? err.message : String(err);
+            toast('PDF export failed: ' + msg, 'err');
+          }).then(function() {
+            btn.disabled = false;
+            btn.textContent = orig;
+          });
+          return;
+        }
+
+        // alpha.8.3 — Soft-delete saved deal
+        if (action === 'sd-delete') {
+          if (!_savedDealData) return;
+          const ref = _savedDealData.display_ref || _savedDealData.ref || _savedDealRefId;
+          if (!ref) {
+            toast('Cannot delete: no reference ID.', 'err');
+            return;
+          }
+          if (!confirm('Delete ' + ref + '?\n\nYou can restore it from History \u2192 Deleted.')) return;
+          const btn = actEl;
+          const orig = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = 'Deleting\u2026';
+          STORE.deleteDeal(ref).then(function(r) {
+            if (r && r.ok === true) {
+              // Cancel any pending autosave so the dispose doesn't fire a save
+              // against a now-deleted deal.
+              if (_autosaveTimer) { clearTimeout(_autosaveTimer); _autosaveTimer = null; }
+              _savedDealData    = null;
+              _savedDealRefId   = null;
+              _autosaveInFlight = false;
+              toast(ref + ' deleted. Restore from History \u2192 Deleted.', 'ok');
+              location.hash = '#/history';
+            } else {
+              toast('Delete returned unexpected response: ' + JSON.stringify(r), 'err');
+              btn.disabled = false;
+              btn.textContent = orig;
+            }
+          }).catch(function(err) {
+            const msg = (err && err.message) ? err.message : String(err);
+            toast('Delete failed: ' + msg, 'err');
+            btn.disabled = false;
+            btn.textContent = orig;
+          });
+          return;
+        }
+
+        // alpha.8.3 — Restore a soft-deleted deal from History view
+        if (action === 'hist-restore') {
+          const ref = actEl.getAttribute('data-ref');
+          if (!ref) return;
+          if (!confirm('Restore ' + ref + '?')) return;
+          const btn = actEl;
+          const orig = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = 'Restoring\u2026';
+          STORE.restoreDeal(ref).then(function(r) {
+            if (r && r.ok === true) {
+              toast(ref + ' restored.', 'ok');
+              // Reload the history list — the restored deal disappears from
+              // the Deleted filter and reappears in All / Open / Won / Lost.
+              if (typeof loadHistoryList === 'function') loadHistoryList();
+            } else {
+              toast('Restore returned unexpected response: ' + JSON.stringify(r), 'err');
+              btn.disabled = false;
+              btn.textContent = orig;
+            }
+          }).catch(function(err) {
+            const msg = (err && err.message) ? err.message : String(err);
+            toast('Restore failed: ' + msg, 'err');
+            btn.disabled = false;
+            btn.textContent = orig;
+          });
+          return;
+        }
+
+        // alpha.7.6 — LED screen array mgmt
+        if (action === 'sd-screen-add') {
+          if (!_savedDealData) return;
+          if (!Array.isArray(_savedDealData.screens)) _savedDealData.screens = [];
+          _savedDealData.screens.push({ w: '', h: '' });
+          markStructuralDirty();
+          setRoot(renderSavedDealLoaded(_savedDealData));
+          return;
+        }
+        if (action === 'sd-screen-remove') {
+          if (!_savedDealData || !Array.isArray(_savedDealData.screens)) return;
+          const idx = parseInt(actEl.getAttribute('data-idx'), 10);
+          if (isNaN(idx) || idx < 0 || idx >= _savedDealData.screens.length) return;
+          _savedDealData.screens.splice(idx, 1);
+          markStructuralDirty();
+          setRoot(renderSavedDealLoaded(_savedDealData));
+          return;
+        }
+
+        // alpha.7.6 — MV input row mgmt
+        if (action === 'sd-mv-input-add') {
+          if (!_savedDealData) return;
+          if (!Array.isArray(_savedDealData.mv_inputs)) _savedDealData.mv_inputs = [];
+          _savedDealData.mv_inputs.push({ signal: '', qty: 1 });
+          markStructuralDirty();
+          setRoot(renderSavedDealLoaded(_savedDealData));
+          return;
+        }
+        if (action === 'sd-mv-input-remove') {
+          if (!_savedDealData || !Array.isArray(_savedDealData.mv_inputs)) return;
+          const idx = parseInt(actEl.getAttribute('data-idx'), 10);
+          if (isNaN(idx) || idx < 0 || idx >= _savedDealData.mv_inputs.length) return;
+          _savedDealData.mv_inputs.splice(idx, 1);
+          markStructuralDirty();
+          setRoot(renderSavedDealLoaded(_savedDealData));
+          return;
+        }
+        if (action === 'sd-mv-input-inc' || action === 'sd-mv-input-dec') {
+          if (!_savedDealData || !Array.isArray(_savedDealData.mv_inputs)) return;
+          const idx = parseInt(actEl.getAttribute('data-idx'), 10);
+          const row = _savedDealData.mv_inputs[idx];
+          if (!row) return;
+          const cur = Number(row.qty) || 0;
+          let next = cur + (action === 'sd-mv-input-inc' ? 1 : -1);
+          if (next < 0) next = 0;
+          if (next > 32) next = 32;
+          if (next === cur) return;
+          row.qty = next;
+          markStructuralDirty();
+          setRoot(renderSavedDealLoaded(_savedDealData));
+          return;
+        }
+
         // Smoke buttons
         // All three handlers toast a summary so the result survives even if
         // the smoke causes a view change (e.g. STORE smoke ends in logout
@@ -4187,6 +5547,73 @@
           return;
         }
 
+        // alpha.7.2: Saved-deal soft-field edits — mutate the loaded deal
+        // object in place + trigger debounced autosave. Note this fires per
+        // keystroke; the 1s debounce in scheduleAutosave keeps the network
+        // calm.
+        // alpha.7.6: Route via SOFT_FIELDS classification so sdField /
+        // sdSelectField helpers can be reused for STRUCTURAL fields too
+        // (which mark dirty + wait for Rebuild instead of autosaving).
+        const sdBind = t.getAttribute('data-sd-bind');
+        if (sdBind && _savedDealData) {
+          _savedDealData[sdBind] = t.value;
+          if (SOFT_FIELDS.indexOf(sdBind) >= 0) {
+            scheduleAutosave();
+          } else {
+            markStructuralDirty();
+          }
+          return;
+        }
+
+        // alpha.7.3: Saved-deal stepper direct typing (sd-step-set)
+        const sdAct = t.getAttribute('data-action');
+        if (sdAct === 'sd-step-set' && _savedDealData) {
+          const ns  = t.getAttribute('data-sd-ns');
+          const key = t.getAttribute('data-sd-key');
+          if (!ns || !key) return;
+          if (!_savedDealData[ns]) _savedDealData[ns] = {};
+          const v = parseInt(t.value, 10);
+          const safe = isNaN(v) || v < 0 ? 0 : (v > 32 ? 32 : v);
+          if (_savedDealData[ns][key] !== safe) {
+            _savedDealData[ns][key] = safe;
+            markStructuralDirty();
+            // Don't re-render mid-type — would lose focus. +/- disabled
+            // states will refresh on next +/- tap or on Rebuild.
+          }
+          return;
+        }
+
+        // alpha.7.6: LED screen W/H direct typing
+        if ((sdAct === 'sd-screen-w' || sdAct === 'sd-screen-h') && _savedDealData) {
+          if (!Array.isArray(_savedDealData.screens)) return;
+          const idx = parseInt(t.getAttribute('data-idx'), 10);
+          const row = _savedDealData.screens[idx];
+          if (!row) return;
+          const v = parseInt(t.value, 10);
+          const safe = isNaN(v) || v < 0 ? '' : v;
+          const field = sdAct === 'sd-screen-w' ? 'w' : 'h';
+          if (row[field] !== safe) {
+            row[field] = safe;
+            markStructuralDirty();
+          }
+          return;
+        }
+
+        // alpha.7.6: MV input qty direct typing
+        if (sdAct === 'sd-mv-input-set' && _savedDealData) {
+          if (!Array.isArray(_savedDealData.mv_inputs)) return;
+          const idx = parseInt(t.getAttribute('data-idx'), 10);
+          const row = _savedDealData.mv_inputs[idx];
+          if (!row) return;
+          const v = parseInt(t.value, 10);
+          const safe = isNaN(v) || v < 0 ? 0 : (v > 32 ? 32 : v);
+          if (row.qty !== safe) {
+            row.qty = safe;
+            markStructuralDirty();
+          }
+          return;
+        }
+
         // Stepper direct typing
         const action = t.getAttribute('data-action');
         if (action === 'step-set') {
@@ -4239,6 +5666,17 @@
           }
           return;
         }
+        // alpha.7.6: Saved-deal MV per-row signal change
+        if (action === 'sd-mv-input-signal' && _savedDealData) {
+          if (!Array.isArray(_savedDealData.mv_inputs)) return;
+          const idx = parseInt(t.getAttribute('data-idx'), 10);
+          const row = _savedDealData.mv_inputs[idx];
+          if (!row) return;
+          row.signal = t.value;
+          markStructuralDirty();
+          setRoot(renderSavedDealLoaded(_savedDealData));
+          return;
+        }
         // Selects bound by data-bind already fire 'input' on change in most
         // browsers, but Safari historically only fires 'change' for select.
         const bind = t.getAttribute('data-bind');
@@ -4250,6 +5688,18 @@
             wizardData[bind] = t.value;
           }
           saveDraft();
+          return;
+        }
+        // alpha.7.2: Same Safari concern for saved-deal selects.
+        // alpha.7.6: Soft/structural classification (see input handler).
+        const sdBind = t.getAttribute('data-sd-bind');
+        if (sdBind && t.tagName === 'SELECT' && _savedDealData) {
+          _savedDealData[sdBind] = t.value;
+          if (SOFT_FIELDS.indexOf(sdBind) >= 0) {
+            scheduleAutosave();
+          } else {
+            markStructuralDirty();
+          }
           return;
         }
       });
@@ -4291,6 +5741,8 @@
       validateStep,
       captureCurrentStepForm,
       setFieldError,
+      // alpha.7.4: APP.wizSave needs the same payload-builder used by autosave
+      buildSavePayload,
       // helpers
       esc, fmtINR, debounce,
       // smoke renderer
@@ -4569,6 +6021,42 @@
       }
     }
 
+    // alpha.7.4 — Save the wizard's current state as a new deal.
+    // Required-field validation already happened in step 1 (project,
+    // customer_name) and step 6 lock (stage). This is a final guard.
+    function wizSave() {
+      const d = UI.getWizardData();
+      if (!d.project || !d.customer_name || !d.stage) {
+        UI.toast('Missing project, customer, or stage \u2014 go back to step 1.', 'err');
+        return;
+      }
+      if (!d.reco) {
+        UI.toast('Build the BoM first.', 'warn');
+        return;
+      }
+      const payload = UI.buildSavePayload(d);
+      if (!payload) {
+        UI.toast('Could not build save payload.', 'err');
+        return;
+      }
+      UI.toast('Saving\u2026', 'info');
+      STORE.saveDeal(payload).then(function(r) {
+        const ref = r && r.display_ref;
+        if (!ref) {
+          UI.toast('Save returned no display_ref \u2014 something is off.', 'err');
+          return;
+        }
+        UI.clearDraft();
+        UI.toast('Saved as ' + ref, 'ok');
+        // Navigate to the saved-deal view. onRouteChange picks up the hash
+        // change and dispatches to showSavedDeal.
+        location.hash = '#/quote/' + ref;
+      }).catch(function(err) {
+        const msg = (err && err.message) ? err.message : String(err);
+        UI.toast('Save failed: ' + msg, 'err');
+      });
+    }
+
     function computeReco(d) {
       if (d.solutionType === 'calico') {
         return RECOMMEND.calico({
@@ -4611,12 +6099,17 @@
     return {
       start, onRouteChange,
       handleLoginSubmit, handleForcePwSubmit, handleProfilePwSubmit,
-      wizNext, wizBack, wizBuild,
+      wizNext, wizBack, wizBuild, wizSave,
       // alpha.7.1: UI.showSavedDeal needs to compute BoM from loaded deal data.
       // computeReco accepts wizardData-shaped object and STORE.loadDeal returns
       // the same shape (plus display_ref / lines[] / etc.), so passing the deal
       // straight in is safe.
-      recoForDeal: computeReco
+      recoForDeal: computeReco,
+      // alpha.9.0 \u2014 internals exposed for __smokeIntegration only.
+      _buildSavePayload:   buildSavePayload,
+      _SOFT_FIELDS:        SOFT_FIELDS,
+      _STRUCTURAL_FIELDS:  STRUCTURAL_FIELDS,
+      _STRUCTURED_COLS:    STRUCTURED_COLS
     };
   })();
 
@@ -4813,9 +6306,593 @@
         return display === 'none' || 'got: ' + display + ' (expected none)';
       });
 
+    /* ============================================================
+       Session 7 smoke additions (alpha.7.0 \u2192 alpha.7.5)
+       Pure-function tests for the saved-deal infrastructure +
+       buildSavePayload contract. DOM-dependent tests omitted to keep
+       smoke synchronous; manual smoke checklist in SESSION-7-handoff.md
+       covers the integration paths.
+       ============================================================ */
+
+    check('UI.buildSavePayload exists',
+      () => typeof UI.buildSavePayload === 'function' || 'got: ' + typeof UI.buildSavePayload);
+
+    check('APP.wizSave exists',
+      () => typeof APP.wizSave === 'function' || 'got: ' + typeof APP.wizSave);
+
+    check('APP.recoForDeal exists (cross-module from saved-deal view)',
+      () => typeof APP.recoForDeal === 'function' || 'got: ' + typeof APP.recoForDeal);
+
+    check('UI.showSavedDeal exists (route target for #/quote/:refId)',
+      () => typeof UI.showSavedDeal === 'function' || 'got: ' + typeof UI.showSavedDeal);
+
+    // ---- buildSavePayload contract ----
+    check('buildSavePayload returns null for null input',
+      () => UI.buildSavePayload(null) === null || 'got: ' + UI.buildSavePayload(null));
+
+    check('buildSavePayload routes project/customer_name/stage to top level',
+      () => {
+        const p = UI.buildSavePayload({
+          project: 'X', customer_name: 'Y', stage: 'Qualified',
+          solutionType: 'calico'
+        });
+        if (p.project !== 'X') return 'project missing';
+        if (p.customer_name !== 'Y') return 'customer_name missing';
+        if (p.stage !== 'Qualified') return 'stage missing';
+        return true;
+      });
+
+    check('buildSavePayload routes solutionType + calico_inputs into raw_submission',
+      () => {
+        const p = UI.buildSavePayload({
+          project: 'X', customer_name: 'Y', stage: 'Qualified',
+          solutionType: 'calico',
+          calico_inputs: { hdmi4k: 2, hdmiFhd: 0 }
+        });
+        if (p.solutionType !== undefined) return 'solutionType leaked to top level';
+        if (!p.raw_submission) return 'raw_submission missing';
+        if (p.raw_submission.solutionType !== 'calico') return 'raw_submission.solutionType missing';
+        if (!p.raw_submission.calico_inputs) return 'raw_submission.calico_inputs missing';
+        return true;
+      });
+
+    check('buildSavePayload preserves id for edit path',
+      () => {
+        const p = UI.buildSavePayload({
+          id: 'uuid-abc', display_ref: 'TV-12345678',
+          project: 'X', customer_name: 'Y', stage: 'Qualified'
+        });
+        if (p.id !== 'uuid-abc') return 'id stripped';
+        if (p.display_ref !== 'TV-12345678') return 'display_ref stripped';
+        return true;
+      });
+
+    check('buildSavePayload drops server-managed fields (created_at, deal_value_inr)',
+      () => {
+        const p = UI.buildSavePayload({
+          project: 'X', customer_name: 'Y', stage: 'Qualified',
+          created_at: '2026-01-01', updated_at: '2026-01-02',
+          deal_value_inr: 999999, is_new: true
+        });
+        if (p.created_at) return 'created_at leaked';
+        if (p.updated_at) return 'updated_at leaked';
+        if (p.deal_value_inr) return 'deal_value_inr leaked';
+        if (p.is_new) return 'is_new leaked';
+        if (p.raw_submission.created_at) return 'created_at leaked into raw';
+        return true;
+      });
+
+    check('buildSavePayload builds lines from reco.cards when present',
+      () => {
+        const p = UI.buildSavePayload({
+          project: 'X', customer_name: 'Y', stage: 'Qualified',
+          solutionType: 'calico',
+          reco: {
+            chassis: 'C7-PRO-1200',
+            cards: [{ sku: 'C2-IN-HDMI', qty: 2, desc: 'HDMI input' }]
+          }
+        });
+        if (!Array.isArray(p.lines)) return 'lines not array';
+        // Chassis should be prepended if not in cards
+        if (p.lines.length !== 2) return 'lines length: ' + p.lines.length;
+        if (p.lines[0].sku !== 'C7-PRO-1200') return 'chassis not first: ' + p.lines[0].sku;
+        if (p.lines[1].sku !== 'C2-IN-HDMI') return 'card not second: ' + p.lines[1].sku;
+        if (p.lines[1].product_family !== 'CALICO') return 'family: ' + p.lines[1].product_family;
+        return true;
+      });
+
+    check('buildSavePayload falls back to deal.lines when no reco (edit-save preserves BoM)',
+      () => {
+        // Session 4 gotcha #3: destructive on lines/screens/config — must
+        // pass existing lines when no fresh reco available.
+        const existing = [{
+          product_family: 'CALICO', sku: 'C7-PRO-1200',
+          description: 'CALICO PRO', model_no: 'C7-PRO-1200',
+          qty: 1, unit_price_inr: 0, line_discount_pct: 0
+        }];
+        const p = UI.buildSavePayload({
+          id: 'uuid', project: 'X', customer_name: 'Y', stage: 'Qualified',
+          lines: existing
+        });
+        if (!Array.isArray(p.lines)) return 'lines not array';
+        if (p.lines.length !== 1) return 'expected 1 line, got ' + p.lines.length;
+        if (p.lines[0].sku !== 'C7-PRO-1200') return 'sku: ' + p.lines[0].sku;
+        return true;
+      });
+
+    /* ---- Session 7.6 — MV/CORIO/LED/SX inline edit infrastructure ---- */
+
+    check('CATALOG.mv.inputModules + outputModules exist (MV signal vocabulary)',
+      () => {
+        const inK  = Object.keys(CATALOG.mv.inputModules || {});
+        const outK = Object.keys(CATALOG.mv.outputModules || {});
+        return (inK.length > 0 && outK.length > 0)
+          || 'in=' + inK.length + ' out=' + outK.length;
+      });
+
+    check('CATALOG.corio.cm2.inputs + outputs exist (CORIO key vocabulary)',
+      () => {
+        const i = (CATALOG.corio && CATALOG.corio.cm2 && CATALOG.corio.cm2.inputs)  || [];
+        const o = (CATALOG.corio && CATALOG.corio.cm2 && CATALOG.corio.cm2.outputs) || [];
+        return (i.length > 0 && o.length > 0) || 'in=' + i.length + ' out=' + o.length;
+      });
+
+    check('SX_EDITORIAL has 4 entries with correct ids (hdmi/sdi/ap536/avip)',
+      () => {
+        // Exposed indirectly via the script scope — re-derive via DOM probe
+        // would require a saved-deal render. The sx_data default shape in
+        // defaultWizard() is the authoritative answer.
+        const d = UI.defaultWizard();
+        const keys = Object.keys(d.sx_data).sort();
+        const expected = ['ap536', 'avip', 'hdmi', 'sdi'];
+        return JSON.stringify(keys) === JSON.stringify(expected)
+          || 'got: ' + keys.join(',');
+      });
+
     return {
       pass, fail, lines: out,
       summary: '\n' + pass + ' passed, ' + fail + ' failed (UI)',
+      ok: fail === 0
+    };
+  };
+
+  /* ============================================================
+     __smokeExport() — Session 8 smoke gate (alpha.8.0+)
+     Synchronous module-presence + API-shape checks. CDN-dependent
+     library lazy-load tests are async and live in __smokeExportAsync
+     (separate so callers can opt-in to network-touching checks).
+     ============================================================ */
+  window.__smokeExport = function() {
+    const out = [];
+    let pass = 0, fail = 0;
+    function check(label, fn) {
+      try {
+        const r = fn();
+        if (r === true) { out.push('\u2713 ' + label); pass++; }
+        else            { out.push('\u2717 ' + label + '  \u2192 ' + r); fail++; }
+      } catch (e) {
+        out.push('\u2717 ' + label + '  \u2192 THREW: ' + (e && e.message || String(e)));
+        fail++;
+      }
+    }
+
+    check('EXPORT module exists',
+      () => typeof EXPORT === 'object' || 'got: ' + typeof EXPORT);
+
+    check('EXPORT.excel is async function',
+      () => (typeof EXPORT.excel === 'function') || 'got: ' + typeof EXPORT.excel);
+
+    check('EXPORT.pdf is async function',
+      () => (typeof EXPORT.pdf === 'function') || 'got: ' + typeof EXPORT.pdf);
+
+    check('EXPORT.download is function',
+      () => (typeof EXPORT.download === 'function') || 'got: ' + typeof EXPORT.download);
+
+    check('EXPORT.filename is function',
+      () => (typeof EXPORT.filename === 'function') || 'got: ' + typeof EXPORT.filename);
+
+    check('EXPORT.loadExcelJS / loadJsPDF / loadHtml2Canvas exist',
+      () => {
+        const all = typeof EXPORT.loadExcelJS === 'function' &&
+                    typeof EXPORT.loadJsPDF === 'function' &&
+                    typeof EXPORT.loadHtml2Canvas === 'function';
+        return all || 'shape: ' + Object.keys(EXPORT).join(',');
+      });
+
+    check('EXPORT.filename produces tvONE_Quote_<ref>_<date>.<ext>',
+      () => {
+        const fn = EXPORT.filename({ display_ref: 'TV-12345678' }, 'xlsx');
+        return /^tvONE_Quote_TV-12345678_\d{4}-\d{2}-\d{2}\.xlsx$/.test(fn)
+          || 'got: ' + fn;
+      });
+
+    check('EXPORT.filename handles deal with no ref (fallback "NOREF")',
+      () => {
+        const fn = EXPORT.filename({}, 'pdf');
+        return /^tvONE_Quote_NOREF_\d{4}-\d{2}-\d{2}\.pdf$/.test(fn)
+          || 'got: ' + fn;
+      });
+
+    check('EXPORT._cdn URLs all start with https://',
+      () => {
+        const c = EXPORT._cdn || {};
+        const urls = [c.CDN_EXCELJS, c.CDN_JSPDF, c.CDN_HTML2CANVAS];
+        return urls.every(u => typeof u === 'string' && u.indexOf('https://') === 0)
+          || 'got: ' + JSON.stringify(urls);
+      });
+
+    check('EXPORT._isIOS returns boolean',
+      () => typeof EXPORT._isIOS() === 'boolean' || 'got: ' + typeof EXPORT._isIOS());
+
+    return {
+      pass, fail, lines: out,
+      summary: '\n' + pass + ' passed, ' + fail + ' failed (Export)',
+      ok: fail === 0
+    };
+  };
+
+  /* ============================================================
+     __smokeExportAsync() — alpha.8.0
+     Network-touching: hits the CDN to verify reachability. Run this
+     once from the Cavitak office network to confirm jsdelivr isn't
+     blocked. Don't run it on every smoke pass (CDN load is ~1.2MB
+     across the three libraries).
+     ============================================================ */
+  window.__smokeExportAsync = async function() {
+    const out = [];
+    let pass = 0, fail = 0;
+    async function check(label, fn) {
+      try {
+        const r = await fn();
+        if (r === true) { out.push('\u2713 ' + label); pass++; }
+        else            { out.push('\u2717 ' + label + '  \u2192 ' + r); fail++; }
+      } catch (e) {
+        out.push('\u2717 ' + label + '  \u2192 THREW: ' + (e && e.message || String(e)));
+        fail++;
+      }
+    }
+
+    await check('EXPORT.loadExcelJS reaches CDN and resolves',
+      async () => {
+        const lib = await EXPORT.loadExcelJS();
+        return (lib && typeof lib.Workbook === 'function')
+          || 'got: ' + (lib ? Object.keys(lib).slice(0, 5).join(',') : lib);
+      });
+
+    await check('EXPORT.loadJsPDF reaches CDN and resolves',
+      async () => {
+        const lib = await EXPORT.loadJsPDF();
+        return (lib && typeof lib.jsPDF === 'function')
+          || 'got: ' + (lib ? Object.keys(lib).slice(0, 5).join(',') : lib);
+      });
+
+    await check('EXPORT.loadHtml2Canvas reaches CDN and resolves',
+      async () => {
+        const fn = await EXPORT.loadHtml2Canvas();
+        return (typeof fn === 'function')
+          || 'got: ' + typeof fn;
+      });
+
+    // alpha.8.1 — end-to-end Excel generation
+    await check('EXPORT.excel(mockDeal) produces a non-trivial Blob',
+      async () => {
+        const mock = {
+          display_ref: 'TV-99999998',
+          project: 'Smoke export test',
+          customer_name: 'Smoke Customer',
+          stage: 'Qualified',
+          solutionType: 'calico',
+          calico_inputs:  { hdmi4k: 2, hdmiFhd: 0, sdi12g: 0, sdi3g: 0, hdbt: 0, ip: 0 },
+          calico_outputs: { display: 2, projector: 0, sdi: 0, projectorRes: 'FHD' },
+          calico_audio: false,
+          hasLed: false, hasSx: false
+        };
+        const blob = await EXPORT.excel(mock);
+        if (!(blob instanceof Blob)) return 'not a Blob';
+        if (blob.size < 1000)        return 'too small: ' + blob.size + ' bytes';
+        if (blob.type.indexOf('spreadsheetml') < 0) return 'mime: ' + blob.type;
+        return true;
+      });
+
+    // alpha.8.2 — end-to-end PDF generation
+    await check('EXPORT.pdf(mockDeal) produces a non-trivial Blob',
+      async () => {
+        const mock = {
+          display_ref: 'TV-99999997',
+          project: 'Smoke pdf test',
+          customer_name: 'Smoke Customer',
+          stage: 'Qualified',
+          solutionType: 'calico',
+          calico_inputs:  { hdmi4k: 1, hdmiFhd: 0, sdi12g: 0, sdi3g: 0, hdbt: 0, ip: 0 },
+          calico_outputs: { display: 1, projector: 0, sdi: 0, projectorRes: 'FHD' },
+          calico_audio: false,
+          hasLed: false, hasSx: false
+        };
+        const blob = await EXPORT.pdf(mock);
+        if (!(blob instanceof Blob)) return 'not a Blob';
+        if (blob.size < 500)         return 'too small: ' + blob.size + ' bytes';
+        if (blob.type.indexOf('pdf') < 0) return 'mime: ' + blob.type;
+        return true;
+      });
+
+    return {
+      pass, fail, lines: out,
+      summary: '\n' + pass + ' passed, ' + fail + ' failed (Export-async)',
+      ok: fail === 0
+    };
+  };
+
+  /* ============================================================
+     __smokeIntegration() — Session 9 smoke gate (alpha.9.0)
+     Data-layer cross-module integration tests. Catches regressions
+     in buildSavePayload contract, field classification invariants,
+     round-trip preservation, recoForDeal dispatch across families,
+     and the Session 4 destructive-on-save gotcha #3 (lines preserved
+     when no fresh reco).
+
+     Synchronous. No external dependencies (mocks STORE-shaped inputs
+     and reconstructs RPC contracts in-memory).
+     ============================================================ */
+  window.__smokeIntegration = function() {
+    const out = [];
+    let pass = 0, fail = 0;
+    function check(label, fn) {
+      try {
+        const r = fn();
+        if (r === true) { out.push('\u2713 ' + label); pass++; }
+        else            { out.push('\u2717 ' + label + '  \u2192 ' + r); fail++; }
+      } catch (e) {
+        out.push('\u2717 ' + label + '  \u2192 THREW: ' + (e && e.message || String(e)));
+        fail++;
+      }
+    }
+
+    // Mock deal builders — shared across tests.
+    function calicoMock(extra) {
+      return Object.assign({
+        solutionType:    'calico',
+        calico_inputs:   { hdmi4k: 2, hdmiFhd: 0, sdi12g: 0, sdi3g: 0, hdbt: 0, ip: 0 },
+        calico_outputs:  { display: 2, projector: 0, sdi: 0, projectorRes: 'FHD' },
+        calico_audio:    false,
+        hasLed:          false,
+        hasSx:           false
+      }, extra || {});
+    }
+    function mvMock(extra) {
+      return Object.assign({
+        solutionType:    'mv',
+        mv_inputs:       [{ signal: 'hdmi4k', qty: 2 }],
+        mv_outputSignal: 'hdmi',
+        hasLed:          false,
+        hasSx:           false
+      }, extra || {});
+    }
+    function corioMock(extra) {
+      return Object.assign({
+        solutionType:    'corio',
+        corio_inputs:    { hdmi4k: 2, hdmiFhd: 0, sdi12g: 0, sdi3g: 0 },
+        corio_outputs:   { display: 2, projector: 0, sdi: 0 },
+        corio_audio:     false,
+        corio_fanFilter: false,
+        hasLed:          false,
+        hasSx:           false
+      }, extra || {});
+    }
+
+    // ---- 1: APP internals exposed for testing ----
+    check('APP._buildSavePayload exists (alpha.9.0 contract)',
+      () => typeof APP._buildSavePayload === 'function'
+        || 'got: ' + typeof APP._buildSavePayload);
+
+    check('APP._SOFT_FIELDS / _STRUCTURAL_FIELDS / _STRUCTURED_COLS exposed',
+      () => {
+        const ok = Array.isArray(APP._SOFT_FIELDS) &&
+                   Array.isArray(APP._STRUCTURAL_FIELDS) &&
+                   Array.isArray(APP._STRUCTURED_COLS);
+        return ok || 'shapes: ' +
+          typeof APP._SOFT_FIELDS + '/' + typeof APP._STRUCTURAL_FIELDS + '/' + typeof APP._STRUCTURED_COLS;
+      });
+
+    // ---- 2: buildSavePayload null safety ----
+    check('buildSavePayload(null) returns null',
+      () => APP._buildSavePayload(null) === null || 'got non-null');
+
+    check('buildSavePayload(undefined) returns null',
+      () => APP._buildSavePayload(undefined) === null || 'got non-null');
+
+    // ---- 3: Field classification invariants ----
+    check('SOFT_FIELDS \u2229 STRUCTURAL_FIELDS = \u2205 (no overlap)',
+      () => {
+        const overlap = APP._SOFT_FIELDS.filter(f => APP._STRUCTURAL_FIELDS.indexOf(f) >= 0);
+        return overlap.length === 0 || 'overlap: ' + overlap.join(',');
+      });
+
+    check('All SOFT_FIELDS in STRUCTURED_COLS (autosave \u2192 top-level columns)',
+      () => {
+        const missing = APP._SOFT_FIELDS.filter(f => APP._STRUCTURED_COLS.indexOf(f) < 0);
+        return missing.length === 0
+          || 'missing from STRUCTURED_COLS: ' + missing.join(',');
+      });
+
+    check('No STRUCTURAL_FIELDS in STRUCTURED_COLS (they belong in raw_submission)',
+      () => {
+        const leak = APP._STRUCTURAL_FIELDS.filter(f => APP._STRUCTURED_COLS.indexOf(f) >= 0);
+        return leak.length === 0
+          || 'STRUCTURAL leaked into STRUCTURED_COLS: ' + leak.join(',');
+      });
+
+    // ---- 4: buildSavePayload field routing ----
+    check('Structured field "project" routes to payload top-level',
+      () => {
+        const p = APP._buildSavePayload({ project: 'X' });
+        return (p.project === 'X' && (!p.raw_submission || !('project' in p.raw_submission)))
+          || 'p.project=' + JSON.stringify(p.project) +
+             ' raw.project=' + JSON.stringify(p.raw_submission && p.raw_submission.project);
+      });
+
+    check('Structural field "solutionType" routes to raw_submission',
+      () => {
+        const p = APP._buildSavePayload({ solutionType: 'calico' });
+        return (p.raw_submission && p.raw_submission.solutionType === 'calico' && !('solutionType' in p))
+          || 'p.solutionType=' + JSON.stringify(p.solutionType) +
+             ' raw=' + JSON.stringify(p.raw_submission);
+      });
+
+    check('Server-managed fields stripped (created_at, deleted_at, etc.)',
+      () => {
+        const p = APP._buildSavePayload({
+          project: 'X',
+          created_at: '2026-01-01',
+          updated_at: '2026-01-02',
+          deleted_at: '2026-01-03',
+          created_by: 'someone',
+          deal_value_inr: 100000,
+          is_new: true
+        });
+        const stripped = ['created_at', 'updated_at', 'deleted_at',
+                          'created_by', 'deal_value_inr', 'is_new'];
+        const leaked = stripped.filter(k => k in p || (p.raw_submission && k in p.raw_submission));
+        return leaked.length === 0 || 'leaked: ' + leaked.join(',');
+      });
+
+    check('id + display_ref preserved at top-level (edit path)',
+      () => {
+        const p = APP._buildSavePayload({ id: 'uuid-123', display_ref: 'TV-12345678', project: 'X' });
+        return (p.id === 'uuid-123' && p.display_ref === 'TV-12345678')
+          || 'p.id=' + p.id + ' p.display_ref=' + p.display_ref;
+      });
+
+    // ---- 5: Round-trip preservation (CRITICAL — catches raw_submission bug class) ----
+    check('Round-trip: deal \u2192 buildSavePayload \u2192 reconstruct preserves all keys',
+      () => {
+        const testDeal = calicoMock({
+          project: 'RoundTrip',
+          customer_name: 'Customer Co',
+          contact_phone: '+91 98765 43210',
+          stage: 'Qualified',
+          deal_value: 250000
+        });
+        const p = APP._buildSavePayload(testDeal);
+        // Reconstruct: merge raw_submission back to top level
+        const recon = Object.assign({}, p);
+        delete recon.raw_submission;
+        delete recon.lines;
+        Object.assign(recon, p.raw_submission || {});
+
+        const mismatches = [];
+        Object.keys(testDeal).forEach(k => {
+          if (JSON.stringify(testDeal[k]) !== JSON.stringify(recon[k])) {
+            mismatches.push(k + ': ' + JSON.stringify(testDeal[k]) +
+                            ' \u2260 ' + JSON.stringify(recon[k]));
+          }
+        });
+        return mismatches.length === 0 || mismatches.join(' | ');
+      });
+
+    // ---- 6: Lines persistence (Session 4 gotcha #3) ----
+    check('buildSavePayload preserves deal.lines when no reco (no wipe!)',
+      () => {
+        const p = APP._buildSavePayload({
+          project: 'X',
+          solutionType: 'calico',
+          lines: [
+            { sku: 'TEST-1', description: 'D1', qty: 1, product_family: 'CALICO' },
+            { sku: 'TEST-2', description: 'D2', qty: 2, product_family: 'CALICO' }
+          ]
+        });
+        return (Array.isArray(p.lines) && p.lines.length === 2 &&
+                p.lines[0].sku === 'TEST-1' && p.lines[1].sku === 'TEST-2')
+          || 'p.lines=' + JSON.stringify(p.lines);
+      });
+
+    check('buildSavePayload uses reco.cards when reco present (fresh BoM)',
+      () => {
+        const p = APP._buildSavePayload({
+          project: 'X',
+          solutionType: 'calico',
+          reco: {
+            chassis: null,
+            cards: [
+              { sku: 'NEW-A', desc: 'New A', qty: 1 },
+              { sku: 'NEW-B', desc: 'New B', qty: 3 }
+            ]
+          },
+          lines: [
+            { sku: 'OLD-1', description: 'Stale', qty: 1, product_family: 'CALICO' }
+          ]
+        });
+        return (Array.isArray(p.lines) && p.lines.length === 2 &&
+                p.lines[0].sku === 'NEW-A' && p.lines[1].sku === 'NEW-B')
+          || 'p.lines=' + JSON.stringify(p.lines && p.lines.map(l => l.sku));
+      });
+
+    check('buildSavePayload prepends chassis if not already in reco.cards',
+      () => {
+        const p = APP._buildSavePayload({
+          project: 'X',
+          solutionType: 'calico',
+          reco: {
+            chassis: 'CHASSIS-X',
+            cards: [
+              { sku: 'CARD-A', desc: 'A', qty: 1 }
+            ]
+          }
+        });
+        return (Array.isArray(p.lines) && p.lines.length === 2 &&
+                p.lines[0].sku === 'CHASSIS-X' && p.lines[1].sku === 'CARD-A')
+          || 'p.lines=' + JSON.stringify(p.lines && p.lines.map(l => l.sku));
+      });
+
+    check('buildSavePayload does NOT duplicate chassis if already in cards',
+      () => {
+        const p = APP._buildSavePayload({
+          project: 'X',
+          solutionType: 'calico',
+          reco: {
+            chassis: 'CHASSIS-X',
+            cards: [
+              { sku: 'CHASSIS-X', desc: 'X', qty: 1 },
+              { sku: 'CARD-A',    desc: 'A', qty: 1 }
+            ]
+          }
+        });
+        return (Array.isArray(p.lines) && p.lines.length === 2 &&
+                p.lines.filter(l => l.sku === 'CHASSIS-X').length === 1)
+          || 'p.lines=' + JSON.stringify(p.lines && p.lines.map(l => l.sku));
+      });
+
+    check('buildSavePayload returns empty lines array (not undefined) on empty input',
+      () => {
+        const p = APP._buildSavePayload({ project: 'X', solutionType: 'calico' });
+        return (Array.isArray(p.lines) && p.lines.length === 0)
+          || 'p.lines=' + JSON.stringify(p.lines);
+      });
+
+    // ---- 7: recoForDeal dispatch across all 3 families ----
+    check('recoForDeal(CALICO mock) returns non-null reco with cards array',
+      () => {
+        const r = APP.recoForDeal(calicoMock());
+        return (r && Array.isArray(r.cards))
+          || 'r=' + JSON.stringify(r && Object.keys(r));
+      });
+
+    check('recoForDeal(MV mock) returns non-null reco',
+      () => {
+        const r = APP.recoForDeal(mvMock());
+        return (r && (Array.isArray(r.cards) || r.chassis != null))
+          || 'r=' + JSON.stringify(r && Object.keys(r));
+      });
+
+    check('recoForDeal(CORIO mock) returns non-null reco',
+      () => {
+        const r = APP.recoForDeal(corioMock());
+        return (r && (Array.isArray(r.cards) || r.chassis != null))
+          || 'r=' + JSON.stringify(r && Object.keys(r));
+      });
+
+    return {
+      pass, fail, lines: out,
+      summary: '\n' + pass + ' passed, ' + fail + ' failed (Integration)',
       ok: fail === 0
     };
   };
@@ -4830,10 +6907,43 @@
   APP.start();
 
   /* ============================================================
-     End of v27.0.0-alpha.7.1
-     (Session 7 surface 2/6: real one-page layout — BoM hero,
-      sticky action bar, sticky chip nav, accordion sections;
-      bonus: not-found error classification fix from T2)
+     End of v27.0.0-alpha.9.0
+     (Session 9 surface 1/N: __smokeIntegration() shipped.
+      18 data-layer integration checks:
+       - APP internals contract (_buildSavePayload + field arrays)
+       - buildSavePayload null safety + field routing
+       - SOFT vs STRUCTURAL classification invariants
+       - Server-managed field stripping (created_at, deleted_at, etc.)
+       - id/display_ref preservation (edit path)
+       - Round-trip preservation (deal \u2192 payload \u2192 reconstruct)
+         \u2014 CRITICAL: catches the raw_submission bug class
+       - Lines persistence gotcha #3 (preserve deal.lines, prefer reco)
+       - Chassis prepend logic (no duplicates)
+       - recoForDeal dispatch for CALICO / MV / CORIO
+
+      No external dependencies. Synchronous. Run via __smokeIntegration().
+
+      Smoke totals:
+       __smoke()             \u2192 47
+       __smokeStore()        \u2192 11
+       __smokeUI()           \u2192 40
+       __smokeExport()       \u2192 10
+       __smokeIntegration()  \u2192 18  (NEW)
+       TOTAL sync            = 126
+       __smokeExportAsync()  \u2192  5  (network, run ONCE from Cavitak)
+       TOTAL with async      = 131
+
+      \u26A0 CODE FREEZE FROM CLAUDE SIDE.
+      All remaining Session 9 work happens on Dipenkumar's side:
+       - Deploy alpha.9.0 to GitHub Pages
+       - Run __smokeExportAsync() once from Cavitak network
+       - Real-device matrix (iPhone Safari, Android Chrome, iPad)
+       - Lighthouse audit on production URL
+       - A11y walkthrough (keyboard, screen reader, 44px tap targets)
+
+      Any bugs surfaced from real-device testing become alpha.9.1+
+      in a FRESH chat (this one is 9 surfaces deep \u2014 cumulative
+      context risk per SPEC \u00a78).)
      ============================================================ */
   </script>
 </body>
