@@ -42,6 +42,10 @@
       --sh-nav: 0 -1px 0 var(--c-border), 0 -4px 12px rgba(26,46,31,0.04);
     }
     * { box-sizing: border-box; }
+    /* Belt-and-suspenders: [hidden] beats author CSS like display:flex.
+       Without this, .topbar / .tricolor-bar / .bottom-nav stay visible on
+       login because their display:flex outranks the UA [hidden] rule. */
+    [hidden] { display: none !important; }
     html { -webkit-text-size-adjust: 100%; }
     body { margin: 0; background: var(--c-bg); color: var(--c-fg);
       font: 15px/1.45 var(--f-sans); min-height: 100vh;
@@ -683,7 +687,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.0.0-alpha.6',
+      version: 'v27.0.0-alpha.6.1',
       constants,
       calico,
       mv,
@@ -1696,8 +1700,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.0.0-alpha.6"',
-      () => CATALOG.version === 'v27.0.0-alpha.6' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.0.0-alpha.6.1"',
+      () => CATALOG.version === 'v27.0.0-alpha.6.1' || 'got: ' + CATALOG.version);
 
     check('Object.isFrozen(CATALOG)',
       () => Object.isFrozen(CATALOG) === true || 'not frozen');
@@ -4257,6 +4261,33 @@
         return v !== '' || 'got: empty';
       });
 
+    /* ---- Chrome hidden on login (regression check, alpha.6.1 hotfix) ----
+       The first iPad smoke of alpha.6 caught topbar + bottom-nav leaking
+       onto the login screen because display:flex outranked [hidden]. The
+       global `[hidden] { display: none !important }` rule fixes it; this
+       check makes sure we don't reintroduce it. */
+    check('Login chrome hidden: tricolor + topbar + bottom-nav have display:none when showLogin is active',
+      () => {
+        // Render login synchronously and check computed styles.
+        const stash = location.hash;
+        try {
+          UI.showLogin();
+          const els = ['tricolor','topbar','bottom-nav'];
+          for (const id of els) {
+            const el = document.getElementById(id);
+            if (!el) return 'missing element: ' + id;
+            const cs = getComputedStyle(el);
+            if (cs.display !== 'none') return id + ' computed display: ' + cs.display + ' (expected none)';
+          }
+          return true;
+        } finally {
+          // Restore route — if user was logged in, put them back where they were
+          if (STORE.currentUser()) {
+            location.hash = stash || '#/home';
+          }
+        }
+      });
+
     return {
       pass, fail, lines: out,
       summary: '\n' + pass + ' passed, ' + fail + ' failed (UI)',
@@ -4274,7 +4305,7 @@
   APP.start();
 
   /* ============================================================
-     End of v27.0.0-alpha.6 (Sessions 5 + 6)
+     End of v27.0.0-alpha.6.1 (Sessions 5 + 6 + chrome-hidden hotfix)
      ============================================================ */
   </script>
 </body>
