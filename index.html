@@ -2278,32 +2278,35 @@ body.on-quote-form .app-main { padding-bottom: calc(var(--s-6) + 80px); }
             </select>
           </div>
         </div>
+        <!-- v26.6.5 — f_outputType + f_projectorRes hidden per user request.
+             Kept as elements (not deleted) because 8 engine references read them. -->
+        <div class="field" style="display:none;">
+          <label class="field-label" for="f_outputType">Output type</label>
+          <select class="field-select" id="f_outputType">
+            <option>Display(s)</option><option>Projector(s)</option><option>LED wall</option>
+            <option>Signal Extension</option><option>Multi Viewer</option><option>Mixed</option>
+          </select>
+        </div>
+        <div class="field" style="display:none;">
+          <label class="field-label" for="f_projectorRes">Projector res (legacy)</label>
+          <select class="field-select" id="f_projectorRes">
+            <option>4K</option><option>FHD</option>
+          </select>
+        </div>
+        <!-- v26.6.5 — Active LED wall? paired with Audio outputs.
+             onchange wired so LED Screens section toggles open when set to Yes. -->
         <div class="field-row">
           <div class="field">
-            <label class="field-label" for="f_outputType">Output type</label>
-            <select class="field-select" id="f_outputType">
-              <option>Display(s)</option><option>Projector(s)</option><option>LED wall</option>
-              <option>Signal Extension</option><option>Multi Viewer</option><option>Mixed</option>
-            </select>
-          </div>
-          <div class="field">
             <label class="field-label" for="f_outputActiveLed">Active LED wall?</label>
-            <select class="field-select" id="f_outputActiveLed">
+            <select class="field-select" id="f_outputActiveLed"
+                    onchange="window._onActiveLedToggleTV && window._onActiveLedToggleTV()">
               <option>No</option><option>Yes</option>
             </select>
           </div>
-        </div>
-        <div class="field-row">
           <div class="field">
             <label class="field-label" for="f_outputAudio">Audio outputs</label>
             <select class="field-select" id="f_outputAudio">
               <option>None</option><option>Embedded only</option><option>Discrete</option><option>Discrete + embedded</option>
-            </select>
-          </div>
-          <div class="field">
-            <label class="field-label" for="f_projectorRes">Projector res (legacy)</label>
-            <select class="field-select" id="f_projectorRes">
-              <option>4K</option><option>FHD</option>
             </select>
           </div>
         </div>
@@ -2468,6 +2471,25 @@ function setTheme(name) {
 
 /* ---- App version ---- */
 // ============================================================
+// v26.6.5 — LED Screens visibility + unwanted fields hidden — 2026-05-22
+// ============================================================
+// 5 fixes:
+//   1. "Where is screen add & pixel add field?" — ledScreensWrap was
+//      hidden by default + only shown when f_outputActiveLed === 'yes'
+//      (lowercase). Select option is "Yes" (capitalized), no value attr
+//      → case-mismatch → wrap stayed hidden forever. Also no onchange
+//      wired. Fix: case-insensitive check, onchange wired, auto-init
+//      first screen when section opens, restyle as proper form-section.
+//   2. Output type + Projector res (legacy) hidden per user request.
+//      Elements kept (8 engine refs) but containers display:none.
+//      Active LED wall? + Audio outputs now paired in one row.
+//   3. addScreen markup rewritten with v26 design tokens (was using
+//      v25 dark-theme hardcoded colors that didn't match light theme).
+//   4. removeLastScreen function added (keeps at least 1 screen).
+//   5. Chrome-extension noise suppressed — the "A listener indicated
+//      an asynchronous response" unhandledrejection comes from chrome
+//      extensions, NOT our code. Filtered out before reaching v26.error.
+// ============================================================
 // v26.6.4 — UX cleanup — 2026-05-22
 // ============================================================
 // Fixes 4 user-reported issues from v26.6.3 deploy:
@@ -2579,7 +2601,7 @@ function setTheme(name) {
 // No backend / schema / catalog change. Save/restore already wired
 // via _sbEnrichBlob (L8053) + edit-restore SX block (L10920+).
 // ============================================================
-const TVONE_FRONTEND_VERSION = '26.6.4';
+const TVONE_FRONTEND_VERSION = '26.6.5';
 /* v26.2.0 — Architecture-first pass (2026-05-22). Stop the patchwork loop;
    align frontend with DB schema as source of truth. Paired with DB migration
    v26_2_0_pipeline_stages_new_canon applied same day.
@@ -3796,6 +3818,21 @@ function _setText(id, t) {
     populateCloseMonths_();
   }
 
+/* --- removeLastScreen (v26.6.5 — paired with addScreen) --- */
+  function removeLastScreen() {
+    if (screenCount <= 1) {
+      // Always keep at least 1 screen row when section is visible
+      return;
+    }
+    const last = document.getElementById('screen-' + screenCount);
+    if (last && last.parentNode) last.parentNode.removeChild(last);
+    screenCount--;
+    if (typeof updateTotals === 'function') {
+      try { updateTotals(); } catch(_) {}
+    }
+  }
+  window.removeLastScreen = removeLastScreen;
+
 /* --- addScreen (v25.118 L2445-2467, function) --- */
   function addScreen() {
     if (screenCount >= MAX_SCREENS) { alert('Maximum ' + MAX_SCREENS + ' screens.'); return; }
@@ -3808,14 +3845,20 @@ function _setText(id, t) {
           <div class="calc-readout" id="readout-${idx}">— px · — pixels · — ports</div>
         </div>
         <div class="screen-grid">
-          <div class="field"><label>Resolution Width (px) <span class="req">*</span></label>
-            <input type="number" min="0" id="resW-${idx}" placeholder="e.g. 1920" oninput="updateReadout(${idx}); updateTotals()"></div>
-          <div class="field"><label>Resolution Height (px) <span class="req">*</span></label>
-            <input type="number" min="0" id="resH-${idx}" placeholder="e.g. 1080" oninput="updateReadout(${idx}); updateTotals()"></div>
-          <div class="field"><label>LED pitch (mm)</label>
-            <input type="number" step="0.01" min="0.3" max="20" id="pitch-${idx}" placeholder="e.g. 2.5" oninput="updateReadout(${idx})"></div>
+          <div class="field">
+            <label class="field-label" for="resW-${idx}">Resolution width (px) *</label>
+            <input class="field-input" type="number" min="0" id="resW-${idx}" placeholder="e.g. 1920" oninput="updateReadout(${idx}); updateTotals()">
+          </div>
+          <div class="field">
+            <label class="field-label" for="resH-${idx}">Resolution height (px) *</label>
+            <input class="field-input" type="number" min="0" id="resH-${idx}" placeholder="e.g. 1080" oninput="updateReadout(${idx}); updateTotals()">
+          </div>
+          <div class="field">
+            <label class="field-label" for="pitch-${idx}">LED pitch (mm)</label>
+            <input class="field-input" type="number" step="0.01" min="0.3" max="20" id="pitch-${idx}" placeholder="e.g. 2.5" oninput="updateReadout(${idx})">
+          </div>
         </div>
-        <div class="helper" id="mmInfo-${idx}" style="margin-top:10px; display:none; padding:11px 16px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); border-left:3px solid var(--emerald-bright); border-radius:8px; color:#A7F3D0; font-size:13px; backdrop-filter:blur(10px)"></div>
+        <div class="screen-mm-info" id="mmInfo-${idx}" style="display:none;"></div>
       </div>`;
     document.getElementById('screensContainer').insertAdjacentHTML('beforeend', html);
     updateTotals();
@@ -3838,7 +3881,11 @@ function _setText(id, t) {
       const wMm = Math.round(rW * pitch);
       const hMm = Math.round(rH * pitch);
       mmEl.style.display = 'block';
-      mmEl.innerHTML = '<b>Physical size:</b> ' + wMm.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' × ' + hMm.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' mm (' + (wMm/1000).toFixed(2) + ' × ' + (hMm/1000).toFixed(2) + ' m) — at ' + pitch + ' mm pitch';
+      // v26.6.5 — cleaner readout, v26 typography. Locale tweaked to en-IN format.
+      mmEl.innerHTML = '<strong>Physical size:</strong> ' +
+        wMm.toLocaleString('en-IN') + ' × ' + hMm.toLocaleString('en-IN') + ' mm ' +
+        '(' + (wMm/1000).toFixed(2) + ' × ' + (hMm/1000).toFixed(2) + ' m) at ' +
+        pitch + ' mm pitch';
     } else {
       mmEl.style.display = 'none';
       mmEl.innerHTML = '';
@@ -5003,10 +5050,19 @@ function _setText(id, t) {
     const sel = document.getElementById('f_outputActiveLed');
     const wrap = document.getElementById('ledScreensWrap');
     if (!sel || !wrap) return;
-    if (sel.value === 'yes') {
-      wrap.style.display = '';
-    } else {
-      wrap.style.display = 'none';
+    // v26.6.5 — case-insensitive check. The select's options have NO value
+    // attribute, so .value returns the option's display text ("Yes" / "No").
+    // The old strict-equality 'yes' check would never match → LED Screens
+    // section stayed hidden forever, which is what the user reported.
+    const isYes = String(sel.value || '').trim().toLowerCase() === 'yes';
+    wrap.style.display = isYes ? '' : 'none';
+    // First time the section opens, make sure at least one Screen row exists.
+    // initScreens is idempotent — it clears + adds one row.
+    if (isYes) {
+      const container = document.getElementById('screensContainer');
+      if (container && !container.firstChild && typeof addScreen === 'function') {
+        try { addScreen(); } catch(e) { console.warn('[v26.6.5] addScreen on LED toggle failed:', e); }
+      }
     }
   };
 
@@ -15603,10 +15659,19 @@ async function restoreEntry_tv(refId) {
     const sel = document.getElementById('f_outputActiveLed');
     const wrap = document.getElementById('ledScreensWrap');
     if (!sel || !wrap) return;
-    if (sel.value === 'yes') {
-      wrap.style.display = '';
-    } else {
-      wrap.style.display = 'none';
+    // v26.6.5 — case-insensitive check. The select's options have NO value
+    // attribute, so .value returns the option's display text ("Yes" / "No").
+    // The old strict-equality 'yes' check would never match → LED Screens
+    // section stayed hidden forever, which is what the user reported.
+    const isYes = String(sel.value || '').trim().toLowerCase() === 'yes';
+    wrap.style.display = isYes ? '' : 'none';
+    // First time the section opens, make sure at least one Screen row exists.
+    // initScreens is idempotent — it clears + adds one row.
+    if (isYes) {
+      const container = document.getElementById('screensContainer');
+      if (container && !container.firstChild && typeof addScreen === 'function') {
+        try { addScreen(); } catch(e) { console.warn('[v26.6.5] addScreen on LED toggle failed:', e); }
+      }
     }
   };
 
@@ -16676,6 +16741,16 @@ window.addEventListener('error', (e) => {
   });
 });
 window.addEventListener('unhandledrejection', (e) => {
+  // v26.6.5 — Filter Chrome-extension noise. The "A listener indicated an
+  // asynchronous response by returning true, but the message channel closed
+  // before a response was received" error is emitted by chrome.runtime
+  // message channels (browser extensions), NOT our code. It's not actionable
+  // and was cluttering the console + queueing error_log_insert RPCs.
+  const reasonMsg = String(e && e.reason && (e.reason.message || e.reason) || '');
+  if (/listener indicated an asynchronous response|message channel closed before a response/i.test(reasonMsg)) {
+    e.preventDefault();  // silence the default "Unhandled promise rejection" log
+    return;
+  }
   v26.error('unhandled-promise', e.reason, {
     context: { promise: 'rejected' }
   });
@@ -17665,6 +17740,52 @@ Router.register('/profile', (host) => {
       .sx-field-row { grid-template-columns: 1fr; }
     }
 
+    /* v26.6.5 — LED Screens section styling */
+    .screen-block {
+      background: var(--bg-card);
+      border: 0.5px solid var(--border-soft);
+      border-radius: var(--r-md);
+      padding: var(--s-4);
+      margin-bottom: var(--s-3);
+    }
+    .screen-block-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: var(--s-3);
+      padding-bottom: var(--s-2);
+      border-bottom: 0.5px solid var(--border-soft);
+    }
+    .screen-label {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: var(--t-h3); color: var(--ink-strong);
+    }
+    .calc-readout {
+      font-family: var(--font-mono); font-size: 11.5px;
+      color: var(--ink-soft);
+      background: var(--bg-input); padding: 4px 10px; border-radius: var(--r-xs);
+    }
+    .screen-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--s-3);
+    }
+    @media (max-width: 720px) {
+      .screen-grid { grid-template-columns: 1fr; }
+      .screen-block-header { flex-wrap: wrap; gap: var(--s-2); }
+    }
+    .screen-mm-info {
+      margin-top: var(--s-3);
+      padding: var(--s-3); border-radius: var(--r-sm);
+      background: var(--bg-input);
+      border-left: 3px solid var(--accent, var(--ink-strong));
+      font-size: var(--t-body-sm); color: var(--ink-mid);
+      line-height: 1.5;
+    }
+    .screen-actions {
+      display: flex; gap: var(--s-2); margin-top: var(--s-3); flex-wrap: wrap;
+    }
+    .section-intro {
+      font-size: var(--t-body-sm); color: var(--ink-mid);
+      margin: 0 0 var(--s-4); line-height: 1.5;
+    }
     /* v26.6.2 — MV wizard intro + 3-field row layout */
     .wizard-intro {
       font-size: var(--t-body-sm); color: var(--ink-mid);
@@ -18011,26 +18132,23 @@ Router.register('/profile', (host) => {
 
       </div>
 
-      <!-- LED screens wrap — appears when Active LED = Yes -->
-      <div class="led-screens-wrap" id="ledScreensWrap">
-        <!-- v26.1.7 — Container restored. (Earlier v26.1.6 attempt put
-             markdown backticks in this comment, which closed the
-             enclosing JS template literal prematurely and made the
-             whole script fail to parse. Plain text only here.)
-             screensContainer was missing from the L10 wizard markup;
-             engine code (addScreen, initScreens, populateFormFromRow_)
-             all do getElementById on screensContainer. Restored. -->
-        <div id="screensContainer"></div>
-        <button type="button" id="addScreenBtn"
-                onclick="if(typeof addScreen==='function'){addScreen();}else{console.warn('addScreen unavailable');}"
-                style="margin-top:12px; padding:9px 16px; border-radius:8px;
-                       border:1px solid rgba(255,255,255,0.18);
-                       background:rgba(255,255,255,0.04);
-                       color:var(--ink, #fff); font-family:inherit;
-                       font-size:13px; font-weight:600; cursor:pointer;
-                       letter-spacing:0.2px;">
-          + Add screen
-        </button>
+      <!-- v26.6.5 — LED Screens · Resolution Calculator
+           Was buried inside wizard markup + invisible (case-mismatch bug).
+           Now styled as a proper form-section. Appears when Active LED = Yes
+           (set on Outputs section dropdown). -->
+      <div class="form-section led-screens-wrap" id="ledScreensWrap" style="display: none;">
+        <div class="form-section-head">
+          <h2>LED Screens</h2>
+          <span class="step-meta">pixel resolution per screen</span>
+        </div>
+        <div class="form-card">
+          <p class="section-intro">Enter each screen's pixel resolution. LED pitch is optional but enables physical-size calculation.</p>
+          <div id="screensContainer"></div>
+          <div class="screen-actions">
+            <button type="button" class="btn btn-secondary" onclick="if(typeof addScreen==='function'){addScreen();}">+ Add screen</button>
+            <button type="button" class="btn btn-secondary" onclick="if(typeof removeLastScreen==='function'){removeLastScreen();}">− Remove last</button>
+          </div>
+        </div>
       </div>
     </div>
   `;
