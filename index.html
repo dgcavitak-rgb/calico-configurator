@@ -271,6 +271,130 @@
       text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-accent); }
     .bom-concerns ul, .bom-valueadds ul { margin: 0; padding-left: 18px; font-size: 13px; }
 
+    /* ----- Saved-deal view (alpha.7.1) ----- */
+    /* Header band: ref + project + customer/stage */
+    .sd-view { padding-bottom: 24px; }
+    .sd-header { margin-bottom: 14px; }
+    .sd-ref { font: 700 11px/1 var(--f-mono); letter-spacing: 0.08em;
+      color: var(--c-fg-soft); text-transform: uppercase; margin-bottom: 6px; }
+    .sd-title { margin: 0 0 2px; }
+
+    /* BoM hero wrap (no extra chrome, just spacing) */
+    .sd-bom-wrap { margin: 4px 0 8px; }
+
+    /* Sticky action bar — Excel/PDF/Edit/Delete buttons */
+    .sd-actionbar {
+      position: sticky;
+      top: calc(var(--topbar-h, 48px) + var(--tricolor-h, 4px));
+      z-index: 5;
+      display: flex; gap: 8px; flex-wrap: wrap;
+      padding: 10px 0;
+      background: var(--c-bg);
+      border-bottom: 1px solid var(--c-border);
+      margin: 8px 0 0;
+    }
+    .sd-actionbar .btn { flex: 1 1 auto; min-height: 44px; min-width: 64px; }
+
+    /* Sticky chip nav — section jump targets */
+    .sd-chipnav {
+      position: sticky;
+      top: calc(var(--topbar-h, 48px) + var(--tricolor-h, 4px) + 56px);
+      z-index: 4;
+      display: flex; gap: 6px; overflow-x: auto;
+      padding: 8px 0; margin: 0 0 4px;
+      background: var(--c-bg);
+      border-bottom: 1px solid var(--c-border);
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+    }
+    .sd-chipnav::-webkit-scrollbar { display: none; }
+    .sd-chip {
+      flex: 0 0 auto;
+      min-height: 36px; padding: 6px 14px;
+      border: 1px solid var(--c-border-st); border-radius: 999px;
+      background: var(--c-elev); color: var(--c-fg);
+      font: 600 13px/1 var(--f-sans);
+      cursor: pointer; white-space: nowrap;
+    }
+    .sd-chip:active { background: var(--c-accent-lt); border-color: var(--c-accent); }
+
+    /* Accordion sections via <details>/<summary> */
+    .sd-accordion { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .sd-section {
+      background: var(--c-elev);
+      border: 1px solid var(--c-border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .sd-summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px;
+      min-height: 48px;       /* tap target per SPEC §9.2 */
+      padding: 10px 14px;
+      font-weight: 600;
+      user-select: none;
+    }
+    .sd-summary::-webkit-details-marker { display: none; }
+    .sd-summary-title { flex: 1 1 auto; }
+    .sd-summary-meta { display: flex; align-items: center; gap: 8px; }
+    .sd-badge {
+      font: 600 11px/1 var(--f-mono);
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--c-sunk);
+      color: var(--c-fg-soft);
+      letter-spacing: 0.04em;
+    }
+    .sd-chevron {
+      font-size: 18px;
+      color: var(--c-fg-soft);
+      transition: transform 0.18s ease;
+      display: inline-block;
+    }
+    .sd-section[open] .sd-chevron { transform: rotate(90deg); }
+
+    .sd-section-body {
+      padding: 4px 14px 14px;
+      border-top: 1px solid var(--c-border);
+    }
+    .sd-subhead {
+      font: 600 11px/1 var(--f-sans);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--c-fg-soft);
+      margin: 12px 0 4px;
+    }
+    .sd-subhead:first-child { margin-top: 8px; }
+    .sd-row {
+      display: flex; gap: 12px; align-items: baseline;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--c-border);
+      font-size: 14px;
+    }
+    .sd-row:last-child { border-bottom: 0; }
+    .sd-row-k { flex: 0 0 38%; color: var(--c-fg-soft); font-size: 12px;
+      text-transform: uppercase; letter-spacing: 0.04em; }
+    .sd-row-v { flex: 1 1 auto; word-break: break-word; }
+    .sd-row-muted { color: var(--c-fg-mute); font-style: italic; padding: 8px 0; }
+    .sd-edit-note { padding: 10px 0 0; }
+
+    /* Spinner for loading state (alpha.7.0 leftover, reused) */
+    .spinner {
+      display: inline-block; width: 28px; height: 28px;
+      border: 3px solid var(--c-border);
+      border-top-color: var(--c-accent);
+      border-radius: 50%;
+      animation: sd-spin 0.8s linear infinite;
+    }
+    @keyframes sd-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .spinner { animation: none; }
+      .sd-chevron { transition: none; }
+    }
+
     /* Common layouts */
     .row { display: flex; align-items: center; gap: 10px; }
     .row.between { justify-content: space-between; }
@@ -687,7 +811,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.0.0-alpha.7.0',
+      version: 'v27.0.0-alpha.7.1',
       constants,
       calico,
       mv,
@@ -1700,8 +1824,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.0.0-alpha.7.0"',
-      () => CATALOG.version === 'v27.0.0-alpha.7.0' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.0.0-alpha.7.1"',
+      () => CATALOG.version === 'v27.0.0-alpha.7.1' || 'got: ' + CATALOG.version);
 
     check('Object.isFrozen(CATALOG)',
       () => Object.isFrozen(CATALOG) === true || 'not frozen');
@@ -2861,6 +2985,16 @@
         setRoot(renderSavedDealLoaded(deal));
       }).catch(function(err) {
         if (_activeSavedDealRefId !== refId) return;
+        // alpha.7.1: STORE.loadDeal throws on "deal not found" instead of
+        // resolving with null. Classify by sniffing the message — the RPC
+        // returns "deal_get: deal not found" and PostgREST returns PGRST116
+        // for the no-rows case. Route those to the warn banner instead of
+        // the red error banner.
+        const msg = (err && err.message) ? err.message : String(err || '');
+        if (/deal not found|PGRST116|no rows/i.test(msg)) {
+          setRoot(renderSavedDealNotFound(refId));
+          return;
+        }
         setRoot(renderSavedDealError(refId, err));
       });
     }
@@ -2908,37 +3042,281 @@
     }
 
     function renderSavedDealLoaded(deal) {
-      // alpha.7.0 — minimal success render. Surfaces the data is there and the
-      // route works end-to-end. Real layout (BoM hero · accordion · autosave)
-      // ships in alpha.7.1.
-      const refId = (deal && (deal.display_ref || deal.ref || deal.id)) || '\u2014';
-      const project = (deal && deal.project) || '\u2014';
+      // alpha.7.1 — real one-page layout per SPEC §4.2.
+      // BoM hero (top) · Rebuild banner (hidden) · sticky action bar ·
+      // sticky chip nav · accordion sections (Project context auto-expanded).
+      // Editable fields inside accordions land in alpha.7.2 (autosave layer).
+
+      const refId    = (deal && (deal.display_ref || deal.ref || deal.id)) || '\u2014';
+      const project  = (deal && deal.project)       || '\u2014';
       const customer = (deal && deal.customer_name) || '\u2014';
-      const stage = (deal && deal.stage) || '\u2014';
-      const lineCount = (deal && Array.isArray(deal.lines)) ? deal.lines.length : 0;
-      const screenCount = (deal && Array.isArray(deal.screens)) ? deal.screens.length : 0;
-      return '<div class="v">' +
-          '<div class="h1">Saved deal</div>' +
-          '<div class="small mono soft" style="margin:-6px 0 16px">' + esc(refId) + '</div>' +
-          '<div class="banner info">' +
-            '<strong>Deal loaded.</strong> Full one-page layout ' +
-            '(BoM hero + accordion editor + autosave + Rebuild) lands in alpha.7.1. ' +
-            'This skeleton confirms the route, load, and race-guard paths work.' +
+      const stage    = (deal && deal.stage)         || '\u2014';
+
+      // ---- Compute BoM from deal data ----
+      // APP.recoForDeal accepts wizardData-shaped objects; loadDeal returns
+      // the symmetric shape, so the deal passes through directly. Wrap in
+      // try/catch in case the loaded deal is missing required fields — we
+      // still render the page, just without a BoM card.
+      let reco = null;
+      let recoErr = null;
+      try {
+        reco = (typeof APP !== 'undefined' && APP.recoForDeal)
+          ? APP.recoForDeal(deal)
+          : null;
+      } catch (e) {
+        recoErr = (e && e.message) ? e.message : String(e);
+      }
+      const bomHtml = reco
+        ? renderBomCard(reco, deal.solutionType || '')
+        : '<div class="bom-card empty-bom">' +
+            '<div class="bom-chassis-sku">BOM UNAVAILABLE</div>' +
+            '<div class="bom-chassis-label">Couldn\u2019t compute</div>' +
+            '<div class="bom-meta">' + esc(recoErr || 'No solution type set.') + '</div>' +
+          '</div>';
+
+      // ---- Section visibility ----
+      const hasLed = !!(deal && deal.hasLed);
+      const hasSx  = !!(deal && deal.hasSx);
+
+      // ---- Field-count badges (count non-empty values per section) ----
+      const ctxFields = ['project','customer_name','partner_name','consultant_name',
+        'venue','city','state','stage','lead_source','sales_person','presales_person',
+        'contact_name','contact_phone','contact_email','expected_closure','deal_value'];
+      const ctxCount = ctxFields.filter(f => deal && deal[f] != null && deal[f] !== '').length;
+
+      const ioCount = (function() {
+        if (!deal) return 0;
+        if (deal.solutionType === 'calico') {
+          return countNonZero(deal.calico_inputs) + countNonZero(deal.calico_outputs) +
+                 (deal.calico_audio ? 1 : 0);
+        }
+        if (deal.solutionType === 'mv') {
+          return (Array.isArray(deal.mv_inputs) ? deal.mv_inputs.filter(r => r && Number(r.qty) > 0).length : 0) +
+                 (deal.mv_outputSignal ? 1 : 0);
+        }
+        if (deal.solutionType === 'corio') {
+          return countNonZero(deal.corio_inputs) + countNonZero(deal.corio_outputs) +
+                 (deal.corio_audio ? 1 : 0) + (deal.corio_fanFilter ? 1 : 0);
+        }
+        return 0;
+      })();
+
+      const ledCount    = (hasLed && Array.isArray(deal.screens))
+        ? deal.screens.filter(s => Number(s.w) > 0 && Number(s.h) > 0).length
+        : 0;
+      const sxCount     = (hasSx && deal.sx_data)
+        ? Object.values(deal.sx_data).filter(v => Number(v) > 0).length
+        : 0;
+
+      // ---- Chip nav (sticky) ----
+      const chips = [
+        { id:'sec-ctx', label:'Context'  },
+        { id:'sec-sol', label:'Solution' },
+        { id:'sec-io',  label:'I/O'      }
+      ];
+      if (hasLed) chips.push({ id:'sec-led', label:'LED' });
+      if (hasSx)  chips.push({ id:'sec-sx',  label:'SX'  });
+      const chipNavHtml = '<nav class="sd-chipnav" aria-label="Section nav">' +
+        chips.map(c =>
+          '<button class="sd-chip" type="button" data-action="sd-jump" data-target="' + esc(c.id) + '">' +
+            esc(c.label) +
+          '</button>'
+        ).join('') +
+      '</nav>';
+
+      // ---- Helpers ----
+      function row(label, value) {
+        const v = (value == null || value === '') ? '\u2014' : String(value);
+        return '<div class="sd-row">' +
+            '<div class="sd-row-k">' + esc(label) + '</div>' +
+            '<div class="sd-row-v">' + esc(v) + '</div>' +
+          '</div>';
+      }
+      function sectionHeader(title, count) {
+        return '<summary class="sd-summary">' +
+            '<span class="sd-summary-title">' + esc(title) + '</span>' +
+            '<span class="sd-summary-meta">' +
+              '<span class="sd-badge">' + count + (count === 1 ? ' field' : ' fields') + '</span>' +
+              '<span class="sd-chevron" aria-hidden="true">\u203a</span>' +
+            '</span>' +
+          '</summary>';
+      }
+
+      // ---- Section: Project context (auto-expanded) ----
+      const ctxBody =
+        row('Project',          deal.project) +
+        row('Customer',         deal.customer_name) +
+        row('Partner',          deal.partner_name) +
+        row('Stage',            deal.stage) +
+        row('Lead source',      deal.lead_source) +
+        row('Venue / City',     [deal.venue, deal.city].filter(Boolean).join(' \u00b7 ')) +
+        row('Salesperson',      deal.sales_person) +
+        row('Presales',         deal.presales_person) +
+        row('Contact',          [deal.contact_name, deal.contact_phone].filter(Boolean).join(' \u00b7 ')) +
+        row('Expected closure', deal.expected_closure) +
+        row('Deal value',       deal.deal_value);
+
+      // ---- Section: Solution type ----
+      const solBody = row('Family', familyLabel(deal.solutionType));
+
+      // ---- Section: Inputs & outputs (family-specific compact preview) ----
+      const ioBody = renderSavedDealIoPreview(deal);
+
+      // ---- Section: LED (only if hasLed) ----
+      const ledBody = hasLed
+        ? (deal.screens || []).filter(s => Number(s.w) > 0 && Number(s.h) > 0).map((s, i) =>
+            row('Screen ' + (i+1), s.w + ' \u00d7 ' + s.h + ' = ' + (s.w * s.h).toLocaleString() + ' px')
+          ).join('') || '<div class="sd-row sd-row-muted">No screens set.</div>'
+        : '';
+
+      // ---- Section: SX (only if hasSx) ----
+      const sxBody = hasSx
+        ? SX_EDITORIAL
+            .filter(s => Number((deal.sx_data || {})[s.id]) > 0)
+            .map(s => row(s.label, deal.sx_data[s.id]))
+            .join('') || '<div class="sd-row sd-row-muted">No SX quantities set.</div>'
+        : '';
+
+      // ---- Assemble ----
+      return '<div class="v sd-view">' +
+
+          // Header band
+          '<div class="sd-header">' +
+            '<div class="sd-ref">' + esc(refId) + '</div>' +
+            '<div class="h1 sd-title">' + esc(project) + '</div>' +
+            '<div class="small soft">' + esc(customer) + ' \u00b7 ' + esc(stage) + '</div>' +
           '</div>' +
-          '<section class="card" style="margin-top:14px">' +
-            '<div class="h3">Quick summary</div>' +
-            '<div class="kv-grid" style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin-top:8px">' +
-              '<div class="small muted">Project</div><div class="small">' + esc(project) + '</div>' +
-              '<div class="small muted">Customer</div><div class="small">' + esc(customer) + '</div>' +
-              '<div class="small muted">Stage</div><div class="small">' + esc(stage) + '</div>' +
-              '<div class="small muted">Lines</div><div class="small">' + lineCount + '</div>' +
-              '<div class="small muted">Screens</div><div class="small">' + screenCount + '</div>' +
-            '</div>' +
-          '</section>' +
-          '<div style="margin-top:16px">' +
-            '<button class="btn btn-ghost" type="button" data-nav="#/history">Back to History</button>' +
+
+          // BoM hero
+          '<section class="sd-bom-wrap">' + bomHtml + '</section>' +
+
+          // Rebuild banner (hidden until alpha.7.3 wires it)
+          '<div id="sd-rebuild-banner" class="banner warn" hidden style="margin-top:10px">' +
+            '<strong>BoM is out of date.</strong> ' +
+            '<button class="btn btn-text" type="button" data-action="sd-rebuild">Tap Rebuild \u2192</button>' +
+            ' <span class="small soft">(autosave + Rebuild wire up in alpha.7.2 / .7.3)</span>' +
+          '</div>' +
+
+          // Sticky action bar
+          '<div class="sd-actionbar">' +
+            '<button class="btn"        type="button" data-action="sd-excel"     disabled title="Wires up in Session 8">Excel</button>' +
+            '<button class="btn"        type="button" data-action="sd-pdf"       disabled title="Wires up in Session 8">PDF</button>' +
+            '<button class="btn btn-ghost" type="button" data-action="sd-edit"   disabled title="Edit form wires up in alpha.7.2">Edit</button>' +
+            '<button class="btn btn-danger btn-ghost" type="button" data-action="sd-delete" disabled title="Wires up in alpha.7.4">Delete</button>' +
+          '</div>' +
+
+          // Sticky chip nav
+          chipNavHtml +
+
+          // Accordion sections
+          '<div class="sd-accordion">' +
+
+            '<details class="sd-section" id="sec-ctx" open>' +
+              sectionHeader('Project context', ctxCount) +
+              '<div class="sd-section-body">' + ctxBody +
+                '<div class="sd-edit-note small soft">Editable fields land in alpha.7.2.</div>' +
+              '</div>' +
+            '</details>' +
+
+            '<details class="sd-section" id="sec-sol">' +
+              sectionHeader('Solution type', deal.solutionType ? 1 : 0) +
+              '<div class="sd-section-body">' + solBody + '</div>' +
+            '</details>' +
+
+            '<details class="sd-section" id="sec-io">' +
+              sectionHeader('Inputs & outputs', ioCount) +
+              '<div class="sd-section-body">' + ioBody + '</div>' +
+            '</details>' +
+
+            (hasLed
+              ? '<details class="sd-section" id="sec-led">' +
+                  sectionHeader('LED screens', ledCount) +
+                  '<div class="sd-section-body">' + ledBody + '</div>' +
+                '</details>'
+              : '') +
+
+            (hasSx
+              ? '<details class="sd-section" id="sec-sx">' +
+                  sectionHeader('Signal extension', sxCount) +
+                  '<div class="sd-section-body">' + sxBody + '</div>' +
+                '</details>'
+              : '') +
+
+          '</div>' +
+
+          // Bottom escape
+          '<div style="margin-top:18px; text-align:center">' +
+            '<button class="btn btn-ghost" type="button" data-nav="#/history">\u2190 Back to History</button>' +
           '</div>' +
         '</div>';
+    }
+
+    // Family label helper used in saved-deal Solution section.
+    function familyLabel(t) {
+      if (t === 'calico') return 'CALICO \u2014 Video Processor';
+      if (t === 'mv')     return 'Multi Viewer (CORIOview)';
+      if (t === 'corio')  return 'CORIO \u2014 Video Processor';
+      return '\u2014';
+    }
+
+    // Count non-zero values in a simple object (used for I/O field counts).
+    function countNonZero(obj) {
+      if (!obj || typeof obj !== 'object') return 0;
+      return Object.values(obj).filter(v => Number(v) > 0).length;
+    }
+
+    // Compact I/O preview per family. Mirrors the wizard step 3 structure.
+    function renderSavedDealIoPreview(deal) {
+      if (!deal || !deal.solutionType) {
+        return '<div class="sd-row sd-row-muted">No solution type set.</div>';
+      }
+      const row = function(k, v) {
+        const val = (v == null || v === '') ? '\u2014' : String(v);
+        return '<div class="sd-row">' +
+            '<div class="sd-row-k">' + esc(k) + '</div>' +
+            '<div class="sd-row-v">' + esc(val) + '</div>' +
+          '</div>';
+      };
+      if (deal.solutionType === 'calico') {
+        const i = deal.calico_inputs || {};
+        const o = deal.calico_outputs || {};
+        return '<div class="sd-subhead">Inputs</div>' +
+          row('HDMI 4K',  i.hdmi4k  || 0) +
+          row('HDMI FHD', i.hdmiFhd || 0) +
+          row('SDI 12G',  i.sdi12g  || 0) +
+          row('SDI 3G',   i.sdi3g   || 0) +
+          row('HDBaseT',  i.hdbt    || 0) +
+          row('IP',       i.ip      || 0) +
+          '<div class="sd-subhead">Outputs</div>' +
+          row('Display',   o.display   || 0) +
+          row('Projector', o.projector || 0) +
+          row('SDI',       o.sdi       || 0) +
+          row('Audio',     deal.calico_audio ? 'Yes' : 'No');
+      }
+      if (deal.solutionType === 'mv') {
+        const rows = (deal.mv_inputs || [])
+          .filter(r => r && r.signal && Number(r.qty) > 0)
+          .map(r => row(r.signal, r.qty)).join('');
+        return '<div class="sd-subhead">Inputs</div>' +
+          (rows || '<div class="sd-row sd-row-muted">No inputs set.</div>') +
+          '<div class="sd-subhead">Output</div>' +
+          row('Signal', deal.mv_outputSignal || '\u2014');
+      }
+      if (deal.solutionType === 'corio') {
+        const i = deal.corio_inputs || {};
+        const o = deal.corio_outputs || {};
+        const iRows = Object.entries(i).filter(([_,v]) => Number(v) > 0)
+          .map(([k,v]) => row(k, v)).join('');
+        const oRows = Object.entries(o).filter(([_,v]) => Number(v) > 0)
+          .map(([k,v]) => row(k, v)).join('');
+        return '<div class="sd-subhead">Inputs</div>' +
+          (iRows || '<div class="sd-row sd-row-muted">No inputs set.</div>') +
+          '<div class="sd-subhead">Outputs</div>' +
+          (oRows || '<div class="sd-row sd-row-muted">No outputs set.</div>') +
+          row('Audio',      deal.corio_audio || '\u2014') +
+          row('Fan filter', deal.corio_fanFilter ? 'Yes' : 'No');
+      }
+      return '<div class="sd-row sd-row-muted">Unknown solution type.</div>';
     }
 
     /* ============================================================
@@ -3737,6 +4115,22 @@
           return;
         }
 
+        // Saved-deal chip-nav jump — open target accordion section + smooth-scroll.
+        // The <details> element needs `open` set explicitly before scrollIntoView
+        // so the browser scrolls to the expanded position, not the collapsed one.
+        if (action === 'sd-jump') {
+          const targetId = t.getAttribute('data-target') || '';
+          const el = document.getElementById(targetId);
+          if (el) {
+            if (el.tagName === 'DETAILS') el.open = true;
+            // Defer to next frame so layout settles after open=true expands the body.
+            requestAnimationFrame(function() {
+              el.scrollIntoView({ behavior:'smooth', block:'start' });
+            });
+          }
+          return;
+        }
+
         // Smoke buttons
         // All three handlers toast a summary so the result survives even if
         // the smoke causes a view change (e.g. STORE smoke ends in logout
@@ -4217,7 +4611,12 @@
     return {
       start, onRouteChange,
       handleLoginSubmit, handleForcePwSubmit, handleProfilePwSubmit,
-      wizNext, wizBack, wizBuild
+      wizNext, wizBack, wizBuild,
+      // alpha.7.1: UI.showSavedDeal needs to compute BoM from loaded deal data.
+      // computeReco accepts wizardData-shaped object and STORE.loadDeal returns
+      // the same shape (plus display_ref / lines[] / etc.), so passing the deal
+      // straight in is safe.
+      recoForDeal: computeReco
     };
   })();
 
@@ -4431,8 +4830,10 @@
   APP.start();
 
   /* ============================================================
-     End of v27.0.0-alpha.7.0
-     (Session 7 surface 1/6: showSavedDeal skeleton + locked SX labels)
+     End of v27.0.0-alpha.7.1
+     (Session 7 surface 2/6: real one-page layout — BoM hero,
+      sticky action bar, sticky chip nav, accordion sections;
+      bonus: not-found error classification fix from T2)
      ============================================================ */
   </script>
 </body>
