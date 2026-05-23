@@ -251,6 +251,9 @@
       color: var(--c-accent-dk); text-transform: uppercase; }
     .bom-chassis-label { font-size: 22px; font-weight: 700; margin: 4px 0 2px;
       letter-spacing: -0.01em; }
+    /* v27.1.2 #4b — I/O port summary, sits below chassisLabel above bom-meta */
+    .bom-io { font-size: 12.5px; color: var(--c-fg-soft); margin: 0 0 2px;
+      line-height: 1.4; }
     .bom-meta { font-size: 13px; color: var(--c-fg-soft); }
     .bom-lines { list-style: none; padding: 0; margin: 14px 0 0;
       border-top: 1px solid var(--c-border); }
@@ -278,6 +281,18 @@
     .sd-ref { font: 700 11px/1 var(--f-mono); letter-spacing: 0.08em;
       color: var(--c-fg-soft); text-transform: uppercase; margin-bottom: 6px; }
     .sd-title { margin: 0 0 2px; }
+    /* v27.1.2 #8 — expanded header lines + lead_source pill */
+    .sd-meta-line { font-size: 12.5px; line-height: 1.45;
+      color: var(--c-fg-soft); margin-top: 3px; }
+    .sd-meta-line .label { color: var(--c-fg-mute); }
+    .sd-pill-source {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px; border-radius: var(--r-pill);
+      font: 600 11px/1.4 var(--f-sans);
+      letter-spacing: 0.02em; text-transform: none;
+    }
+    .sd-pill-source.is-cavitak { background: var(--c-ok-lt); color: var(--c-ok); }
+    .sd-pill-source.is-tvone   { background: #d6e9f7;       color: #1c5a8a; }
 
     /* BoM hero wrap (no extra chrome, just spacing) */
     .sd-bom-wrap { margin: 4px 0 8px; }
@@ -874,7 +889,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.1.1',
+      version: 'v27.1.2',
       constants,
       calico,
       mv,
@@ -1170,6 +1185,24 @@
         valueAdds,
         reasons,
         meta: {
+          // v27.1.2 #4b — chassisLabel guaranteed (was missing on CALICO path,
+          // caused duplicate-SKU display in renderBomCard). Built from CATALOG
+          // entry: form-factor + native inputs/outputs gives a useful one-liner.
+          chassisLabel: (CHASSIS[chassis] && CHASSIS[chassis].model) || chassis,
+          // v27.1.2 #4b — io summary for the new I/O spec line in BoM card.
+          // renderBomCard formats this via HUMAN_LABELS into prose like
+          // "4 inputs (2× HDMI 4K, 2× HDMI FHD) · 1 output (HDMI)".
+          io: {
+            inputs:  Object.assign({}, input.inputs),
+            outputs: (function() {
+              // Strip projectorRes (non-count) before copying so the summary
+              // doesn't try to format it as a qty.
+              const o = Object.assign({}, input.outputs);
+              delete o.projectorRes;
+              delete o.led;     // boolean, not a port count for v27.1.1 shape
+              return o;
+            })()
+          },
           model: model.model, formFactor: model.formFactor,
           ledPixels, ledPorts, rawLedPorts, projPorts,
           hdmiPortsNeeded, sdiPortsNeeded, portsNeeded,
@@ -1219,6 +1252,20 @@
       const concerns = [];
       const valueAdds = [];
 
+      // v27.1.2 #4b — build a uniform meta.io shape so renderBomCard can
+      // format the I/O spec line consistently across MV / CALICO / CORIO.
+      // For MV: inputs is keyed by signal label (already human-readable);
+      // outputs is { [outputSignal]: 1 }.
+      function _buildMvIo() {
+        const ins = {};
+        validInputs.forEach(function(r) {
+          ins[r.signal] = (ins[r.signal] || 0) + (Number(r.qty) || 0);
+        });
+        const outs = {};
+        if (input.outputSignal) outs[input.outputSignal] = 1;
+        return { inputs: ins, outputs: outs };
+      }
+
       // alpha.9.2: Rule A — Multi Viewer caps at 2 distinct signal types.
       // Defense in depth; the wizard UI also enforces this at the row level.
       // Fires before the downstream card-count guard (MTO.maxInputCards) so the
@@ -1261,6 +1308,7 @@
               reasons,
               meta: {
                 type: 'fixed', chassisLabel: chosen.desc,
+                io: _buildMvIo(),
                 inputSignal: sig, outputSignal: input.outputSignal, inputCount: qty
               }
             };
@@ -1310,6 +1358,7 @@
           reasons,
           meta: {
             type: 'mto', chassisLabel: MTO.desc,
+            io: _buildMvIo(),
             inputSignal: sig, outputSignal: input.outputSignal, inputCount: qty
           }
         };
@@ -1375,7 +1424,8 @@
         valueAdds,
         reasons,
         meta: {
-          type: 'mto-mixed', chassisLabel: MTO.desc + ' · mixed input (' + summarySignals + ')',
+          type: 'mto-mixed', chassisLabel: MTO.desc + ' \u00b7 mixed input (' + summarySignals + ')',
+          io: _buildMvIo(),
           inputSignal: summarySignals, outputSignal: input.outputSignal, inputCount: totalPorts
         }
       };
@@ -1592,6 +1642,11 @@
         meta: {
           type: 'ok',
           chassisLabel: chassis.label,
+          // v27.1.2 #4b — io summary for the BoM I/O spec line.
+          io: {
+            inputs:  Object.assign({}, input.inputs),
+            outputs: Object.assign({}, input.outputs)
+          },
           ecosystem: chassis.cardEcosystem,
           slotsUsed: totalSlotsUsed,
           slotsTotal: chassis.slots,
@@ -2545,8 +2600,84 @@
       }
     }
 
-    check('CATALOG.version === "v27.1.1"',
-      () => CATALOG.version === 'v27.1.1' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.1.2"',
+      () => CATALOG.version === 'v27.1.2' || 'got: ' + CATALOG.version);
+
+    /* ---------- v27.1.2 invariants ---------- */
+    // §1.2 — HUMAN_LABELS structural shape
+    check('v27.1.2 §1.2: HUMAN_LABELS has calico_inputs/outputs + sx_data',
+      () => (typeof HUMAN_LABELS === 'object'
+        && HUMAN_LABELS.calico_inputs && HUMAN_LABELS.calico_outputs
+        && HUMAN_LABELS.sx_data) || 'missing namespace');
+    check('v27.1.2 §1.2: humanizeNamespace formats with \u00d7',
+      () => humanizeNamespace('calico_inputs', { hdmi4k: 2, hdmiFhd: 2 }) === 'HDMI 4K \u00d7 2, HDMI FHD \u00d7 2'
+        || 'got: ' + humanizeNamespace('calico_inputs', { hdmi4k: 2, hdmiFhd: 2 }));
+    check('v27.1.2 §1.2: humanizeNamespace returns "none" for empty',
+      () => humanizeNamespace('calico_inputs', {}) === 'none' || 'got: ' + humanizeNamespace('calico_inputs', {}));
+    // #7 — corio_canvases default + STRUCTURAL_FIELDS entry
+    check('v27.1.2 #7: defaultWizard().corio_canvases === 0',
+      () => UI.defaultWizard().corio_canvases === 0
+        || 'got: ' + UI.defaultWizard().corio_canvases);
+    check('v27.1.2 #7: corio_canvases in STRUCTURAL_FIELDS',
+      () => UI._STRUCTURAL_FIELDS.indexOf('corio_canvases') >= 0
+        || 'not in list');
+    // #6 — hydrate helper exists
+    check('v27.1.2 #6: UI.hydrateWizardFromDeal exists',
+      () => typeof UI.hydrateWizardFromDeal === 'function'
+        || 'got: ' + typeof UI.hydrateWizardFromDeal);
+    check('v27.1.2 #6: hydrateWizardFromDeal preserves id + display_ref',
+      () => {
+        const w = UI.hydrateWizardFromDeal({
+          id: 'uuid-abc', display_ref: 'TV-12345678',
+          project: 'P', customer_name: 'C', stage: 'Lead'
+        });
+        return (w.id === 'uuid-abc' && w.display_ref === 'TV-12345678' && w.project === 'P')
+          || 'got: id=' + w.id + ' ref=' + w.display_ref;
+      });
+    check('v27.1.2 #6 OQ 1A: hydrate adds pitch="" to v27.1.1 screens lacking it',
+      () => {
+        const w = UI.hydrateWizardFromDeal({
+          project: 'P', customer_name: 'C', stage: 'Lead',
+          hasLed: true, screens: [{ w: 3600, h: 2200 }]
+        });
+        return (w.screens.length === 1 && w.screens[0].pitch === '')
+          || 'got: ' + JSON.stringify(w.screens);
+      });
+    // #4b — meta.io shape after recommendCalico
+    check('v27.1.2 #4b: recommendCalico return has meta.chassisLabel non-empty',
+      () => {
+        const r = RECOMMEND.calico({ inputs: { hdmi4k: 1 }, outputs: { display: 1 } });
+        return (r && r.meta && typeof r.meta.chassisLabel === 'string' && r.meta.chassisLabel.length > 0)
+          || 'got: ' + (r && r.meta && r.meta.chassisLabel);
+      });
+    check('v27.1.2 #4b: recommendCalico chassisLabel !== chassis SKU (dedupe)',
+      () => {
+        const r = RECOMMEND.calico({ inputs: { hdmi4k: 1 }, outputs: { display: 1 } });
+        return (r && r.chassis && r.meta && r.meta.chassisLabel !== r.chassis)
+          || 'got: chassis=' + (r && r.chassis) + ' label=' + (r && r.meta && r.meta.chassisLabel);
+      });
+    check('v27.1.2 #4b: recommendCalico return has meta.io.inputs + meta.io.outputs',
+      () => {
+        const r = RECOMMEND.calico({ inputs: { hdmi4k: 2 }, outputs: { display: 1 } });
+        return (r && r.meta && r.meta.io && r.meta.io.inputs && r.meta.io.outputs
+                && r.meta.io.inputs.hdmi4k === 2 && r.meta.io.outputs.display === 1)
+          || 'got: ' + JSON.stringify(r && r.meta && r.meta.io);
+      });
+    check('v27.1.2 #4b: recommendCorio return has meta.io',
+      () => {
+        const r = RECOMMEND.corio({ inputs: { 'HDMI 4K': 1 }, outputs: { 'HDMI 4K': 1 } });
+        return (r && r.meta && r.meta.io && r.meta.io.inputs)
+          || 'got: ' + JSON.stringify(r && r.meta && r.meta.io);
+      });
+    check('v27.1.2 #4b: recommendMv fixed path has meta.io',
+      () => {
+        const r = RECOMMEND.mv({
+          inputs: [{ signal: 'HDMI 4K', qty: 1 }],
+          outputSignal: '4K HDMI'
+        });
+        return (r && r.meta && r.meta.io && r.meta.io.inputs)
+          || 'got: ' + JSON.stringify(r && r.meta && r.meta.io);
+      });
 
     check('Object.isFrozen(CATALOG)',
       () => Object.isFrozen(CATALOG) === true || 'not frozen');
@@ -3612,6 +3743,9 @@
       'calico_inputs', 'calico_outputs', 'calico_audio',
       'mv_inputs', 'mv_outputSignal',
       'corio_inputs', 'corio_outputs', 'corio_audio', 'corio_fanFilter',
+      // v27.1.2 #7 — corio_canvases persisted via raw_submission. UI-only this
+      // release; algorithm consumer lands in v27.1.3.
+      'corio_canvases',
       'hasLed', 'screens',
       'hasSx', 'sx_data'
     ];
@@ -3973,6 +4107,52 @@
       'Review & build'
     ];
 
+    /* ---------- Human labels (v27.1.2 #4a) ----------
+       Single source of truth for ID → display-name mapping used by
+       Step 6 Review summary, BoM I/O spec line (#4b), and any other
+       customer-facing surfaces. Internal IDs stay in code; labels here
+       are the only place to edit display text. */
+    const HUMAN_LABELS = {
+      calico_inputs: {
+        hdmi4k:  'HDMI 4K',
+        hdmiFhd: 'HDMI FHD',
+        sdi12g:  'SDI 12G',
+        sdi3g:   'SDI 3G',
+        hdbt:    'HDBaseT',
+        ip:      'IP / NDI'
+      },
+      calico_outputs: {
+        display:   'HDMI Display',
+        projector: 'HDMI Projector',
+        sdi:       'SDI Output',
+        led:       'LED Screen',
+        audio:     'Audio'
+      },
+      sx_data: {
+        hdmi:  'HDMI Extender',
+        sdi:   'SDI Extender',
+        ap536: 'AP-536 Audio Extractor',
+        avip:  'AVIP Encoder'
+      }
+      // corio_inputs / corio_outputs use CATALOG keys directly
+      // (already human-readable: "HDMI 4K", "DVI-U", etc.)
+    };
+
+    // Summarise a namespaced data object as "Label \u00d7 N, Label \u00d7 N".
+    // Returns 'none' when no positive numeric values present.
+    function humanizeNamespace(ns, dataObj) {
+      if (!dataObj || typeof dataObj !== 'object') return 'none';
+      const map = HUMAN_LABELS[ns] || {};
+      const parts = [];
+      Object.keys(dataObj).forEach(function(k) {
+        const v = dataObj[k];
+        if (typeof v === 'number' && v > 0) {
+          parts.push((map[k] || k) + ' \u00d7 ' + v);
+        }
+      });
+      return parts.length ? parts.join(', ') : 'none';
+    }
+
     /* ---------- State ---------- */
 
     function defaultWizard() {
@@ -3995,6 +4175,11 @@
         corio_outputs: {},
         corio_audio: '',
         corio_fanFilter: false,
+        // v27.1.2 #7 — Canvas count for CORIO solutions. UI-only this release
+        // (OQ 7B): captured + displayed + persisted, but does NOT drive chassis
+        // auto-select (_corioAutoSelectChassis). Algorithm update lands in
+        // v27.1.3 once tvONE's exact canvas→chassis rule is confirmed.
+        corio_canvases: 0,
         hasLed: false,
         screens: [],
         hasSx: false,
@@ -4037,6 +4222,79 @@
     function clearDraft() {
       try { localStorage.removeItem(WIZ_KEY); } catch (e) {}
       wizardData = defaultWizard();
+    }
+
+    /* ---------- v27.1.2 #3+#5: screens array resizer ----------
+       Called from the synthetic 'led' stepper in Step 3 CALICO Outputs and
+       from the lazy-remap path in hydrateWizardFromDeal. Grows the screens
+       array with blank entries {w,h,pitch} or trims from the tail, preserving
+       existing data. Keeps wizardData.hasLed in sync at call-site. */
+    function _resizeScreens(targetLen) {
+      const n = Math.max(0, parseInt(targetLen, 10) || 0);
+      if (!Array.isArray(wizardData.screens)) wizardData.screens = [];
+      const cur = wizardData.screens.length;
+      if (n === cur) return;
+      if (n > cur) {
+        for (let i = cur; i < n; i++) {
+          wizardData.screens.push({ w: '', h: '', pitch: '' });
+        }
+      } else {
+        wizardData.screens.length = n;
+      }
+    }
+
+    /* ---------- v27.1.2 #6: hydrate wizard from saved deal ----------
+       Caller is sd-edit action handler. Deal arrives already flattened
+       (raw_submission unpacked onto top-level by showSavedDeal). We start
+       from a fresh defaultWizard() so any missing fields default cleanly,
+       then overlay deal fields. id + display_ref preserved so wizSave
+       routes through the update path (buildSavePayload checks for id). */
+    function hydrateWizardFromDeal(deal) {
+      if (!deal || typeof deal !== 'object') {
+        throw new Error('hydrateWizardFromDeal: deal required');
+      }
+      const w = defaultWizard();
+      // Overlay top-level fields. Object.assign handles primitives + objects;
+      // for nested objects (calico_inputs etc.) we re-merge with defaults so
+      // any missing sub-keys default to 0 / false.
+      Object.keys(deal).forEach(function(k) {
+        if (k === 'reco' || k === 'errors' || k === 'lines' ||
+            k === 'created_at' || k === 'updated_at' || k === 'deleted_at') {
+          return;
+        }
+        const v = deal[k];
+        if (v === undefined || v === null) return;
+        // Re-merge known nested objects so v27.1.1 deals (lacking newer keys)
+        // pick up the defaults; deal values still win for keys they have.
+        if (k === 'calico_inputs' || k === 'calico_outputs' || k === 'sx_data') {
+          w[k] = Object.assign({}, w[k], v);
+        } else {
+          w[k] = v;
+        }
+      });
+      // Preserve id + display_ref for edit-mode detection (consumed by
+      // buildSavePayload at line ~3735).
+      if (deal.id)          w.id          = deal.id;
+      if (deal.display_ref) w.display_ref = deal.display_ref;
+      // v27.1.2 OQ 1A — lazy remap of v27.1.1 deal shape:
+      //   - hasLed was a top-level boolean; v27.1.2 still uses it but Step 3
+      //     drives it from a count stepper. No remap needed at hasLed itself
+      //     (we kept it canonical).
+      //   - screens entries lacked 'pitch'. Ensure every entry has the pitch
+      //     key so Step 4 renders cleanly (empty string → user prompted to
+      //     fill on edit; OQ 5B: shown as '\u2014' on Review pre-edit).
+      if (Array.isArray(w.screens)) {
+        w.screens = w.screens.map(function(s) {
+          if (s && typeof s === 'object' && !('pitch' in s)) {
+            return Object.assign({}, s, { pitch: '' });
+          }
+          return s;
+        });
+      }
+      w.reco = null;        // rebuild on Build
+      w.errors = {};
+      w.step = 1;
+      return w;
     }
 
     /* ---------- Toast / sheet / chrome ---------- */
@@ -4612,6 +4870,79 @@
       const customer = (deal && deal.customer_name) || '\u2014';
       const stage    = (deal && deal.stage)         || '\u2014';
 
+      // v27.1.2 #8 — expanded header fields. OQ 8B: missing fields skip
+      // the line silently (no "Closing —" placeholders).
+      const leadSource    = (deal && deal.lead_source) || '';
+      const closeMonth    = (deal && deal.close_month) || '';     // 'YYYY-MM'
+      const salesId       = (deal && deal.sales_person_id) || '';
+      const presalesId    = (deal && deal.presales_person_id) || '';
+      const city          = (deal && deal.city)  || '';
+      const stateV        = (deal && deal.state) || '';
+      const venueType     = (deal && deal.venue_type) || '';
+      const createdAt     = (deal && deal.created_at) || '';
+      const updatedAt     = (deal && deal.updated_at) || '';
+
+      // Helpers — kept local to keep the function self-contained.
+      function fmtShortDate(iso) {
+        if (!iso) return '';
+        try {
+          const d = new Date(iso);
+          if (isNaN(d.getTime())) return '';
+          return d.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+        } catch (e) { return ''; }
+      }
+      function fmtCloseMonth(ym) {
+        if (!ym) return '';
+        // Accept either 'YYYY-MM' or 'YYYY-MM-DD'
+        const m = /^(\d{4})-(\d{2})/.exec(ym);
+        if (!m) return ym;
+        const year = m[1], mn = parseInt(m[2], 10);
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return (months[mn - 1] || mn) + ' ' + year;
+      }
+      const salesName    = salesId    ? labelFor(salesId,    SALES_TEAM)    : '';
+      const presalesName = presalesId ? labelFor(presalesId, PRESALES_TEAM) : '';
+      const createdStr   = fmtShortDate(createdAt);
+      const updatedStr   = fmtShortDate(updatedAt);
+      const closeStr     = fmtCloseMonth(closeMonth);
+
+      // Lead-source pill HTML (OQ 8A — Cavitak=green, tvONE=blue).
+      const sourceClass = leadSource === 'tvONE' ? 'is-tvone'
+                        : leadSource === 'Cavitak' ? 'is-cavitak'
+                        : '';
+      const sourcePillHtml = (leadSource && sourceClass)
+        ? '<span class="sd-pill-source ' + sourceClass + '">' + esc(leadSource) + '</span>'
+        : '';
+
+      // Customer · stage · closing — line 3. closeStr appended only if present.
+      const line3Parts = [esc(customer), esc(stage)];
+      if (closeStr) line3Parts.push('Closing ' + esc(closeStr));
+      const line3Html = '<div class="sd-meta-line">' + line3Parts.join(' \u00b7 ') + '</div>';
+
+      // Sales / Presales — line 4. Skipped entirely if both absent.
+      const peopleParts = [];
+      if (salesName)    peopleParts.push('<span class="label">Sales:</span> ' + esc(salesName));
+      if (presalesName) peopleParts.push('<span class="label">Presales:</span> ' + esc(presalesName));
+      const line4Html = peopleParts.length
+        ? '<div class="sd-meta-line">' + peopleParts.join(' \u00b7 ') + '</div>'
+        : '';
+
+      // City, state · venue_type — line 5. Skipped if all three absent.
+      const locParts = [];
+      if (city || stateV) locParts.push(esc([city, stateV].filter(Boolean).join(', ')));
+      if (venueType)      locParts.push(esc(venueType));
+      const line5Html = locParts.length
+        ? '<div class="sd-meta-line">' + locParts.join(' \u00b7 ') + '</div>'
+        : '';
+
+      // Created · Updated — line 6. Skipped if both absent.
+      const dateParts = [];
+      if (createdStr) dateParts.push('Created ' + esc(createdStr));
+      if (updatedStr) dateParts.push('Updated ' + esc(updatedStr));
+      const line6Html = dateParts.length
+        ? '<div class="sd-meta-line">' + dateParts.join(' \u00b7 ') + '</div>'
+        : '';
+
       // ---- Compute BoM from deal data ----
       let reco = null;
       let recoErr = null;
@@ -4790,13 +5121,20 @@
       return '<div class="v sd-view">' +
 
           // Header band
+          // v27.1.2 #8 — expanded header (refId + source pill · project · customer/stage/close · sales/presales · city,state/venue · created/updated).
+          // Missing fields skip their line silently (OQ 8B). Lead-source pill on
+          // ref row with Cavitak=green, tvONE=blue (OQ 8A).
           '<div class="sd-header">' +
             '<div class="sd-ref-row">' +
               '<div class="sd-ref">' + esc(refId) + '</div>' +
+              sourcePillHtml +
               '<div class="sd-status sd-status-idle" id="sd-status"></div>' +
             '</div>' +
             '<div class="h1 sd-title">' + esc(project) + '</div>' +
-            '<div class="small soft">' + esc(customer) + ' \u00b7 ' + esc(stage) + '</div>' +
+            line3Html +
+            line4Html +
+            line5Html +
+            line6Html +
           '</div>' +
 
           // BoM hero
@@ -4811,7 +5149,10 @@
           '</div>' +
 
           // Sticky action bar
+          // v27.1.2 #6 — Edit button leads; opens full wizard with deal pre-hydrated.
+          // Route '#/quote/edit/{refId}' distinguishes update vs new-create.
           '<div class="sd-actionbar">' +
+            '<button class="btn"        type="button" data-action="sd-edit"  id="sd-btn-edit">Edit</button>' +
             '<button class="btn"        type="button" data-action="sd-excel" id="sd-btn-excel">Excel</button>' +
             '<button class="btn"        type="button" data-action="sd-pdf"   id="sd-btn-pdf">PDF</button>' +
             '<button class="btn btn-danger btn-ghost" type="button" data-action="sd-delete" id="sd-btn-delete">Delete</button>' +
@@ -5004,7 +5345,18 @@
     function showWizard(stepNum) {
       showChrome(true);
       updateNavActive('#/quote/new');
-      if (!wizardData) wizardData = loadDraft();
+      // v27.1.2 #2 + #6 — reset/preserve logic by hash shape:
+      //   #/quote/new            → silent reset (fresh "New" tap, OQ 2A)
+      //   #/quote/new/N          → deep-link into wizard, preserve in-memory state
+      //   #/quote/edit/{ref}     → preserve hydrated state from sd-edit handler
+      //   #/quote/edit/{ref}/N   → ditto, deep link mid-edit
+      // OQ 2A locked: silent reset, no confirm prompt.
+      const isFreshNew = (location.hash === '#/quote/new');
+      if (isFreshNew) {
+        clearDraft();             // wipes localStorage AND sets wizardData = defaultWizard()
+      } else if (!wizardData) {
+        wizardData = loadDraft();
+      }
       wizardData.step = clamp(parseInt(stepNum, 10) || 1, 1, 6);
       wizardData.errors = {};
       // Auto-skip conditional steps if their flag is off
@@ -5261,6 +5613,12 @@
     function renderStep3Calico(d) {
       const inErr = d.errors.calico_io
         ? '<div class="banner err">' + esc(d.errors.calico_io) + '</div>' : '';
+      // v27.1.2 #3+#5 — derive LED count from existing screens array length.
+      // Stepper drives this via the new 'calico-led' action which resizes
+      // d.screens in-place (preserving entries on shrink, pushing {w,h,pitch}
+      // on grow) and toggles d.hasLed accordingly. This keeps hasLed and
+      // screens as the canonical state (no defaultWizard shape break).
+      const ledCount = (d.hasLed && Array.isArray(d.screens)) ? d.screens.length : 0;
       return inErr +
         '<h3 class="h3">Inputs</h3>' +
         '<div class="card">' +
@@ -5276,6 +5634,11 @@
           stepperRow('display',   'Display (HDMI)',   'Standard displays', d.calico_outputs.display,   { namespace:'calico_outputs' }) +
           stepperRow('projector', 'Projector (HDMI)', 'Projector outputs', d.calico_outputs.projector, { namespace:'calico_outputs' }) +
           stepperRow('sdi',       'SDI output',       '12G-SDI outputs',   d.calico_outputs.sdi,       { namespace:'calico_outputs' }) +
+          // v27.1.2 #3+#5 — LED relocated from Add-ons to Outputs as a qty stepper.
+          // Special action 'calico-led' (not the generic stepper action) so we
+          // can resize the screens array in lockstep. namespace omitted to mark
+          // this as a synthetic field — not a direct binding.
+          stepperRow('led',       'Active LED screens', 'Per-screen W/H/pitch lives in Step 4', ledCount, { namespace:'__calico_led' }) +
           (d.calico_outputs.projector > 0
             ? '<div class="field" style="margin-top:10px">' +
                 '<label>Projector resolution</label>' +
@@ -5285,11 +5648,14 @@
                 '</select>' +
               '</div>'
             : '') +
+          // v27.1.2 #3 — Audio relocated from Add-ons to Outputs.
+          toggleRow('calico_audio', 'Audio required', 'Add audio extraction / embed cards', d.calico_audio, { namespace:'' }) +
         '</div>' +
         '<h3 class="h3">Add-ons</h3>' +
         '<div class="col">' +
-          toggleRow('hasLed',       'Active LED screens',         'Add LED screen configuration in Step 4',         d.hasLed,       { namespace:'' }) +
-          toggleRow('calico_audio', 'Audio required',             'Add audio extraction / embed cards',             d.calico_audio, { namespace:'' }) +
+          // v27.1.2 #3 — SX is the lone Add-on now and serves as flow-control
+          // toggle for Step 5 (already wired via computeVisibleSteps / showWizard
+          // auto-skip on hasSx).
           toggleRow('hasSx',        'Signal Extension needed',    'Configure HDMI / SDI / AP-536 / AVIP in Step 5', d.hasSx,        { namespace:'' }) +
         '</div>';
     }
@@ -5374,6 +5740,14 @@
           'For CM ecosystem (C3-503 / C3-510 \u00b7 1080p), RECOMMEND will downgrade ' +
           'automatically when only CM-compatible signals are selected.' +
         '</div>' +
+        // v27.1.2 #7 — Canvas configuration above Outputs (OQ 7A). Single
+        // count field. Captured + displayed in Review/Excel/PDF; chassis
+        // auto-select unaffected this release (algorithm update deferred to
+        // v27.1.3 per OQ 7B).
+        '<h3 class="h3">Canvas configuration</h3>' +
+        '<div class="card">' +
+          stepperRow('corio_canvases', 'Canvas count', 'Number of independent canvases (UI-only — does not affect chassis pick in v27.1.2)', d.corio_canvases || 0, { namespace:'__corio_canvas' }) +
+        '</div>' +
         '<h3 class="h3">Inputs</h3>' +
         '<div class="card">' +
           cm2In.map(c =>
@@ -5412,33 +5786,49 @@
     function renderStep4(d) {
       const errHtml = d.errors.screens
         ? '<div class="banner err">' + esc(d.errors.screens) + '</div>' : '';
-      const screensHtml = d.screens.length === 0
-        ? '<div class="muted small" style="padding:12px 0">No screens yet. Tap \u201c+ Add screen\u201d.</div>'
-        : d.screens.map((s, idx) => {
-            const px = (Number(s.w) || 0) * (Number(s.h) || 0);
-            return '<div class="card" style="margin-bottom:8px">' +
-              '<div class="row between" style="margin:0 0 6px">' +
-                '<strong>Screen ' + (idx + 1) + '</strong>' +
-                '<button class="btn btn-text" type="button" data-action="screen-remove" data-idx="' + idx + '">Remove</button>' +
-              '</div>' +
-              '<div class="row gap-2">' +
-                '<div class="field" style="flex:1;margin:0">' +
-                  '<label>Width (px)</label>' +
-                  '<input type="text" inputmode="numeric" value="' + esc(s.w) + '"' +
-                    ' data-action="screen-w" data-idx="' + idx + '">' +
-                '</div>' +
-                '<div class="field" style="flex:1;margin:0">' +
-                  '<label>Height (px)</label>' +
-                  '<input type="text" inputmode="numeric" value="' + esc(s.h) + '"' +
-                    ' data-action="screen-h" data-idx="' + idx + '">' +
-                '</div>' +
-              '</div>' +
-              (px > 0 ? '<div class="help mono" style="margin-top:6px">= ' +
-                px.toLocaleString('en-US') + ' pixels</div>' : '') +
-            '</div>';
-          }).join('');
-      return errHtml + screensHtml +
-        '<button class="btn btn-ghost btn-block" type="button" data-action="screen-add">+ Add screen</button>';
+      // v27.1.2 #5 — block count is fixed by Step 3's LED stepper. No add/remove
+      // here. Each block has W (px), H (px), Pitch (mm, 2dp decimal). If user
+      // landed here with screens=[] (shouldn't happen due to auto-skip when
+      // hasLed=false, but defensive), prompt them back to Step 3.
+      if (!d.screens || d.screens.length === 0) {
+        return errHtml +
+          '<div class="banner info">' +
+            'No screens configured. Set <strong>Active LED screens</strong> in Step 3 to add screens.' +
+          '</div>';
+      }
+      const screensHtml = d.screens.map(function(s, idx) {
+        const px = (Number(s.w) || 0) * (Number(s.h) || 0);
+        return '<div class="card" style="margin-bottom:8px">' +
+          '<div class="row between" style="margin:0 0 6px">' +
+            '<strong>Screen ' + (idx + 1) + '</strong>' +
+          '</div>' +
+          '<div class="row gap-2">' +
+            '<div class="field" style="flex:1;margin:0">' +
+              '<label>Width (px)</label>' +
+              '<input type="text" inputmode="numeric" value="' + esc(s.w) + '"' +
+                ' data-action="screen-w" data-idx="' + idx + '">' +
+            '</div>' +
+            '<div class="field" style="flex:1;margin:0">' +
+              '<label>Height (px)</label>' +
+              '<input type="text" inputmode="numeric" value="' + esc(s.h) + '"' +
+                ' data-action="screen-h" data-idx="' + idx + '">' +
+            '</div>' +
+          '</div>' +
+          // v27.1.2 #5 — Pixel pitch (mm), decimal 2dp. inputmode="decimal"
+          // so mobile keyboards show the decimal point. Field hint reminds
+          // the range so smaller LED pitches are clearly accepted.
+          '<div class="field" style="margin:8px 0 0">' +
+            '<label>Pixel pitch (mm)</label>' +
+            '<input type="text" inputmode="decimal" value="' + esc(s.pitch || '') + '"' +
+              ' placeholder="e.g. 2.50"' +
+              ' data-action="screen-pitch" data-idx="' + idx + '">' +
+            '<div class="help">Typical 0.50\u201350.00 mm \u00b7 2 decimal places</div>' +
+          '</div>' +
+          (px > 0 ? '<div class="help mono" style="margin-top:6px">= ' +
+            px.toLocaleString('en-US') + ' pixels</div>' : '') +
+        '</div>';
+      }).join('');
+      return errHtml + screensHtml;
     }
 
     /* ---------- Step 5: Signal Extension ---------- */
@@ -5486,39 +5876,53 @@
       add('Solution', solLabel, 2);
 
       if (d.solutionType === 'calico') {
-        const inSum = Object.entries(d.calico_inputs).filter(([_,v]) => v > 0)
-          .map(([k,v]) => k + ':' + v).join(', ') || 'none';
-        const outSum = Object.entries(d.calico_outputs).filter(([k,v]) => k !== 'projectorRes' && v > 0)
-          .map(([k,v]) => k + ':' + v).join(', ') || 'none';
-        add('Inputs',  inSum, 3);
-        add('Outputs', outSum, 3);
+        // v27.1.2 #4a — humanize via HUMAN_LABELS map
+        // Filter projectorRes (not a count field) before humanizing.
+        const outForHuman = Object.assign({}, d.calico_outputs);
+        delete outForHuman.projectorRes;
+        add('Inputs',  humanizeNamespace('calico_inputs',  d.calico_inputs),  3);
+        add('Outputs', humanizeNamespace('calico_outputs', outForHuman),      3);
+        // calico_audio still read here for v27.1.1 deals; v27.1.2 #3 moves it
+        // into calico_outputs.audio and removes this top-level branch.
         if (d.calico_audio) add('Audio', 'Yes', 3);
       } else if (d.solutionType === 'mv') {
+        // MV signal names already human-readable from CATALOG.mv keys
+        // ("HDMI 4K", "SDI 12G" etc.) so just swap ':' separator for '\u00d7'.
         const inSum = d.mv_inputs.filter(r => r.signal && r.qty > 0)
-          .map(r => r.signal + ':' + r.qty).join(', ') || 'none';
+          .map(r => r.signal + ' \u00d7 ' + r.qty).join(', ') || 'none';
         add('Inputs', inSum, 3);
         add('Output signal', d.mv_outputSignal || '\u2014', 3);
       } else if (d.solutionType === 'corio') {
+        // CORIO catalog keys already human-readable; humanize style only.
         const inSum = Object.entries(d.corio_inputs).filter(([_,v]) => v > 0)
-          .map(([k,v]) => k + ':' + v).join(', ') || 'none';
+          .map(([k,v]) => k + ' \u00d7 ' + v).join(', ') || 'none';
         const outSum = Object.entries(d.corio_outputs).filter(([_,v]) => v > 0)
-          .map(([k,v]) => k + ':' + v).join(', ') || 'none';
+          .map(([k,v]) => k + ' \u00d7 ' + v).join(', ') || 'none';
         add('Inputs',  inSum, 3);
         add('Outputs', outSum, 3);
+        // v27.1.2 #7 — canvas count line, only shown when > 0.
+        if (d.corio_canvases && Number(d.corio_canvases) > 0) {
+          add('Canvases', String(d.corio_canvases), 3);
+        }
         if (d.corio_audio)      add('Audio module', d.corio_audio, 3);
         if (d.corio_fanFilter)  add('Fan filter', 'Yes', 3);
       }
 
       if (d.hasLed) {
+        // v27.1.2 #4a/#5 — humanize screens summary, include pitch when present.
+        // OQ 5B: missing pitch (v27.1.1 saved deals) renders as '\u2014'.
         const sum = d.screens.length === 0
           ? 'no screens'
-          : d.screens.map((s,i) => 'S' + (i+1) + ':' + s.w + '\u00d7' + s.h).join(', ');
+          : d.screens.map(function(s, i) {
+              const pitchStr = (s.pitch != null && s.pitch !== '')
+                ? ' @ ' + s.pitch + 'mm'
+                : ' @ \u2014';
+              return 'S' + (i+1) + ': ' + (s.w || '?') + '\u00d7' + (s.h || '?') + pitchStr;
+            }).join(', ');
         add('LED screens', sum, 4);
       }
       if (d.hasSx) {
-        const sxSum = Object.entries(d.sx_data).filter(([_,v]) => v > 0)
-          .map(([k,v]) => k + ':' + v).join(', ') || 'none';
-        add('Signal extension', sxSum, 5);
+        add('Signal extension', humanizeNamespace('sx_data', d.sx_data), 5);
       }
 
       const summaryHtml =
@@ -5550,7 +5954,7 @@
             'Tap <strong>Build quote \u2192</strong> below to compute the BoM, then save.' +
           '</div>';
 
-      return summaryHtml + bomHtml;
+      return bomHtml + summaryHtml;
     }
 
     /* ---------- BoM card renderer ---------- */
@@ -5582,6 +5986,50 @@
           (meta.ecosystem ? ' \u00b7 ' + meta.ecosystem : '')
         : (meta.chassisLabel || '');
 
+      // v27.1.2 #4b — guarantee chassisLabel is meaningful and distinct
+      // from the SKU. If recommendCalico/Mv/Corio set chassisLabel correctly
+      // (they now do as of v27.1.2), this falls through unchanged. The
+      // empty-fallback to SKU is removed so we never print the same string
+      // on lines 1 and 2.
+      const labelLine = (meta.chassisLabel && meta.chassisLabel !== reco.chassis)
+        ? meta.chassisLabel
+        : '';   // empty → element renders empty (no duplicate SKU)
+
+      // v27.1.2 #4b — I/O port spec line. Reads from reco.meta.io (set by
+      // each RECOMMEND path). Skipped when meta.io absent (e.g. error returns).
+      const ioSpecLine = (function() {
+        if (!meta.io) return '';
+        function summariseSide(side, dataObj, mapNs) {
+          const entries = Object.keys(dataObj)
+            .map(function(k) { return [k, Number(dataObj[k]) || 0]; })
+            .filter(function(e) { return e[1] > 0; });
+          if (entries.length === 0) return '';
+          const total = entries.reduce(function(a, e) { return a + e[1]; }, 0);
+          const noun  = side + (total === 1 ? '' : 's');
+          // Use HUMAN_LABELS when mapNs provided (CALICO); for MV/CORIO the
+          // keys are already human-readable signal names so emit as-is.
+          const breakdown = entries.map(function(e) {
+            const lbl = mapNs && HUMAN_LABELS[mapNs] && HUMAN_LABELS[mapNs][e[0]]
+              ? HUMAN_LABELS[mapNs][e[0]]
+              : e[0];
+            return e[1] + '\u00d7 ' + lbl;
+          }).join(', ');
+          return total + ' ' + noun + ' (' + breakdown + ')';
+        }
+        // Detect family by reco shape: CALICO uses calico_inputs/outputs keys.
+        const isCalico = !!(meta.io.inputs && (
+          meta.io.inputs.hdmi4k !== undefined || meta.io.inputs.hdmiFhd !== undefined ||
+          meta.io.inputs.sdi12g !== undefined || meta.io.inputs.sdi3g  !== undefined ||
+          meta.io.inputs.hdbt   !== undefined || meta.io.inputs.ip     !== undefined
+        ));
+        const inSum  = summariseSide('input',  meta.io.inputs  || {}, isCalico ? 'calico_inputs'  : null);
+        const outSum = summariseSide('output', meta.io.outputs || {}, isCalico ? 'calico_outputs' : null);
+        const parts = [];
+        if (inSum)  parts.push(inSum);
+        if (outSum) parts.push(outSum);
+        return parts.join(' \u00b7 ');
+      })();
+
       const linesHtml = (reco.cards || []).map(c =>
         '<li class="bom-line">' +
           '<div class="desc">' + esc(c.desc || c.label || c.sku) +
@@ -5604,9 +6052,15 @@
           '</div>'
         : '';
 
+      // v27.1.2 #4b — line order: SKU · label (deduped) · I/O spec · slots · lines
       return '<div class="bom-card">' +
         '<div class="bom-chassis-sku">' + esc(reco.chassis) + '</div>' +
-        '<div class="bom-chassis-label">' + esc(meta.chassisLabel || reco.chassis) + '</div>' +
+        (labelLine
+          ? '<div class="bom-chassis-label">' + esc(labelLine) + '</div>'
+          : '') +
+        (ioSpecLine
+          ? '<div class="bom-io">' + esc(ioSpecLine) + '</div>'
+          : '') +
         '<div class="bom-meta">' + esc(slotsLine) + '</div>' +
         '<ul class="bom-lines">' + linesHtml + '</ul>' +
         concernsHtml + valueAddsHtml +
@@ -5663,8 +6117,27 @@
           }
         }
       } else if (d.step === 4) {
-        if (d.hasLed && d.screens.filter(s => Number(s.w) > 0 && Number(s.h) > 0).length === 0) {
-          errors.screens = 'Add at least one screen with width & height > 0, or untick LED in Step 3.';
+        // v27.1.2 #5 — full screen validation: W, H integers within
+        // [64, 16384]; pitch decimal within [0.50, 50.00] (2dp).
+        // Only fires when hasLed (other paths auto-skip to 5 or 6).
+        if (d.hasLed) {
+          if (!d.screens || d.screens.length === 0) {
+            errors.screens = 'Set Active LED screens > 0 in Step 3, or untick LED.';
+          } else {
+            const bad = [];
+            for (let i = 0; i < d.screens.length; i++) {
+              const s = d.screens[i] || {};
+              const w = Number(s.w), h = Number(s.h);
+              const p = s.pitch === '' || s.pitch == null ? NaN : Number(s.pitch);
+              if (!(w >= 64 && w <= 16384)) bad.push('Screen ' + (i+1) + ' width');
+              if (!(h >= 64 && h <= 16384)) bad.push('Screen ' + (i+1) + ' height');
+              if (!(p >= 0.50 && p <= 50.00)) bad.push('Screen ' + (i+1) + ' pitch');
+            }
+            if (bad.length) {
+              errors.screens = 'Fix: ' + bad.join(', ') + '. ' +
+                'W/H must be integer 64\u201316384 px. Pitch must be 0.50\u201350.00 mm.';
+            }
+          }
         }
       } else if (d.step === 5) {
         if (d.hasSx) {
@@ -5753,6 +6226,30 @@
         if (action === 'step-inc' || action === 'step-dec') {
           const ns  = actEl.getAttribute('data-ns');
           const key = actEl.getAttribute('data-key');
+          // v27.1.2 #3+#5 — synthetic 'led' stepper in the CALICO Outputs
+          // section resizes wizardData.screens directly and keeps hasLed in
+          // lockstep. No defaultWizard shape break — screens stays the canonical
+          // state holder.
+          if (ns === '__calico_led') {
+            const cur = Array.isArray(wizardData.screens) ? wizardData.screens.length : 0;
+            const delta = action === 'step-inc' ? 1 : -1;
+            const next = Math.max(0, cur + delta);
+            _resizeScreens(next);
+            wizardData.hasLed = (next > 0);
+            saveDraft();
+            renderWizard();
+            return;
+          }
+          // v27.1.2 #7 — synthetic 'corio_canvases' stepper writes top-level
+          // (not nested under corio_outputs since it's not an I/O port count).
+          if (ns === '__corio_canvas') {
+            const cur = Number(wizardData.corio_canvases) || 0;
+            const delta = action === 'step-inc' ? 1 : -1;
+            wizardData.corio_canvases = Math.max(0, cur + delta);
+            saveDraft();
+            renderWizard();
+            return;
+          }
           if (ns) {
             wizardData[ns][key] = (Number(wizardData[ns][key]) || 0) + (action === 'step-inc' ? 1 : -1);
             if (wizardData[ns][key] < 0) wizardData[ns][key] = 0;
@@ -5840,20 +6337,11 @@
           return;
         }
 
-        // LED screen mgmt
-        if (action === 'screen-add') {
-          wizardData.screens.push({ w: '', h: '' });
-          saveDraft();
-          renderWizard();
-          return;
-        }
-        if (action === 'screen-remove') {
-          const idx = parseInt(actEl.getAttribute('data-idx'), 10);
-          wizardData.screens.splice(idx, 1);
-          saveDraft();
-          renderWizard();
-          return;
-        }
+        // v27.1.2 #5 — screen-add / screen-remove retired. The LED count
+        // stepper in Step 3 (synthetic 'led' field, namespace '__calico_led')
+        // owns array sizing via _resizeScreens(). Old handlers removed; if a
+        // stale button somehow remains in DOM, the actions fall through to
+        // the unhandled-action toast which is appropriate (visible failure).
 
         // Logout
         if (action === 'logout') {
@@ -5921,6 +6409,35 @@
         // alpha.7.3 — Rebuild BoM from current structural state
         if (action === 'sd-rebuild') {
           rebuildSavedDeal();
+          return;
+        }
+
+        // v27.1.2 #6 — Edit: hydrate wizard from this deal, jump to Step 1.
+        // OQ 6A locked: updates existing deal (not duplicate). Distinguished
+        // from fresh-new via route '#/quote/edit/{refId}'. Save handler
+        // (wiz-save) detects edit-mode via this hash and updates rather than
+        // inserts. Per-step "Edit step N" links inside accordions remain (OQ 6B).
+        if (action === 'sd-edit') {
+          if (!_savedDealData) return;
+          const ref = _savedDealData.display_ref || _savedDealData.ref || _savedDealRefId;
+          if (!ref) {
+            toast('Cannot edit: no reference ID.', 'err');
+            return;
+          }
+          try {
+            wizardData = hydrateWizardFromDeal(_savedDealData);
+            wizardData.step = 1;
+            wizardData.errors = {};
+            // Persist edit-target refId on wizardData so wiz-save can detect
+            // update-vs-insert without relying solely on the hash (hash may
+            // change during step navigation).
+            wizardData._editRefId = ref;
+          } catch (e) {
+            const msg = (e && e.message) ? e.message : String(e);
+            toast('Cannot open editor: ' + msg, 'err');
+            return;
+          }
+          location.hash = '#/quote/edit/' + encodeURIComponent(ref);
           return;
         }
 
@@ -6220,6 +6737,24 @@
           const key = t.getAttribute('data-key');
           const v = parseInt(t.value, 10);
           const safe = isNaN(v) || v < 0 ? 0 : v;
+          // v27.1.2 #3+#5 — synthetic LED stepper: resize screens array on
+          // direct-type as well. Re-render here (unlike normal step-set which
+          // skips render during typing) because screen blocks in Step 4 need
+          // to update when user changes LED count from Step 3.
+          if (ns === '__calico_led') {
+            _resizeScreens(safe);
+            wizardData.hasLed = (safe > 0);
+            saveDraft();
+            renderWizard();
+            return;
+          }
+          // v27.1.2 #7 — corio_canvases direct typing.
+          if (ns === '__corio_canvas') {
+            wizardData.corio_canvases = safe;
+            saveDraft();
+            // Don't re-render mid-type; allow continued typing.
+            return;
+          }
           if (ns) wizardData[ns][key] = safe;
           saveDraft();
           // Don't re-render mid-type; user is still typing.
@@ -6246,6 +6781,33 @@
             const v = parseInt(t.value, 10);
             const safe = isNaN(v) || v < 0 ? '' : v;
             row[action === 'screen-w' ? 'w' : 'h'] = safe;
+            saveDraft();
+          }
+          return;
+        }
+
+        // v27.1.2 #5 — LED pixel pitch direct typing.
+        // Store as STRING (not parsed) during typing so users can build up
+        // "2.5" → "2.50" without the value snapping. validateStep parses +
+        // range-checks. Accept only digits and a single decimal point; strip
+        // anything else silently so paste/autocomplete oddities don't stick.
+        if (action === 'screen-pitch') {
+          const idx = parseInt(t.getAttribute('data-idx'), 10);
+          const row = wizardData.screens[idx];
+          if (row) {
+            // Allow empty during typing; sanitize to numeric+decimal pattern.
+            let s = String(t.value == null ? '' : t.value);
+            // Permit one optional leading minus is NOT allowed — pitches are positive.
+            s = s.replace(/[^0-9.]/g, '');
+            // Collapse multiple decimal points to the first one
+            const firstDot = s.indexOf('.');
+            if (firstDot >= 0) {
+              s = s.slice(0, firstDot + 1) + s.slice(firstDot + 1).replace(/\./g, '');
+            }
+            row.pitch = s;
+            // If sanitizer changed the value, write it back so the input
+            // doesn't show illegal chars momentarily.
+            if (s !== t.value) t.value = s;
             saveDraft();
           }
           return;
@@ -6355,6 +6917,7 @@
       setWizardData: (d) => { wizardData = d; },
       loadDraft, clearDraft, saveDraft: () => saveDraft(),
       defaultWizard,
+      hydrateWizardFromDeal,
       renderWizard,
       validateStep,
       captureCurrentStepForm,
@@ -6470,6 +7033,18 @@
         // #/quote/new          → step 1
         // #/quote/new/2        → step 2
         const stepNum = parts.length >= 4 ? parseInt(parts[3], 10) || 1 : 1;
+        UI.showWizard(stepNum);
+        return;
+      }
+      // v27.1.2 #6 — edit-mode wizard entry. Hash carries the refId so
+      // wizSave can detect update-vs-insert. wizardData itself is
+      // hydrated by the sd-edit handler BEFORE the hash change, so we
+      // just route to the wizard renderer here.
+      if (hash.indexOf('#/quote/edit/') === 0) {
+        const parts = hash.split('/');
+        // #/quote/edit/{refId}     → step 1
+        // #/quote/edit/{refId}/3   → step 3 (deep link case)
+        const stepNum = parts.length >= 5 ? parseInt(parts[4], 10) || 1 : 1;
         UI.showWizard(stepNum);
         return;
       }
@@ -6675,7 +7250,12 @@
         UI.toast('Could not build save payload.', 'err');
         return;
       }
-      UI.toast('Saving\u2026', 'info');
+      // v27.1.2 #6 — distinguish update (edit-mode) vs insert (new). buildSavePayload
+      // already includes payload.id in edit-mode (set by hydrateWizardFromDeal),
+      // which STORE.saveDeal routes to the deal_save RPC update path. Here we
+      // only adjust the user-facing toast and the post-save navigation.
+      const isEdit = !!payload.id;
+      UI.toast(isEdit ? 'Updating\u2026' : 'Saving\u2026', 'info');
       STORE.saveDeal(payload).then(function(r) {
         const ref = r && r.display_ref;
         if (!ref) {
@@ -6683,13 +7263,13 @@
           return;
         }
         UI.clearDraft();
-        UI.toast('Saved as ' + ref, 'ok');
+        UI.toast(isEdit ? ('Updated ' + ref) : ('Saved as ' + ref), 'ok');
         // Navigate to the saved-deal view. onRouteChange picks up the hash
         // change and dispatches to showSavedDeal.
         location.hash = '#/quote/' + ref;
       }).catch(function(err) {
         const msg = (err && err.message) ? err.message : String(err);
-        UI.toast('Save failed: ' + msg, 'err');
+        UI.toast((isEdit ? 'Update' : 'Save') + ' failed: ' + msg, 'err');
       });
     }
 
@@ -7785,6 +8365,123 @@
      ============================================================ */
   UI.mount();
   APP.start();
+
+  /* ============================================================
+     v27.1.2 — Test-cycle remediation (24 May 2026)
+     Scope: 9 findings from v27.1.1 production smoke test + 1
+     cross-cutting (HUMAN_LABELS infrastructure). Frontend only,
+     no backend migration. Ship single chat, sequenced for minimum
+     blast radius. Spec lock: SPEC-v27.1.2.md (13 OQs all accepted
+     per Claude recommendations).
+
+     FRONTEND ITEMS:
+      §1.2  HUMAN_LABELS const + humanizeNamespace() helper.
+            Source of truth for ID->display-name mapping used by
+            Step 6 Review (#4a) and BoM I/O spec line (#4b).
+            Lives near STEP_TITLES; structured by namespace
+            (calico_inputs, calico_outputs, sx_data). CORIO/MV
+            keys are already human-readable so no entry needed.
+
+      #2   Form reset on '#/quote/new' (OQ 2A: silent reset).
+            showWizard() detects fresh-new entry via hash shape
+            === '#/quote/new' and calls clearDraft() which wipes
+            both wizardData and localStorage WIZ_KEY. Deep links
+            (#/quote/new/3) preserve in-memory state.
+
+      #3   I/O restructure (CALICO only, per OQ 1B).
+            LED stepper and Audio toggle moved from Add-ons into
+            Outputs section. Add-ons now contains only Signal
+            Extension toggle (acts as flow-control for Step 5,
+            already wired via computeVisibleSteps).
+            LED stepper is synthetic (namespace='__calico_led')
+            — drives wizardData.screens array length via
+            _resizeScreens() and keeps hasLed in lockstep. No
+            defaultWizard shape break.
+
+      #4a  Humanize Step 6 Review tech IDs. Replaces 'hdmi4k:2,
+            hdmiFhd:2' with 'HDMI 4K \u00d7 2, HDMI FHD \u00d7 2' via
+            humanizeNamespace('calico_inputs', d.calico_inputs).
+            MV/CORIO use catalog keys directly (already human).
+
+      #4b  BoM card dedupe + I/O port spec line. recommendCalico
+            now sets meta.chassisLabel (was missing — caused the
+            duplicate-SKU display bug). All 3 RECOMMEND paths now
+            also set meta.io = { inputs, outputs } so renderBomCard
+            can emit a new I/O spec line: '4 inputs (2\u00d7 HDMI 4K,
+            2\u00d7 HDMI FHD) \u00b7 1 output (HDMI)'. CSS rule .bom-io
+            added between .bom-chassis-label and .bom-meta.
+
+      #5   LED qty + per-screen W/H/pitch blocks.
+            Step 4 now renders exactly d.screens.length blocks
+            (count owned by Step 3 stepper, +/Remove buttons
+            retired). Each block has W (64-16384 px integer),
+            H (64-16384 px integer), Pitch (0.50-50.00 mm decimal
+            2dp). Pitch stored as string during typing; sanitized
+            to digits+single-decimal; range-checked in validateStep.
+            OQ 5A: pitch is metadata-only this release — NOT fed
+            into RECOMMEND.calico (algorithm change deferred).
+            OQ 5B: old screens (v27.1.1, no pitch) get pitch=''
+            via hydrateWizardFromDeal lazy remap; Review renders
+            missing pitch as '\u2014'.
+
+      #6   Top-level Edit button on saved-deal page (OQ 6A: updates
+            existing deal). New sd-edit action handler in
+            bindGlobalEvents click delegate: hydrates wizard via
+            hydrateWizardFromDeal(_savedDealData), sets _editRefId,
+            navigates to '#/quote/edit/{ref}'. Router adds matching
+            handler that routes to showWizard without clearing state
+            (sd-edit already hydrated). buildSavePayload routes through
+            update path automatically when payload.id is present.
+            wizSave shows 'Updating\u2026'/'Updated {ref}' toast for
+            edit-mode vs 'Saving\u2026'/'Saved as {ref}' for new.
+            OQ 6B: per-step 'Edit step N' links inside accordions kept.
+
+      #7   CORIO canvas count (UI-only per OQ 7B). New
+            'Canvas configuration' section above Outputs in
+            renderStep3Corio (OQ 7A). Synthetic stepper
+            (namespace='__corio_canvas') writes to
+            wizardData.corio_canvases (top-level field, added to
+            defaultWizard + STRUCTURAL_FIELDS for raw_submission
+            persistence). Algorithm (_corioAutoSelectChassis)
+            DELIBERATELY UNCHANGED — domain rule (canvas count
+            -> Micro/Mini/CM2) lands in v27.1.3 once tvONE
+            confirms exact mapping. Step 6 Review shows
+            'Canvases: N' when > 0.
+
+      #8   Saved-deal header expansion. sd-header expanded from
+            3 lines (refId + project + customer/stage) to up to
+            6 lines: adds lead_source pill (OQ 8A: Cavitak=green,
+            tvONE=blue), close_month (formatted 'Jul 2026'),
+            sales/presales (UUID-resolved via labelFor), city/state
+            + venue_type, created/updated dates (relative-ish
+            'en-IN' day+month). OQ 8B: each line skipped silently
+            when source field absent. CSS .sd-meta-line + .sd-pill-source
+            (with .is-cavitak / .is-tvone modifiers) added.
+
+      #9   Step 6 BoM moves to top (OQ 9A: pre-Build banner stays
+            at top, gives users a visual signal of the BoM target
+            area). Single line flip: 'return bomHtml + summaryHtml'.
+
+     CROSS-CUTTING:
+      OQ 1A  Lazy in-memory remap of v27.1.1 deals on
+              hydrateWizardFromDeal: ensures every screens[] entry
+              has a 'pitch' key (defaulting to '') so Step 4 renders
+              cleanly without a separate migration script. No DB
+              touch.
+      OQ 1B  #3 restructure applies to CALICO only (MV and CORIO
+              don't have hasLed/calico_audio in their Step 3
+              today). SX toggle relocation is identical across
+              the three paths (no change needed beyond CALICO).
+
+     KNOWN-DEFERRED (NOT v27.1.2 scope):
+      - 3 test deals in public.deals (TV-51822447, TV-60537796,
+        TV-67976652) pending UI deletion. Environmental cleanup
+        only — does not block v27.1.2 ship.
+      - CORIO canvas-count -> chassis-pick algorithm: v27.1.3.
+      - Backend migration for any v27.1.2 field: NOT needed.
+        screens[i].pitch and corio_canvases round-trip via
+        existing raw_submission JSONB.
+     ============================================================ */
 
   /* ============================================================
      End of v27.1.1
