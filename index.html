@@ -874,7 +874,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.0.0-alpha.9.1',
+      version: 'v27.0.0-alpha.9.2',
       constants,
       calico,
       mv,
@@ -1218,6 +1218,21 @@
       const reasons = [];
       const concerns = [];
       const valueAdds = [];
+
+      // alpha.9.2: Rule A — Multi Viewer caps at 2 distinct signal types.
+      // Defense in depth; the wizard UI also enforces this at the row level.
+      // Fires before the downstream card-count guard (MTO.maxInputCards) so the
+      // rep sees a spec-level message ("max 2 distinct") rather than a hardware
+      // message ("needs 4 cards but supports 2").
+      const MV_DISTINCT_CAP = 2;
+      const distinctSigs = new Set(validInputs.map(r => r.signal)).size;
+      if (distinctSigs > MV_DISTINCT_CAP) {
+        return {
+          chassis: null, cards: [], concerns, valueAdds, reasons,
+          meta: { type: 'error' },
+          error: 'Multi Viewer supports max ' + MV_DISTINCT_CAP + ' distinct signal types. Requested: ' + distinctSigs + '. Remove rows or change signal types to reduce to ' + MV_DISTINCT_CAP + ' distinct.'
+        };
+      }
 
       // Step 1: SINGLE-signal path — try a fixed preset (only possible when output is 4K HDMI).
       if (validInputs.length === 1) {
@@ -2482,8 +2497,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.0.0-alpha.9.1"',
-      () => CATALOG.version === 'v27.0.0-alpha.9.1' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.0.0-alpha.9.2"',
+      () => CATALOG.version === 'v27.0.0-alpha.9.2' || 'got: ' + CATALOG.version);
 
     check('Object.isFrozen(CATALOG)',
       () => Object.isFrozen(CATALOG) === true || 'not frozen');
@@ -2771,13 +2786,15 @@
         return true;
       });
 
-    check('MV error: too many cards for MTO',
+    check('MV error: too many cards for MTO (within distinct cap)',
       () => {
+        // alpha.9.2: was 3 distinct × qty 4 (4 cards); after Rule A that fires
+        // the distinct-cap guard first. Reworked to 2 distinct + high qty so
+        // the totalCards > maxInputCards branch still has coverage.
         const r = RECOMMEND.mv({
           inputs: [
             { signal: 'FHD HDMI', qty: 4 },
-            { signal: '3G-SDI', qty: 4 },
-            { signal: 'HDBaseT', qty: 4 }
+            { signal: '3G-SDI',   qty: 12 }
           ],
           outputSignal: '4K HDMI'
         });
@@ -4416,6 +4433,19 @@
         if (!Array.isArray(deal.mv_inputs)) deal.mv_inputs = [];
         const MV_INPUT_SIGNALS  = Object.keys(CATALOG.mv.inputModules);
         const MV_OUTPUT_SIGNALS = Object.keys(CATALOG.mv.outputModules);
+
+        // alpha.9.2: Rule A — max 2 distinct signal types (mirror of renderStep3Mv).
+        // Same shape as the wizard: capReached disables "+ Add input" and filters
+        // each row's signal dropdown to {distinctSet} ∪ {row.signal}.
+        const MV_DISTINCT_CAP = 2;
+        const distinctSet = new Set(
+          deal.mv_inputs.filter(r => r && r.signal && Number(r.qty) > 0).map(r => r.signal)
+        );
+        const capReached = distinctSet.size >= MV_DISTINCT_CAP;
+        const capBanner = capReached
+          ? '<div class="banner info" style="margin-top:8px"><strong>Cap reached:</strong> Multi Viewer supports a maximum of ' + MV_DISTINCT_CAP + ' distinct signal types. Remove a row or change its signal to add a different type.</div>'
+          : '';
+
         const inputRowsHtml = deal.mv_inputs.length === 0
           ? '<div class="muted small" style="padding:8px 0">No input rows yet. Tap \u201c+ Add input\u201d below.</div>'
           : deal.mv_inputs.map((row, idx) =>
@@ -4423,10 +4453,12 @@
                 '<div class="row gap-2" style="flex-wrap:wrap">' +
                   '<select data-action="sd-mv-input-signal" data-idx="' + idx + '" style="flex:1;min-width:140px">' +
                     '<option value="">\u2014 signal \u2014</option>' +
-                    MV_INPUT_SIGNALS.map(s =>
-                      '<option value="' + esc(s) + '"' +
-                      (row.signal === s ? ' selected' : '') + '>' + esc(s) + '</option>'
-                    ).join('') +
+                    MV_INPUT_SIGNALS
+                      .filter(s => !capReached || distinctSet.has(s) || s === row.signal)
+                      .map(s =>
+                        '<option value="' + esc(s) + '"' +
+                        (row.signal === s ? ' selected' : '') + '>' + esc(s) + '</option>'
+                      ).join('') +
                   '</select>' +
                   '<div class="stepper">' +
                     '<button type="button" data-action="sd-mv-input-dec" data-idx="' + idx + '"' +
@@ -4446,7 +4478,8 @@
             { placeholder: '\u2014 select \u2014' }) +
           '<div class="sd-subhead">Inputs</div>' +
           inputRowsHtml +
-          '<button class="btn btn-ghost btn-block" type="button" data-action="sd-mv-input-add">+ Add input</button>' +
+          '<button class="btn btn-ghost btn-block" type="button" data-action="sd-mv-input-add"' + (capReached ? ' disabled' : '') + '>+ Add input</button>' +
+          capBanner +
           '<div class="sd-edit-note small soft">Edits set the Rebuild banner above. Tap <strong>Rebuild</strong> to recompute the BoM.</div>';
       }
       if (deal.solutionType === 'corio') {
@@ -4747,6 +4780,20 @@
     function renderStep3Mv(d) {
       const MV_INPUT_SIGNALS = Object.keys(CATALOG.mv.inputModules);
       const MV_OUTPUT_SIGNALS = Object.keys(CATALOG.mv.outputModules);
+
+      // alpha.9.2: Rule A — max 2 distinct signal types (mirrors RECOMMEND.mv guard).
+      // capReached disables "+ Add input" and filters each row's signal dropdown
+      // to {already-chosen distinct signals} ∪ {this row's own signal}, so
+      // existing rows can be retargeted but can't expand distinct count past 2.
+      const MV_DISTINCT_CAP = 2;
+      const distinctSet = new Set(
+        d.mv_inputs.filter(r => r && r.signal && Number(r.qty) > 0).map(r => r.signal)
+      );
+      const capReached = distinctSet.size >= MV_DISTINCT_CAP;
+      const capBanner = capReached
+        ? '<div class="banner info" style="margin-top:8px"><strong>Cap reached:</strong> Multi Viewer supports a maximum of ' + MV_DISTINCT_CAP + ' distinct signal types. Remove a row or change its signal to add a different type.</div>'
+        : '';
+
       const inErr = d.errors.mv_io
         ? '<div class="banner err">' + esc(d.errors.mv_io) + '</div>' : '';
 
@@ -4757,10 +4804,12 @@
             '<div class="row gap-2" style="flex-wrap:wrap">' +
               '<select data-action="mv-input-signal" data-idx="' + idx + '" style="flex:1;min-width:140px">' +
                 '<option value="">\u2014 signal \u2014</option>' +
-                MV_INPUT_SIGNALS.map(s =>
-                  '<option value="' + esc(s) + '"' +
-                  (row.signal === s ? ' selected' : '') + '>' + esc(s) + '</option>'
-                ).join('') +
+                MV_INPUT_SIGNALS
+                  .filter(s => !capReached || distinctSet.has(s) || s === row.signal)
+                  .map(s =>
+                    '<option value="' + esc(s) + '"' +
+                    (row.signal === s ? ' selected' : '') + '>' + esc(s) + '</option>'
+                  ).join('') +
               '</select>' +
               '<div class="stepper">' +
                 '<button type="button" data-action="mv-input-dec" data-idx="' + idx + '"' +
@@ -4790,7 +4839,8 @@
         '</div>' +
         '<h3 class="h3">Inputs</h3>' +
         inputRowsHtml +
-        '<button class="btn btn-ghost btn-block" type="button" data-action="mv-input-add">+ Add input</button>' +
+        '<button class="btn btn-ghost btn-block" type="button" data-action="mv-input-add"' + (capReached ? ' disabled' : '') + '>+ Add input</button>' +
+        capBanner +
         '<div class="sp-12"></div>' +
         toggleRow('hasSx', 'Signal Extension needed', 'Configure in Step 5', d.hasSx, { namespace:'' });
     }
@@ -5223,6 +5273,13 @@
 
         // MV input row mgmt
         if (action === 'mv-input-add') {
+          // alpha.9.2: defensive Rule-A guard. The UI button is disabled at the
+          // cap, but a stale view or rapid double-tap on the enable→disable
+          // boundary could still fire this handler. No-op if already at cap.
+          const _dist = new Set(
+            wizardData.mv_inputs.filter(r => r && r.signal && Number(r.qty) > 0).map(r => r.signal)
+          );
+          if (_dist.size >= 2) return;
           wizardData.mv_inputs.push({ signal: '', qty: 1 });
           saveDraft();
           renderWizard();
@@ -5461,6 +5518,11 @@
         if (action === 'sd-mv-input-add') {
           if (!_savedDealData) return;
           if (!Array.isArray(_savedDealData.mv_inputs)) _savedDealData.mv_inputs = [];
+          // alpha.9.2: defensive Rule-A guard (mirror of wizard handler).
+          const _dist = new Set(
+            _savedDealData.mv_inputs.filter(r => r && r.signal && Number(r.qty) > 0).map(r => r.signal)
+          );
+          if (_dist.size >= 2) return;
           _savedDealData.mv_inputs.push({ signal: '', qty: 1 });
           markStructuralDirty();
           setRoot(renderSavedDealLoaded(_savedDealData));
@@ -6903,6 +6965,35 @@
           || 'r=' + JSON.stringify(r && Object.keys(r));
       });
 
+    // ---- 8: MV signal-type cap (alpha.9.2 Rule A — max 2 distinct) ----
+    check('RECOMMEND.mv rejects > 2 distinct signal types',
+      () => {
+        const r = RECOMMEND.mv({
+          inputs: [
+            { signal: 'FHD HDMI', qty: 1 },
+            { signal: '3G-SDI',   qty: 1 },
+            { signal: 'HDBaseT',  qty: 1 }
+          ],
+          outputSignal: '4K HDMI'
+        });
+        const errStr = String(r && r.error || '');
+        return (errStr.indexOf('max 2 distinct') >= 0 && r.chassis == null)
+          || 'expected "max 2 distinct" error, got: chassis=' + r.chassis + ' error=' + JSON.stringify(r.error);
+      });
+
+    check('RECOMMEND.mv accepts 2 distinct signal types at boundary',
+      () => {
+        const r = RECOMMEND.mv({
+          inputs: [
+            { signal: 'FHD HDMI', qty: 2 },
+            { signal: '3G-SDI',   qty: 2 }
+          ],
+          outputSignal: '4K HDMI'
+        });
+        return (r && r.chassis === 'MWP-MTO' && !r.error)
+          || 'expected MWP-MTO chassis without error, got: chassis=' + r.chassis + ' error=' + JSON.stringify(r.error);
+      });
+
     return {
       pass, fail, lines: out,
       summary: '\n' + pass + ' passed, ' + fail + ' failed (Integration)',
@@ -6920,8 +7011,44 @@
   APP.start();
 
   /* ============================================================
-     End of v27.0.0-alpha.9.1
-     (alpha.9.1 \u2014 hotfix on top of alpha.9.0.
+     End of v27.0.0-alpha.9.2
+     (alpha.9.2 \u2014 MV signal-type cap (Rule A) + smoke true-up.
+
+      WHAT CHANGED:
+       1. RECOMMEND.mv: reject > 2 distinct signal types early with
+          a spec-level error message. Fires before the downstream
+          MTO.maxInputCards card-count guard so reps get
+          "max 2 distinct signal types" instead of "needs N cards".
+       2. renderStep3Mv (wizard Step 3): disable "+ Add input" when
+          distinctSet.size >= 2; filter each row's signal dropdown
+          to {distinctSet} \u222a {row.signal} so existing rows can be
+          retargeted but can't escalate distinct count.
+       3. renderSavedDealLoaded MV edit block: same 3 UI changes,
+          mirroring the wizard so the cap holds on edit too.
+       4. mv-input-add + sd-mv-input-add handlers: defensive guard
+          (no-op if cap already reached) for stale-view / double-tap.
+       5. __smokeIntegration: 2 new checks (rejection > 2 + boundary
+          acceptance at 2). Existing test "too many cards for MTO"
+          re-shaped to 2 distinct + high qty so the card-count guard
+          still has coverage independent of the new distinct guard.
+       6. CATALOG.version + smoke assertion: alpha.9.1 \u2192 alpha.9.2.
+       7. This changelog entry.
+
+      SMOKE CONTRACT:
+        __smoke              47
+        __smokeStore         11
+        __smokeUI            40
+        __smokeExport        10
+        __smokeIntegration   22   (was 20; +2 MV cap checks)
+        ----------------------
+        sync total          130
+        __smokeExportAsync    5
+        ----------------------
+        TOTAL               135
+
+      PRIOR ALPHA.9.1 NOTES (kept for historical record):
+
+      alpha.9.1 was a hotfix on top of alpha.9.0.
 
       BUG: alpha.9.0 deploy threw at module-init time:
         Uncaught ReferenceError: buildSavePayload is not defined
@@ -6939,19 +7066,13 @@
       Session 9 didn't catch this: a ReferenceError to an undefined
       symbol is a runtime failure, not a syntax error.
 
-      FIX (5 edits, all in this file):
+      ALPHA.9.1 FIX (5 edits):
        1. UI return block: also expose _SOFT_FIELDS,
           _STRUCTURAL_FIELDS, _STRUCTURED_COLS.
        2. APP return block: route all four through UI.<name>.
-          Mirrors the working pattern at the earlier
-          `UI.buildSavePayload(d)` call site.
        3. CATALOG.version: alpha.9.0 \u2192 alpha.9.1.
        4. Smoke version assertion: matching bump.
-       5. This changelog entry.
-
-      Smoke contract unchanged (126 sync + 5 async = 131).
-      APP._buildSavePayload etc. surface remains stable
-      \u2014 only the underlying wiring changed.
+       5. Changelog entry.
 
       LESSON FOR v27.1 BACKLOG: extend the validation gauntlet
       to load index.html headlessly (jsdom + a stub for DOM
