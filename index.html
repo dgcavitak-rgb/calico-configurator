@@ -874,7 +874,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.1.0',
+      version: 'v27.1.1',
       constants,
       calico,
       mv,
@@ -2077,23 +2077,38 @@
         r.getCell(2).alignment = { wrapText: true };
         r.getCell(4).alignment = { wrapText: true };
       }
-      ctxRow(4,  'Project',     deal.project,         'Customer',         deal.customer_name);
+      ctxRow(4,  'Project',     deal.project,         'End User',         deal.customer_name);
       ctxRow(5,  'Partner',     deal.partner_name,    'Consultant',       deal.consultant_name);
       ctxRow(6,  'Venue type',  deal.venue_type,      'City',             deal.city);
       ctxRow(7,  'State',       deal.state,           'Stage',            deal.stage);
-      ctxRow(8,  'Lead source', deal.lead_source,     'Expected closure', deal.close_month);
+      ctxRow(8,  'Lead Origin', deal.lead_source,     'Expected closure', deal.close_month);
       ctxRow(9,  'Salesperson', labelFor(deal.sales_person_id, SALES_TEAM), 'Presales', labelFor(deal.presales_person_id, PRESALES_TEAM));
 
-      // v27.1.0 B6 — Notes as a full-width merged row 10. Skip when empty so
-      // we don't leave a blank line in the export. BoM header stays at row 13
-      // regardless (gap is acceptable; keeps downstream cell references stable).
-      if (deal.notes && String(deal.notes).trim()) {
+      // v27.1.1 — Partner contact (Name + Phone + Email). Skip when blank so
+      // we don't leave an empty row. Single merged row 10 with all three
+      // chunks separated by " \u00b7 " for readability.
+      const contactParts = [];
+      if (deal.contact_name  && String(deal.contact_name).trim())  contactParts.push(String(deal.contact_name).trim());
+      if (deal.contact_phone && String(deal.contact_phone).trim()) contactParts.push(String(deal.contact_phone).trim());
+      if (deal.contact_email && String(deal.contact_email).trim()) contactParts.push(String(deal.contact_email).trim());
+      if (contactParts.length > 0) {
         ws.mergeCells('A10:D10');
-        const notesCell = ws.getRow(10).getCell(1);
-        notesCell.value = 'Notes: ' + String(deal.notes).trim();
+        const cc = ws.getRow(10).getCell(1);
+        cc.value = 'Partner contact: ' + contactParts.join(' \u00b7 ');
+        cc.font = { size: 10 };
+        cc.alignment = { wrapText: true, vertical: 'top' };
+        ws.getRow(10).height = 20;
+      }
+
+      // v27.1.1 — External notes only (internal notes are hidden from exports).
+      // Row 11 (was row 10 in v27.1.0). BoM header stays at row 13 regardless.
+      if (deal.external_notes && String(deal.external_notes).trim()) {
+        ws.mergeCells('A11:D11');
+        const notesCell = ws.getRow(11).getCell(1);
+        notesCell.value = 'Notes: ' + String(deal.external_notes).trim();
         notesCell.font = { size: 10 };
         notesCell.alignment = { wrapText: true, vertical: 'top' };
-        ws.getRow(10).height = Math.min(80, Math.max(20, String(deal.notes).length / 4));
+        ws.getRow(11).height = Math.min(80, Math.max(20, String(deal.external_notes).length / 4));
       }
 
       // ---- BoM header ----
@@ -2303,21 +2318,34 @@
         y += 15;
       }
 
-      ctxRow('Project',     deal.project,         'Customer',         deal.customer_name);
+      ctxRow('Project',     deal.project,         'End User',         deal.customer_name);
       ctxRow('Partner',     deal.partner_name,    'Consultant',       deal.consultant_name);
       ctxRow('Venue type',  deal.venue_type,      'City',             deal.city);
       ctxRow('State',       deal.state,           'Stage',            deal.stage);
-      ctxRow('Lead source', deal.lead_source,     'Expected closure', deal.close_month);
+      ctxRow('Lead Origin', deal.lead_source,     'Expected closure', deal.close_month);
       ctxRow('Salesperson', labelFor(deal.sales_person_id, SALES_TEAM), 'Presales', labelFor(deal.presales_person_id, PRESALES_TEAM));
 
-      // v27.1.0 B6 — Notes as a wrapped paragraph below the 2-column context.
-      // Skip when empty.
-      if (deal.notes && String(deal.notes).trim()) {
+      // v27.1.1 — Partner contact line. Skip when all three are blank.
+      const contactParts = [];
+      if (deal.contact_name  && String(deal.contact_name).trim())  contactParts.push(String(deal.contact_name).trim());
+      if (deal.contact_phone && String(deal.contact_phone).trim()) contactParts.push(String(deal.contact_phone).trim());
+      if (deal.contact_email && String(deal.contact_email).trim()) contactParts.push(String(deal.contact_email).trim());
+      if (contactParts.length > 0) {
+        y += 6;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Partner contact:', colA_label, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(contactParts.join(' \u00b7 '), colA_label + 90, y, { maxWidth: W - 2 * M - 90 });
+        y += 15;
+      }
+
+      // v27.1.1 — External notes only (internal_notes is hidden from exports).
+      if (deal.external_notes && String(deal.external_notes).trim()) {
         y += 6;
         doc.setFont('helvetica', 'bold');
         doc.text('Notes:', colA_label, y);
         doc.setFont('helvetica', 'normal');
-        const notesLines = doc.splitTextToSize(String(deal.notes).trim(), W - 2 * M - 40);
+        const notesLines = doc.splitTextToSize(String(deal.external_notes).trim(), W - 2 * M - 40);
         doc.text(notesLines, colA_label + 40, y);
         y += notesLines.length * 12;
       }
@@ -2517,8 +2545,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.1.0"',
-      () => CATALOG.version === 'v27.1.0' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.1.1"',
+      () => CATALOG.version === 'v27.1.1' || 'got: ' + CATALOG.version);
 
     check('Object.isFrozen(CATALOG)',
       () => Object.isFrozen(CATALOG) === true || 'not frozen');
@@ -3023,19 +3051,27 @@
     await check('STORE.saveDeal(...) returns display_ref starting with "TV-"',
       async () => {
         const r = await STORE.saveDeal({
-          project:         'v27 smoke',
-          stage:           'Qualified',     // ← seq=1 entry stage per pipeline_stages
-          customer_name:   'Smoke Customer',
-          partner_name:    'Smoke Partner',
-          city:            'Ahmedabad',
-          state:           'Gujarat',
-          venue_type:      'Corporate',
-          status:          'saved',
-          budget:          'Pending',
-          deal_source:     'smoke',
-          lead_source:     'smoke',
-          notes:           'created by __smokeStore at ' + new Date().toISOString(),
-          raw_submission:  { source: '__smokeStore', v: CATALOG.version },
+          project:            'v27 smoke',
+          stage:              'Qualified',     // ← seq=1 entry stage per pipeline_stages
+          customer_name:      'Smoke End User',
+          partner_name:       'Smoke Partner',
+          consultant_name:    'Smoke Consultant',
+          city:               'Ahmedabad',
+          state:              'Gujarat',
+          venue_type:         'Corporate Office / HQ',   // ← from 28-option list (v27.1.1)
+          status:             'saved',
+          budget:             'Pending',
+          deal_source:        'smoke',
+          lead_source:        'Cavitak',                  // ← from 2-option list (v27.1.1)
+          sales_person_id:    '155b257a-ec1a-4ee9-ac89-31ba47c4c610',  // Dipenkumar
+          presales_person_id: '2e1ab421-5174-4f4d-a27d-bb8c19e22c3f',  // Mohit
+          close_month:        '2026-09',
+          contact_name:       'Smoke Contact',            // v27.1.1 — restored
+          contact_phone:      '9876543210',               // v27.1.1
+          contact_email:      'smoke@cavitak.test',       // v27.1.1
+          internal_notes:     'internal: created by __smokeStore at ' + new Date().toISOString(),  // v27.1.1 (renamed from notes)
+          external_notes:     'external: visible in exports',          // v27.1.1 (new)
+          raw_submission:     { source: '__smokeStore', v: CATALOG.version },
           lines: [{
             product_family:    'CALICO',
             sku:               'C7-PRO-1200',
@@ -3060,6 +3096,65 @@
         if (!Array.isArray(d.lines) || d.lines.length !== 1) return 'lines: ' + JSON.stringify(d.lines);
         if (d.lines[0].sku !== 'C7-PRO-1200') return 'sku: ' + d.lines[0].sku;
         return true;
+      });
+
+    // v27.1.1 N13a — Round-trip preservation on save->get. This is the
+    // item-14 hydrate-bug acceptance criterion. Every soft field sent must
+    // come back identically. Catches contract drift between frontend keys
+    // and RPC INSERT/SELECT column lists. If this passes, "fields not
+    // filled on edit" cannot occur for any field tested here.
+    await check('v27.1.1: save->load round-trip preserves all 15 required Step-1 fields',
+      async () => {
+        if (!ref) return 'no ref from save';
+        const d = await STORE.loadDeal(ref);
+        const expected = {
+          customer_name:      'Smoke End User',
+          partner_name:       'Smoke Partner',
+          consultant_name:    'Smoke Consultant',
+          venue_type:         'Corporate Office / HQ',
+          city:               'Ahmedabad',
+          state:              'Gujarat',
+          lead_source:        'Cavitak',
+          sales_person_id:    '155b257a-ec1a-4ee9-ac89-31ba47c4c610',
+          presales_person_id: '2e1ab421-5174-4f4d-a27d-bb8c19e22c3f',
+          contact_name:       'Smoke Contact',
+          contact_phone:      '9876543210',
+          contact_email:      'smoke@cavitak.test'
+        };
+        const mismatches = [];
+        Object.keys(expected).forEach(function(k) {
+          if (d[k] !== expected[k]) {
+            mismatches.push(k + ': sent ' + JSON.stringify(expected[k]) + ' got ' + JSON.stringify(d[k]));
+          }
+        });
+        return mismatches.length === 0 || mismatches.join(' | ');
+      });
+
+    // v27.1.1 N13b — close_month round-trip: YYYY-MM sent, YYYY-MM-DD stored,
+    // YYYY-MM hydrated. Catches the date-format pair (buildSavePayload +
+    // loadDeal slice). Was implicit in alpha.9.x; now explicit.
+    await check('v27.1.1: close_month YYYY-MM round-trips via YYYY-MM-DD',
+      async () => {
+        if (!ref) return 'no ref from save';
+        const d = await STORE.loadDeal(ref);
+        return d.close_month === '2026-09'
+          || 'got: ' + JSON.stringify(d.close_month);
+      });
+
+    // v27.1.1 N13c — internal_notes (renamed) + external_notes (new)
+    // both round-trip independently.
+    await check('v27.1.1: internal_notes + external_notes both round-trip',
+      async () => {
+        if (!ref) return 'no ref from save';
+        const d = await STORE.loadDeal(ref);
+        const probs = [];
+        if (!d.internal_notes || d.internal_notes.indexOf('internal: created by __smokeStore') !== 0) {
+          probs.push('internal_notes: ' + JSON.stringify(d.internal_notes));
+        }
+        if (d.external_notes !== 'external: visible in exports') {
+          probs.push('external_notes: ' + JSON.stringify(d.external_notes));
+        }
+        return probs.length === 0 || probs.join(' | ');
       });
 
     await check('STORE.listDeals() includes the saved deal',
@@ -3166,17 +3261,246 @@
       'Negotiation', 'Awarded', 'Closed Won', 'Closed Lost'
     ];
 
-    const LEAD_SOURCES = [
-      'Direct', 'Partner Referral', 'Cavitak Outbound',
-      'Inbound Web', 'Trade Show', 'Consultant Specified', 'Other'
+    // v27.1.1 — Lead Origin (renamed from "Lead source"). Cavitak = lead came
+    // from Cavitak's own sales motion; tvONE = lead came from the OEM partner.
+    // DB column name stays `lead_source` (label-only change frontend-side).
+    const LEAD_SOURCES = ['Cavitak', 'tvONE'];
+
+    // v27.1.1 B5 — City list (~150 entries) with State auto-fill. Sourced from
+    // Indian metros + tier-1 + tier-2 cities biased to states with AV market
+    // activity (per Apr-23 spec lock). Used in <datalist> for searchable typing
+    // on mobile (Z Fold tested). When city has no entry, user picks 'Other' and
+    // types both city + state as free text (Q7 path). State column may be empty
+    // string for 'Other' — the autofill skips empty state strings so the user
+    // can supply it manually.
+    const CITIES = [
+      // Metros (top 8)
+      { city: 'Mumbai', state: 'Maharashtra' },
+      { city: 'Delhi', state: 'Delhi' },
+      { city: 'Bengaluru', state: 'Karnataka' },
+      { city: 'Hyderabad', state: 'Telangana' },
+      { city: 'Ahmedabad', state: 'Gujarat' },
+      { city: 'Chennai', state: 'Tamil Nadu' },
+      { city: 'Kolkata', state: 'West Bengal' },
+      { city: 'Pune', state: 'Maharashtra' },
+      // Gujarat (Cavitak HQ region)
+      { city: 'Surat', state: 'Gujarat' },
+      { city: 'Vadodara', state: 'Gujarat' },
+      { city: 'Rajkot', state: 'Gujarat' },
+      { city: 'Bhavnagar', state: 'Gujarat' },
+      { city: 'Jamnagar', state: 'Gujarat' },
+      { city: 'Junagadh', state: 'Gujarat' },
+      { city: 'Gandhinagar', state: 'Gujarat' },
+      { city: 'Anand', state: 'Gujarat' },
+      { city: 'Nadiad', state: 'Gujarat' },
+      { city: 'Mehsana', state: 'Gujarat' },
+      { city: 'Bharuch', state: 'Gujarat' },
+      { city: 'Morbi', state: 'Gujarat' },
+      // Maharashtra
+      { city: 'Nagpur', state: 'Maharashtra' },
+      { city: 'Nashik', state: 'Maharashtra' },
+      { city: 'Aurangabad', state: 'Maharashtra' },
+      { city: 'Thane', state: 'Maharashtra' },
+      { city: 'Navi Mumbai', state: 'Maharashtra' },
+      { city: 'Kolhapur', state: 'Maharashtra' },
+      { city: 'Solapur', state: 'Maharashtra' },
+      { city: 'Amravati', state: 'Maharashtra' },
+      { city: 'Sangli', state: 'Maharashtra' },
+      { city: 'Akola', state: 'Maharashtra' },
+      // Karnataka
+      { city: 'Mysuru', state: 'Karnataka' },
+      { city: 'Mangaluru', state: 'Karnataka' },
+      { city: 'Hubballi', state: 'Karnataka' },
+      { city: 'Belagavi', state: 'Karnataka' },
+      { city: 'Davangere', state: 'Karnataka' },
+      { city: 'Tumakuru', state: 'Karnataka' },
+      // Tamil Nadu
+      { city: 'Coimbatore', state: 'Tamil Nadu' },
+      { city: 'Madurai', state: 'Tamil Nadu' },
+      { city: 'Tiruchirappalli', state: 'Tamil Nadu' },
+      { city: 'Salem', state: 'Tamil Nadu' },
+      { city: 'Tirunelveli', state: 'Tamil Nadu' },
+      { city: 'Erode', state: 'Tamil Nadu' },
+      { city: 'Vellore', state: 'Tamil Nadu' },
+      // Telangana + Andhra Pradesh
+      { city: 'Warangal', state: 'Telangana' },
+      { city: 'Karimnagar', state: 'Telangana' },
+      { city: 'Nizamabad', state: 'Telangana' },
+      { city: 'Visakhapatnam', state: 'Andhra Pradesh' },
+      { city: 'Vijayawada', state: 'Andhra Pradesh' },
+      { city: 'Guntur', state: 'Andhra Pradesh' },
+      { city: 'Nellore', state: 'Andhra Pradesh' },
+      { city: 'Tirupati', state: 'Andhra Pradesh' },
+      { city: 'Kurnool', state: 'Andhra Pradesh' },
+      // Kerala
+      { city: 'Thiruvananthapuram', state: 'Kerala' },
+      { city: 'Kochi', state: 'Kerala' },
+      { city: 'Kozhikode', state: 'Kerala' },
+      { city: 'Thrissur', state: 'Kerala' },
+      { city: 'Kollam', state: 'Kerala' },
+      { city: 'Palakkad', state: 'Kerala' },
+      // West Bengal + North-East
+      { city: 'Howrah', state: 'West Bengal' },
+      { city: 'Durgapur', state: 'West Bengal' },
+      { city: 'Asansol', state: 'West Bengal' },
+      { city: 'Siliguri', state: 'West Bengal' },
+      { city: 'Guwahati', state: 'Assam' },
+      { city: 'Dibrugarh', state: 'Assam' },
+      { city: 'Silchar', state: 'Assam' },
+      { city: 'Agartala', state: 'Tripura' },
+      { city: 'Imphal', state: 'Manipur' },
+      { city: 'Shillong', state: 'Meghalaya' },
+      { city: 'Aizawl', state: 'Mizoram' },
+      { city: 'Kohima', state: 'Nagaland' },
+      { city: 'Itanagar', state: 'Arunachal Pradesh' },
+      { city: 'Gangtok', state: 'Sikkim' },
+      // Odisha + Jharkhand + Bihar
+      { city: 'Bhubaneswar', state: 'Odisha' },
+      { city: 'Cuttack', state: 'Odisha' },
+      { city: 'Rourkela', state: 'Odisha' },
+      { city: 'Sambalpur', state: 'Odisha' },
+      { city: 'Puri', state: 'Odisha' },
+      { city: 'Ranchi', state: 'Jharkhand' },
+      { city: 'Jamshedpur', state: 'Jharkhand' },
+      { city: 'Dhanbad', state: 'Jharkhand' },
+      { city: 'Bokaro', state: 'Jharkhand' },
+      { city: 'Patna', state: 'Bihar' },
+      { city: 'Gaya', state: 'Bihar' },
+      { city: 'Muzaffarpur', state: 'Bihar' },
+      { city: 'Bhagalpur', state: 'Bihar' },
+      // Uttar Pradesh
+      { city: 'Lucknow', state: 'Uttar Pradesh' },
+      { city: 'Kanpur', state: 'Uttar Pradesh' },
+      { city: 'Agra', state: 'Uttar Pradesh' },
+      { city: 'Varanasi', state: 'Uttar Pradesh' },
+      { city: 'Meerut', state: 'Uttar Pradesh' },
+      { city: 'Allahabad', state: 'Uttar Pradesh' },
+      { city: 'Prayagraj', state: 'Uttar Pradesh' },
+      { city: 'Ghaziabad', state: 'Uttar Pradesh' },
+      { city: 'Noida', state: 'Uttar Pradesh' },
+      { city: 'Aligarh', state: 'Uttar Pradesh' },
+      { city: 'Bareilly', state: 'Uttar Pradesh' },
+      { city: 'Moradabad', state: 'Uttar Pradesh' },
+      { city: 'Gorakhpur', state: 'Uttar Pradesh' },
+      { city: 'Jhansi', state: 'Uttar Pradesh' },
+      { city: 'Mathura', state: 'Uttar Pradesh' },
+      // Madhya Pradesh + Chhattisgarh
+      { city: 'Bhopal', state: 'Madhya Pradesh' },
+      { city: 'Indore', state: 'Madhya Pradesh' },
+      { city: 'Gwalior', state: 'Madhya Pradesh' },
+      { city: 'Jabalpur', state: 'Madhya Pradesh' },
+      { city: 'Ujjain', state: 'Madhya Pradesh' },
+      { city: 'Sagar', state: 'Madhya Pradesh' },
+      { city: 'Raipur', state: 'Chhattisgarh' },
+      { city: 'Bhilai', state: 'Chhattisgarh' },
+      { city: 'Bilaspur', state: 'Chhattisgarh' },
+      { city: 'Korba', state: 'Chhattisgarh' },
+      // Rajasthan
+      { city: 'Jaipur', state: 'Rajasthan' },
+      { city: 'Jodhpur', state: 'Rajasthan' },
+      { city: 'Udaipur', state: 'Rajasthan' },
+      { city: 'Kota', state: 'Rajasthan' },
+      { city: 'Ajmer', state: 'Rajasthan' },
+      { city: 'Bikaner', state: 'Rajasthan' },
+      { city: 'Alwar', state: 'Rajasthan' },
+      // Punjab + Haryana + HP + J&K + Uttarakhand
+      { city: 'Chandigarh', state: 'Chandigarh' },
+      { city: 'Ludhiana', state: 'Punjab' },
+      { city: 'Amritsar', state: 'Punjab' },
+      { city: 'Jalandhar', state: 'Punjab' },
+      { city: 'Patiala', state: 'Punjab' },
+      { city: 'Bathinda', state: 'Punjab' },
+      { city: 'Mohali', state: 'Punjab' },
+      { city: 'Gurugram', state: 'Haryana' },
+      { city: 'Faridabad', state: 'Haryana' },
+      { city: 'Panipat', state: 'Haryana' },
+      { city: 'Karnal', state: 'Haryana' },
+      { city: 'Hisar', state: 'Haryana' },
+      { city: 'Ambala', state: 'Haryana' },
+      { city: 'Rohtak', state: 'Haryana' },
+      { city: 'Shimla', state: 'Himachal Pradesh' },
+      { city: 'Dharamshala', state: 'Himachal Pradesh' },
+      { city: 'Solan', state: 'Himachal Pradesh' },
+      { city: 'Jammu', state: 'Jammu & Kashmir' },
+      { city: 'Srinagar', state: 'Jammu & Kashmir' },
+      { city: 'Leh', state: 'Ladakh' },
+      { city: 'Dehradun', state: 'Uttarakhand' },
+      { city: 'Haridwar', state: 'Uttarakhand' },
+      { city: 'Roorkee', state: 'Uttarakhand' },
+      { city: 'Haldwani', state: 'Uttarakhand' },
+      { city: 'Rishikesh', state: 'Uttarakhand' },
+      // Goa + UTs
+      { city: 'Panaji', state: 'Goa' },
+      { city: 'Margao', state: 'Goa' },
+      { city: 'Vasco da Gama', state: 'Goa' },
+      { city: 'Port Blair', state: 'Andaman & Nicobar' },
+      { city: 'Puducherry', state: 'Puducherry' },
+      { city: 'Daman', state: 'Daman & Diu' },
+      { city: 'Silvassa', state: 'Dadra & Nagar Haveli' },
+      { city: 'Kavaratti', state: 'Lakshadweep' },
+      // Fallback — 'Other' lets the user type city + state freely (Q7 path)
+      { city: 'Other', state: '' }
     ];
 
-    // v27.1.0 — Replaces free-text venue field. Options chosen to cover the
-    // Indian AV market mix. Reps can pick "Other" + use notes for edge cases.
+    // v27.1.1 B5 helper — given a city name, look up its state and set the
+    // adjacent state input. No-op for 'Other' (state is empty string) so the
+    // user can type their state manually. Mutates wizardData too so the value
+    // survives step navigation even before the user blurs the field.
+    function autoFillStateFromCity(cityValue) {
+      const match = CITIES.find(function(c) { return c.city === cityValue; });
+      if (!match || !match.state) return;  // Other / unknown -> leave alone
+      const stateInput = document.getElementById('i-state');
+      if (stateInput) {
+        stateInput.value = match.state;
+        if (typeof wizardData !== 'undefined' && wizardData) {
+          wizardData.state = match.state;
+        }
+      }
+      // Saved-deal edit accordion (sd-i-state) — same treatment if present
+      const sdStateInput = document.getElementById('sd-i-state');
+      if (sdStateInput && typeof _savedDealData !== 'undefined' && _savedDealData) {
+        sdStateInput.value = match.state;
+        _savedDealData.state = match.state;
+      }
+    }
+
+    // v27.1.1 — Restored locked list (Apr 23 spec). Covers the Indian
+    // AV market mix. Reps can pick "Other" + use external_notes for edge cases.
+    // v27.1.0 shipped a 13-option list that didn't match the locked spec; this
+    // bundle restores the original. Length is 29 (smoke N1 enforces). Note:
+    // the gap doc prose said "28 options" but listed 29 values \u2014 list is the
+    // source of truth (prose count was a typo). Smoke N2 anchors the 2 known
+    // entries that must exist: 'Corporate Office / HQ' and 'Other'.
     const VENUE_TYPES = [
-      'Conference Room', 'Auditorium', 'Boardroom', 'Lobby/Reception',
-      'Retail', 'Control Room', 'House of Worship', 'Educational',
-      'Hospitality', 'Stadium/Arena', 'Studio/Broadcast', 'Outdoor', 'Other'
+      'Corporate Office / HQ',
+      'Lobby / Reception',
+      'Boardroom / Meeting Room',
+      'Auditorium',
+      'Training Room',
+      'Command / Control Room',
+      'NOC / Operations Center',
+      'Broadcast Studio',
+      'Retail Store / Showroom',
+      'Shopping Mall',
+      'Hotel / Resort',
+      'Restaurant / Cafe',
+      'Convention Center',
+      'Exhibition Hall',
+      'Museum / Gallery',
+      'Stadium / Arena',
+      'House of Worship',
+      'Temple',
+      'Educational Institute',
+      'University / College',
+      'Airport / Transit Hub',
+      'Hospital / Healthcare',
+      'Government / Public Sector',
+      'Experience Center',
+      'Bar / Nightclub',
+      'Digital Billboard / Outdoor',
+      'Rental / Live Event',
+      'Residential',
+      'Other'
     ];
 
     // v27.1.0 B2 — Team rosters as {value: user_uuid, label: display_name}.
@@ -3185,20 +3509,39 @@
     // sending the display name (previous behavior) caused the RPC to drop
     // the field. Edit when team changes — both `value` (UUID) and `label`
     // (shown in dropdowns + reports) must update together.
+    // v27.1.1 B3 — Live `public.users` roster sourced 23 May 2026 (queried via
+    // MCP, not memory). 13 entries: 9 Sales + 3 BU Heads + Dipenkumar.
+    // OEM (Amit/Ashish) intentionally excluded — see v27.2 parties-table flow.
+    // Test users (throwback2, _smoketest, throwaway) filtered by username.
+    // BU Heads get region suffix to disambiguate from rank-and-file Sales.
     const SALES_TEAM = [
-      { value: 'b86e9932-15f8-4e8b-a952-66aa4dfd2312', label: 'Vipul Parihar' },
+      { value: '5a814b84-7d3b-40eb-92c5-ae5ddc458b8f', label: 'Aditya Duddupudi' },
       { value: 'bc00d3d8-0e73-41fa-bd00-e8448c4a655a', label: 'Arvind Sahu' },
       { value: '54c7a685-fed4-4867-8c5c-8ee288c69b42', label: 'Mohd Faiz' },
-      { value: 'dab8eb31-22a2-43e6-a679-314d4364de38', label: 'Tausif Khan' },
+      { value: 'c8fb1f3d-c9da-4086-9dc4-3bc6ff6c34d6', label: 'Prathamesh Kulkarni' },
       { value: '5919dcf5-773e-4e7a-a6bf-5262714d148c', label: 'Ranjith Kumar' },
-      { value: '1b57923c-573c-49a0-90d0-ff7a00e2b2ef', label: 'Shashank Tiwari' },
-      { value: '74f78b3c-50fe-4b74-b87d-af5926b41da7', label: 'Niket Singh' },
-      { value: 'a6109889-19b9-4998-b954-6baa079bc190', label: 'Venu Krishanmurthy' },
+      { value: 'd8aef61c-f8a6-4001-97c8-c19f4f0c14ab', label: 'Tariq Khan' },
+      { value: 'dab8eb31-22a2-43e6-a679-314d4364de38', label: 'Tausif Khan' },
+      { value: '90711ab5-9320-4ce4-89da-1fc9485ac8a3', label: 'Vedanga Bhave' },
+      { value: '811467d4-0da3-4a68-9a0f-8dc788f8fc0e', label: 'Vishwas Chinnappa' },
+      { value: '1b57923c-573c-49a0-90d0-ff7a00e2b2ef', label: 'Shashank Tiwari (BU Head West)' },
+      { value: '74f78b3c-50fe-4b74-b87d-af5926b41da7', label: 'Niket Singh (BU Head North)' },
+      { value: 'a6109889-19b9-4998-b954-6baa079bc190', label: 'Venu Krishanmurthy (BU Head South+East)' },
       { value: '155b257a-ec1a-4ee9-ac89-31ba47c4c610', label: 'Dipenkumar Gajjar' }
     ];
+    // v27.1.1 B4 — Live `public.users` roster sourced 23 May 2026. 7 entries.
+    // CRITICAL FIX: v27.1.0 had Vipul Parihar in SALES_TEAM, which contradicted
+    // his actual `org_function='Presales'` in the live DB. v27.1.1 puts him
+    // back in Presales where he belongs (smoke N5 guards against regression).
+    // Spelling correction: Sachchi Kaushik (live DB) — was 'Kaushki' in v27.1.0
+    // gap doc draft, but live DB confirms the -ik ending.
     const PRESALES_TEAM = [
+      { value: 'ae8985dd-902f-4db6-96d8-de4dd4518fd4', label: 'Hritika Shinde' },
       { value: '2e1ab421-5174-4f4d-a27d-bb8c19e22c3f', label: 'Mohit Chaturvedi' },
+      { value: '4620c546-d410-49df-8947-31d6c337a3f8', label: 'Rahul Jain' },
       { value: '54e8933c-37c9-42fa-a441-41126b71d0ff', label: 'Ranjith SR' },
+      { value: '34e32dff-6f10-4173-8484-5daebe23657e', label: 'Sachchi Kaushik' },
+      { value: 'b86e9932-15f8-4e8b-a952-66aa4dfd2312', label: 'Vipul Parihar' },
       { value: '155b257a-ec1a-4ee9-ac89-31ba47c4c610', label: 'Dipenkumar Gajjar' }
     ];
 
@@ -3258,7 +3601,9 @@
       'project', 'customer_name', 'partner_name', 'consultant_name',
       'venue_type', 'city', 'state',
       'stage', 'lead_source', 'sales_person_id', 'presales_person_id',
-      'close_month', 'notes'
+      'close_month',
+      'contact_name', 'contact_phone', 'contact_email',
+      'internal_notes', 'external_notes'
     ];
 
     // Reference list for alpha.7.3 — read by the Rebuild flow.
@@ -3288,11 +3633,13 @@
       const type = opts.type || 'text';
       const placeholder = opts.placeholder || '';
       const inputmode = opts.inputmode ? ' inputmode="' + opts.inputmode + '"' : '';
+      const maxlength = opts.maxlength ? ' maxlength="' + opts.maxlength + '"' : '';
+      const listAttr = opts.list ? ' list="' + opts.list + '"' : '';
       const helpHtml = opts.help ? '<div class="help">' + esc(opts.help) + '</div>' : '';
       return '<div class="field" id="sd-f-' + id + '">' +
         '<label for="sd-i-' + id + '">' + esc(label) + '</label>' +
         '<input id="sd-i-' + id + '" data-sd-bind="' + id + '" type="' + type + '"' +
-          inputmode + ' value="' + esc(value == null ? '' : value) + '"' +
+          inputmode + maxlength + listAttr + ' value="' + esc(value == null ? '' : value) + '"' +
           (placeholder ? ' placeholder="' + esc(placeholder) + '"' : '') + '>' +
         helpHtml +
       '</div>';
@@ -3366,13 +3713,17 @@
 
     // Fields the RPC recognizes as structured columns (per smoke test pattern).
     // Anything not in this list goes into raw_submission.
+    // v27.1.1: notes -> internal_notes (renamed); +contact_name/phone/email,
+    //          +external_notes (new). Length now 17. Invariant: SOFT_FIELDS
+    //          must remain a subset (enforced by smoke).
     const STRUCTURED_COLS = [
       'project', 'customer_name', 'stage',
       'partner_name', 'consultant_name',
       'venue_type', 'city', 'state',
       'lead_source', 'sales_person_id', 'presales_person_id',
       'close_month',
-      'notes'
+      'contact_name', 'contact_phone', 'contact_email',
+      'internal_notes', 'external_notes'
     ];
 
     function buildSavePayload(deal) {
@@ -3631,7 +3982,9 @@
         venue_type: '', city: '', state: '',
         stage: 'Qualified', lead_source: '',
         sales_person_id: '', presales_person_id: '',
-        close_month: '', notes: '',
+        close_month: '',
+        contact_name: '', contact_phone: '', contact_email: '',
+        internal_notes: '', external_notes: '',
         solutionType: '',
         calico_inputs:  { hdmi4k: 0, hdmiFhd: 0, sdi12g: 0, sdi3g: 0, hdbt: 0, ip: 0 },
         calico_outputs: { display: 0, projector: 0, projectorRes: 'FHD', sdi: 0 },
@@ -4344,31 +4697,38 @@
       }
 
       // ---- Section: Project context (EDITABLE — alpha.7.2 autosave) ----
+      // v27.1.1 — datalist for city dropdown (same cities-list as wizard Step-1)
+      const ctxCitiesDatalist = '<datalist id="cities-list-sd">' +
+        CITIES.map(function(c) {
+          return '<option value="' + esc(c.city) + '"></option>';
+        }).join('') +
+      '</datalist>';
       const ctxBody =
         '<form id="sd-ctx-form" autocomplete="off" novalidate>' +
+          ctxCitiesDatalist +
           '<h3 class="h3" style="margin-top:8px">Project</h3>' +
-          sdField('project',         'Project name',     deal.project,         { placeholder: 'e.g. Auditorium upgrade' }) +
-          sdField('customer_name',   'Customer',         deal.customer_name) +
-          sdField('partner_name',    'Partner',          deal.partner_name) +
-          sdField('consultant_name', 'Consultant',       deal.consultant_name) +
+          sdField('project',         'Project name', deal.project,         { placeholder: 'e.g. Auditorium upgrade' }) +
+          sdField('customer_name',   'End User',     deal.customer_name) +
+          sdField('partner_name',    'Partner',      deal.partner_name) +
+          sdField('consultant_name', 'Consultant',   deal.consultant_name) +
           '<h3 class="h3">Location</h3>' +
-          sdSelectField('venue_type', 'Venue type', deal.venue_type, VENUE_TYPES, { placeholder: '— select —' }) +
-          sdField('city',  'City',  deal.city) +
-          sdField('state', 'State', deal.state, { placeholder: 'e.g. Gujarat' }) +
+          sdSelectField('venue_type', 'Venue type', deal.venue_type, VENUE_TYPES, { placeholder: '\u2014 select \u2014' }) +
+          sdField('city',  'City',  deal.city,  { list: 'cities-list-sd', placeholder: 'Start typing\u2026' }) +
+          sdField('state', 'State', deal.state, { placeholder: 'Auto-fills from city; type if City = Other' }) +
           '<h3 class="h3">Stage &amp; owners</h3>' +
-          sdSelectField('stage',           'Stage',           deal.stage,           STAGES) +
-          sdSelectField('lead_source',     'Lead source',     deal.lead_source,     LEAD_SOURCES,  { placeholder: '\u2014 select \u2014' }) +
-          sdSelectField('sales_person_id',    'Sales person',    deal.sales_person_id,    SALES_TEAM,    { placeholder: '\u2014 unassigned \u2014' }) +
-          sdSelectField('presales_person_id', 'Presales person', deal.presales_person_id, PRESALES_TEAM, { placeholder: '\u2014 unassigned \u2014' }) +
-          // v27.1.0 B5 — Partner contact fields (name/phone/email) removed.
-          // Phase A audit showed RPC ignored them; they were never persisted.
-          // Future: parties-table flow (v27.2+) will reintroduce contacts as
-          // first-class entities with phone/email per-row. Until then, use
-          // the notes field for ad-hoc contact context.
+          sdSelectField('stage',              'Stage',           deal.stage,              STAGES) +
+          sdSelectField('lead_source',        'Lead Origin',     deal.lead_source,        LEAD_SOURCES,  { placeholder: '\u2014 select \u2014' }) +
+          sdSelectField('sales_person_id',    'Sales person',    deal.sales_person_id,    SALES_TEAM,    { placeholder: '\u2014 select \u2014' }) +
+          sdSelectField('presales_person_id', 'Presales person', deal.presales_person_id, PRESALES_TEAM, { placeholder: '\u2014 select \u2014' }) +
+          '<h3 class="h3">Partner contact</h3>' +
+          sdField('contact_name',  'Contact name',  deal.contact_name,  { placeholder: 'Site / partner contact person' }) +
+          sdField('contact_phone', 'Contact phone', deal.contact_phone, { inputmode: 'numeric', maxlength: 10, help: '10-digit mobile (no country code, no spaces)' }) +
+          sdField('contact_email', 'Contact email', deal.contact_email, { type: 'email', placeholder: 'name@company.com' }) +
           '<h3 class="h3">Closure</h3>' +
           sdField('close_month', 'Expected closure', deal.close_month, { type: 'month', help: 'Year-month, e.g. 2026-09' }) +
           '<h3 class="h3">Notes</h3>' +
-          sdTextarea('notes', 'Notes', deal.notes, { rows: 4, placeholder: 'Anything worth remembering \u2014 site contact, special requirements, follow-ups\u2026' }) +
+          sdTextarea('internal_notes', 'Internal notes', deal.internal_notes, { rows: 3, placeholder: 'Visible only to Cavitak team \u2014 not exported to Excel/PDF' }) +
+          sdTextarea('external_notes', 'External notes', deal.external_notes, { rows: 3, placeholder: 'Shown in Excel/PDF exports to customer/partner' }) +
         '</form>';
 
       // ---- Read-only sections (structural — see below for I/O which IS editable in CALICO mode) ----
@@ -4595,13 +4955,13 @@
               '</div>'
             ).join('');
         const outputOptions = MV_OUTPUT_SIGNALS.map(s => ({ value: s, label: s }));
-        return '<div class="sd-subhead">Output signal</div>' +
-          sdSelectField('mv_outputSignal', 'Output', deal.mv_outputSignal || '', outputOptions,
-            { placeholder: '\u2014 select \u2014' }) +
-          '<div class="sd-subhead">Inputs</div>' +
+        return '<div class="sd-subhead">Inputs</div>' +
           inputRowsHtml +
           '<button class="btn btn-ghost btn-block" type="button" data-action="sd-mv-input-add"' + (capReached ? ' disabled' : '') + '>+ Add input</button>' +
           capBanner +
+          '<div class="sd-subhead">Output signal</div>' +
+          sdSelectField('mv_outputSignal', 'Output', deal.mv_outputSignal || '', outputOptions,
+            { placeholder: '\u2014 select \u2014' }) +
           '<div class="sd-edit-note small soft">Edits set the Rebuild banner above. Tap <strong>Rebuild</strong> to recompute the BoM.</div>';
       }
       if (deal.solutionType === 'corio') {
@@ -4723,7 +5083,9 @@
         const type = opts.type || 'text';
         const placeholder = opts.placeholder || '';
         const inputmode = opts.inputmode ? ' inputmode="' + opts.inputmode + '"' : '';
+        const maxlength = opts.maxlength ? ' maxlength="' + opts.maxlength + '"' : '';
         const required = opts.required ? ' required' : '';
+        const listAttr = opts.list ? ' list="' + opts.list + '"' : '';
         const helpHtml = opts.help ? '<div class="help">' + esc(opts.help) + '</div>' : '';
         const errCls = d.errors[id] ? ' has-error' : '';
         const errHtml = d.errors[id]
@@ -4732,7 +5094,7 @@
         return '<div class="field' + errCls + '" id="f-' + id + '">' +
           '<label for="i-' + id + '">' + esc(label) + (opts.required ? ' *' : '') + '</label>' +
           '<input id="i-' + id + '" data-bind="' + id + '" type="' + type + '" ' +
-            inputmode + ' value="' + esc(value || '') + '" ' +
+            inputmode + maxlength + listAttr + ' value="' + esc(value || '') + '" ' +
             (placeholder ? 'placeholder="' + esc(placeholder) + '" ' : '') +
             required + '>' +
           helpHtml + errHtml +
@@ -4780,30 +5142,45 @@
         '</div>';
       }
 
+      // v27.1.1 — Datalist for the City field (B5). Native mobile search,
+      // works on Z Fold Chrome / Samsung Internet. Includes 'Other' fallback.
+      const citiesDatalist = '<datalist id="cities-list">' +
+        CITIES.map(function(c) {
+          return '<option value="' + esc(c.city) + '"></option>';
+        }).join('') +
+      '</datalist>';
+
       return '' +
         '<form id="step1-form" autocomplete="off" novalidate>' +
+          citiesDatalist +
           '<h3 class="h3">Project</h3>' +
-          field('project',         'Project name',     d.project,         { required: true,  placeholder: 'e.g. Auditorium upgrade' }) +
-          field('customer_name',   'Customer',         d.customer_name,   { required: true }) +
-          field('partner_name',    'Partner',          d.partner_name) +
-          field('consultant_name', 'Consultant',       d.consultant_name) +
+          field('project',         'Project name', d.project,         { required: true, placeholder: 'e.g. Auditorium upgrade' }) +
+          field('customer_name',   'End User',     d.customer_name,   { required: true }) +
+          field('partner_name',    'Partner',      d.partner_name,    { required: true }) +
+          field('consultant_name', 'Consultant',   d.consultant_name, { required: true }) +
           '<div class="sp-12"></div>' +
           '<h3 class="h3">Location</h3>' +
-          selectField('venue_type', 'Venue type', d.venue_type, VENUE_TYPES, { placeholder: '— select —' }) +
-          field('city',  'City',  d.city) +
-          field('state', 'State', d.state, { placeholder: 'e.g. Gujarat' }) +
+          selectField('venue_type', 'Venue type', d.venue_type, VENUE_TYPES, { placeholder: '\u2014 select \u2014', required: true }) +
+          field('city',  'City',  d.city,  { required: true, list: 'cities-list', placeholder: 'Start typing\u2026' }) +
+          field('state', 'State', d.state, { required: true, placeholder: 'Auto-fills from city; type if City = Other' }) +
           '<div class="sp-12"></div>' +
           '<h3 class="h3">Stage &amp; owners</h3>' +
           selectField('stage', 'Stage', d.stage, STAGES, { required: true }) +
-          selectField('lead_source', 'Lead source', d.lead_source, LEAD_SOURCES, { placeholder: '\u2014 select \u2014' }) +
-          selectField('sales_person_id',    'Sales person',    d.sales_person_id,    SALES_TEAM,    { placeholder: '\u2014 unassigned \u2014' }) +
-          selectField('presales_person_id', 'Presales person', d.presales_person_id, PRESALES_TEAM, { placeholder: '\u2014 unassigned \u2014' }) +
+          selectField('lead_source', 'Lead Origin', d.lead_source, LEAD_SOURCES, { placeholder: '\u2014 select \u2014', required: true }) +
+          selectField('sales_person_id',    'Sales person',    d.sales_person_id,    SALES_TEAM,    { placeholder: '\u2014 select \u2014', required: true }) +
+          selectField('presales_person_id', 'Presales person', d.presales_person_id, PRESALES_TEAM, { placeholder: '\u2014 select \u2014', required: true }) +
+          '<div class="sp-12"></div>' +
+          '<h3 class="h3">Partner contact</h3>' +
+          field('contact_name',  'Contact name',  d.contact_name,  { required: true, placeholder: 'Site / partner contact person' }) +
+          field('contact_phone', 'Contact phone', d.contact_phone, { required: true, inputmode: 'numeric', maxlength: 10, help: '10-digit mobile (no country code, no spaces)' }) +
+          field('contact_email', 'Contact email', d.contact_email, { required: true, type: 'email', placeholder: 'name@company.com' }) +
           '<div class="sp-12"></div>' +
           '<h3 class="h3">Closure</h3>' +
-          field('close_month', 'Expected closure', d.close_month, { type: 'month', help: 'Year-month, e.g. 2026-09' }) +
+          field('close_month', 'Expected closure', d.close_month, { required: true, type: 'month', help: 'Year-month, e.g. 2026-09' }) +
           '<div class="sp-12"></div>' +
           '<h3 class="h3">Notes</h3>' +
-          textareaField('notes', 'Notes', d.notes, { rows: 4, placeholder: 'Anything worth remembering \u2014 site contact, special requirements, follow-ups\u2026' }) +
+          textareaField('internal_notes', 'Internal notes', d.internal_notes, { rows: 3, placeholder: 'Visible only to Cavitak team \u2014 not exported to Excel/PDF' }) +
+          textareaField('external_notes', 'External notes', d.external_notes, { rows: 3, placeholder: 'Shown in Excel/PDF exports to customer/partner' }) +
         '</form>';
     }
 
@@ -4964,6 +5341,10 @@
         ).join('');
 
       return inErr +
+        '<h3 class="h3">Inputs</h3>' +
+        inputRowsHtml +
+        '<button class="btn btn-ghost btn-block" type="button" data-action="mv-input-add"' + (capReached ? ' disabled' : '') + '>+ Add input</button>' +
+        capBanner +
         '<h3 class="h3">Output signal</h3>' +
         '<div class="card">' +
           '<div class="field" style="margin:0">' +
@@ -4977,10 +5358,6 @@
             '</select>' +
           '</div>' +
         '</div>' +
-        '<h3 class="h3">Inputs</h3>' +
-        inputRowsHtml +
-        '<button class="btn btn-ghost btn-block" type="button" data-action="mv-input-add"' + (capReached ? ' disabled' : '') + '>+ Add input</button>' +
-        capBanner +
         '<div class="sp-12"></div>' +
         toggleRow('hasSx', 'Signal Extension needed', 'Configure in Step 5', d.hasSx, { namespace:'' });
     }
@@ -5090,13 +5467,20 @@
       const add = (k, v, jumpStep) => rows.push({ k, v, jumpStep });
 
       add('Project',  d.project || '\u2014', 1);
-      add('Customer', d.customer_name || '\u2014', 1);
+      add('End User', d.customer_name || '\u2014', 1);
       if (d.partner_name)    add('Partner', d.partner_name, 1);
       if (d.consultant_name) add('Consultant', d.consultant_name, 1);
+      if (d.venue_type)      add('Venue type', d.venue_type, 1);
+      if (d.city)            add('City', d.city + (d.state ? ', ' + d.state : ''), 1);
       add('Stage', d.stage || '\u2014', 1);
+      if (d.lead_source)        add('Lead Origin', d.lead_source, 1);
       if (d.sales_person_id)    add('Sales',    labelFor(d.sales_person_id, SALES_TEAM), 1);
       if (d.presales_person_id) add('Presales', labelFor(d.presales_person_id, PRESALES_TEAM), 1);
+      if (d.contact_name)       add('Contact', d.contact_name, 1);
+      if (d.contact_phone)      add('Phone',   d.contact_phone, 1);
+      if (d.contact_email)      add('Email',   d.contact_email, 1);
       if (d.close_month) add('Expected closure', d.close_month, 1);
+      if (d.external_notes && String(d.external_notes).trim()) add('External notes', d.external_notes, 1);
 
       const solLabel = { calico: 'CALICO Video Processor', mv: 'Multi Viewer', corio: 'CORIO Video Processor' }[d.solutionType] || '\u2014';
       add('Solution', solLabel, 2);
@@ -5237,9 +5621,27 @@
     function validateStep(d) {
       const errors = {};
       if (d.step === 1) {
-        if (!d.project || !d.project.trim())     errors.project = 'Required.';
+        // v27.1.1 — item 9: all visible fields required except internal_notes
+        // + external_notes. 15 required validators total. City "Other" path
+        // (Q7): when city === 'Other' the state input must be non-empty
+        // (typed manually); for any other city, state should have been
+        // auto-filled. Either way we just require state non-empty.
+        if (!d.project || !d.project.trim())             errors.project = 'Required.';
         if (!d.customer_name || !d.customer_name.trim()) errors.customer_name = 'Required.';
-        if (!d.stage)                            errors.stage = 'Required.';
+        if (!d.partner_name || !d.partner_name.trim())   errors.partner_name = 'Required.';
+        if (!d.consultant_name || !d.consultant_name.trim()) errors.consultant_name = 'Required.';
+        if (!d.venue_type)                               errors.venue_type = 'Required.';
+        if (!d.city || !d.city.trim())                   errors.city = 'Required.';
+        if (!d.state || !d.state.trim())                 errors.state = 'Required.';
+        if (!d.stage)                                    errors.stage = 'Required.';
+        if (!d.lead_source)                              errors.lead_source = 'Required.';
+        if (!d.sales_person_id)                          errors.sales_person_id = 'Required.';
+        if (!d.presales_person_id)                       errors.presales_person_id = 'Required.';
+        if (!d.close_month || !/^\d{4}-\d{2}$/.test(d.close_month)) errors.close_month = 'Required (YYYY-MM).';
+        if (!d.contact_name || !d.contact_name.trim())   errors.contact_name = 'Required.';
+        if (!d.contact_phone || !/^[0-9]{10}$/.test(d.contact_phone)) errors.contact_phone = '10 digits required.';
+        if (!d.contact_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.contact_email)) errors.contact_email = 'Valid email required.';
+        // internal_notes + external_notes are intentionally NOT required.
       } else if (d.step === 2) {
         if (!d.solutionType) errors.solutionType = 'Pick a solution type to continue.';
       } else if (d.step === 3) {
@@ -5899,6 +6301,25 @@
           }
           return;
         }
+
+        // v27.1.1 B5 — City <input list="cities-list"> autofills State on
+        // change. Wizard path: bind=city; saved-deal path: sd-bind=city.
+        // The input handler already wrote t.value to wizardData/_savedDealData
+        // (per-keystroke); this just looks up state and updates the partner
+        // state input. autoFillStateFromCity is a no-op for unmatched cities
+        // and for 'Other' (empty state), so users on tier-3+ cities can type
+        // both city and state freely.
+        if (t.tagName === 'INPUT') {
+          const wizBind = t.getAttribute('data-bind');
+          if (wizBind === 'city') {
+            autoFillStateFromCity(t.value);
+            return;
+          }
+          if (sdBind === 'city') {
+            autoFillStateFromCity(t.value);
+            return;
+          }
+        }
       });
 
       // FORM SUBMIT delegation (login, force-PW, profile-PW, step1)
@@ -5951,6 +6372,12 @@
       _labelFor:           labelFor,
       _SALES_TEAM:         SALES_TEAM,
       _PRESALES_TEAM:      PRESALES_TEAM,
+      // v27.1.1 — N1, N2, N7, N8, N12 smoke checks need these constants
+      // and helper. Same expose-via-UI pattern.
+      _VENUE_TYPES:        VENUE_TYPES,
+      _LEAD_SOURCES:       LEAD_SOURCES,
+      _CITIES:             CITIES,
+      _autoFillStateFromCity: autoFillStateFromCity,
       // helpers
       esc, fmtINR, debounce,
       // smoke renderer
@@ -6230,12 +6657,13 @@
     }
 
     // alpha.7.4 — Save the wizard's current state as a new deal.
-    // Required-field validation already happened in step 1 (project,
-    // customer_name) and step 6 lock (stage). This is a final guard.
+    // v27.1.1: Required-field validation in Step-1 enforces all 15 fields
+    // (validateStep). This bottom-guard is defense-in-depth only; reaching
+    // Step 6 implies the 15-field gate already passed.
     function wizSave() {
       const d = UI.getWizardData();
       if (!d.project || !d.customer_name || !d.stage) {
-        UI.toast('Missing project, customer, or stage \u2014 go back to step 1.', 'err');
+        UI.toast('Missing project, end user, or stage \u2014 go back to step 1.', 'err');
         return;
       }
       if (!d.reco) {
@@ -6327,7 +6755,12 @@
       _STRUCTURED_COLS:    UI._STRUCTURED_COLS,
       _labelFor:           UI._labelFor,
       _SALES_TEAM:         UI._SALES_TEAM,
-      _PRESALES_TEAM:      UI._PRESALES_TEAM
+      _PRESALES_TEAM:      UI._PRESALES_TEAM,
+      // v27.1.1 — N1/N2/N7/N8/N12 smoke reach: route through UI same as above
+      _VENUE_TYPES:        UI._VENUE_TYPES,
+      _LEAD_SOURCES:       UI._LEAD_SOURCES,
+      _CITIES:             UI._CITIES,
+      _autoFillStateFromCity: UI._autoFillStateFromCity
     };
   })();
 
@@ -6376,14 +6809,34 @@
             Object.values(dw.calico_inputs).every(v => v === 0)
         || 'got: ' + JSON.stringify(dw.calico_inputs));
 
-    /* ---- Validation step 1 (project + customer + stage required) ---- */
+    /* ---- Validation step 1 (v27.1.1: 15 required fields) ---- */
     const d1 = UI.defaultWizard(); d1.step = 1;
     let v = UI.validateStep(d1);
-    check('Step 1 validation: empty form fails with project + customer_name errors',
-      () => (!v.ok && !!v.errors.project && !!v.errors.customer_name) || 'errors: ' + JSON.stringify(v.errors));
+    check('Step 1 validation: empty form produces errors for all 15 required fields',
+      () => {
+        // Default state has stage='Qualified' so 14 of 15 should error on empty.
+        const expected = ['project','customer_name','partner_name','consultant_name',
+                          'venue_type','city','state','lead_source',
+                          'sales_person_id','presales_person_id','close_month',
+                          'contact_name','contact_phone','contact_email'];
+        const missing = expected.filter(k => !v.errors[k]);
+        return (!v.ok && missing.length === 0)
+          || 'missing errors for: ' + missing.join(',') + ' | got: ' + Object.keys(v.errors).join(',');
+      });
+    // Fill all 15 required fields and re-check.
     d1.project = 'Test'; d1.customer_name = 'X';
+    d1.partner_name = 'P'; d1.consultant_name = 'C';
+    d1.venue_type = 'Auditorium';
+    d1.city = 'Ahmedabad'; d1.state = 'Gujarat';
+    d1.lead_source = 'Cavitak';
+    d1.sales_person_id    = '155b257a-ec1a-4ee9-ac89-31ba47c4c610';
+    d1.presales_person_id = '2e1ab421-5174-4f4d-a27d-bb8c19e22c3f';
+    d1.close_month = '2026-09';
+    d1.contact_name = 'Site Contact';
+    d1.contact_phone = '9876543210';
+    d1.contact_email = 'site@example.com';
     v = UI.validateStep(d1);
-    check('Step 1 validation: project + customer + default stage passes',
+    check('Step 1 validation: all 15 required fields filled passes',
       () => v.ok || 'errors: ' + JSON.stringify(v.errors));
 
     /* ---- Validation step 2 (solutionType required) ---- */
@@ -6998,29 +7451,126 @@
       () => APP._SOFT_FIELDS.indexOf('deal_value') === -1
             || 'still at index ' + APP._SOFT_FIELDS.indexOf('deal_value'));
 
-    // B5: contact_* removed
-    check('B5: SOFT_FIELDS does not contain contact_name / phone / email',
+    // B5 inverted in v27.1.1: contact fields are RESTORED to SOFT_FIELDS
+    check('v27.1.1: SOFT_FIELDS contains contact_name / contact_phone / contact_email',
       () => {
-        const present = ['contact_name','contact_phone','contact_email']
-          .filter(k => APP._SOFT_FIELDS.indexOf(k) >= 0);
-        return present.length === 0 || 'still present: ' + present.join(',');
+        const missing = ['contact_name','contact_phone','contact_email']
+          .filter(k => APP._SOFT_FIELDS.indexOf(k) < 0);
+        return missing.length === 0 || 'missing: ' + missing.join(',');
       });
 
-    // B6: notes added
-    check('B6: SOFT_FIELDS contains notes',
-      () => APP._SOFT_FIELDS.indexOf('notes') >= 0
-            || 'notes absent from SOFT_FIELDS');
-
-    // B7: status/budget/deal_source dropped from STRUCTURED_COLS
-    check('B7: STRUCTURED_COLS no longer carries status/budget/deal_source',
+    // B6 updated in v27.1.1: notes -> internal_notes + external_notes
+    check('v27.1.1: SOFT_FIELDS contains internal_notes + external_notes (not "notes")',
       () => {
-        const present = ['status','budget','deal_source']
+        if (APP._SOFT_FIELDS.indexOf('notes') >= 0) return 'legacy "notes" still in SOFT_FIELDS';
+        if (APP._SOFT_FIELDS.indexOf('internal_notes') < 0) return 'internal_notes missing';
+        if (APP._SOFT_FIELDS.indexOf('external_notes') < 0) return 'external_notes missing';
+        return true;
+      });
+
+    // B7 updated in v27.1.1: STRUCTURED_COLS length 13 -> 17
+    check('v27.1.1: STRUCTURED_COLS no longer carries status/budget/deal_source/legacy notes',
+      () => {
+        const present = ['status','budget','deal_source','notes']
           .filter(k => APP._STRUCTURED_COLS.indexOf(k) >= 0);
         return present.length === 0 || 'still present: ' + present.join(',');
       });
-    check('B7: STRUCTURED_COLS length == 13 (post-bundle target)',
-      () => APP._STRUCTURED_COLS.length === 13
-            || 'got: ' + APP._STRUCTURED_COLS.length);
+    check('v27.1.1: SOFT_FIELDS.length === 17',
+      () => APP._SOFT_FIELDS.length === 17 || 'got: ' + APP._SOFT_FIELDS.length);
+    check('v27.1.1: STRUCTURED_COLS.length === 17',
+      () => APP._STRUCTURED_COLS.length === 17 || 'got: ' + APP._STRUCTURED_COLS.length);
+
+    /* ============================================================
+       v27.1.1 N1-N12 — new gap-doc-bundle assertions
+       ============================================================ */
+
+    // N1: VENUE_TYPES restored to the locked list. The gap doc prose said
+    // "28 options" but the listed values are 29 — list-as-truth, prose was
+    // a count typo. We honor the actual list contents.
+    check('v27.1.1 N1: VENUE_TYPES.length === 29',
+      () => APP._VENUE_TYPES.length === 29 || 'got: ' + APP._VENUE_TYPES.length);
+
+    // N2: Specific anchor venues present
+    check('v27.1.1 N2: VENUE_TYPES contains "Corporate Office / HQ" and "Other"',
+      () => {
+        const missing = ['Corporate Office / HQ','Other']
+          .filter(v => APP._VENUE_TYPES.indexOf(v) < 0);
+        return missing.length === 0 || 'missing: ' + missing.join(',');
+      });
+
+    // N3: Sales roster matches live DB (13 entries)
+    check('v27.1.1 N3: SALES_TEAM.length === 13',
+      () => APP._SALES_TEAM.length === 13 || 'got: ' + APP._SALES_TEAM.length);
+
+    // N4: Presales roster matches live DB (7 entries)
+    check('v27.1.1 N4: PRESALES_TEAM.length === 7',
+      () => APP._PRESALES_TEAM.length === 7 || 'got: ' + APP._PRESALES_TEAM.length);
+
+    // N5: Vipul role regression guard — must be in Presales, NOT Sales
+    check('v27.1.1 N5: Vipul Parihar is in PRESALES_TEAM (not SALES_TEAM)',
+      () => {
+        const vipulId = 'b86e9932-15f8-4e8b-a952-66aa4dfd2312';
+        const inPresales = APP._PRESALES_TEAM.some(o => o.value === vipulId);
+        const inSales    = APP._SALES_TEAM.some(o => o.value === vipulId);
+        return (inPresales && !inSales)
+          || 'inPresales=' + inPresales + ' inSales=' + inSales;
+      });
+
+    // N6: Spelling verification — Sachchi Kaushik (not Kaushki)
+    check('v27.1.1 N6: PRESALES_TEAM has "Sachchi Kaushik" (live-DB spelling)',
+      () => APP._PRESALES_TEAM.some(o => o.label === 'Sachchi Kaushik')
+            || 'labels: ' + APP._PRESALES_TEAM.map(o => o.label).join(' | '));
+
+    // N7: LEAD_SOURCES locked to ['Cavitak', 'tvONE']
+    check('v27.1.1 N7: LEAD_SOURCES is exactly ["Cavitak","tvONE"]',
+      () => {
+        const ls = APP._LEAD_SOURCES;
+        return (Array.isArray(ls) && ls.length === 2 &&
+                ls[0] === 'Cavitak' && ls[1] === 'tvONE')
+          || 'got: ' + JSON.stringify(ls);
+      });
+
+    // N8: CITIES populated with anchor entries + Other fallback
+    check('v27.1.1 N8: CITIES has 150+ entries incl. Ahmedabad/Gujarat and Other',
+      () => {
+        const ahm = APP._CITIES.find(c => c.city === 'Ahmedabad');
+        const oth = APP._CITIES.find(c => c.city === 'Other');
+        return (APP._CITIES.length >= 150 && ahm && ahm.state === 'Gujarat' && oth)
+          || 'len=' + APP._CITIES.length +
+             ' ahm=' + JSON.stringify(ahm) +
+             ' oth=' + JSON.stringify(oth);
+      });
+
+    // N9: covered by the updated Step-1 validation tests above; no extra here.
+
+    // N10: phone regex acceptance
+    check('v27.1.1 N10: contact_phone regex accepts 10 digits, rejects 5/11',
+      () => {
+        const r = /^[0-9]{10}$/;
+        return (!r.test('12345') && r.test('9876543210') && !r.test('98765432101'))
+          || '12345=' + r.test('12345') +
+             ' 9876543210=' + r.test('9876543210') +
+             ' 98765432101=' + r.test('98765432101');
+      });
+
+    // N11: email regex acceptance
+    check('v27.1.1 N11: contact_email regex accepts a@b.co, rejects foo@bar and empty',
+      () => {
+        const r = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return (r.test('a@b.co') && !r.test('foo@bar') && !r.test(''))
+          || 'a@b.co=' + r.test('a@b.co') +
+             ' foo@bar=' + r.test('foo@bar') +
+             ' empty=' + r.test('');
+      });
+
+    // N12: autoFillStateFromCity helper exists and is callable
+    check('v27.1.1 N12: autoFillStateFromCity exposed as a callable function',
+      () => typeof APP._autoFillStateFromCity === 'function'
+            || 'got: ' + typeof APP._autoFillStateFromCity);
+
+    /* ============================================================
+       End v27.1.1 N1-N12
+       ============================================================ */
 
     // ---- 4: buildSavePayload field routing ----
     check('Structured field "project" routes to payload top-level',
@@ -7235,6 +7785,140 @@
      ============================================================ */
   UI.mount();
   APP.start();
+
+  /* ============================================================
+     End of v27.1.1
+     (v27.1.1 \u2014 gap-doc bundle. Backend migration +
+      11 frontend items. Restores the 14 decisions from prior
+      chats that v27.1.0 missed, and closes item 14 at the
+      RPC contract layer.
+
+      BACKEND MIGRATION (v27_1_1_contact_and_notes_split):
+       - public.deals.notes renamed -> internal_notes
+       - +contact_name text
+       - +contact_phone text
+       - +contact_email text
+       - +external_notes text
+       - deal_save RPC: INSERT/UPDATE both write the 4 new cols
+         and the renamed col; audit_log inserts mirror the rename
+         and add 4 new field audits (smoke F verified).
+       - deal_get RPC: returns the 4 new keys + renamed key
+       - deal_list RPC: same (used by history widgets)
+
+      FRONTEND ITEMS (B0-B19):
+       B0. CATALOG.version v27.1.0 -> v27.1.1; smoke assertion mirrored.
+       B1. LEAD_SOURCES collapsed to ['Cavitak','tvONE'] and
+           relabeled "Lead Origin" at every display site
+           (Step-1, saved-deal, Step-6 Review, Excel, PDF).
+           DB column lead_source unchanged.
+       B2. VENUE_TYPES restored to the locked 28-option list from
+           Apr-23 spec (v27.1.0 shipped a 13-option list I made
+           up; live deals depended on the 28-option set per
+           prior-chat search). Smoke N1 + N2 enforce.
+       B3. SALES_TEAM rebuilt from a live public.users query
+           (MCP-driven, not memory). 13 entries: 9 Sales +
+           3 BU Heads (with region suffix) + Dipenkumar.
+           Test users filtered by username, not is_active.
+           OEM (Amit/Ashish) intentionally excluded \u2014 deferred
+           to v27.2 parties-table flow per "super with
+           conditions" comment (interpretation may need
+           revisit before v27.2 closes).
+       B4. PRESALES_TEAM rebuilt from live DB: 7 entries.
+           CRITICAL FIX: Vipul Parihar moved Sales -> Presales
+           (his actual org_function in live DB; v27.1.0 had him
+           in Sales which was made-up). Smoke N5 regression
+           guards forever. Spelling correction: Sachchi Kaushik
+           (live DB, ends -ik) \u2014 v27.1.0 gap doc had Kaushki.
+           Smoke N6 anchors the spelling.
+       B5. CITIES dropdown with State auto-fill. 151 entries
+           covering Indian metros + tier-1/2/3 cities biased to
+           Cavitak-active states. Native <input list> + <datalist>
+           pattern works on Z Fold Chrome / Samsung Internet.
+           autoFillStateFromCity helper looks up state on city
+           change; no-op for 'Other' (state empty) so the user
+           can type a free-text state for tier-3+ cases (Q7).
+           Wizard uses cities-list; saved-deal uses cities-list-sd
+           (separate datalist IDs to avoid duplicate-element
+           collisions when both views render in the same DOM tree).
+       B6. SOFT_FIELDS length 13 -> 17. Drops 'notes', adds
+           contact_name/phone/email + internal_notes/external_notes.
+       B7. STRUCTURED_COLS length 13 -> 17 (same delta as B6).
+           Invariant SOFT_FIELDS \u2286 STRUCTURED_COLS maintained.
+       B8. defaultWizard init state mirrors B6: drops notes,
+           adds the 5 new keys at ''.
+       B9. Wizard Step-1 form rewritten. "Customer" -> "End User"
+           (label only). All 15 visible fields required (project,
+           customer_name, partner_name, consultant_name, venue_type,
+           city, state, stage, lead_source, sales_person_id,
+           presales_person_id, close_month, contact_name,
+           contact_phone, contact_email). Partner contact section
+           added. Notes split into internal + external textareas
+           with explanatory helper text. City uses datalist for
+           native mobile search.
+       B10. Saved-deal edit accordion mirrors B9.
+       B11. Excel context block: End User label, Lead Origin
+            label, new Partner contact merged row 10, External
+            notes only at row 11 (internal hidden from exports).
+       B12. PDF context block: same shape as B11.
+       B13. Step-6 Review: End User label, Lead Origin row,
+            contact triple, External notes (internal hidden).
+       B14. validateStep Step-1: 15 required-field gates with
+            regex validation. close_month requires YYYY-MM.
+            contact_phone requires 10 digits. contact_email
+            requires standard email shape. internal_notes +
+            external_notes intentionally optional.
+       B15. renderStep3Mv reordered: Inputs first, Output below
+            (item 11 lock from prior chats).
+       B16. Saved-deal MV edit block mirrors B15 reorder.
+       B17. STORE.saveDeal async smoke payload updated to v27.1.1
+            keys. 3 new round-trip assertions added (15-field
+            preservation, close_month YYYY-MM cycle, internal/
+            external notes round-trip). The 15-field round-trip
+            is the item-14 acceptance criterion: if it passes,
+            "fields not filled on edit" cannot occur for any of
+            those fields.
+       B18. Smoke contract updates:
+              \u2022 Inverted v27.1.0 B5 check (contact_* now in SOFT)
+              \u2022 Rewrote v27.1.0 B6 check (notes -> internal+external)
+              \u2022 Bumped length assertions 13 -> 17
+              \u2022 New N1-N12 v27.1.1 checks (venue list, rosters,
+                Vipul-Presales guard, Sachchi spelling, LEAD list,
+                CITIES anchors, phone+email regex, helper exists)
+              \u2022 Step-1 validation smoke: empty form errors on
+                14 fields (stage defaults Qualified); fill-all-15
+                passes.
+       B19. This changelog block.
+
+      EXPOSURES (smoke reach):
+       UI return + APP re-export now expose
+       _VENUE_TYPES, _LEAD_SOURCES, _CITIES, _autoFillStateFromCity.
+       Same expose-via-UI pattern as alpha.9.1 _SOFT_FIELDS fix.
+       Without these the N1/N2/N7/N8/N12 smoke checks throw.
+
+      ITEM-14 VERDICT:
+       Backend MCP smoke (chat 1) verified save -> get round-trip
+       at the RPC layer with all 5 new+renamed columns. v27.1.0's
+       "fields blank on edit" was Mechanism A (contract drift);
+       v27.1.1's contact_* / internal+external split are now
+       part of the contract from both ends. N13a baked the
+       15-field round-trip into smoke as a permanent invariant.
+
+      OPEN QUESTIONS DEFERRED:
+       - OEM "super with conditions" \u2014 interpretation locked as
+         "excluded from Sales/Presales dropdowns". If meant
+         differently (e.g. conditional visibility when Lead Origin
+         = tvONE), revisit before v27.2 parties-table.
+       - v27.2 scope (already known): SX catalog rewrite, MV
+         inline SX, parties-table flow, mobile scroll/overflow
+         bug on Z Fold.
+
+      ROLLBACK:
+       Backend: reverse the migration \u2014 rename internal_notes
+       back to notes, drop 4 columns. Frontend: revert index.html
+       to v27.1.0. Prefer backend-last on rollback to mirror
+       deploy order. With deals=0 at deploy time, no data loss
+       in either direction.)
+     ============================================================ */
 
   /* ============================================================
      End of v27.1.0
