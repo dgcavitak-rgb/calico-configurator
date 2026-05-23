@@ -2814,8 +2814,10 @@
     // checks catch that immediately.
     check('B8: MV fixed-chassis path sets meta.chassisLabel',
       () => {
-        // 4× FHD HDMI in / FHD HDMI out lands in the fixed-chassis branch.
-        const r = RECOMMEND.mv({ inputs: [{ signal: 'FHD HDMI', qty: 4 }], outputSignal: 'FHD HDMI' });
+        // 4× FHD HDMI in / 4K HDMI out → MWP-4H-1Y preset (proven by the
+        // "MV small" smoke above). Previous attempt used FHD HDMI out
+        // which has no matching fixed chassis → routed to error path.
+        const r = RECOMMEND.mv({ inputs: [{ signal: 'FHD HDMI', qty: 4 }], outputSignal: '4K HDMI' });
         return (r && r.meta && r.meta.type === 'fixed' && typeof r.meta.chassisLabel === 'string' && r.meta.chassisLabel.length > 0)
           || 'meta=' + JSON.stringify(r && r.meta);
       });
