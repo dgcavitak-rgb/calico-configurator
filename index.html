@@ -874,7 +874,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.0.0-alpha.9.2',
+      version: 'v27.1.0',
       constants,
       calico,
       mv,
@@ -1260,7 +1260,7 @@
               valueAdds,
               reasons,
               meta: {
-                type: 'fixed', chassisDesc: chosen.desc,
+                type: 'fixed', chassisLabel: chosen.desc,
                 inputSignal: sig, outputSignal: input.outputSignal, inputCount: qty
               }
             };
@@ -1309,7 +1309,7 @@
           valueAdds,
           reasons,
           meta: {
-            type: 'mto', chassisDesc: MTO.desc,
+            type: 'mto', chassisLabel: MTO.desc,
             inputSignal: sig, outputSignal: input.outputSignal, inputCount: qty
           }
         };
@@ -1375,7 +1375,7 @@
         valueAdds,
         reasons,
         meta: {
-          type: 'mto-mixed', chassisDesc: MTO.desc + ' · mixed input (' + summarySignals + ')',
+          type: 'mto-mixed', chassisLabel: MTO.desc + ' · mixed input (' + summarySignals + ')',
           inputSignal: summarySignals, outputSignal: input.outputSignal, inputCount: totalPorts
         }
       };
@@ -2079,12 +2079,22 @@
       }
       ctxRow(4,  'Project',     deal.project,         'Customer',         deal.customer_name);
       ctxRow(5,  'Partner',     deal.partner_name,    'Consultant',       deal.consultant_name);
-      ctxRow(6,  'Venue',       deal.venue,           'City',             deal.city);
+      ctxRow(6,  'Venue type',  deal.venue_type,      'City',             deal.city);
       ctxRow(7,  'State',       deal.state,           'Stage',            deal.stage);
-      ctxRow(8,  'Lead source', deal.lead_source,     'Deal value (INR)', deal.deal_value);
-      ctxRow(9,  'Salesperson', deal.sales_person,    'Presales',         deal.presales_person);
-      ctxRow(10, 'Contact',     deal.contact_name,    'Phone',            deal.contact_phone);
-      ctxRow(11, 'Email',       deal.contact_email,   'Expected closure', deal.expected_closure);
+      ctxRow(8,  'Lead source', deal.lead_source,     'Expected closure', deal.close_month);
+      ctxRow(9,  'Salesperson', labelFor(deal.sales_person_id, SALES_TEAM), 'Presales', labelFor(deal.presales_person_id, PRESALES_TEAM));
+
+      // v27.1.0 B6 — Notes as a full-width merged row 10. Skip when empty so
+      // we don't leave a blank line in the export. BoM header stays at row 13
+      // regardless (gap is acceptable; keeps downstream cell references stable).
+      if (deal.notes && String(deal.notes).trim()) {
+        ws.mergeCells('A10:D10');
+        const notesCell = ws.getRow(10).getCell(1);
+        notesCell.value = 'Notes: ' + String(deal.notes).trim();
+        notesCell.font = { size: 10 };
+        notesCell.alignment = { wrapText: true, vertical: 'top' };
+        ws.getRow(10).height = Math.min(80, Math.max(20, String(deal.notes).length / 4));
+      }
 
       // ---- BoM header ----
       ws.mergeCells('A13:D13');
@@ -2295,12 +2305,22 @@
 
       ctxRow('Project',     deal.project,         'Customer',         deal.customer_name);
       ctxRow('Partner',     deal.partner_name,    'Consultant',       deal.consultant_name);
-      ctxRow('Venue',       deal.venue,           'City',             deal.city);
+      ctxRow('Venue type',  deal.venue_type,      'City',             deal.city);
       ctxRow('State',       deal.state,           'Stage',            deal.stage);
-      ctxRow('Lead source', deal.lead_source,     'Deal value (INR)', deal.deal_value);
-      ctxRow('Salesperson', deal.sales_person,    'Presales',         deal.presales_person);
-      ctxRow('Contact',     deal.contact_name,    'Phone',            deal.contact_phone);
-      ctxRow('Email',       deal.contact_email,   'Expected closure', deal.expected_closure);
+      ctxRow('Lead source', deal.lead_source,     'Expected closure', deal.close_month);
+      ctxRow('Salesperson', labelFor(deal.sales_person_id, SALES_TEAM), 'Presales', labelFor(deal.presales_person_id, PRESALES_TEAM));
+
+      // v27.1.0 B6 — Notes as a wrapped paragraph below the 2-column context.
+      // Skip when empty.
+      if (deal.notes && String(deal.notes).trim()) {
+        y += 6;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Notes:', colA_label, y);
+        doc.setFont('helvetica', 'normal');
+        const notesLines = doc.splitTextToSize(String(deal.notes).trim(), W - 2 * M - 40);
+        doc.text(notesLines, colA_label + 40, y);
+        y += notesLines.length * 12;
+      }
 
       y += 10;
 
@@ -2497,8 +2517,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.0.0-alpha.9.2"',
-      () => CATALOG.version === 'v27.0.0-alpha.9.2' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.1.0"',
+      () => CATALOG.version === 'v27.1.0' || 'got: ' + CATALOG.version);
 
     check('Object.isFrozen(CATALOG)',
       () => Object.isFrozen(CATALOG) === true || 'not frozen');
@@ -2784,6 +2804,35 @@
         const inputCards = r.cards.filter(c => c.role === 'input_card');
         if (inputCards.length !== 2) return 'expected 2 input cards, got ' + inputCards.length;
         return true;
+      });
+
+    // ---- v27.1.0 B8: chassisLabel set on all 3 MV recommend paths ----
+    // Pre-v27.1 these three RECOMMEND.mv branches stamped `chassisDesc`
+    // while 5 downstream consumers (Excel/PDF BoM, buildSavePayload, UI
+    // BoM card x2) read `chassisLabel`. Result: MV BoM rows showed blank
+    // description. Regressing requires re-touching the rename — these
+    // checks catch that immediately.
+    check('B8: MV fixed-chassis path sets meta.chassisLabel',
+      () => {
+        // 4× FHD HDMI in / FHD HDMI out lands in the fixed-chassis branch.
+        const r = RECOMMEND.mv({ inputs: [{ signal: 'FHD HDMI', qty: 4 }], outputSignal: 'FHD HDMI' });
+        return (r && r.meta && r.meta.type === 'fixed' && typeof r.meta.chassisLabel === 'string' && r.meta.chassisLabel.length > 0)
+          || 'meta=' + JSON.stringify(r && r.meta);
+      });
+    check('B8: MV MTO single-signal path sets meta.chassisLabel',
+      () => {
+        const r = RECOMMEND.mv({ inputs: [{ signal: '4K HDMI', qty: 4 }], outputSignal: 'DVI-I' });
+        return (r && r.meta && r.meta.type === 'mto' && typeof r.meta.chassisLabel === 'string' && r.meta.chassisLabel.length > 0)
+          || 'meta=' + JSON.stringify(r && r.meta);
+      });
+    check('B8: MV MTO mixed-input path sets meta.chassisLabel',
+      () => {
+        const r = RECOMMEND.mv({
+          inputs: [{ signal: 'FHD HDMI', qty: 4 }, { signal: '3G-SDI', qty: 4 }],
+          outputSignal: '4K HDMI'
+        });
+        return (r && r.meta && r.meta.type === 'mto-mixed' && typeof r.meta.chassisLabel === 'string' && r.meta.chassisLabel.length > 0)
+          || 'meta=' + JSON.stringify(r && r.meta);
       });
 
     check('MV error: too many cards for MTO (within distinct cap)',
@@ -3120,12 +3169,47 @@
       'Inbound Web', 'Trade Show', 'Consultant Specified', 'Other'
     ];
 
-    // Cavitak team rosters (from product memory). Edit when team changes.
-    const SALES_TEAM    = ['Vipul', 'Arvind', 'Mohd Faiz', 'Tausif',
-                           'Ranjith Kumar', 'Shashank Tiwari',
-                           'Niket Singh', 'Venu Krishanmurthy',
-                           'Dipenkumar'];
-    const PRESALES_TEAM = ['Mohit', 'Ranjith SR', 'Dipenkumar'];
+    // v27.1.0 — Replaces free-text venue field. Options chosen to cover the
+    // Indian AV market mix. Reps can pick "Other" + use notes for edge cases.
+    const VENUE_TYPES = [
+      'Conference Room', 'Auditorium', 'Boardroom', 'Lobby/Reception',
+      'Retail', 'Control Room', 'House of Worship', 'Educational',
+      'Hospitality', 'Stadium/Arena', 'Studio/Broadcast', 'Outdoor', 'Other'
+    ];
+
+    // v27.1.0 B2 — Team rosters as {value: user_uuid, label: display_name}.
+    // UUIDs are public.users.id values, verified live at v27.1.0 deploy.
+    // deal_save's *_person_id columns require UUIDs referencing users.id;
+    // sending the display name (previous behavior) caused the RPC to drop
+    // the field. Edit when team changes — both `value` (UUID) and `label`
+    // (shown in dropdowns + reports) must update together.
+    const SALES_TEAM = [
+      { value: 'b86e9932-15f8-4e8b-a952-66aa4dfd2312', label: 'Vipul Parihar' },
+      { value: 'bc00d3d8-0e73-41fa-bd00-e8448c4a655a', label: 'Arvind Sahu' },
+      { value: '54c7a685-fed4-4867-8c5c-8ee288c69b42', label: 'Mohd Faiz' },
+      { value: 'dab8eb31-22a2-43e6-a679-314d4364de38', label: 'Tausif Khan' },
+      { value: '5919dcf5-773e-4e7a-a6bf-5262714d148c', label: 'Ranjith Kumar' },
+      { value: '1b57923c-573c-49a0-90d0-ff7a00e2b2ef', label: 'Shashank Tiwari' },
+      { value: '74f78b3c-50fe-4b74-b87d-af5926b41da7', label: 'Niket Singh' },
+      { value: 'a6109889-19b9-4998-b954-6baa079bc190', label: 'Venu Krishanmurthy' },
+      { value: '155b257a-ec1a-4ee9-ac89-31ba47c4c610', label: 'Dipenkumar Gajjar' }
+    ];
+    const PRESALES_TEAM = [
+      { value: '2e1ab421-5174-4f4d-a27d-bb8c19e22c3f', label: 'Mohit Chaturvedi' },
+      { value: '54e8933c-37c9-42fa-a441-41126b71d0ff', label: 'Ranjith SR' },
+      { value: '155b257a-ec1a-4ee9-ac89-31ba47c4c610', label: 'Dipenkumar Gajjar' }
+    ];
+
+    // v27.1.0 — Lookup helper: given a UUID and a {value,label}[] list,
+    // return the label. Used by display sites (Step-6 Review, Excel, PDF)
+    // that need a human-readable name from a sales_person_id /
+    // presales_person_id UUID. Returns '' for empty input; falls back to
+    // the UUID itself if not found, so we never silently lose attribution.
+    function labelFor(uuid, list) {
+      if (!uuid) return '';
+      const m = (list || []).find(o => o && o.value === uuid);
+      return m ? m.label : uuid;
+    }
 
     // SX editorial labels — locked alpha.7.0 to match real CATALOG.sx products.
     // Previous labels (HDMI/SDI/AP-536/AVIP) were fictional carryovers from a
@@ -3170,10 +3254,9 @@
 
     const SOFT_FIELDS = [
       'project', 'customer_name', 'partner_name', 'consultant_name',
-      'venue', 'city', 'state',
-      'stage', 'lead_source', 'sales_person', 'presales_person',
-      'contact_name', 'contact_phone', 'contact_email',
-      'expected_closure', 'deal_value'
+      'venue_type', 'city', 'state',
+      'stage', 'lead_source', 'sales_person_id', 'presales_person_id',
+      'close_month', 'notes'
     ];
 
     // Reference list for alpha.7.3 — read by the Rebuild flow.
@@ -3209,6 +3292,23 @@
         '<input id="sd-i-' + id + '" data-sd-bind="' + id + '" type="' + type + '"' +
           inputmode + ' value="' + esc(value == null ? '' : value) + '"' +
           (placeholder ? ' placeholder="' + esc(placeholder) + '"' : '') + '>' +
+        helpHtml +
+      '</div>';
+    }
+    // v27.1.0 — Multiline variant of sdField. Same data-sd-bind delegation,
+    // same sd-i- prefix. textarea.value works identically to input.value so
+    // no handler changes needed.
+    function sdTextarea(id, label, value, opts) {
+      opts = opts || {};
+      const placeholder = opts.placeholder || '';
+      const rows = opts.rows || 3;
+      const helpHtml = opts.help ? '<div class="help">' + esc(opts.help) + '</div>' : '';
+      return '<div class="field" id="sd-f-' + id + '">' +
+        '<label for="sd-i-' + id + '">' + esc(label) + '</label>' +
+        '<textarea id="sd-i-' + id + '" data-sd-bind="' + id + '" rows="' + rows + '"' +
+          (placeholder ? ' placeholder="' + esc(placeholder) + '"' : '') + '>' +
+          esc(value == null ? '' : value) +
+        '</textarea>' +
         helpHtml +
       '</div>';
     }
@@ -3267,11 +3367,10 @@
     const STRUCTURED_COLS = [
       'project', 'customer_name', 'stage',
       'partner_name', 'consultant_name',
-      'venue', 'venue_type', 'city', 'state',
-      'lead_source', 'sales_person', 'presales_person',
-      'contact_name', 'contact_phone', 'contact_email',
-      'expected_closure', 'deal_value',
-      'status', 'budget', 'deal_source', 'notes'
+      'venue_type', 'city', 'state',
+      'lead_source', 'sales_person_id', 'presales_person_id',
+      'close_month',
+      'notes'
     ];
 
     function buildSavePayload(deal) {
@@ -3302,6 +3401,15 @@
       });
 
       payload.raw_submission = raw;
+
+      // v27.1.0 B3 — close_month column is DATE in Postgres, but HTML
+      // <input type="month"> emits 'YYYY-MM'. NULLIF(...)::DATE rejects
+      // 'YYYY-MM' (error 22007). Append '-01' so the RPC's cast succeeds.
+      // The matching slice on the hydrate side (loadDeal) brings it back
+      // to 'YYYY-MM' for the input to display correctly.
+      if (payload.close_month && /^\d{4}-\d{2}$/.test(payload.close_month)) {
+        payload.close_month = payload.close_month + '-01';
+      }
 
       // Lines — prefer fresh reco.cards (post-Rebuild or wizard Build);
       // fall back to existing deal.lines so editing a soft field on an
@@ -3518,11 +3626,10 @@
       return {
         step: 1,
         project: '', customer_name: '', partner_name: '', consultant_name: '',
-        venue: '', city: '', state: '',
+        venue_type: '', city: '', state: '',
         stage: 'Qualified', lead_source: '',
-        sales_person: '', presales_person: '',
-        contact_name: '', contact_phone: '', contact_email: '',
-        expected_closure: '', deal_value: '',
+        sales_person_id: '', presales_person_id: '',
+        close_month: '', notes: '',
         solutionType: '',
         calico_inputs:  { hdmi4k: 0, hdmiFhd: 0, sdi12g: 0, sdi3g: 0, hdbt: 0, ip: 0 },
         calico_outputs: { display: 0, projector: 0, projectorRes: 'FHD', sdi: 0 },
@@ -3803,7 +3910,9 @@
       const proj  = d.project || '(no project name)';
       const stage = d.stage || '\u2014';
       const cust  = d.customer_name || '';
-      const val   = (d.deal_value_inr != null) ? fmtINR(d.deal_value_inr) : '';
+      // v27.1.0 B4 — guard `> 0` (was `!= null`): hides for tvONE (no prices,
+      // trigger always computes 0) but naturally reveals for BS once it lands.
+      const val   = (d.deal_value_inr > 0) ? fmtINR(d.deal_value_inr) : '';
       const stageTag =
         (stage === 'Closed Won')  ? 'ok' :
         (stage === 'Closed Lost') ? 'warn' : 'accent';
@@ -4060,6 +4169,15 @@
           // Drop the nested copy — buildSavePayload will rebuild it on save.
           delete deal.raw_submission;
         }
+
+        // v27.1.0 B3 — deal_get returns close_month as 'YYYY-MM-DD' (DATE).
+        // <input type="month"> needs 'YYYY-MM' to display. Slice it back so
+        // the form shows the user's original month selection. (Matches the
+        // '+ -01' appended in buildSavePayload on the send side.)
+        if (deal.close_month && /^\d{4}-\d{2}-\d{2}$/.test(deal.close_month)) {
+          deal.close_month = deal.close_month.slice(0, 7);
+        }
+
         setRoot(renderSavedDealLoaded(deal));
       }).catch(function(err) {
         if (_activeSavedDealRefId !== refId) return;
@@ -4232,21 +4350,23 @@
           sdField('partner_name',    'Partner',          deal.partner_name) +
           sdField('consultant_name', 'Consultant',       deal.consultant_name) +
           '<h3 class="h3">Location</h3>' +
-          sdField('venue', 'Venue', deal.venue, { placeholder: 'e.g. ABC Tower, 12th floor' }) +
+          sdSelectField('venue_type', 'Venue type', deal.venue_type, VENUE_TYPES, { placeholder: '— select —' }) +
           sdField('city',  'City',  deal.city) +
           sdField('state', 'State', deal.state, { placeholder: 'e.g. Gujarat' }) +
           '<h3 class="h3">Stage &amp; owners</h3>' +
           sdSelectField('stage',           'Stage',           deal.stage,           STAGES) +
           sdSelectField('lead_source',     'Lead source',     deal.lead_source,     LEAD_SOURCES,  { placeholder: '\u2014 select \u2014' }) +
-          sdSelectField('sales_person',    'Sales person',    deal.sales_person,    SALES_TEAM,    { placeholder: '\u2014 unassigned \u2014' }) +
-          sdSelectField('presales_person', 'Presales person', deal.presales_person, PRESALES_TEAM, { placeholder: '\u2014 unassigned \u2014' }) +
-          '<h3 class="h3">Partner contact</h3>' +
-          sdField('contact_name',  'Name',  deal.contact_name) +
-          sdField('contact_phone', 'Phone', deal.contact_phone, { type: 'tel',   inputmode: 'tel' }) +
-          sdField('contact_email', 'Email', deal.contact_email, { type: 'email', inputmode: 'email' }) +
-          '<h3 class="h3">Closure &amp; value</h3>' +
-          sdField('expected_closure', 'Expected closure', deal.expected_closure, { type: 'month', help: 'Year-month, e.g. 2026-09' }) +
-          sdField('deal_value',       'Deal value (INR)', deal.deal_value,       { type: 'number', inputmode: 'numeric', help: 'Approximate; refine later.' }) +
+          sdSelectField('sales_person_id',    'Sales person',    deal.sales_person_id,    SALES_TEAM,    { placeholder: '\u2014 unassigned \u2014' }) +
+          sdSelectField('presales_person_id', 'Presales person', deal.presales_person_id, PRESALES_TEAM, { placeholder: '\u2014 unassigned \u2014' }) +
+          // v27.1.0 B5 — Partner contact fields (name/phone/email) removed.
+          // Phase A audit showed RPC ignored them; they were never persisted.
+          // Future: parties-table flow (v27.2+) will reintroduce contacts as
+          // first-class entities with phone/email per-row. Until then, use
+          // the notes field for ad-hoc contact context.
+          '<h3 class="h3">Closure</h3>' +
+          sdField('close_month', 'Expected closure', deal.close_month, { type: 'month', help: 'Year-month, e.g. 2026-09' }) +
+          '<h3 class="h3">Notes</h3>' +
+          sdTextarea('notes', 'Notes', deal.notes, { rows: 4, placeholder: 'Anything worth remembering \u2014 site contact, special requirements, follow-ups\u2026' }) +
         '</form>';
 
       // ---- Read-only sections (structural — see below for I/O which IS editable in CALICO mode) ----
@@ -4616,6 +4736,27 @@
           helpHtml + errHtml +
         '</div>';
       }
+      // v27.1.0 — Multiline variant of field(). Same closure (shares d),
+      // same i- prefix, same data-bind delegation. textarea.value works
+      // identically to input.value so the capture path is unchanged.
+      function textareaField(id, label, value, opts) {
+        opts = opts || {};
+        const placeholder = opts.placeholder || '';
+        const rows = opts.rows || 3;
+        const helpHtml = opts.help ? '<div class="help">' + esc(opts.help) + '</div>' : '';
+        const errCls = d.errors[id] ? ' has-error' : '';
+        const errHtml = d.errors[id]
+          ? '<div class="err">' + esc(d.errors[id]) + '</div>'
+          : '<div class="err" hidden></div>';
+        return '<div class="field' + errCls + '" id="f-' + id + '">' +
+          '<label for="i-' + id + '">' + esc(label) + '</label>' +
+          '<textarea id="i-' + id + '" data-bind="' + id + '" rows="' + rows + '"' +
+            (placeholder ? ' placeholder="' + esc(placeholder) + '"' : '') + '>' +
+            esc(value || '') +
+          '</textarea>' +
+          helpHtml + errHtml +
+        '</div>';
+      }
       function selectField(id, label, value, options, opts) {
         opts = opts || {};
         const errCls = d.errors[id] ? ' has-error' : '';
@@ -4646,24 +4787,21 @@
           field('consultant_name', 'Consultant',       d.consultant_name) +
           '<div class="sp-12"></div>' +
           '<h3 class="h3">Location</h3>' +
-          field('venue', 'Venue', d.venue, { placeholder: 'e.g. ABC Tower, 12th floor' }) +
+          selectField('venue_type', 'Venue type', d.venue_type, VENUE_TYPES, { placeholder: '— select —' }) +
           field('city',  'City',  d.city) +
           field('state', 'State', d.state, { placeholder: 'e.g. Gujarat' }) +
           '<div class="sp-12"></div>' +
           '<h3 class="h3">Stage &amp; owners</h3>' +
           selectField('stage', 'Stage', d.stage, STAGES, { required: true }) +
           selectField('lead_source', 'Lead source', d.lead_source, LEAD_SOURCES, { placeholder: '\u2014 select \u2014' }) +
-          selectField('sales_person',    'Sales person',    d.sales_person,    SALES_TEAM,    { placeholder: '\u2014 unassigned \u2014' }) +
-          selectField('presales_person', 'Presales person', d.presales_person, PRESALES_TEAM, { placeholder: '\u2014 unassigned \u2014' }) +
+          selectField('sales_person_id',    'Sales person',    d.sales_person_id,    SALES_TEAM,    { placeholder: '\u2014 unassigned \u2014' }) +
+          selectField('presales_person_id', 'Presales person', d.presales_person_id, PRESALES_TEAM, { placeholder: '\u2014 unassigned \u2014' }) +
           '<div class="sp-12"></div>' +
-          '<h3 class="h3">Partner contact</h3>' +
-          field('contact_name',  'Name',  d.contact_name) +
-          field('contact_phone', 'Phone', d.contact_phone, { type: 'tel',   inputmode: 'tel' }) +
-          field('contact_email', 'Email', d.contact_email, { type: 'email', inputmode: 'email' }) +
+          '<h3 class="h3">Closure</h3>' +
+          field('close_month', 'Expected closure', d.close_month, { type: 'month', help: 'Year-month, e.g. 2026-09' }) +
           '<div class="sp-12"></div>' +
-          '<h3 class="h3">Closure &amp; value</h3>' +
-          field('expected_closure', 'Expected closure', d.expected_closure, { type: 'month', help: 'Year-month, e.g. 2026-09' }) +
-          field('deal_value',       'Deal value (INR)', d.deal_value,       { type: 'number', inputmode: 'numeric', help: 'Approximate; refine later.' }) +
+          '<h3 class="h3">Notes</h3>' +
+          textareaField('notes', 'Notes', d.notes, { rows: 4, placeholder: 'Anything worth remembering \u2014 site contact, special requirements, follow-ups\u2026' }) +
         '</form>';
     }
 
@@ -4954,10 +5092,9 @@
       if (d.partner_name)    add('Partner', d.partner_name, 1);
       if (d.consultant_name) add('Consultant', d.consultant_name, 1);
       add('Stage', d.stage || '\u2014', 1);
-      if (d.sales_person)    add('Sales',    d.sales_person, 1);
-      if (d.presales_person) add('Presales', d.presales_person, 1);
-      if (d.deal_value)      add('Value', fmtINR(d.deal_value), 1);
-      if (d.expected_closure) add('Expected closure', d.expected_closure, 1);
+      if (d.sales_person_id)    add('Sales',    labelFor(d.sales_person_id, SALES_TEAM), 1);
+      if (d.presales_person_id) add('Presales', labelFor(d.presales_person_id, PRESALES_TEAM), 1);
+      if (d.close_month) add('Expected closure', d.close_month, 1);
 
       const solLabel = { calico: 'CALICO Video Processor', mv: 'Multi Viewer', corio: 'CORIO Video Processor' }[d.solutionType] || '\u2014';
       add('Solution', solLabel, 2);
@@ -5101,12 +5238,6 @@
         if (!d.project || !d.project.trim())     errors.project = 'Required.';
         if (!d.customer_name || !d.customer_name.trim()) errors.customer_name = 'Required.';
         if (!d.stage)                            errors.stage = 'Required.';
-        if (d.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.contact_email)) {
-          errors.contact_email = 'Looks invalid.';
-        }
-        if (d.deal_value && isNaN(Number(d.deal_value))) {
-          errors.deal_value = 'Must be a number.';
-        }
       } else if (d.step === 2) {
         if (!d.solutionType) errors.solutionType = 'Pick a solution type to continue.';
       } else if (d.step === 3) {
@@ -5147,10 +5278,12 @@
        ============================================================ */
 
     function captureStep1Form() {
-      const fields = ['project','customer_name','partner_name','consultant_name',
-        'venue','city','state','stage','lead_source','sales_person','presales_person',
-        'contact_name','contact_phone','contact_email','expected_closure','deal_value'];
-      fields.forEach(f => {
+      // v27.1.0 F3 — uses SOFT_FIELDS as the single source of truth so this
+      // capture stays in sync automatically when SOFT_FIELDS changes.
+      // Pre-v27.1 hardcoded a duplicate list that drifted. The i-* element
+      // ID prefix works identically for input and textarea elements; .value
+      // works identically too — no special-case needed for the notes textarea.
+      SOFT_FIELDS.forEach(function(f) {
         const el = $('i-' + f);
         if (el) wizardData[f] = el.value;
       });
@@ -5811,6 +5944,11 @@
       _SOFT_FIELDS:        SOFT_FIELDS,
       _STRUCTURAL_FIELDS:  STRUCTURAL_FIELDS,
       _STRUCTURED_COLS:    STRUCTURED_COLS,
+      // v27.1.0 B2 smoke needs reach into the UUID-lookup machinery; same
+      // expose-via-UI pattern as _SOFT_FIELDS above.
+      _labelFor:           labelFor,
+      _SALES_TEAM:         SALES_TEAM,
+      _PRESALES_TEAM:      PRESALES_TEAM,
       // helpers
       esc, fmtINR, debounce,
       // smoke renderer
@@ -6184,7 +6322,10 @@
       _buildSavePayload:   UI.buildSavePayload,
       _SOFT_FIELDS:        UI._SOFT_FIELDS,
       _STRUCTURAL_FIELDS:  UI._STRUCTURAL_FIELDS,
-      _STRUCTURED_COLS:    UI._STRUCTURED_COLS
+      _STRUCTURED_COLS:    UI._STRUCTURED_COLS,
+      _labelFor:           UI._labelFor,
+      _SALES_TEAM:         UI._SALES_TEAM,
+      _PRESALES_TEAM:      UI._PRESALES_TEAM
     };
   })();
 
@@ -6796,6 +6937,89 @@
           || 'STRUCTURAL leaked into STRUCTURED_COLS: ' + leak.join(',');
       });
 
+    // ---- v27.1.0 bundle assertions (B1-B8) ----
+    // B1: venue → venue_type
+    check('B1: SOFT_FIELDS contains venue_type, not venue',
+      () => (APP._SOFT_FIELDS.indexOf('venue') === -1 &&
+             APP._SOFT_FIELDS.indexOf('venue_type') >= 0)
+            || 'venue=' + APP._SOFT_FIELDS.indexOf('venue') +
+               ' venue_type=' + APP._SOFT_FIELDS.indexOf('venue_type'));
+    check('B1: STRUCTURED_COLS contains venue_type, not venue',
+      () => (APP._STRUCTURED_COLS.indexOf('venue') === -1 &&
+             APP._STRUCTURED_COLS.indexOf('venue_type') >= 0)
+            || 'venue=' + APP._STRUCTURED_COLS.indexOf('venue') +
+               ' venue_type=' + APP._STRUCTURED_COLS.indexOf('venue_type'));
+
+    // B2: sales_person/presales_person → *_id (UUID)
+    check('B2: SOFT_FIELDS uses sales_person_id, not sales_person',
+      () => (APP._SOFT_FIELDS.indexOf('sales_person') === -1 &&
+             APP._SOFT_FIELDS.indexOf('sales_person_id') >= 0)
+            || 'sales_person=' + APP._SOFT_FIELDS.indexOf('sales_person') +
+               ' sales_person_id=' + APP._SOFT_FIELDS.indexOf('sales_person_id'));
+    check('B2: SOFT_FIELDS uses presales_person_id, not presales_person',
+      () => (APP._SOFT_FIELDS.indexOf('presales_person') === -1 &&
+             APP._SOFT_FIELDS.indexOf('presales_person_id') >= 0)
+            || 'presales_person=' + APP._SOFT_FIELDS.indexOf('presales_person') +
+               ' presales_person_id=' + APP._SOFT_FIELDS.indexOf('presales_person_id'));
+    check('B2: labelFor(known UUID, SALES_TEAM) returns the display name',
+      () => {
+        // Dipenkumar's row used as sentinel; present in BOTH team arrays.
+        const out = APP._labelFor('155b257a-ec1a-4ee9-ac89-31ba47c4c610', APP._SALES_TEAM);
+        return out === 'Dipenkumar Gajjar' || 'got: ' + JSON.stringify(out);
+      });
+    check('B2: labelFor(empty, SALES_TEAM) returns empty string',
+      () => APP._labelFor('', APP._SALES_TEAM) === ''
+            || 'got: ' + JSON.stringify(APP._labelFor('', APP._SALES_TEAM)));
+    check('B2: labelFor(unknown UUID, SALES_TEAM) falls back to the UUID',
+      () => APP._labelFor('not-a-real-uuid', APP._SALES_TEAM) === 'not-a-real-uuid'
+            || 'got: ' + JSON.stringify(APP._labelFor('not-a-real-uuid', APP._SALES_TEAM)));
+
+    // B3: expected_closure → close_month + DATE conversion
+    check('B3: SOFT_FIELDS uses close_month, not expected_closure',
+      () => (APP._SOFT_FIELDS.indexOf('expected_closure') === -1 &&
+             APP._SOFT_FIELDS.indexOf('close_month') >= 0)
+            || 'expected_closure=' + APP._SOFT_FIELDS.indexOf('expected_closure') +
+               ' close_month=' + APP._SOFT_FIELDS.indexOf('close_month'));
+    check('B3: buildSavePayload appends -01 to YYYY-MM close_month',
+      () => {
+        const p = APP._buildSavePayload({ close_month: '2026-09' });
+        return p.close_month === '2026-09-01' || 'got: ' + JSON.stringify(p.close_month);
+      });
+    check('B3: buildSavePayload leaves YYYY-MM-DD close_month untouched (idempotent)',
+      () => {
+        const p = APP._buildSavePayload({ close_month: '2026-09-01' });
+        return p.close_month === '2026-09-01' || 'got: ' + JSON.stringify(p.close_month);
+      });
+
+    // B4: deal_value removed
+    check('B4: SOFT_FIELDS does not contain deal_value',
+      () => APP._SOFT_FIELDS.indexOf('deal_value') === -1
+            || 'still at index ' + APP._SOFT_FIELDS.indexOf('deal_value'));
+
+    // B5: contact_* removed
+    check('B5: SOFT_FIELDS does not contain contact_name / phone / email',
+      () => {
+        const present = ['contact_name','contact_phone','contact_email']
+          .filter(k => APP._SOFT_FIELDS.indexOf(k) >= 0);
+        return present.length === 0 || 'still present: ' + present.join(',');
+      });
+
+    // B6: notes added
+    check('B6: SOFT_FIELDS contains notes',
+      () => APP._SOFT_FIELDS.indexOf('notes') >= 0
+            || 'notes absent from SOFT_FIELDS');
+
+    // B7: status/budget/deal_source dropped from STRUCTURED_COLS
+    check('B7: STRUCTURED_COLS no longer carries status/budget/deal_source',
+      () => {
+        const present = ['status','budget','deal_source']
+          .filter(k => APP._STRUCTURED_COLS.indexOf(k) >= 0);
+        return present.length === 0 || 'still present: ' + present.join(',');
+      });
+    check('B7: STRUCTURED_COLS length == 13 (post-bundle target)',
+      () => APP._STRUCTURED_COLS.length === 13
+            || 'got: ' + APP._STRUCTURED_COLS.length);
+
     // ---- 4: buildSavePayload field routing ----
     check('Structured field "project" routes to payload top-level',
       () => {
@@ -6843,9 +7067,9 @@
         const testDeal = calicoMock({
           project: 'RoundTrip',
           customer_name: 'Customer Co',
-          contact_phone: '+91 98765 43210',
+          sales_person_id: '155b257a-ec1a-4ee9-ac89-31ba47c4c610',
           stage: 'Qualified',
-          deal_value: 250000
+          notes: 'Round-trip test note'
         });
         const p = APP._buildSavePayload(testDeal);
         // Reconstruct: merge raw_submission back to top level
@@ -7009,6 +7233,99 @@
      ============================================================ */
   UI.mount();
   APP.start();
+
+  /* ============================================================
+     End of v27.1.0
+     (v27.1.0 \u2014 Phase B atomic bundle. Mechanism A contract drift
+      fixed. Frontend-only \u2014 no backend RPC body changes, no
+      schema migrations.
+
+      WHAT CHANGED (8 B-items + 2 helpers + 1 refactor):
+       H1. labelFor(uuid, list) helper. Display sites (Step-6,
+           Excel, PDF) that read sales_person_id / presales_person_id
+           as raw UUIDs now resolve them to human-readable names.
+           Empty input \u2192 ''; unknown UUID \u2192 falls back to the UUID
+           itself (no silent data loss).
+       H2. sdTextarea (saved-deal) + textareaField (wizard) helpers.
+           Mirror sdField / field but emit <textarea>. data-bind /
+           data-sd-bind delegation untouched: <textarea>.value works
+           identically to <input>.value.
+
+       B1. venue (free text) \u2192 venue_type (dropdown). VENUE_TYPES
+           constant: 13 options covering the Indian AV market mix.
+           STRUCTURED_COLS already carried venue_type from a prior
+           pass; this completes the UI side.
+       B2. sales_person / presales_person (display name as text)
+           \u2192 *_id (UUID) routing. SALES_TEAM + PRESALES_TEAM
+           become {value: users.id, label: display_name} arrays.
+           sdSelectField / selectField were already polymorphic on
+           string-vs-object options \u2014 no helper changes needed.
+           Excel/PDF/Step-6 wrap with labelFor() so customer-facing
+           output reads as names, not UUIDs. (Phase A D1: this was
+           one of 8 SOFT_FIELDS that round-trip-lost data.)
+       B3. expected_closure \u2192 close_month + paired DATE conversion.
+           The deal_save RPC casts NULLIF(p->>'close_month','')::DATE,
+           which rejects 'YYYY-MM' from <input type=\"month\"> with
+           Postgres error 22007. buildSavePayload appends '-01' to
+           the YYYY-MM payload; the hydrate path at the raw_submission
+           unpack slices YYYY-MM-DD back to YYYY-MM so the input
+           displays correctly on reopen. Without this pair the rename
+           would replace silent-drop with hard-fail on every save.
+       B4. deal_value input removed (architecturally dead per Phase A:
+           tvONE has no catalog prices \u2192 line totals always 0 \u2192
+           trigger-computed deal_value_inr always 0). History row
+           guard tightened from `!= null` to `> 0` so the column
+           naturally hides for tvONE today and naturally reveals
+           once BrightSign lands with real prices. Validation +
+           Step-6 display + Excel/PDF cell removed.
+       B5. contact_name / contact_phone / contact_email removed.
+           Phase A: RPC ignored all three; no DB columns ever
+           existed. Reps lost three editable fields in v27.1 \u2014
+           acceptable because the destination was /dev/null anyway.
+           Deferred to parties-table flow in v27.2+. Saved-deal
+           accordion carries an inline comment marking the
+           deletion site for the future re-introduction.
+       B6. notes textarea added (saved-deal + wizard Step-1).
+           STRUCTURED_COLS already carried notes; this completes
+           the UI side. Soft cap (no maxlength) since DB column
+           is `text`. Excel renders as merged A:D row; PDF as
+           wrapped paragraph; both skip when empty.
+           F3 (folded into B6): captureStep1Form refactored from
+           a hardcoded 16-field list to SOFT_FIELDS.forEach(...).
+           Eliminates the mirror-drift hazard that was waiting to
+           bite the next field-set change.
+       B7. status / budget / deal_source pruned from STRUCTURED_COLS.
+           RPC has its own defaults (status defaults to 'saved';
+           budget + deal_source accept null). DB columns retained
+           for future use. Frontend-only change.
+       B8. MV recommend paths: chassisDesc \u2192 chassisLabel \u00d7 3
+           (RECOMMEND.mv fixed-chassis line 1263, MTO single-signal
+           line 1312, MTO mixed-input line 1378). Five consumers
+           (Excel/PDF BoM, buildSavePayload description, UI BoM
+           card x2) already read chassisLabel \u2014 only the producer
+           side was misnamed. Fixes blank chassis description on
+           every MV export and save.
+
+      POST-BUNDLE INVARIANTS (enforced by smoke):
+        SOFT_FIELDS length:        13 (was 16)
+        STRUCTURED_COLS length:    13 (was 21)
+        SOFT_FIELDS \u2286 STRUCTURED_COLS: yes
+        SOFT_FIELDS \u2229 STRUCTURAL_FIELDS: \u2205
+
+      SMOKE CONTRACT:
+        Baseline (alpha.9.2)   135
+        +B1-B7 bundle checks   +15  (in __smokeIntegration)
+        +B8 chassisLabel        +3  (in __smoke MV block)
+        ----------------------
+        TOTAL                  153  (sync 137 + await 16)
+
+      ROLLBACK: single-file revert to v27.0.0-alpha.9.2 (no
+      schema changes to undo). Any deal saved with v27.1.0
+      uses post-bundle keys (close_month, sales_person_id, etc.)
+      that don't collide with pre-bundle keys; rolled-back code
+      reads the old keys, sees them absent, renders empty. Value
+      preserved in DB; reappears on re-deploy. No data loss.)
+     ============================================================ */
 
   /* ============================================================
      End of v27.0.0-alpha.9.2
