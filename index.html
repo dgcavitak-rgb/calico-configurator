@@ -4,6 +4,45 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>tvONE Product Selector — v27</title>
+  <!--
+    v27.2.0 — CONTRACT RESTORE (Slice B of v27.2 scope)
+    Date: 2026-05-24. Frontend only; backend unchanged at v26.19.0.
+    Spec: /home/claude/work/SPEC-v27.2-contract-restore.md
+    Inventory: /mnt/project/01-FEATURES.md (D16 + C1 + C2 → ✓ shipped)
+
+    Shipped this version:
+      1. STORE.fetchRoster + roster cache (user_list RPC at login)
+         - new: STORE.fetchRoster, .getRoster, .rosterById, .clearRoster, ._patchCurrentUser
+         - new: UI._userRichFor, ._joinParts, ._normalizePhone, ._profileIncomplete
+         - persists to localStorage.v27.roster; cleared on logout
+      2. D16 Profile Setup Gate (silently dropped in v27 rebuild, now restored)
+         - route-level gate, mirrors must_change pattern (non-dismissible)
+         - 3 fields: professional_title, phone (last-10-digit normalized),
+           email; validated locally to match the gate predicate
+         - 3-failure escape hatch with sessionStorage bypass (session-scoped)
+      3. C1 Cavitak T&C block (contract C1, OP §3.8) — 11 items, in Excel + PDF
+         - text verbatim from BS production 2026-05-06 + tvONE v25.109.1 warranty
+         - new: UI._tncItems(dateStr), UI._formatQuoteDate(Date)
+      4. C2 Sales+Presales contact footer (contract C2, OP §3.9) — in Excel + PDF
+         - reads name/title/phone/email from roster cache per UUID
+         - Sales row, Presales row (skipped when no presales assigned),
+           Escalation row (skipped when viewer is Super), Issued-by row
+      5. Latent bug fix (caught during Item 3): bare labelFor/SALES_TEAM/
+         PRESALES_TEAM references inside EXPORT IIFE could not resolve
+         via lexical scope (EXPORT and UI are sibling IIFEs). Existing
+         v27.1.3 Excel/PDF context row "Salesperson: <uuid>" likely showed
+         raw UUID in production. Now namespaced via UI._labelFor.
+
+    Heads-up for deploy:
+      - 25/26 active users will hit the D16 gate on next login (96%).
+        Send a team WhatsApp before deploying so the modal isn't surprising.
+      - Dipenkumar's phone has +91 prefix in current DB; will normalize
+        to 10 digits when he completes his own gate.
+      - Smoke test plan: SPEC §6 S1-S10.
+
+    Previously: v27.1.3 (3 hot-fix items: F1 LED count synthesis, F2 scroll
+    preserve via sync scrollTo, U1 always-render Audio row).
+  -->
   <style>
     /* ============================================================
        Design tokens — tvONE forest-green / gold / tricolor
@@ -889,7 +928,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.1.3',
+      version: 'v27.2.0',
       constants,
       calico,
       mv,
@@ -1776,6 +1815,71 @@
       } catch (_) { _user = null; }
     })();
 
+    /* ---------- v27.2.0 roster cache (for C2 contact footer + D16 gate) ----------
+       _roster holds the live `public.users` snapshot fetched at login via the
+       user_list RPC. Returns {users:[{id, username, full_name, phone, email,
+       professional_title, org_function, region, permission_tier, is_active}]}.
+       Persisted to localStorage so a page reload doesn't need a refetch before
+       an export render needs designation/phone/email for sales+presales lines.
+       Cleared on logout. */
+    const ROSTER_STORAGE_KEY = 'v27.roster';
+    let _roster = null;
+    (function bootRosterRestore() {
+      try {
+        const raw = localStorage.getItem(ROSTER_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          _roster = Array.isArray(parsed) ? parsed : null;
+        }
+      } catch (_) { _roster = null; }
+    })();
+
+    async function fetchRoster() {
+      // Non-throwing. Errors leave _roster at its prior value (null on first
+      // login, stale on subsequent failed refresh) so callers can fall back
+      // to hardcoded SALES_TEAM/PRESALES_TEAM arrays for label-only display.
+      try {
+        const r = await rpc('user_list', { p_include_inactive: false });
+        if (r && Array.isArray(r.users)) {
+          _roster = r.users;
+          try { localStorage.setItem(ROSTER_STORAGE_KEY, JSON.stringify(_roster)); } catch (_) {}
+        }
+      } catch (e) {
+        console.warn('STORE.fetchRoster failed; using cached roster:', e && e.message || e);
+      }
+      return _roster;
+    }
+
+    function getRoster() { return _roster; }
+
+    function rosterById(uuid) {
+      if (!_roster || !uuid) return null;
+      for (let i = 0; i < _roster.length; i++) {
+        if (_roster[i] && _roster[i].id === uuid) return _roster[i];
+      }
+      return null;
+    }
+
+    function clearRoster() {
+      _roster = null;
+      try { localStorage.removeItem(ROSTER_STORAGE_KEY); } catch (_) {}
+    }
+
+    // v27.2.0 — Patch the in-memory _user with arbitrary fields and
+    // persist to localStorage. Used by the D16 Profile Gate after a
+    // successful profile_update so STORE.currentUser() reflects the
+    // new title/phone/email immediately without a reload. Per OP §2.6,
+    // this is the SINGLE write path for _user mutations — every other
+    // path that ends up reading state.user.{professional_title, phone,
+    // email} should observe the patched value via this.
+    function _patchCurrentUser(patch) {
+      if (!_user || !patch) return _user;
+      _user = Object.assign({}, _user, patch);
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(_user)); } catch (_) {}
+      fireAuthChange();
+      return _user;
+    }
+
     async function login(opts) {
       const o = opts || {};
       const username = String(o.username || '').trim().toLowerCase();
@@ -1799,6 +1903,11 @@
       }
       _user = r.user;
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(_user)); } catch (_) {}
+      // v27.2.0 — Refresh team roster on every login. Non-throwing; failure
+      // just leaves cached roster in place (or null on first-ever login).
+      // This feeds the C2 contact footer in exports and the D16 Profile Gate
+      // that runs after fireAuthChange.
+      await fetchRoster();
       fireAuthChange();
       return _user;
     }
@@ -1806,6 +1915,7 @@
     function logout() {
       _user = null;
       try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+      clearRoster();  // v27.2.0 — drop cached roster on logout for hygiene
       fireAuthChange();
     }
 
@@ -1925,6 +2035,8 @@
       login, logout, currentUser, onAuthChange, changePassword,
       // deals
       saveDeal, loadDeal, listDeals, deleteDeal, restoreDeal,
+      // v27.2.0 — roster cache (for C2 footer + D16 gate)
+      fetchRoster, getRoster, rosterById, clearRoster, _patchCurrentUser,
       // internals exposed for debug only
       _rpc: rpc, _sha256Hex: sha256Hex
     });
@@ -2137,7 +2249,7 @@
       ctxRow(6,  'Venue type',  deal.venue_type,      'City',             deal.city);
       ctxRow(7,  'State',       deal.state,           'Stage',            deal.stage);
       ctxRow(8,  'Lead Origin', deal.lead_source,     'Expected closure', deal.close_month);
-      ctxRow(9,  'Salesperson', labelFor(deal.sales_person_id, SALES_TEAM), 'Presales', labelFor(deal.presales_person_id, PRESALES_TEAM));
+      ctxRow(9,  'Salesperson', UI._labelFor(deal.sales_person_id, UI._SALES_TEAM), 'Presales', UI._labelFor(deal.presales_person_id, UI._PRESALES_TEAM));
 
       // v27.1.1 — Partner contact (Name + Phone + Email). Skip when blank so
       // we don't leave an empty row. Single merged row 10 with all three
@@ -2287,6 +2399,105 @@
         });
       }
 
+      // ---- v27.2.0 — C1 Cavitak T&C / Warranty block ----
+      // Mandatory on every export per OP §3.8 (contract C1). Section
+      // header in BoM-header style, then 11 rows of "Label / Text"
+      // pulled from UI._tncItems with today's date interpolated into
+      // the Validity row.
+      {
+        const _today = UI._formatQuoteDate(new Date());
+        const _tnc   = UI._tncItems(_today);
+
+        curRow += 2;  // spacer above T&C
+        ws.mergeCells(curRow, 1, curRow, 4);
+        const tncHdr = ws.getCell(curRow, 1);
+        tncHdr.value = 'TERMS & CONDITIONS';
+        tncHdr.font  = { bold: true, size: 11, color: { argb: 'FF1F4E1F' }};
+        tncHdr.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F1E8' }};
+        tncHdr.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+        ws.getRow(curRow).height = 20;
+
+        _tnc.forEach(function(pair) {
+          curRow++;
+          const r = ws.getRow(curRow);
+          ws.mergeCells(curRow, 2, curRow, 4);
+          r.getCell(1).value = pair[0];
+          r.getCell(1).font  = { bold: true, size: 9 };
+          r.getCell(1).alignment = { vertical: 'top' };
+          r.getCell(2).value = pair[1];
+          r.getCell(2).font  = { size: 9 };
+          r.getCell(2).alignment = { wrapText: true, vertical: 'top' };
+          // Auto-grow row height for longer items (Forex, Returns,
+          // Cancellation typically wrap on portrait A4).
+          r.height = pair[1].length > 80 ? 28 : 16;
+        });
+      }
+
+      // ---- v27.2.0 — C2 Sales+Presales contact footer ----
+      // Mandatory on every export per OP §3.9. Reads from UI._userRichFor
+      // (live roster) so designation/phone/email come from current DB
+      // values, not the hardcoded SALES_TEAM/PRESALES_TEAM arrays which
+      // only carry names. Skips the presales line when no presales
+      // assignment exists on the deal. Skips the escalation line when
+      // the viewer is a Super user (typically Dipenkumar himself —
+      // avoids the "escalate to yourself" pattern). Issued-by always
+      // renders. Format: "Sales: {name} · {title} · Phone: +91 {10digits} · Email: {email}"
+      {
+        const _viewer  = STORE.currentUser();
+        const _isSuper = _viewer && _viewer.permission_tier === 'super';
+
+        const _composeLine = function(label, uuid, fallbackTeam) {
+          if (!uuid) return null;
+          const rich  = UI._userRichFor(uuid);
+          const name  = (rich && String(rich.full_name || '').trim()) ||
+                        UI._labelFor(uuid, fallbackTeam);
+          if (!name) return null;
+          const title = rich ? String(rich.professional_title || '').trim() : '';
+          const phone = rich ? String(rich.phone || '').trim() : '';
+          const email = rich ? String(rich.email || '').trim() : '';
+          const parts = [
+            name,
+            title,
+            phone ? 'Phone: +91 ' + phone : '',
+            email ? 'Email: ' + email : ''
+          ];
+          return label + ': ' + UI._joinParts(parts, ' \u00b7 ');
+        };
+
+        const _writeRow = function(text, italic) {
+          if (!text) return;
+          curRow++;
+          ws.mergeCells(curRow, 1, curRow, 4);
+          const cell = ws.getCell(curRow, 1);
+          cell.value = text;
+          cell.font  = { size: 9, italic: !!italic, color: { argb: 'FF555555' } };
+          cell.alignment = { wrapText: true };
+        };
+
+        curRow += 2;  // spacer above the block
+
+        _writeRow(_composeLine('Sales',    deal.sales_person_id,    UI._SALES_TEAM));
+        _writeRow(_composeLine('Presales', deal.presales_person_id, UI._PRESALES_TEAM));
+
+        // Escalation line — only when viewer is not Super.
+        if (!_isSuper) {
+          const DIPENKUMAR_UUID = '155b257a-ec1a-4ee9-ac89-31ba47c4c610';
+          const dipRich  = UI._userRichFor(DIPENKUMAR_UUID);
+          const dipTitle = (dipRich && String(dipRich.professional_title || '').trim()) ||
+                           'National Product Lead';
+          const dipPhone = (dipRich && String(dipRich.phone || '').trim()) || '8160756906';
+          const dipEmail = (dipRich && String(dipRich.email || '').trim()) || 'dipen.g@cavitak.com';
+          _writeRow(
+            'For pricing escalation: Dipenkumar Gajjar \u00b7 ' + dipTitle +
+            ' \u00b7 Phone: +91 ' + dipPhone +
+            ' \u00b7 Email: ' + dipEmail,
+            true  // italic
+          );
+        }
+
+        _writeRow('Issued by: Cavitak Marketing Pvt Ltd');
+      }
+
       // ---- Footer (Cavitak attribution) ----
       curRow += 2;
       ws.mergeCells(curRow, 1, curRow, 4);
@@ -2378,7 +2589,7 @@
       ctxRow('Venue type',  deal.venue_type,      'City',             deal.city);
       ctxRow('State',       deal.state,           'Stage',            deal.stage);
       ctxRow('Lead Origin', deal.lead_source,     'Expected closure', deal.close_month);
-      ctxRow('Salesperson', labelFor(deal.sales_person_id, SALES_TEAM), 'Presales', labelFor(deal.presales_person_id, PRESALES_TEAM));
+      ctxRow('Salesperson', UI._labelFor(deal.sales_person_id, UI._SALES_TEAM), 'Presales', UI._labelFor(deal.presales_person_id, UI._PRESALES_TEAM));
 
       // v27.1.1 — Partner contact line. Skip when all three are blank.
       const contactParts = [];
@@ -2547,6 +2758,118 @@
         });
       }
 
+      // ---- v27.2.0 — C1 Cavitak T&C / Warranty block ----
+      // Mandatory on every export per OP §3.8 (contract C1). Same canonical
+      // text source as Excel via UI._tncItems. Pre-wraps to compute block
+      // height + reserves space for the section header so the heading +
+      // first item never sit alone above a page break.
+      {
+        const _today = UI._formatQuoteDate(new Date());
+        const _tnc   = UI._tncItems(_today);
+
+        // Pre-wrap to size the block.
+        const _labelW = 70;
+        const _textW  = W - 2 * M - _labelW - 6;
+        doc.setFontSize(9);
+        const _rows = _tnc.map(function(pair) {
+          const wrap = doc.splitTextToSize(pair[1], _textW);
+          return { label: pair[0], wrap: wrap, h: Math.max(wrap.length * 11, 13) };
+        });
+        const _blockH = 24 + _rows.reduce(function(a, r) { return a + r.h + 4; }, 0);
+
+        // Try to keep header + first item together on the same page.
+        checkPageBreak(Math.min(_blockH, 80));
+        y += 10;
+
+        // Section header band — matches BoM-header style.
+        doc.setFillColor(232, 241, 232);
+        doc.rect(M, y, W - 2 * M, 18, 'F');
+        doc.setTextColor(31, 78, 31);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text('TERMS & CONDITIONS', M + 6, y + 12);
+        y += 22;
+
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(9);
+        _rows.forEach(function(r) {
+          checkPageBreak(r.h + 4);
+          doc.setFont('helvetica', 'bold');
+          doc.text(r.label, M, y);
+          doc.setFont('helvetica', 'normal');
+          doc.text(r.wrap, M + _labelW, y);
+          y += r.h + 4;
+        });
+      }
+
+      // ---- v27.2.0 — C2 Sales+Presales contact footer ----
+      // Mandatory on every export per OP §3.9. Same source-of-truth and
+      // composition as the Excel block. Uses checkPageBreak to ensure
+      // the whole block lands on a single page when room exists; falls
+      // to next page only if Value-adds already pushed close to the bottom.
+      {
+        const _viewer  = STORE.currentUser();
+        const _isSuper = _viewer && _viewer.permission_tier === 'super';
+
+        const _composeLine = function(label, uuid, fallbackTeam) {
+          if (!uuid) return null;
+          const rich  = UI._userRichFor(uuid);
+          const name  = (rich && String(rich.full_name || '').trim()) ||
+                        UI._labelFor(uuid, fallbackTeam);
+          if (!name) return null;
+          const title = rich ? String(rich.professional_title || '').trim() : '';
+          const phone = rich ? String(rich.phone || '').trim() : '';
+          const email = rich ? String(rich.email || '').trim() : '';
+          const parts = [
+            name,
+            title,
+            phone ? 'Phone: +91 ' + phone : '',
+            email ? 'Email: ' + email : ''
+          ];
+          return label + ': ' + UI._joinParts(parts, ' \u00b7 ');
+        };
+
+        const lines = [];
+        const salesLn = _composeLine('Sales',    deal.sales_person_id,    UI._SALES_TEAM);
+        const presLn  = _composeLine('Presales', deal.presales_person_id, UI._PRESALES_TEAM);
+        if (salesLn) lines.push({ text: salesLn, italic: false });
+        if (presLn)  lines.push({ text: presLn,  italic: false });
+        if (!_isSuper) {
+          const DIPENKUMAR_UUID = '155b257a-ec1a-4ee9-ac89-31ba47c4c610';
+          const dipRich  = UI._userRichFor(DIPENKUMAR_UUID);
+          const dipTitle = (dipRich && String(dipRich.professional_title || '').trim()) ||
+                           'National Product Lead';
+          const dipPhone = (dipRich && String(dipRich.phone || '').trim()) || '8160756906';
+          const dipEmail = (dipRich && String(dipRich.email || '').trim()) || 'dipen.g@cavitak.com';
+          lines.push({
+            text: 'For pricing escalation: Dipenkumar Gajjar \u00b7 ' + dipTitle +
+                  ' \u00b7 Phone: +91 ' + dipPhone +
+                  ' \u00b7 Email: ' + dipEmail,
+            italic: true
+          });
+        }
+        lines.push({ text: 'Issued by: Cavitak Marketing Pvt Ltd', italic: false });
+
+        // Pre-wrap to compute block height, then page-break once for the
+        // whole block so contact info isn't split mid-row across pages.
+        doc.setFontSize(9);
+        doc.setTextColor(85, 85, 85);
+        const wrappedLines = lines.map(function(ln) {
+          const wrap = doc.splitTextToSize(ln.text, W - 2 * M);
+          return { wrap: wrap, italic: ln.italic, h: wrap.length * 11 };
+        });
+        const blockH = wrappedLines.reduce(function(a, w) { return a + w.h + 2; }, 8);
+        checkPageBreak(blockH);
+        y += 10;  // spacer above block
+        wrappedLines.forEach(function(w) {
+          doc.setFont('helvetica', w.italic ? 'italic' : 'normal');
+          doc.text(w.wrap, M, y);
+          y += w.h + 2;
+        });
+        // Reset text colour for the per-page footer loop below.
+        doc.setTextColor(0, 0, 0);
+      }
+
       // ---- Footer on every page (set after all content) ----
       const pageCount = doc.internal.getNumberOfPages();
       for (let p = 1; p <= pageCount; p++) {
@@ -2600,8 +2923,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.1.3"',
-      () => CATALOG.version === 'v27.1.3' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.2.0"',
+      () => CATALOG.version === 'v27.2.0' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.1.2 invariants ---------- */
     // §1.2 — HUMAN_LABELS structural shape
@@ -3696,6 +4019,102 @@
       return m ? m.label : uuid;
     }
 
+    // v27.2.0 — Return the full live-roster record for a UUID, or null
+    // when the roster isn't loaded or the UUID isn't found. Reads
+    // through STORE (which manages the cache + localStorage rehydration).
+    // Used by the C2 contact footer in Excel/PDF exports and the D16
+    // Profile Gate to evaluate the current user's field completeness.
+    function userRichFor(uuid) {
+      if (!uuid) return null;
+      if (typeof STORE === 'undefined' || !STORE.rosterById) return null;
+      return STORE.rosterById(uuid);
+    }
+
+    // v27.2.0 — Join an array of values with a separator, dropping
+    // null/empty/whitespace-only entries first. Used by the C2 contact
+    // footer to render "Name · Title · Phone · Email" without leaving
+    // empty " ·  · " segments when a field is blank.
+    function joinParts(parts, sep) {
+      const s = sep || ' \u00b7 ';
+      const clean = (parts || [])
+        .map(p => String(p == null ? '' : p).trim())
+        .filter(p => p.length > 0);
+      return clean.join(s);
+    }
+
+    // v27.2.0 — Normalize a phone-ish string to the last 10 digits.
+    // Strips +91, spaces, hyphens, parens, anything non-digit. Returns
+    // the digits string; the caller validates length === 10. Used on
+    // D16 Profile Gate save before writing to public.users.phone so
+    // every stored phone is in canonical 10-digit form regardless of
+    // how the user typed it.
+    function normalizePhone(raw) {
+      const digits = String(raw || '').replace(/\D+/g, '');
+      return digits.length >= 10 ? digits.slice(-10) : digits;
+    }
+
+    // v27.2.0 — D16 Profile Setup Gate predicate. Returns true when
+    // the user record is missing or invalid for any of the three
+    // mandatory fields that feed the C2 Sales+Presales contact footer
+    // in exports. Called by the router (post-login + on every nav)
+    // and by the login submit handler to decide whether to route to
+    // the gate screen. Conservative: any of NULL / blank / shape-wrong
+    // triggers the gate, since a half-filled profile renders the
+    // C2 footer half-blank for every quote that user creates.
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const PHONE_RE = /^[0-9]{10}$/;
+    function profileIncomplete(u) {
+      if (!u) return false;  // not-logged-in path is handled upstream
+      // v27.2.0 — Session-scoped bypass set by the "Skip for now"
+      // escape hatch after 3 failed RPC saves. Lets a trapped user
+      // continue working; gate re-fires on next browser session.
+      try {
+        if (sessionStorage.getItem('v27.profileSkip') === '1') return false;
+      } catch (_) {}
+      const title = String(u.professional_title || '').trim();
+      const phone = String(u.phone || '').trim();
+      const email = String(u.email || '').trim();
+      if (!title) return true;
+      if (!PHONE_RE.test(phone)) return true;
+      if (!EMAIL_RE.test(email)) return true;
+      return false;
+    }
+
+    // v27.2.0 — Cavitak T&C / Warranty block (contract C1, OP §3.8).
+    // Single source of truth for the 11 standard quote terms; both
+    // EXPORT.excel and EXPORT.pdf consume this via UI._tncItems(dateStr).
+    // Text is verbatim from BS production 2026-05-06 with the tvONE
+    // warranty correction locked at v25.109.1 ("5-year OEM warranty
+    // on tvONE products"). Date is computed per-call so each quote
+    // carries its issue date in the Validity line.
+    function tncItems(dateStr) {
+      const _date = String(dateStr || '').trim() || 'today';
+      return [
+        ['Payment Terms', '100% advance along with purchase order'],
+        ['Delivery',      'Ex-warehouse, 30 days from receipt of confirmed PO & advance payment'],
+        ['Warranty',      'Standard 5-year OEM warranty on tvONE products. Warranty card issued on delivery.'],
+        ['Validity',      '15 days from quote date (' + _date + '). Pricing subject to revision thereafter.'],
+        ['Taxes',         'GST @ 18% included above. Any additional levies, cess or local duties extra at actuals.'],
+        ['Forex',         'Pricing based on prevailing INR\u2013USD rate on quote date. Material forex movement (>3%) before PO may revise pricing.'],
+        ['Stock Validity','Stock subject to prior sale. Confirmation of availability at the time of PO placement.'],
+        ['Installation',  'Commissioning, integration & on-site support quoted separately on request.'],
+        ['Cancellation',  'Orders once placed are non-cancellable. Advance payment is non-refundable for despatched/in-transit goods.'],
+        ['Returns',       'Returns accepted only for manufacturing defects within warranty terms. No returns on commercially correct supplies.'],
+        ['Jurisdiction',  'All disputes subject to Ahmedabad jurisdiction. Indian law applies.']
+      ];
+    }
+
+    // v27.2.0 — Format a Date as "DD MMM YYYY" for the T&C Validity line.
+    // Locale-stable: avoids the locale-sniffing surprises of
+    // toLocaleDateString() on jsdom / older Android Chrome where the
+    // 'en-IN' tag occasionally falls back to en-US ordering.
+    function formatQuoteDate(d) {
+      const dt = d instanceof Date ? d : new Date();
+      const dd = String(dt.getDate()).padStart(2, '0');
+      const mm = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dt.getMonth()];
+      return dd + ' ' + mm + ' ' + dt.getFullYear();
+    }
+
     // SX editorial labels — locked alpha.7.0 to match real CATALOG.sx products.
     // Previous labels (HDMI/SDI/AP-536/AVIP) were fictional carryovers from a
     // stale planning doc and didn't reflect what CATALOG.sx.{hdbt,da,ap,aoc}
@@ -4202,6 +4621,7 @@
     let historyState = { filter: 'all', limit: 20, offset: 0, total: 0 };
     let loginMode = 'login';
     let pendingForcedUser = null;
+    let pendingProfileUser = null;  // v27.2.0 — D16 gate
 
     const WIZ_KEY = 'v27.wizard.draft';
 
@@ -4400,8 +4820,22 @@
       pendingForcedUser = user;
       renderLogin();
     }
+    // v27.2.0 — D16 Profile Setup Gate. Mirrors showForcePw: same login-card
+    // shell, different inner form. Non-dismissible by design (no close, no
+    // ESC, no backdrop) — exits only via successful profile_update save or
+    // via the explicit "Sign out instead" button.
+    function showProfileSetup(user) {
+      showChrome(false);
+      loginMode = 'force-profile';
+      pendingProfileUser = user;
+      renderLogin();
+    }
 
     function renderLogin() {
+      const inner =
+        loginMode === 'force-pw'      ? renderForcePwForm() :
+        loginMode === 'force-profile' ? renderProfileSetupForm() :
+                                        renderLoginForm();
       const html =
         '<div class="login-bg">' +
           '<div class="login-card">' +
@@ -4410,7 +4844,7 @@
               '<div style="font-size:18px;font-weight:700;text-align:center;">tvONE Product Selector</div>' +
               '<div class="ver-tag">' + esc(CATALOG.version) + '</div>' +
             '</div>' +
-            (loginMode === 'force-pw' ? renderForcePwForm() : renderLoginForm()) +
+            inner +
           '</div>' +
         '</div>';
       setRoot(html);
@@ -4466,6 +4900,58 @@
           '</div>' +
           '<button class="btn btn-block" type="submit" id="btn-pwchange">Update password</button>' +
         '</form>' +
+        '<div class="sp-12"></div>' +
+        '<button class="btn btn-text btn-block" type="button" data-action="logout">' +
+          'Sign out instead' +
+        '</button>';
+    }
+
+    // v27.2.0 — D16 Profile Setup Gate form. Three required fields:
+    // professional_title, phone (10-digit normalized), email. Pre-fills
+    // from pendingProfileUser when any field already has a value
+    // (partial-fill cases — e.g. only phone was missing). Non-dismissible
+    // except via Sign out. After 3 failed save attempts, an "Skip for
+    // now" escape hatch appears (rendered conditionally by the submit
+    // handler via showProfileSetupSkip()).
+    function renderProfileSetupForm() {
+      const u = pendingProfileUser || {};
+      const t = esc(String(u.professional_title || '').trim());
+      const p = esc(String(u.phone || '').trim());
+      const em = esc(String(u.email || '').trim());
+      return '' +
+        '<div class="banner info">' +
+          '<strong>Complete your profile.</strong> A few details are needed ' +
+          'before you can create or share quotes. These appear on every BoM ' +
+          'you generate, for sales and presales credit on quotes.' +
+        '</div>' +
+        '<div class="field"><label>Signed in as</label>' +
+          '<div class="mono">' + esc(u.username || u.full_name || '') + '</div></div>' +
+        '<form id="profile-setup-form" autocomplete="off" novalidate>' +
+          '<div class="field" id="f-prof-title">' +
+            '<label for="i-prof-title">Professional title</label>' +
+            '<input id="i-prof-title" type="text" maxlength="80" ' +
+                   'placeholder="e.g. National Product Lead, Sr Presales" ' +
+                   'value="' + t + '" required>' +
+            '<div class="err" hidden></div>' +
+          '</div>' +
+          '<div class="field" id="f-prof-phone">' +
+            '<label for="i-prof-phone">Phone</label>' +
+            '<input id="i-prof-phone" type="tel" inputmode="numeric" ' +
+                   'placeholder="10-digit number" value="' + p + '" required>' +
+            '<div class="help">+91 prefix, spaces, and hyphens accepted &mdash; ' +
+              'stored as 10 digits.</div>' +
+            '<div class="err" hidden></div>' +
+          '</div>' +
+          '<div class="field" id="f-prof-email">' +
+            '<label for="i-prof-email">Email</label>' +
+            '<input id="i-prof-email" type="email" autocomplete="email" ' +
+                   'placeholder="name@cavitak.com" value="' + em + '" required>' +
+            '<div class="err" hidden></div>' +
+          '</div>' +
+          '<button class="btn btn-block" type="submit" id="btn-prof-save">' +
+            'Save and continue</button>' +
+        '</form>' +
+        '<div id="prof-skip-wrap"></div>' +
         '<div class="sp-12"></div>' +
         '<button class="btn btn-text btn-block" type="button" data-action="logout">' +
           'Sign out instead' +
@@ -6940,6 +7426,7 @@
         if (f.id === 'login-form')       { e.preventDefault(); APP.handleLoginSubmit(); return; }
         if (f.id === 'pw-form')          { e.preventDefault(); APP.handleForcePwSubmit(); return; }
         if (f.id === 'profile-pw-form')  { e.preventDefault(); APP.handleProfilePwSubmit(); return; }
+        if (f.id === 'profile-setup-form') { e.preventDefault(); APP.handleProfileSetupSubmit(); return; }  // v27.2.0 — D16
         if (f.id === 'step1-form')       { e.preventDefault(); APP.wizNext(); return; }
       });
     }
@@ -6958,7 +7445,7 @@
 
     return {
       mount, toast, openSheet, closeSheet,
-      showLogin, showForcePw,
+      showLogin, showForcePw, showProfileSetup,
       showHome, showHistory, showProfile, showSavedDeal, showWizard,
       updateNavActive, showChrome,
       // expose for APP
@@ -6988,6 +7475,16 @@
       _labelFor:           labelFor,
       _SALES_TEAM:         SALES_TEAM,
       _PRESALES_TEAM:      PRESALES_TEAM,
+      // v27.2.0 — expose roster + helpers for EXPORT (sibling IIFE, no
+      // shared scope). C2 contact footer uses _userRichFor to look up
+      // designation/phone/email per uuid; _joinParts skips blanks in
+      // composed text lines. Same expose-via-UI pattern as _labelFor.
+      _userRichFor:        userRichFor,
+      _joinParts:          joinParts,
+      _normalizePhone:     normalizePhone,
+      _profileIncomplete:  profileIncomplete,
+      _tncItems:           tncItems,
+      _formatQuoteDate:    formatQuoteDate,
       // v27.1.1 — N1, N2, N7, N8, N12 smoke checks need these constants
       // and helper. Same expose-via-UI pattern.
       _VENUE_TYPES:        VENUE_TYPES,
@@ -7058,6 +7555,13 @@
         UI.showForcePw(u);
         return;
       }
+      // v27.2.0 — D16 Profile Setup Gate. After PW change, before any nav.
+      // Blocks the app until professional_title + phone + email are populated
+      // and valid. These fields feed the C2 contact footer on every export.
+      if (profileIncomplete(u)) {
+        UI.showProfileSetup(u);
+        return;
+      }
       if (!initialHash || initialHash === '#/' || initialHash === '#/login') {
         location.hash = '#/home';
       } else {
@@ -7078,6 +7582,13 @@
       // change before going anywhere else.
       if (u && u.must_change && hash !== '#/login') {
         UI.showForcePw(u);
+        return;
+      }
+      // v27.2.0 — D16 Profile Setup Gate. Same shape as the must_change
+      // guard but fires after PW is set. Any in-app navigation while
+      // profile is incomplete bounces back to the gate screen.
+      if (u && profileIncomplete(u) && hash !== '#/login') {
+        UI.showProfileSetup(u);
         return;
       }
 
@@ -7143,6 +7654,11 @@
         if (user.must_change) {
           UI.showForcePw(user);
           UI.toast('Please set a new password.', 'default');
+        } else if (profileIncomplete(user)) {
+          // v27.2.0 — D16 Profile Setup Gate. Logged in OK but missing
+          // title/phone/email — block until completed.
+          UI.showProfileSetup(user);
+          UI.toast('A few profile details are needed first.', 'default');
         } else {
           UI.toast('Welcome, ' + (user.full_name || user.username) + '!', 'ok');
           location.hash = '#/home';
@@ -7197,6 +7713,126 @@
         const msg = (e && e.message) ? e.message : 'Password change failed.';
         UI.setFieldError('f-oldpw', msg);
         UI.toast(msg, 'err');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
+    }
+
+    // v27.2.0 — D16 Profile Setup Gate submit handler. Validates the 3
+    // fields locally, normalizes the phone to canonical 10 digits, calls
+    // profile_update, then patches STORE._user via _patchCurrentUser so
+    // the gate clears without a reload. Refreshes the roster cache in
+    // the background. After 3 consecutive RPC failures, an escape hatch
+    // appears so the user can continue working with a stale profile;
+    // the gate will re-fire on next browser session.
+    let _profileSetupAttempts = 0;
+    async function handleProfileSetupSubmit() {
+      const titleI = document.getElementById('i-prof-title');
+      const phoneI = document.getElementById('i-prof-phone');
+      const emailI = document.getElementById('i-prof-email');
+      const btn    = document.getElementById('btn-prof-save');
+      if (!titleI || !phoneI || !emailI || !btn) return;
+
+      UI.setFieldError('f-prof-title', null);
+      UI.setFieldError('f-prof-phone', null);
+      UI.setFieldError('f-prof-email', null);
+
+      const titleRaw = String(titleI.value || '').trim();
+      const phoneRaw = String(phoneI.value || '').trim();
+      const emailRaw = String(emailI.value || '').trim();
+      const phone10  = normalizePhone(phoneRaw);
+
+      // Validation mirrors profileIncomplete() so a successful save can
+      // never re-trigger the gate.
+      let firstError = null;
+      if (!titleRaw) {
+        UI.setFieldError('f-prof-title', 'Required.');
+        firstError = firstError || 'i-prof-title';
+      } else if (titleRaw.length > 80) {
+        UI.setFieldError('f-prof-title', 'Keep under 80 characters.');
+        firstError = firstError || 'i-prof-title';
+      }
+      if (!PHONE_RE.test(phone10)) {
+        UI.setFieldError('f-prof-phone',
+          phone10.length < 10
+            ? 'Enter 10 digits (+91 / spaces / hyphens are accepted).'
+            : 'Phone must be 10 digits.');
+        firstError = firstError || 'i-prof-phone';
+      }
+      if (!EMAIL_RE.test(emailRaw)) {
+        UI.setFieldError('f-prof-email', 'Enter a valid email address.');
+        firstError = firstError || 'i-prof-email';
+      }
+      if (firstError) {
+        const input = document.getElementById(firstError);
+        if (input) input.focus();
+        return;
+      }
+
+      const u = pendingProfileUser || STORE.currentUser();
+      if (!u || !u.id) {
+        UI.toast('Session error — please sign in again.', 'err');
+        return;
+      }
+
+      btn.disabled = true;
+      const orig = btn.textContent;
+      btn.textContent = 'Loading\u2026';
+      try {
+        const r = await STORE._rpc('profile_update', {
+          p_actor: u.id,
+          p_payload: {
+            professional_title: titleRaw,
+            phone:              phone10,
+            email:              emailRaw
+          }
+        });
+        if (!r || r.ok !== true) {
+          throw new Error((r && r.error) || 'Profile save failed.');
+        }
+        // OP §2.6 — single canonical write path for state.user mutations.
+        STORE._patchCurrentUser({
+          professional_title: titleRaw,
+          phone:              phone10,
+          email:              emailRaw
+        });
+        // Refresh roster cache so C2 footer reads the new values on
+        // any export rendered later this session.
+        STORE.fetchRoster();   // intentionally not awaited — UX speed
+        _profileSetupAttempts = 0;
+        try { sessionStorage.removeItem('v27.profileSkip'); } catch (_) {}
+        UI.toast('Profile saved. Welcome aboard!', 'ok');
+        location.hash = '#/home';
+      } catch (e) {
+        _profileSetupAttempts += 1;
+        const msg = (e && e.message) ? e.message : 'Profile save failed.';
+        UI.setFieldError('f-prof-email', msg);
+        UI.toast(msg, 'err');
+        // After 3 failures, expose the skip escape hatch.
+        if (_profileSetupAttempts >= 3) {
+          const wrap = document.getElementById('prof-skip-wrap');
+          if (wrap && !wrap.querySelector('button')) {
+            wrap.innerHTML =
+              '<div class="sp-12"></div>' +
+              '<div class="tiny muted t-center" style="margin-bottom:6px;">' +
+                'Backend seems unavailable. You can continue without saving — ' +
+                'we\u2019ll ask again on next login.</div>' +
+              '<button class="btn btn-text btn-block" type="button" ' +
+                'id="btn-prof-skip">Skip for now</button>';
+            const skipBtn = document.getElementById('btn-prof-skip');
+            if (skipBtn) {
+              skipBtn.addEventListener('click', function() {
+                console.warn('[v27.2 D16] Profile save skipped after ' +
+                  _profileSetupAttempts + ' failed attempts for ' +
+                  (u && u.username));
+                try { sessionStorage.setItem('v27.profileSkip', '1'); } catch (_) {}
+                UI.toast('Continuing without saving. Will ask again next login.', 'default');
+                location.hash = '#/home';
+              });
+            }
+          }
+        }
       } finally {
         btn.disabled = false;
         btn.textContent = orig;
@@ -7373,7 +8009,7 @@
 
     return {
       start, onRouteChange,
-      handleLoginSubmit, handleForcePwSubmit, handleProfilePwSubmit,
+      handleLoginSubmit, handleForcePwSubmit, handleProfilePwSubmit, handleProfileSetupSubmit,
       wizNext, wizBack, wizBuild, wizSave,
       // alpha.7.1: UI.showSavedDeal needs to compute BoM from loaded deal data.
       // computeReco accepts wizardData-shaped object and STORE.loadDeal returns
