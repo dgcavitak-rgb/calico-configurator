@@ -5,6 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>tvONE Product Selector — v27</title>
   <!--
+    v27.2.1 — HOTFIX (2026-05-24, same-day as v27.2.0)
+    Bug: blank screen for any logged-in user after v27.2.0 deploy.
+    Root cause: 7 bare cross-IIFE references inside APP IIFE to UI-private
+    symbols. start() called `profileIncomplete(u)` which is defined in UI
+    IIFE — sibling scope, not reachable by bare name. ReferenceError
+    aborted start() before any view rendered. Same bug class as the
+    pre-existing labelFor latent bug fixed in v27.2.0, but introduced
+    BY v27.2.0 itself. OP §2.14 self-violation.
+
+    Fix: 7 surgical str_replace edits in APP scope:
+      - 3x profileIncomplete(...)  → UI._profileIncomplete(...)
+      - 1x normalizePhone(...)     → UI._normalizePhone(...)
+      - 1x PHONE_RE.test(...)      → inlined /^[0-9]{10}$/
+      - 1x EMAIL_RE.test(...)      → inlined /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      - 1x pendingProfileUser || STORE.currentUser()  →  STORE.currentUser()
+    No functionality change; same C1+C2+D16 behaviour as v27.2.0 intended.
+
     v27.2.0 — CONTRACT RESTORE (Slice B of v27.2 scope)
     Date: 2026-05-24. Frontend only; backend unchanged at v26.19.0.
     Spec: /home/claude/work/SPEC-v27.2-contract-restore.md
@@ -928,7 +945,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.2.0',
+      version: 'v27.2.1',
       constants,
       calico,
       mv,
@@ -2923,8 +2940,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.2.0"',
-      () => CATALOG.version === 'v27.2.0' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.2.1"',
+      () => CATALOG.version === 'v27.2.1' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.1.2 invariants ---------- */
     // §1.2 — HUMAN_LABELS structural shape
@@ -7558,7 +7575,9 @@
       // v27.2.0 — D16 Profile Setup Gate. After PW change, before any nav.
       // Blocks the app until professional_title + phone + email are populated
       // and valid. These fields feed the C2 contact footer on every export.
-      if (profileIncomplete(u)) {
+      // v27.2.1 — namespaced via UI._profileIncomplete; bare reference crashed
+      // start() at boot for any logged-in user (cross-IIFE scope, OP §2.14).
+      if (UI._profileIncomplete(u)) {
         UI.showProfileSetup(u);
         return;
       }
@@ -7587,7 +7606,8 @@
       // v27.2.0 — D16 Profile Setup Gate. Same shape as the must_change
       // guard but fires after PW is set. Any in-app navigation while
       // profile is incomplete bounces back to the gate screen.
-      if (u && profileIncomplete(u) && hash !== '#/login') {
+      // v27.2.1 — namespaced via UI._profileIncomplete (OP §2.14).
+      if (u && UI._profileIncomplete(u) && hash !== '#/login') {
         UI.showProfileSetup(u);
         return;
       }
@@ -7654,9 +7674,10 @@
         if (user.must_change) {
           UI.showForcePw(user);
           UI.toast('Please set a new password.', 'default');
-        } else if (profileIncomplete(user)) {
+        } else if (UI._profileIncomplete(user)) {
           // v27.2.0 — D16 Profile Setup Gate. Logged in OK but missing
           // title/phone/email — block until completed.
+          // v27.2.1 — namespaced (OP §2.14).
           UI.showProfileSetup(user);
           UI.toast('A few profile details are needed first.', 'default');
         } else {
@@ -7741,7 +7762,14 @@
       const titleRaw = String(titleI.value || '').trim();
       const phoneRaw = String(phoneI.value || '').trim();
       const emailRaw = String(emailI.value || '').trim();
-      const phone10  = normalizePhone(phoneRaw);
+      // v27.2.1 — UI._normalizePhone via namespace; bare normalizePhone()
+      // crashed the D16 save (cross-IIFE scope, OP §2.14).
+      const phone10  = UI._normalizePhone(phoneRaw);
+      // v27.2.1 — Inlined regex literals. Originals (EMAIL_RE / PHONE_RE)
+      // live in UI scope and aren't reachable bare from APP. Inlining is
+      // lighter than adding two more UI exports just for two regexes.
+      const _PHONE_RE = /^[0-9]{10}$/;
+      const _EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
       // Validation mirrors profileIncomplete() so a successful save can
       // never re-trigger the gate.
@@ -7753,14 +7781,14 @@
         UI.setFieldError('f-prof-title', 'Keep under 80 characters.');
         firstError = firstError || 'i-prof-title';
       }
-      if (!PHONE_RE.test(phone10)) {
+      if (!_PHONE_RE.test(phone10)) {
         UI.setFieldError('f-prof-phone',
           phone10.length < 10
             ? 'Enter 10 digits (+91 / spaces / hyphens are accepted).'
             : 'Phone must be 10 digits.');
         firstError = firstError || 'i-prof-phone';
       }
-      if (!EMAIL_RE.test(emailRaw)) {
+      if (!_EMAIL_RE.test(emailRaw)) {
         UI.setFieldError('f-prof-email', 'Enter a valid email address.');
         firstError = firstError || 'i-prof-email';
       }
@@ -7770,7 +7798,10 @@
         return;
       }
 
-      const u = pendingProfileUser || STORE.currentUser();
+      // v27.2.1 — `pendingProfileUser` lives in UI scope; APP cannot read
+      // it by bare name. Drop the fallback — STORE.currentUser() is the
+      // authoritative source (the gate only fires for a logged-in user).
+      const u = STORE.currentUser();
       if (!u || !u.id) {
         UI.toast('Session error — please sign in again.', 'err');
         return;
