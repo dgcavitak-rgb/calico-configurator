@@ -889,7 +889,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.1.2',
+      version: 'v27.1.3',
       constants,
       calico,
       mv,
@@ -2600,20 +2600,24 @@
       }
     }
 
-    check('CATALOG.version === "v27.1.2"',
-      () => CATALOG.version === 'v27.1.2' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.1.3"',
+      () => CATALOG.version === 'v27.1.3' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.1.2 invariants ---------- */
     // §1.2 — HUMAN_LABELS structural shape
+    // v27.1.3 S1 — route via UI.* since both live inside the UI IIFE closure
+    // and aren't reachable as bare globals from the smoke harness scope.
+    // v27.1.3 S2 — wrap the &&-chain in !!() so the check function gets a
+    // boolean (it requires === true) instead of the last truthy operand.
     check('v27.1.2 §1.2: HUMAN_LABELS has calico_inputs/outputs + sx_data',
-      () => (typeof HUMAN_LABELS === 'object'
-        && HUMAN_LABELS.calico_inputs && HUMAN_LABELS.calico_outputs
-        && HUMAN_LABELS.sx_data) || 'missing namespace');
+      () => !!(typeof UI.HUMAN_LABELS === 'object'
+        && UI.HUMAN_LABELS.calico_inputs && UI.HUMAN_LABELS.calico_outputs
+        && UI.HUMAN_LABELS.sx_data) || 'missing namespace');
     check('v27.1.2 §1.2: humanizeNamespace formats with \u00d7',
-      () => humanizeNamespace('calico_inputs', { hdmi4k: 2, hdmiFhd: 2 }) === 'HDMI 4K \u00d7 2, HDMI FHD \u00d7 2'
-        || 'got: ' + humanizeNamespace('calico_inputs', { hdmi4k: 2, hdmiFhd: 2 }));
+      () => UI.humanizeNamespace('calico_inputs', { hdmi4k: 2, hdmiFhd: 2 }) === 'HDMI 4K \u00d7 2, HDMI FHD \u00d7 2'
+        || 'got: ' + UI.humanizeNamespace('calico_inputs', { hdmi4k: 2, hdmiFhd: 2 }));
     check('v27.1.2 §1.2: humanizeNamespace returns "none" for empty',
-      () => humanizeNamespace('calico_inputs', {}) === 'none' || 'got: ' + humanizeNamespace('calico_inputs', {}));
+      () => UI.humanizeNamespace('calico_inputs', {}) === 'none' || 'got: ' + UI.humanizeNamespace('calico_inputs', {}));
     // #7 — corio_canvases default + STRUCTURAL_FIELDS entry
     check('v27.1.2 #7: defaultWizard().corio_canvases === 0',
       () => UI.defaultWizard().corio_canvases === 0
@@ -2666,16 +2670,21 @@
     check('v27.1.2 #4b: recommendCorio return has meta.io',
       () => {
         const r = RECOMMEND.corio({ inputs: { 'HDMI 4K': 1 }, outputs: { 'HDMI 4K': 1 } });
-        return (r && r.meta && r.meta.io && r.meta.io.inputs)
+        // v27.1.3 S2 — coerce truthy chain to boolean
+        return !!(r && r.meta && r.meta.io && r.meta.io.inputs)
           || 'got: ' + JSON.stringify(r && r.meta && r.meta.io);
       });
     check('v27.1.2 #4b: recommendMv fixed path has meta.io',
       () => {
+        // v27.1.3 S3 — MV input modules are keyed '4K HDMI' (not 'HDMI 4K'
+        // which is CORIO vocabulary). Wrong key fell through to error path
+        // which has no meta.io, so the test failed for a fake reason.
         const r = RECOMMEND.mv({
-          inputs: [{ signal: 'HDMI 4K', qty: 1 }],
+          inputs: [{ signal: '4K HDMI', qty: 1 }],
           outputSignal: '4K HDMI'
         });
-        return (r && r.meta && r.meta.io && r.meta.io.inputs)
+        // v27.1.3 S2 — coerce truthy chain to boolean
+        return !!(r && r.meta && r.meta.io && r.meta.io.inputs)
           || 'got: ' + JSON.stringify(r && r.meta && r.meta.io);
       });
 
@@ -4219,6 +4228,20 @@
       } catch (e) { /* silent */ }
     }, 350);
 
+    // v27.1.3 S5 — synchronous flush of the current wizardData to localStorage.
+    // Bypasses the 350ms debounce on saveDraft. Used by the saveDraft round-trip
+    // smoke test so it can read localStorage immediately after writing. Safe to
+    // call from production code paths too (e.g. before navigating away), though
+    // currently only the smoke harness uses it.
+    function flushDraft() {
+      try {
+        if (!wizardData) return;
+        const o = Object.assign({}, wizardData);
+        delete o.reco; delete o.errors;
+        localStorage.setItem(WIZ_KEY, JSON.stringify(o));
+      } catch (e) { /* silent */ }
+    }
+
     function clearDraft() {
       try { localStorage.removeItem(WIZ_KEY); } catch (e) {}
       wizardData = defaultWizard();
@@ -5365,6 +5388,18 @@
       renderWizard();
     }
 
+    // v27.1.3 F2 — Wrapper that re-renders the wizard while preserving the
+    // current scroll position. Used at all in-step state mutation sites
+    // (steppers, toggles, MV row add/remove). The bare renderWizard() does
+    // setRoot(html) → wholesale innerHTML replace, which resets scrollY to
+    // 0. Step-navigation handlers (wiz-jump, wiz-new, hydration mount) keep
+    // calling renderWizard() directly — scroll-to-top is correct there.
+    function rerenderPreservingScroll() {
+      const y = window.scrollY || window.pageYOffset || 0;
+      renderWizard();
+      requestAnimationFrame(function() { window.scrollTo(0, y); });
+    }
+
     function renderWizard() {
       const d = wizardData;
       const visibleSteps = computeVisibleSteps(d);
@@ -5880,11 +5915,20 @@
         // Filter projectorRes (not a count field) before humanizing.
         const outForHuman = Object.assign({}, d.calico_outputs);
         delete outForHuman.projectorRes;
+        // v27.1.3 F1 — synthesize LED count into outForHuman so the Outputs
+        // row renders it. Canonical state lives in d.screens (length) +
+        // d.hasLed — calico_outputs.led is not written by v27.1.2 #3 LED
+        // stepper. This synthesis is display-only; does not write back.
+        // HUMAN_LABELS.calico_outputs.led = 'LED Screen' already exists.
+        if (d.hasLed && Array.isArray(d.screens) && d.screens.length > 0) {
+          outForHuman.led = d.screens.length;
+        }
         add('Inputs',  humanizeNamespace('calico_inputs',  d.calico_inputs),  3);
         add('Outputs', humanizeNamespace('calico_outputs', outForHuman),      3);
-        // calico_audio still read here for v27.1.1 deals; v27.1.2 #3 moves it
-        // into calico_outputs.audio and removes this top-level branch.
-        if (d.calico_audio) add('Audio', 'Yes', 3);
+        // v27.1.3 U1 — always render Audio row (was conditional-hidden when
+        // off). calico_audio still read for v27.1.1 deals; v27.1.2 #3 moves
+        // canonical state into the Step 3 Audio toggle (still d.calico_audio).
+        add('Audio', d.calico_audio ? 'Yes' : 'No', 3);
       } else if (d.solutionType === 'mv') {
         // MV signal names already human-readable from CATALOG.mv keys
         // ("HDMI 4K", "SDI 12G" etc.) so just swap ':' separator for '\u00d7'.
@@ -6218,7 +6262,7 @@
           const v = actEl.getAttribute('data-value');
           wizardData.solutionType = v;
           saveDraft();
-          renderWizard();
+          rerenderPreservingScroll();
           return;
         }
 
@@ -6237,7 +6281,7 @@
             _resizeScreens(next);
             wizardData.hasLed = (next > 0);
             saveDraft();
-            renderWizard();
+            rerenderPreservingScroll();
             return;
           }
           // v27.1.2 #7 — synthetic 'corio_canvases' stepper writes top-level
@@ -6247,7 +6291,7 @@
             const delta = action === 'step-inc' ? 1 : -1;
             wizardData.corio_canvases = Math.max(0, cur + delta);
             saveDraft();
-            renderWizard();
+            rerenderPreservingScroll();
             return;
           }
           if (ns) {
@@ -6257,7 +6301,7 @@
             // bare key — currently unused for steppers; reserved
           }
           saveDraft();
-          renderWizard();
+          rerenderPreservingScroll();
           return;
         }
 
@@ -6271,7 +6315,7 @@
             wizardData[key] = !wizardData[key];
           }
           saveDraft();
-          renderWizard();
+          rerenderPreservingScroll();
           return;
         }
 
@@ -6316,14 +6360,14 @@
           if (_dist.size >= 2) return;
           wizardData.mv_inputs.push({ signal: '', qty: 1 });
           saveDraft();
-          renderWizard();
+          rerenderPreservingScroll();
           return;
         }
         if (action === 'mv-input-remove') {
           const idx = parseInt(actEl.getAttribute('data-idx'), 10);
           wizardData.mv_inputs.splice(idx, 1);
           saveDraft();
-          renderWizard();
+          rerenderPreservingScroll();
           return;
         }
         if (action === 'mv-input-inc' || action === 'mv-input-dec') {
@@ -6333,7 +6377,7 @@
           row.qty = (Number(row.qty) || 0) + (action === 'mv-input-inc' ? 1 : -1);
           if (row.qty < 0) row.qty = 0;
           saveDraft();
-          renderWizard();
+          rerenderPreservingScroll();
           return;
         }
 
@@ -6745,7 +6789,7 @@
             _resizeScreens(safe);
             wizardData.hasLed = (safe > 0);
             saveDraft();
-            renderWizard();
+            rerenderPreservingScroll();
             return;
           }
           // v27.1.2 #7 — corio_canvases direct typing.
@@ -6916,6 +6960,10 @@
       getWizardData: () => wizardData,
       setWizardData: (d) => { wizardData = d; },
       loadDraft, clearDraft, saveDraft: () => saveDraft(),
+      // v27.1.3 S5 — synchronous flush of draft, bypasses debounce. Used by
+      // the saveDraft round-trip smoke test which reads localStorage
+      // immediately after writing.
+      flushDraft,
       defaultWizard,
       hydrateWizardFromDeal,
       renderWizard,
@@ -6943,6 +6991,12 @@
       _autoFillStateFromCity: autoFillStateFromCity,
       // helpers
       esc, fmtINR, debounce,
+      // v27.1.3 S1 — expose humanize map + helper for smoke harness reach.
+      // Both live inside the UI IIFE closure; smoke harness lives outside,
+      // so direct reference fails. Step 6 Review uses these internally;
+      // production behaviour unchanged.
+      HUMAN_LABELS,
+      humanizeNamespace,
       // smoke renderer
       _renderSmokeOutput: renderSmokeOutput
     };
@@ -7455,7 +7509,10 @@
     v = UI.validateStep(d4);
     check('Step 4 validation: hasLed=true with no screens fails',
       () => (!v.ok && !!v.errors.screens) || 'errors: ' + JSON.stringify(v.errors));
-    d4.screens = [{ w: 1920, h: 1080 }];
+    // v27.1.3 S4 — pitch is required after v27.1.2 #5. Stale test data was
+    // missing the field so validation correctly rejected it. Added 1.5mm
+    // (mid-range value; passes the 0.50-50.00 mm guard).
+    d4.screens = [{ w: 1920, h: 1080, pitch: 1.5 }];
     v = UI.validateStep(d4);
     check('Step 4 validation: one 1920x1080 screen passes',
       () => v.ok || 'errors: ' + JSON.stringify(v.errors));
@@ -7492,10 +7549,10 @@
         const d = UI.defaultWizard();
         d.project = 'Smoke-UI-Roundtrip';
         UI.setWizardData(d);
-        UI.saveDraft();
-        // saveDraft is debounced; the implementation also exposes via direct call
-        // here we wait a tick by checking the raw key
-        // We accept either: localStorage has the key, or in-memory state still has it.
+        // v27.1.3 S5 — flushDraft writes synchronously, bypassing the 350ms
+        // debounce on saveDraft. Smoke previously read localStorage before
+        // the debounced write fired, getting the previous deal's draft.
+        UI.flushDraft();
         const raw = localStorage.getItem('v27.wizard.draft');
         const ok = !raw || (raw.indexOf('Smoke-UI-Roundtrip') > -1);
         // Restore
@@ -8115,7 +8172,8 @@
       () => {
         const ahm = APP._CITIES.find(c => c.city === 'Ahmedabad');
         const oth = APP._CITIES.find(c => c.city === 'Other');
-        return (APP._CITIES.length >= 150 && ahm && ahm.state === 'Gujarat' && oth)
+        // v27.1.3 S2 — coerce truthy chain to boolean
+        return !!(APP._CITIES.length >= 150 && ahm && ahm.state === 'Gujarat' && oth)
           || 'len=' + APP._CITIES.length +
              ' ahm=' + JSON.stringify(ahm) +
              ' oth=' + JSON.stringify(oth);
@@ -8358,6 +8416,36 @@
   };
 
   /* ============================================================
+     v27.1.3 S6 — __smokeRunAll() aggregator
+
+     Convenience runner referenced by the v27.1.2 deploy handoff doc but
+     never actually built. Sequences every sync + async smoke harness in
+     order, sums pass/fail counts, console.table()s a per-suite breakdown,
+     and returns a structured result.
+
+     __smokeStore() is intentionally excluded — it signs the user out at
+     the end, which would interrupt any subsequent UI tests. Call it
+     separately when you specifically want to validate STORE.
+     ============================================================ */
+  window.__smokeRunAll = async function() {
+    const results = [];
+    results.push(Object.assign({ name: 'core'        }, window.__smoke()));
+    results.push(Object.assign({ name: 'ui'          }, window.__smokeUI()));
+    results.push(Object.assign({ name: 'integration' }, window.__smokeIntegration()));
+    results.push(Object.assign({ name: 'export'      }, window.__smokeExport()));
+    results.push(Object.assign({ name: 'exportAsync' }, await window.__smokeExportAsync()));
+    const totalPass = results.reduce(function(s, r) { return s + r.pass; }, 0);
+    const totalFail = results.reduce(function(s, r) { return s + r.fail; }, 0);
+    try {
+      console.table(results.map(function(r) {
+        return { suite: r.name, pass: r.pass, fail: r.fail };
+      }));
+    } catch (e) { /* console.table unsupported in some envs */ }
+    console.log('SMOKE TOTAL: ' + totalPass + ' passed, ' + totalFail + ' failed');
+    return { results: results, totalPass: totalPass, totalFail: totalFail, ok: totalFail === 0 };
+  };
+
+  /* ============================================================
      Boot
      Mounts UI then starts APP router. Runs as soon as the
      containing <script> executes (script is at end of body, so
@@ -8365,6 +8453,71 @@
      ============================================================ */
   UI.mount();
   APP.start();
+
+  /* ============================================================
+     v27.1.3 — Hotfix on top of v27.1.2 prod test (24-25 May 2026)
+     Scope: 2 real frontend bugs + 1 UX request + 6 smoke harness
+     corrections found during v27.1.2 prod test cycle on Z Fold.
+     Frontend only, no backend touch. Single chat. Spec lock:
+     v27_1_3-SPEC-AND-DEPLOY.md.
+
+     REAL FRONTEND BUGS:
+      F1  Step 6 Outputs row was showing "none" when LED screens
+          were active, because the v27.1.2 #3 LED stepper writes
+          to d.screens.length + d.hasLed but never to
+          d.calico_outputs.led (which humanizeNamespace reads).
+          Synthesize outForHuman.led = d.screens.length at the
+          Step 6 humanize site. Display-only; canonical state
+          stays in d.screens.
+
+      F2  Scroll-jump on every Step 3 in-step mutation (steppers,
+          toggles, MV row +/-/add/remove). Cause: bare
+          renderWizard() → setRoot() → wholesale innerHTML
+          replace → browser resets scrollY to 0. Fix: new
+          rerenderPreservingScroll() helper that captures scrollY
+          before re-render and restores via rAF. Swapped at 9
+          in-step mutation sites in the dispatch block.
+          Step-navigation sites (wiz-jump, wiz-new, hydration
+          mount) keep calling bare renderWizard() — scroll-to-top
+          is correct there.
+
+     UX REQUEST:
+      U1  Step 6 Audio row always renders Yes/No. Was
+          conditional-hidden when d.calico_audio false. Symmetric
+          with the Step 3 toggle state; cleaner side-by-side
+          review.
+
+     SMOKE HARNESS CORRECTIONS (no feature changes; tests were
+     wrong, not the features):
+      S1  Expose HUMAN_LABELS + humanizeNamespace on UI public
+          API. Both live inside the UI IIFE closure; smoke
+          harness lives outside; bare reference was failing.
+      S2  Wrap 3 &&-chain truthy-test assertions in !!() so
+          check() (which requires === true) sees a boolean
+          instead of the last truthy operand. Sites: recommend-
+          Corio meta.io, recommendMv meta.io, CITIES N8.
+      S3  MV recommendMv smoke fixture used signal 'HDMI 4K'
+          (CORIO vocabulary) when MV input modules are keyed
+          '4K HDMI'. Wrong key → recommendMv error path → no
+          meta.io → smoke fails for a fake reason. Fixed.
+      S4  Step 4 validation smoke fixture was missing the pitch
+          field, which v27.1.2 #5 made mandatory. Added
+          pitch: 1.5 (mid-range, well within 0.50-50.00 bounds).
+      S5  saveDraft is debounced 350ms; smoke read localStorage
+          immediately after, getting the previous draft. Added
+          flushDraft() — synchronous variant — and exposed on UI.
+          Smoke now calls UI.flushDraft() instead of
+          UI.saveDraft().
+      S6  __smokeRunAll() aggregator added. Referenced by the
+          v27.1.2 deploy handoff doc but never built. Sequences
+          all sync + async smoke harnesses (excluding
+          __smokeStore which signs the user out), console.tables
+          per-suite breakdown, returns structured result.
+
+     VERSION BUMP: CATALOG.version v27.1.2 → v27.1.3. Header pill
+     reads v27.1.3 (auto via $('ver-pill').textContent =
+     CATALOG.version).
+     ============================================================ */
 
   /* ============================================================
      v27.1.2 — Test-cycle remediation (24 May 2026)
