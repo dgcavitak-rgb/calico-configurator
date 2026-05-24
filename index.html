@@ -5,6 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>tvONE Product Selector — v27</title>
   <!--
+    v27.2.2 — FLOW REORDER (2026-05-25, post-v27.2.1 verified-clean deploy)
+    User feedback after v27.2.1 ship: the gate order was wrong. Profile
+    fields should be collected on the very first login (default-PW
+    session), BEFORE the user sets their own password — not after. Also,
+    partial-fill must be tolerated: a user who fills only email and
+    leaves the rest blank should save what they filled, and the gate
+    should re-fire on next login asking only for what's still missing.
+    And after the force-PW change succeeds, the session must end so the
+    user signs back in with their new password.
+
+    Changes:
+      A. Order swap in 3 sites (start, onRouteChange, handleLoginSubmit):
+         Profile gate now fires BEFORE force-PW gate.
+      B. handleProfileSetupSubmit rewritten:
+         - Validates each filled field individually; empty fields are
+           skipped, not errored.
+         - Builds the profile_update payload conditionally — only sends
+           keys for filled-and-valid fields. The RPC's existing COALESCE
+           semantics preserve DB values for keys we don't send. (Option A
+           of two; backend RPC unchanged.)
+         - At-least-one valid field required to submit; nudge toast if
+           all blank.
+         - After save, re-checks profileIncomplete on the patched user.
+           If still incomplete → re-render the gate with what's left.
+           If complete + must_change → route to force-PW gate.
+           If complete + !must_change → route to home (normal flow).
+      C. handleForcePwSubmit: on success, STORE.logout() + UI.showLogin()
+         + toast "Please sign in with your new password." Voluntary PW
+         changes (handleProfilePwSubmit) unchanged — still stay logged in.
+      D. Form copy softened: removed `required` HTML attrs, banner now
+         says "Fill what you can now — we'll ask again next login for
+         anything you skip."
+
+    Audit-gate (six checks A-F per OP §1.9) ran clean before this hand-off.
+
     v27.2.1 — HOTFIX (2026-05-24, same-day as v27.2.0)
     Bug: blank screen for any logged-in user after v27.2.0 deploy.
     Root cause: 7 bare cross-IIFE references inside APP IIFE to UI-private
@@ -945,7 +980,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.2.1',
+      version: 'v27.2.2',
       constants,
       calico,
       mv,
@@ -2940,8 +2975,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.2.1"',
-      () => CATALOG.version === 'v27.2.1' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.2.2"',
+      () => CATALOG.version === 'v27.2.2' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.1.2 invariants ---------- */
     // §1.2 — HUMAN_LABELS structural shape
@@ -4937,9 +4972,10 @@
       const em = esc(String(u.email || '').trim());
       return '' +
         '<div class="banner info">' +
-          '<strong>Complete your profile.</strong> A few details are needed ' +
-          'before you can create or share quotes. These appear on every BoM ' +
-          'you generate, for sales and presales credit on quotes.' +
+          '<strong>Complete your profile.</strong> These details appear on ' +
+          'every BoM you generate so customers know who issued the quote. ' +
+          '<br><span class="tiny muted">Fill what you can now &mdash; we&rsquo;ll ' +
+          'ask again next login for anything you skip.</span>' +
         '</div>' +
         '<div class="field"><label>Signed in as</label>' +
           '<div class="mono">' + esc(u.username || u.full_name || '') + '</div></div>' +
@@ -4948,13 +4984,13 @@
             '<label for="i-prof-title">Professional title</label>' +
             '<input id="i-prof-title" type="text" maxlength="80" ' +
                    'placeholder="e.g. National Product Lead, Sr Presales" ' +
-                   'value="' + t + '" required>' +
+                   'value="' + t + '">' +
             '<div class="err" hidden></div>' +
           '</div>' +
           '<div class="field" id="f-prof-phone">' +
             '<label for="i-prof-phone">Phone</label>' +
             '<input id="i-prof-phone" type="tel" inputmode="numeric" ' +
-                   'placeholder="10-digit number" value="' + p + '" required>' +
+                   'placeholder="10-digit number" value="' + p + '">' +
             '<div class="help">+91 prefix, spaces, and hyphens accepted &mdash; ' +
               'stored as 10 digits.</div>' +
             '<div class="err" hidden></div>' +
@@ -4962,7 +4998,7 @@
           '<div class="field" id="f-prof-email">' +
             '<label for="i-prof-email">Email</label>' +
             '<input id="i-prof-email" type="email" autocomplete="email" ' +
-                   'placeholder="name@cavitak.com" value="' + em + '" required>' +
+                   'placeholder="name@cavitak.com" value="' + em + '">' +
             '<div class="err" hidden></div>' +
           '</div>' +
           '<button class="btn btn-block" type="submit" id="btn-prof-save">' +
@@ -7567,18 +7603,19 @@
         }
         return;
       }
-      // Auth — must_change short-circuits to force-PW
-      if (u.must_change) {
-        UI.showForcePw(u);
-        return;
-      }
-      // v27.2.0 — D16 Profile Setup Gate. After PW change, before any nav.
-      // Blocks the app until professional_title + phone + email are populated
-      // and valid. These fields feed the C2 contact footer on every export.
-      // v27.2.1 — namespaced via UI._profileIncomplete; bare reference crashed
-      // start() at boot for any logged-in user (cross-IIFE scope, OP §2.14).
+      // v27.2.2 — Order swap: Profile gate fires BEFORE force-PW gate.
+      // We want title/phone/email collected on the very first login while
+      // the default-password session is still alive. PW change happens
+      // afterwards. The Profile gate is partial-fill tolerant — any one
+      // field saved is progress, and the gate re-fires next login for
+      // whatever is still missing.
       if (UI._profileIncomplete(u)) {
         UI.showProfileSetup(u);
+        return;
+      }
+      // After profile gate clears (fully filled), force-PW takes over.
+      if (u.must_change) {
+        UI.showForcePw(u);
         return;
       }
       if (!initialHash || initialHash === '#/' || initialHash === '#/login') {
@@ -7597,18 +7634,15 @@
         location.hash = '#/login';
         return;
       }
+      // v27.2.2 — Order swap mirrors start(): Profile gate before force-PW.
+      if (u && UI._profileIncomplete(u) && hash !== '#/login') {
+        UI.showProfileSetup(u);
+        return;
+      }
       // Forced-PW guard: any logged-in user with must_change must finish PW
       // change before going anywhere else.
       if (u && u.must_change && hash !== '#/login') {
         UI.showForcePw(u);
-        return;
-      }
-      // v27.2.0 — D16 Profile Setup Gate. Same shape as the must_change
-      // guard but fires after PW is set. Any in-app navigation while
-      // profile is incomplete bounces back to the gate screen.
-      // v27.2.1 — namespaced via UI._profileIncomplete (OP §2.14).
-      if (u && UI._profileIncomplete(u) && hash !== '#/login') {
-        UI.showProfileSetup(u);
         return;
       }
 
@@ -7671,15 +7705,15 @@
       btn.textContent = 'Signing in\u2026';
       try {
         const user = await STORE.login({ username, password });
-        if (user.must_change) {
+        // v27.2.2 — Order swap: Profile gate fires before force-PW so the
+        // user fills title/phone/email on first login before setting their
+        // own password. Both routers (start + onRouteChange) mirror this.
+        if (UI._profileIncomplete(user)) {
+          UI.showProfileSetup(user);
+          UI.toast('A few profile details first.', 'default');
+        } else if (user.must_change) {
           UI.showForcePw(user);
           UI.toast('Please set a new password.', 'default');
-        } else if (UI._profileIncomplete(user)) {
-          // v27.2.0 — D16 Profile Setup Gate. Logged in OK but missing
-          // title/phone/email — block until completed.
-          // v27.2.1 — namespaced (OP §2.14).
-          UI.showProfileSetup(user);
-          UI.toast('A few profile details are needed first.', 'default');
         } else {
           UI.toast('Welcome, ' + (user.full_name || user.username) + '!', 'ok');
           location.hash = '#/home';
@@ -7728,8 +7762,17 @@
       btn.textContent = 'Updating\u2026';
       try {
         await STORE.changePassword({ oldPassword: oldPw, newPassword: newPw });
-        UI.toast('Password updated. Welcome aboard.', 'ok');
-        location.hash = '#/home';
+        // v27.2.2 — Force-PW success path: close the session and return
+        // the user to the login screen. They sign back in with their
+        // new password. Establishes the password as a real credential
+        // (typed on the login form, not just inside the change-PW form)
+        // and creates a clean session boundary after the default-PW
+        // handoff. Voluntary PW changes (handleProfilePwSubmit) keep
+        // the user logged in — only the first-login forced change ends
+        // the session.
+        STORE.logout();
+        UI.showLogin();
+        UI.toast('Password updated. Please sign in with your new password.', 'ok');
       } catch (e) {
         const msg = (e && e.message) ? e.message : 'Password change failed.';
         UI.setFieldError('f-oldpw', msg);
@@ -7762,45 +7805,62 @@
       const titleRaw = String(titleI.value || '').trim();
       const phoneRaw = String(phoneI.value || '').trim();
       const emailRaw = String(emailI.value || '').trim();
-      // v27.2.1 — UI._normalizePhone via namespace; bare normalizePhone()
-      // crashed the D16 save (cross-IIFE scope, OP §2.14).
+      // v27.2.1 — UI._normalizePhone via namespace.
       const phone10  = UI._normalizePhone(phoneRaw);
-      // v27.2.1 — Inlined regex literals. Originals (EMAIL_RE / PHONE_RE)
-      // live in UI scope and aren't reachable bare from APP. Inlining is
-      // lighter than adding two more UI exports just for two regexes.
+      // v27.2.1 — Inlined regex literals.
       const _PHONE_RE = /^[0-9]{10}$/;
       const _EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-      // Validation mirrors profileIncomplete() so a successful save can
-      // never re-trigger the gate.
+      // v27.2.2 — Partial-fill tolerant validation.
+      //   - Empty field: skipped entirely (not saved, not errored). DB
+      //     keeps whatever it already had (RPC uses COALESCE).
+      //   - Filled field: must validate. If invalid → block submit with
+      //     inline error; user must either fix it or clear it.
+      //   - At least ONE valid field is required to submit; otherwise
+      //     "Save and continue" has nothing to do and we leave the gate
+      //     up rather than no-op-saving.
+      const payload = {};
       let firstError = null;
-      if (!titleRaw) {
-        UI.setFieldError('f-prof-title', 'Required.');
-        firstError = firstError || 'i-prof-title';
-      } else if (titleRaw.length > 80) {
-        UI.setFieldError('f-prof-title', 'Keep under 80 characters.');
-        firstError = firstError || 'i-prof-title';
+
+      if (titleRaw.length > 0) {
+        if (titleRaw.length > 80) {
+          UI.setFieldError('f-prof-title', 'Keep under 80 characters.');
+          firstError = firstError || 'i-prof-title';
+        } else {
+          payload.professional_title = titleRaw;
+        }
       }
-      if (!_PHONE_RE.test(phone10)) {
-        UI.setFieldError('f-prof-phone',
-          phone10.length < 10
-            ? 'Enter 10 digits (+91 / spaces / hyphens are accepted).'
-            : 'Phone must be 10 digits.');
-        firstError = firstError || 'i-prof-phone';
+      if (phoneRaw.length > 0) {
+        if (!_PHONE_RE.test(phone10)) {
+          UI.setFieldError('f-prof-phone',
+            phone10.length < 10
+              ? 'Enter 10 digits (+91 / spaces / hyphens are accepted).'
+              : 'Phone must be 10 digits.');
+          firstError = firstError || 'i-prof-phone';
+        } else {
+          payload.phone = phone10;
+        }
       }
-      if (!_EMAIL_RE.test(emailRaw)) {
-        UI.setFieldError('f-prof-email', 'Enter a valid email address.');
-        firstError = firstError || 'i-prof-email';
+      if (emailRaw.length > 0) {
+        if (!_EMAIL_RE.test(emailRaw)) {
+          UI.setFieldError('f-prof-email', 'Enter a valid email address.');
+          firstError = firstError || 'i-prof-email';
+        } else {
+          payload.email = emailRaw;
+        }
       }
       if (firstError) {
         const input = document.getElementById(firstError);
         if (input) input.focus();
         return;
       }
+      // All-blank → nothing to save. Nudge the user; keep the gate up.
+      if (Object.keys(payload).length === 0) {
+        UI.toast('Fill at least one field to save progress.', 'default');
+        titleI.focus();
+        return;
+      }
 
-      // v27.2.1 — `pendingProfileUser` lives in UI scope; APP cannot read
-      // it by bare name. Drop the fallback — STORE.currentUser() is the
-      // authoritative source (the gate only fires for a logged-in user).
       const u = STORE.currentUser();
       if (!u || !u.id) {
         UI.toast('Session error — please sign in again.', 'err');
@@ -7812,27 +7872,40 @@
       btn.textContent = 'Loading\u2026';
       try {
         const r = await STORE._rpc('profile_update', {
-          p_actor: u.id,
-          p_payload: {
-            professional_title: titleRaw,
-            phone:              phone10,
-            email:              emailRaw
-          }
+          p_actor:   u.id,
+          p_payload: payload   // only filled-and-valid keys; RPC COALESCEs the rest
         });
         if (!r || r.ok !== true) {
           throw new Error((r && r.error) || 'Profile save failed.');
         }
         // OP §2.6 — single canonical write path for state.user mutations.
-        STORE._patchCurrentUser({
-          professional_title: titleRaw,
-          phone:              phone10,
-          email:              emailRaw
-        });
-        // Refresh roster cache so C2 footer reads the new values on
-        // any export rendered later this session.
-        STORE.fetchRoster();   // intentionally not awaited — UX speed
+        // Only patch fields we actually sent (partial-fill: DB and local
+        // state must stay aligned — never patch what we didn't save).
+        STORE._patchCurrentUser(payload);
+        // Refresh roster cache so any export rendered this session reads
+        // the new values.
+        STORE.fetchRoster();   // not awaited — UX speed
         _profileSetupAttempts = 0;
         try { sessionStorage.removeItem('v27.profileSkip'); } catch (_) {}
+
+        // v27.2.2 — Re-check profile completeness against the freshly
+        // patched user. If anything's still missing (partial save),
+        // stay on the gate so the user can finish. If complete, hand
+        // off: must_change still true → force-PW gate next; otherwise
+        // → home.
+        const patched = STORE.currentUser();
+        if (UI._profileIncomplete(patched)) {
+          UI.toast('Saved. A few more details when you have a moment.', 'ok');
+          // Re-render the gate with the freshly-patched user so any
+          // newly-filled fields display correctly + missing ones remain.
+          UI.showProfileSetup(patched);
+          return;
+        }
+        if (patched && patched.must_change) {
+          UI.toast('Profile saved. Now set a new password.', 'ok');
+          UI.showForcePw(patched);
+          return;
+        }
         UI.toast('Profile saved. Welcome aboard!', 'ok');
         location.hash = '#/home';
       } catch (e) {
