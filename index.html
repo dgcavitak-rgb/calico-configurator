@@ -2195,6 +2195,33 @@
       font-variant-numeric: tabular-nums;
     }
 
+    /* v27.3.0 — Funnel rows are clickable buttons; jump to History filtered to stage */
+    .funnel-row-btn {
+      appearance: none;
+      width: 100%;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      padding: 4px 6px;
+      margin: 0 -6px;
+      border-radius: var(--r-sm);
+      transition: background var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-spring);
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .funnel-row-btn:hover { background: var(--bg-subtle); }
+    .funnel-row-btn:active { transform: scale(0.99); }
+    .funnel-row-btn.funnel-row-empty {
+      cursor: default;
+      opacity: 0.55;
+    }
+    .funnel-row-btn.funnel-row-empty:hover { background: transparent; }
+    .funnel-row-btn.funnel-row-empty:active { transform: none; }
+    .funnel-row-btn .funnel-stage {
+      font-weight: 600;
+    }
+
     /* Region tiles */
     .region-grid {
       display: grid; gap: 8px;
@@ -2465,6 +2492,49 @@
     }
     .home-dash-link:hover { background: var(--accent-soft); }
 
+    /* --- v27.3.0 Home empty state (new users) --- */
+    .home-empty {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .home-empty-art {
+      width: 80px; height: 80px;
+      border-radius: 20px;
+      background: var(--accent-soft);
+      color: var(--accent-deep);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-bottom: 16px;
+    }
+    .home-empty-title {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 18px;
+      color: var(--ink-strong);
+      margin: 0 0 6px 0;
+      letter-spacing: -0.01em;
+    }
+    .home-empty-body {
+      font-size: 13.5px;
+      color: var(--ink-soft);
+      margin: 0 0 18px 0;
+      max-width: 280px;
+      line-height: 1.45;
+    }
+    .home-empty-cta {
+      appearance: none; border: none;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 18px;
+      background: var(--accent); color: var(--ink-on-brand);
+      border-radius: var(--r-pill);
+      font-family: var(--font-display); font-weight: 600; font-size: 13.5px;
+      cursor: pointer;
+      box-shadow: 0 3px 12px rgba(232,115,28,0.32);
+      transition: transform var(--dur-fast) var(--ease-spring), background var(--dur-base) var(--ease-out);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .home-empty-cta:hover { background: var(--accent-deep); }
+    .home-empty-cta:active { transform: scale(0.97); }
+
     /* --- v27.3.0 Stage transitions timeline --- */
     .st-timeline {
       padding: 16px 18px 12px 18px;
@@ -2700,6 +2770,48 @@
       margin-bottom: 10px;
       letter-spacing: 0.005em;
     }
+
+    /* --- v27.3.0 Skeleton loaders --- */
+    .skeleton {
+      background: linear-gradient(90deg,
+        var(--bg-subtle) 0%,
+        color-mix(in srgb, var(--bg-subtle) 60%, var(--bg-card) 40%) 50%,
+        var(--bg-subtle) 100%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.4s ease-in-out infinite;
+      border-radius: var(--r-xs);
+      display: block;
+    }
+    @supports not (background: color-mix(in srgb, red 50%, blue)) {
+      .skeleton { background: var(--bg-subtle); }
+    }
+    @keyframes skeleton-shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .skeleton { animation: none; }
+    }
+    .skeleton-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px;
+      border-bottom: 0.5px solid var(--border-soft);
+    }
+    .skeleton-row:last-child { border-bottom: none; }
+    .skeleton-circle  { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; }
+    .skeleton-text    { height: 12px; }
+    .skeleton-text-sm { height: 9px; }
+    .skeleton-card {
+      padding: 14px;
+      border-radius: var(--r-md);
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+    }
+    .skeleton-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (min-width: 720px) { .skeleton-grid { grid-template-columns: repeat(4, 1fr); } }
 
     /* --- v27.3.0 NOTIFICATION SHEET (D6-D9 restore) --- */
     .notif-sheet { padding: 4px 0 16px; }
@@ -7657,7 +7769,7 @@
             '<h3>Notifications</h3>' +
             '<button class="btn-v3 btn-ghost btn-sm" type="button" data-action="notif-mark-all">Mark all read</button>' +
           '</div>' +
-          '<div id="notif-list"><div class="muted small" style="padding:16px;text-align:center">Loading\u2026</div></div>' +
+          '<div id="notif-list">' + _skelDealRows(3) + '</div>' +
         '</div>'
       );
       try {
@@ -7705,7 +7817,7 @@
             '<h3>Audit Log</h3>' +
             (opts.refId ? '<span class="chip-v3 chip-info">' + esc(opts.refId) + '</span>' : '') +
           '</div>' +
-          '<div id="audit-list"><div class="muted small" style="padding:16px;text-align:center">Loading\u2026</div></div>' +
+          '<div id="audit-list">' + _skelDealRows(3) + '</div>' +
         '</div>'
       );
       try {
@@ -7745,7 +7857,7 @@
             '<h3>Revisions</h3>' +
             (refId ? '<span class="chip-v3 chip-info">' + esc(refId) + '</span>' : '') +
           '</div>' +
-          '<div id="rev-list"><div class="muted small" style="padding:16px;text-align:center">Loading\u2026</div></div>' +
+          '<div id="rev-list">' + _skelDealRows(3) + '</div>' +
         '</div>'
       );
       try {
@@ -7788,7 +7900,7 @@
             '<h3>Stage history</h3>' +
             (refId ? '<span class="chip-v3 chip-info">' + esc(refId) + '</span>' : '') +
           '</div>' +
-          '<div id="st-list"><div class="muted small" style="padding:16px;text-align:center">Loading\u2026</div></div>' +
+          '<div id="st-list">' + _skelDealRows(3) + '</div>' +
         '</div>'
       );
       try {
@@ -7896,7 +8008,7 @@
       openSheet(
         '<div class="notif-sheet">' +
           '<div class="notif-sheet-head"><h3>Pending password resets</h3></div>' +
-          '<div id="rp-pending"><div class="muted small" style="padding:16px;text-align:center">Loading\u2026</div></div>' +
+          '<div id="rp-pending">' + _skelDealRows(3) + '</div>' +
         '</div>'
       );
       try {
@@ -8413,7 +8525,7 @@
                 '<a data-nav="#/history" class="home-link">See all \u2192</a>' +
               '</span>' +
             '</header>' +
-            '<div id="home-recent"><div class="muted small" style="padding:16px">Loading\u2026</div></div>' +
+            '<div id="home-recent">' + _skelDealRows(4) + '</div>' +
           '</section>' +
 
           /* ---- Footer cue to dashboard ---- */
@@ -8554,7 +8666,7 @@
               '<span class="meta">By stage</span>' +
             '</header>' +
             '<div id="stage-funnel" class="stage-funnel">' +
-              '<div class="muted small" style="padding:24px;text-align:center">Loading\u2026</div>' +
+              _skelFunnel() +
             '</div>' +
           '</section>' +
 
@@ -8565,7 +8677,7 @@
                   '<span class="meta">' + (isSuper ? 'Pan-India' : 'Your zones') + '</span>' +
                 '</header>' +
                 '<div id="region-tiles" class="region-grid">' +
-                  '<div class="muted small" style="padding:24px;text-align:center;grid-column:1/-1">Loading\u2026</div>' +
+                  _skelRegionGrid() +
                 '</div>' +
               '</section>'
             : '') +
@@ -8576,7 +8688,7 @@
               '<span class="meta">Stuck + slipped open deals</span>' +
             '</header>' +
             '<div id="stuck-table" class="stuck-table-wrap">' +
-              '<div class="muted small" style="padding:24px;text-align:center">Loading\u2026</div>' +
+              _skelDealRows(4) +
             '</div>' +
           '</section>' +
         '</div>'
@@ -8810,16 +8922,30 @@
         'Closed Won':         '#22C55E',
         'Closed Lost':        '#94A3B8'
       };
+      // v27.3.0 — Map stages to History filters so the row is tappable
+      // and jumps to a pre-filtered Quotes list.
+      const stageToFilter = {
+        'Qualified':          'open',  // no per-stage filter yet; closest is "open"
+        'Proposal':           'open',
+        'Budget Approval':    'open',
+        'Technical Approval': 'open',
+        'Negotiation':        'open',
+        'Awarded':            'open',
+        'Closed Won':         'won',
+        'Closed Lost':        'lost'
+      };
       host.innerHTML = stageOrder.map(function (s) {
         const ct = counts[s];
         const pct = Math.max(2, Math.round(ct * 100 / max));
-        return '<div class="funnel-row">' +
-          '<span class="funnel-stage">' + esc(s) + '</span>' +
+        const navHref = '#/history?filter=' + stageToFilter[s] + '&stage=' + encodeURIComponent(s);
+        const isEmpty = ct === 0;
+        return '<button class="funnel-row funnel-row-btn' + (isEmpty ? ' funnel-row-empty' : '') + '" type="button" data-nav="' + esc(navHref) + '"' + (isEmpty ? ' aria-disabled="true"' : '') + '>' +
+          '<span class="funnel-stage" style="color:' + stageColor[s] + '">' + esc(s) + '</span>' +
           '<div class="funnel-bar-wrap">' +
             '<div class="funnel-bar" style="width:' + pct + '%;background:' + stageColor[s] + '"></div>' +
           '</div>' +
           '<span class="funnel-count">' + ct + '</span>' +
-        '</div>';
+        '</button>';
       }).join('');
     }
 
@@ -8929,6 +9055,74 @@
     }
 
     function setText(id, v) { const el = $(id); if (el) el.textContent = v; }
+
+    /* v27.3.0 — Skeleton placeholder helpers.
+       Use to replace "Loading…" text with shimmer placeholders. */
+    function _skelDealRows(n) {
+      n = n || 4;
+      let out = '<div class="deal-list-card" style="border:1px solid var(--border-soft);border-radius:var(--r-md);overflow:hidden">';
+      for (let i = 0; i < n; i++) {
+        out += '<div class="skeleton-row">' +
+          '<span class="skeleton skeleton-circle"></span>' +
+          '<div style="flex:1;display:flex;flex-direction:column;gap:6px">' +
+            '<span class="skeleton skeleton-text" style="width:' + (45 + (i*9)%30) + '%"></span>' +
+            '<span class="skeleton skeleton-text-sm" style="width:' + (25 + (i*5)%20) + '%"></span>' +
+          '</div>' +
+          '<span class="skeleton" style="width:48px;height:14px;border-radius:8px"></span>' +
+        '</div>';
+      }
+      out += '</div>';
+      return out;
+    }
+    function _skelStatTiles(n) {
+      n = n || 4;
+      let cards = '';
+      for (let i = 0; i < n; i++) {
+        cards +=
+          '<div class="skeleton-card">' +
+            '<div style="display:flex;align-items:flex-start;gap:10px">' +
+              '<span class="skeleton" style="width:36px;height:36px;border-radius:10px"></span>' +
+              '<div style="flex:1;display:flex;flex-direction:column;gap:8px;margin-top:2px">' +
+                '<span class="skeleton skeleton-text" style="width:50%;height:22px"></span>' +
+                '<span class="skeleton skeleton-text-sm" style="width:75%"></span>' +
+                '<span class="skeleton skeleton-text-sm" style="width:55%"></span>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+      }
+      return '<div class="skeleton-grid">' + cards + '</div>';
+    }
+    function _skelFunnel() {
+      let out = '';
+      const widths = [88, 72, 60, 50, 40, 30, 22, 12];
+      for (let i = 0; i < 8; i++) {
+        out +=
+          '<div style="display:grid;gap:10px;grid-template-columns:100px 1fr 32px;align-items:center;margin-bottom:8px">' +
+            '<span class="skeleton skeleton-text" style="width:80%"></span>' +
+            '<span class="skeleton" style="height:18px;width:' + widths[i] + '%;border-radius:9px"></span>' +
+            '<span class="skeleton skeleton-text" style="width:60%"></span>' +
+          '</div>';
+      }
+      return '<div style="padding:14px 16px">' + out + '</div>';
+    }
+    function _skelRegionGrid() {
+      let cards = '';
+      for (let i = 0; i < 4; i++) {
+        cards +=
+          '<div class="skeleton-card" style="padding:12px">' +
+            '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">' +
+              '<span class="skeleton" style="width:8px;height:8px;border-radius:50%"></span>' +
+              '<span class="skeleton skeleton-text" style="width:30%"></span>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">' +
+              '<div><span class="skeleton skeleton-text-sm" style="width:60%;margin-bottom:4px"></span><span class="skeleton" style="height:16px;width:40%"></span></div>' +
+              '<div><span class="skeleton skeleton-text-sm" style="width:60%;margin-bottom:4px"></span><span class="skeleton" style="height:16px;width:40%"></span></div>' +
+              '<div><span class="skeleton skeleton-text-sm" style="width:60%;margin-bottom:4px"></span><span class="skeleton" style="height:16px;width:40%"></span></div>' +
+            '</div>' +
+          '</div>';
+      }
+      return cards;
+    }
     function _fmtLakh(n) {
       n = Number(n) || 0;
       if (n >= 10000000) return '\u20B9' + (n / 10000000).toFixed(2).replace(/\.?0+$/, '') + ' Cr';
@@ -8946,11 +9140,22 @@
         if (!host) return;
         if (rows.length === 0) {
           host.innerHTML =
-            '<div class="empty">' +
-              '<div class="ico">\uD83D\uDCCB</div>' +
-              '<div>No saved deals yet.</div>' +
-              '<div class="sp-12"></div>' +
-              '<button class="btn" data-nav="#/quote/new" type="button">Start your first quote</button>' +
+            '<div class="home-empty">' +
+              '<div class="home-empty-art">' +
+                '<svg viewBox="0 0 64 64" width="64" height="64" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' +
+                  '<path d="M14 8h28l8 8v36a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4z"/>' +
+                  '<path d="M42 8v8h8"/>' +
+                  '<line x1="18" y1="28" x2="42" y2="28"/>' +
+                  '<line x1="18" y1="36" x2="42" y2="36"/>' +
+                  '<line x1="18" y1="44" x2="34" y2="44"/>' +
+                '</svg>' +
+              '</div>' +
+              '<h3 class="home-empty-title">Build your first quote</h3>' +
+              '<p class="home-empty-body">No deals yet. Start a new BoM \u2014 the wizard takes about a minute to fill in.</p>' +
+              '<button class="home-empty-cta" type="button" data-nav="#/quote/new">' +
+                '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+                ' Start your first quote' +
+              '</button>' +
             '</div>';
           return;
         }
@@ -9019,10 +9224,12 @@
     function showHistory() {
       showChrome(true);
       updateNavActive('#/history');
-      // Parse filter from URL query if present (e.g. #/history?filter=stuck)
+      // Parse filter + stage from URL query
+      // (e.g. #/history?filter=stuck or #/history?filter=open&stage=Proposal)
       const hash = location.hash || '';
       const queryStart = hash.indexOf('?');
       let urlFilter = null;
+      let urlStage  = null;
       if (queryStart >= 0) {
         const query = hash.slice(queryStart + 1);
         query.split('&').forEach(function (kv) {
@@ -9031,10 +9238,12 @@
           const k = kv.slice(0, eq);
           const v = decodeURIComponent(kv.slice(eq + 1));
           if (k === 'filter') urlFilter = v;
+          if (k === 'stage')  urlStage  = v;
         });
       }
       historyState = {
         filter: urlFilter || 'all',
+        stage:  urlStage  || null,
         search: '',
         limit: 100,
         offset: 0,
@@ -9077,9 +9286,9 @@
             }).join('') +
           '</div>' +
           /* Result count meta */
-          '<div class="hist-meta" id="hist-meta">Loading\u2026</div>' +
+          '<div class="hist-meta" id="hist-meta">&nbsp;</div>' +
           /* Results */
-          '<div id="hist-list"><div class="muted small" style="padding:32px;text-align:center">Loading\u2026</div></div>' +
+          '<div id="hist-list">' + _skelDealRows(6) + '</div>' +
         '</div>'
       );
       // Wire search input with debounce
@@ -9129,6 +9338,12 @@
           }
           return true;
         });
+        // v27.3.0 — exact-stage filter (from clickable funnel rows)
+        if (historyState.stage) {
+          filtered = filtered.filter(function (d) {
+            return String(d.stage || '').toLowerCase() === String(historyState.stage).toLowerCase();
+          });
+        }
         // v27.3.0 — text search across ref + project + customer
         if (historyState.search) {
           const q = historyState.search;
@@ -9144,6 +9359,8 @@
         if (meta) {
           if (historyState.search) {
             meta.textContent = filtered.length + ' result' + (filtered.length === 1 ? '' : 's') + ' for "' + historyState.search + '"';
+          } else if (historyState.stage) {
+            meta.textContent = filtered.length + ' deal' + (filtered.length === 1 ? '' : 's') + ' in ' + historyState.stage;
           } else {
             meta.textContent = filtered.length + ' of ' + allRows.length + (allRows.length === 1 ? ' deal' : ' deals');
           }
@@ -9179,6 +9396,7 @@
 
     function setHistoryFilter(f) {
       historyState.filter = f;
+      historyState.stage = null;  // v27.3.0 — chip click clears stage filter
       document.querySelectorAll('#hist-chips .hist-chip').forEach(c => {
         const isActive = c.getAttribute('data-value') === f;
         c.classList.toggle('hist-chip-active', isActive);
@@ -9236,7 +9454,7 @@
               '</div>'
             : '') +
           '<div id="cust-list">' +
-            '<div class="muted small" style="padding:24px;text-align:center">Loading\u2026</div>' +
+            _skelDealRows(6) +
           '</div>' +
         '</div>'
       );
@@ -9360,7 +9578,7 @@
             '<div class="cust-360-kpi"><div class="cust-360-kpi-k">Value (L)</div><div class="cust-360-kpi-v">\u2014</div></div>' +
           '</div>' +
           '<h4 style="padding:12px 16px 6px;margin:0;font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.06em">Recent deals</h4>' +
-          '<div id="cust-360-deals"><div class="muted small" style="padding:16px;text-align:center">Loading\u2026</div></div>' +
+          '<div id="cust-360-deals">' + _skelDealRows(3) + '</div>' +
         '</div>'
       );
       // Load deals async
