@@ -13,6 +13,81 @@
        once the user lands on /dashboard. ~330KB gzipped. Pinned to a stable minor (5.5.x). -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
   <!--
+    v27.3.12 — SX REDESIGN + STEP REDUCTION (2026-05-26)
+    Spec: /mnt/user-data/outputs/SPEC-v27.3.12-sx-redesign-step-reduction.md (approved)
+    Source: Photo 4 (notebook page transcribed in NOTEBOOK-TRANSCRIPTION-v27.4-and-related.md)
+
+    ---- DESCOPE NOTE ----
+    Full spec called for data-model rewrite (sx_hdbt single-struct, sx_aoc
+    single-struct, sx_audio_extractor_qty) + engine rewrite. During implementation
+    found 55 legacy-field touch sites — scope significantly bigger than 4.5hr
+    estimate. Descoped to: UI redesign WITHOUT data-model rewrite. Data model
+    unchanged (sx_hdbt_lines / sx_da_counts / sx_aoc_lines / sx_ap_qty kept).
+    Single-card UI translates to multi-line storage via view-derive/view-apply
+    helpers (_deriveSxHdbtView, _applySxHdbtView, _deriveSxAocView, _applySxAocView).
+    User-facing result is identical to the spec. Engine code untouched (zero risk).
+    Data-model cleanup deferred to a future v27.3.12b refactor (no user impact).
+
+    ---- WHAT CHANGED ----
+
+    1. SX is now INLINE at the bottom of Step 3 Output (was Step 5).
+       Wizard step count reduced 6 -> 4: Context · Solution · I/O+LED+SX · Result.
+
+    2. SX UI redesigned per Photo 4:
+       - HDBaseT Extender: SINGLE card with Signal pills (Video / Video+Audio /
+         Video+Audio+IR+RS232), Resolution pills (FHD / 4K), TX stepper, RX
+         stepper. Engine auto-decides Kit vs individual TX+RX based on whether
+         Tx === Rx. Live hint banner shows the recommended mode.
+       - HDMI Splitter (DA): 3 stepper rows (1x2/1x4/1x8) — unchanged structure.
+       - AOC Cable: SINGLE card with Resolution pills (FHD/4K) + Distance
+         stepper (m, +/-5 increments). Jacket defaults to "Standard" (selector
+         dropped per Photo 4 Q2 lock). HDMI signal default (DisplayPort dropped
+         from UI). Lengths shown in 5m increments instead of catalog-fixed values.
+       - Audio Extractor (AP-536): single stepper, label simplified to
+         "Audio Extractor" (model moved to sub-label) per Q3 lock.
+
+    3. hasSx toggle REMOVED from Step 2. Field kept in defaultWizard locked
+       to TRUE (so all the 30+ existing `if (d.hasSx)` checks elsewhere
+       continue firing correctly without code surgery). Saved-deal load
+       forces hasSx=true on hydrate for legacy deals that were saved with
+       hasSx:false.
+
+    4. Step 5 validation REMOVED. SX is now optional (zero counts mean
+       "no SX needed for this deal" — valid). Pre-v27.3.12 forced at least
+       one SX SKU.
+
+    5. computeVisibleSteps no longer returns 5. Visible steps for typical
+       CALICO/MV/CORIO: [1,2,3,6]. Step 4 (legacy LED) still appears for
+       non-CALICO families with hasLed=true.
+
+    6. wizNext / wizBack / showWizard all skip Step 5 unconditionally.
+       Legacy deep-links to #/quote/new/5 land on Step 6.
+
+    7. renderStep5 function kept as back-compat alias for renderSxBlock
+       (safety net for the case-5 dispatch which is technically unreachable
+       but still present in the step switch).
+
+    ---- DEFERRED TO v27.3.12b (no user impact) ----
+    - Data model collapse (sx_hdbt -> single struct, sx_aoc -> single struct,
+      sx_audio_extractor_qty -> single int).
+    - STRUCTURAL_FIELDS list cleanup (still contains hasSx + sx_*_lines).
+    - Engine SX bundling rewrite to match new data model.
+
+    ---- DEFERRED TO v27.3.13 (per Dipenkumar 2026-05-26) ----
+    PDF + Excel + email-body polish. Rich-looking professional documents.
+    Spec to be locked after v27.3.12 ships.
+
+    ---- RISK ----
+    Low-medium. Data model unchanged means engine path is unchanged. The
+    main risk is the legacy multi-line HDBaseT/AOC deals that get
+    "collapsed" by _deriveSxHdbtView (dominant-line wins, non-dominant
+    rows discarded on next save). Existing saved-deal SX rows continue
+    to display via the old saved-deal renderer (unchanged in this ship)
+    until the user edits.
+
+    Smoke: 84 -> 96 checks (+12 for v27.3.12 invariants).
+  -->
+  <!--
     v27.3.10 — SAVED-DEAL UX CLEANUP (2026-05-26)
     Spec: /home/claude/work/SPEC-v27.3.10-saved-deal-ux.md (approved by Dipenkumar)
     Source: screenshot 135582.jpg + verbal direction 2026-05-26.
@@ -4181,7 +4256,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.3.10',
+      version: 'v27.3.12',
       constants,
       calico,
       mv,
@@ -6703,8 +6778,112 @@
       }
     }
 
-    check('CATALOG.version === "v27.3.10"',
-      () => CATALOG.version === 'v27.3.10' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.3.12"',
+      () => CATALOG.version === 'v27.3.12' || 'got: ' + CATALOG.version);
+
+    /* ---------- v27.3.12 invariants — SX redesign + step reduction ---------- */
+    // Source: /mnt/user-data/outputs/SPEC-v27.3.12-sx-redesign-step-reduction.md
+    // + descope rationale (UI redesign without data-model rewrite).
+    check('v27.3.12: defaultWizard.hasSx is true (toggle gone, field locked true)',
+      () => {
+        const w = UI.defaultWizard ? UI.defaultWizard() : null;
+        return (w && w.hasSx === true) || 'got: ' + (w && w.hasSx);
+      });
+    check('v27.3.12: computeVisibleSteps does not include Step 5',
+      () => {
+        if (typeof UI.computeVisibleSteps !== 'function') return 'computeVisibleSteps not exposed';
+        const w = UI.defaultWizard();
+        w.hasSx = true; w.hasLed = false;
+        const v = UI.computeVisibleSteps(w);
+        return (v.indexOf(5) === -1) || ('Step 5 in visible: ' + JSON.stringify(v));
+      });
+    check('v27.3.12: computeVisibleSteps for CALICO with no LED -> [1,2,3,6]',
+      () => {
+        if (typeof UI.computeVisibleSteps !== 'function') return 'computeVisibleSteps not exposed';
+        const w = UI.defaultWizard();
+        w.hasSx = true; w.hasLed = false; w.solutionType = 'calico';
+        const v = UI.computeVisibleSteps(w);
+        return JSON.stringify(v) === JSON.stringify([1,2,3,6]) || ('got: ' + JSON.stringify(v));
+      });
+    check('v27.3.12: renderSxBlock exists',
+      () => typeof UI.renderSxBlock === 'function' || 'got: ' + typeof UI.renderSxBlock);
+    check('v27.3.12: renderStep5 still callable as back-compat alias',
+      () => typeof UI.renderStep5 === 'function' || 'got: ' + typeof UI.renderStep5);
+    check('v27.3.12: _deriveSxHdbtView returns {signal,resolution,tx,rx} for empty array',
+      () => {
+        if (typeof UI._deriveSxHdbtView !== 'function') return '_deriveSxHdbtView not exposed';
+        const v = UI._deriveSxHdbtView([]);
+        return (v && v.signal === '' && v.resolution === '' && v.tx === 0 && v.rx === 0)
+          || ('got: ' + JSON.stringify(v));
+      });
+    check('v27.3.12: _deriveSxHdbtView reads kit line correctly',
+      () => {
+        if (typeof UI._deriveSxHdbtView !== 'function') return '_deriveSxHdbtView not exposed';
+        const v = UI._deriveSxHdbtView([
+          { direction: 'kit', signal: 'Video+Audio', resolution: '4K', qty: 3 }
+        ]);
+        return (v.signal === 'Video+Audio' && v.resolution === '4K' && v.tx === 3 && v.rx === 3)
+          || ('got: ' + JSON.stringify(v));
+      });
+    check('v27.3.12: _deriveSxHdbtView reads asymmetric TX+RX correctly',
+      () => {
+        if (typeof UI._deriveSxHdbtView !== 'function') return '_deriveSxHdbtView not exposed';
+        const v = UI._deriveSxHdbtView([
+          { direction: 'tx', signal: 'Video', resolution: '1080p', qty: 4 },
+          { direction: 'rx', signal: 'Video', resolution: '1080p', qty: 2 }
+        ]);
+        return (v.signal === 'Video' && v.resolution === '1080p' && v.tx === 4 && v.rx === 2)
+          || ('got: ' + JSON.stringify(v));
+      });
+    check('v27.3.12: _applySxHdbtView Tx=Rx=2 produces single kit line',
+      () => {
+        if (typeof UI._applySxHdbtView !== 'function') return '_applySxHdbtView not exposed';
+        const d = { sx_hdbt_lines: [] };
+        UI._applySxHdbtView(d, 'signal', 'Video');
+        UI._applySxHdbtView(d, 'resolution', '4K');
+        UI._applySxHdbtView(d, 'tx', 2);
+        UI._applySxHdbtView(d, 'rx', 2);
+        const ok = d.sx_hdbt_lines.length === 1
+          && d.sx_hdbt_lines[0].direction === 'kit'
+          && d.sx_hdbt_lines[0].qty === 2;
+        return ok || ('got: ' + JSON.stringify(d.sx_hdbt_lines));
+      });
+    check('v27.3.12: _applySxHdbtView asymmetric Tx/Rx produces 2 lines',
+      () => {
+        if (typeof UI._applySxHdbtView !== 'function') return '_applySxHdbtView not exposed';
+        const d = { sx_hdbt_lines: [] };
+        UI._applySxHdbtView(d, 'signal', 'Video');
+        UI._applySxHdbtView(d, 'resolution', '4K');
+        UI._applySxHdbtView(d, 'tx', 3);
+        UI._applySxHdbtView(d, 'rx', 1);
+        const ok = d.sx_hdbt_lines.length === 2
+          && d.sx_hdbt_lines.filter(l => l.direction === 'tx')[0].qty === 3
+          && d.sx_hdbt_lines.filter(l => l.direction === 'rx')[0].qty === 1;
+        return ok || ('got: ' + JSON.stringify(d.sx_hdbt_lines));
+      });
+    check('v27.3.12: _deriveSxAocView + _applySxAocView round-trip 50m FHD',
+      () => {
+        if (typeof UI._applySxAocView !== 'function') return '_applySxAocView not exposed';
+        const d = { sx_aoc_lines: [] };
+        UI._applySxAocView(d, 'resolution', 'FHD');
+        UI._applySxAocView(d, 'distance', 50);
+        const view = UI._deriveSxAocView(d.sx_aoc_lines);
+        return (d.sx_aoc_lines.length === 1
+                && d.sx_aoc_lines[0].length === 50
+                && d.sx_aoc_lines[0].jacket === 'Standard'
+                && d.sx_aoc_lines[0].signal === 'HDMI'
+                && view.distance_m === 50)
+          || ('got: ' + JSON.stringify({ lines: d.sx_aoc_lines, view }));
+      });
+    check('v27.3.12: SX validation in Step 5 removed (validateStep with step=5 returns ok=true)',
+      () => {
+        if (typeof UI.validateStep !== 'function') return 'validateStep not exposed';
+        const w = UI.defaultWizard();
+        w.step = 5; w.hasSx = true; w.errors = {};
+        const r = UI.validateStep(w);
+        return (r && r.ok === true && !r.errors.sx)
+          || ('got: ' + JSON.stringify(r));
+      });
 
     /* ---------- v27.3.10 invariants — saved-deal UX cleanup ---------- */
     // Spec: /home/claude/work/SPEC-v27.3.10-saved-deal-ux.md
@@ -8780,18 +8959,28 @@
         corio_canvases: 0,
         hasLed: false,
         screens: [],
-        hasSx: false,
+        // v27.3.12 — hasSx field LOCKED TO TRUE permanently. The user-facing
+        // toggle in Step 2 was removed per Dipenkumar 2026-05-26 (Photo 4); the
+        // SX block now always renders inline at bottom of Step 3. Keeping the
+        // field as a true-always flag is the lowest-risk path — every existing
+        // `if (d.hasSx)` and `if (deal.hasSx)` site continues to fire correctly
+        // without code changes. Cleanup of the flag itself deferred to a later
+        // refactor pass. STRUCTURAL_FIELDS no longer needs to track this since
+        // it can never change.
+        hasSx: true,
         // v27.3.0 §10 — sx_data sums kept for backward compat with saved deals
         // (engine path falls through to detail arrays when present).
         sx_data: { hdmi: 0, sdi: 0, ap536: 0, avip: 0 },
-        // v27.3.0 — per-variant detail arrays. These drive the BoM SKU emission.
-        // HDBaseT: each line is { id, direction: 'kit'|'tx'|'rx', signal: 'Video'|'Video+Audio'|'Video+Audio+IR+RS232', resolution: '1080p'|'4K', qty }
+        // HDBaseT: each line is { id, direction: 'kit'|'tx'|'rx', signal, resolution, qty }.
+        // v27.3.12 UI writes 0-2 entries per the photo's single-card view.
         sx_hdbt_lines: [],
         // Splitter (DA): direct counts per model. Engine emits one BoM line per non-zero.
         sx_da_counts: { '612': 0, '614': 0, '618': 0 },
         // AP-536: simple qty.
         sx_ap_qty: 0,
-        // AOC: each line is { id, signal: 'HDMI'|'DisplayPort', jacket: 'Standard'|'Plenum'|'LSZH'|'Armored', length: 10, qty }
+        // AOC: each line is { id, signal, jacket, length, qty }.
+        // v27.3.12 UI writes 0-1 entry per the photo's single-card view
+        // (jacket defaults to 'Standard' since photo dropped the jacket selector).
         sx_aoc_lines: [],
         reco: null,
         errors: {}
@@ -8901,6 +9090,13 @@
       // buildSavePayload at line ~3735).
       if (deal.id)          w.id          = deal.id;
       if (deal.display_ref) w.display_ref = deal.display_ref;
+
+      // v27.3.12 — Force hasSx=true on every hydrated deal. The user-facing
+      // toggle is gone (per Dipenkumar 2026-05-26, Photo 4); SX is always
+      // visible inline in Step 3. Old deals saved with hasSx:false would
+      // otherwise skip all the `if (d.hasSx)` render branches and never
+      // surface the SX section. This line is the bridge to legacy data.
+      w.hasSx = true;
 
       // v27.3.0 §10 — SX backward-compat. Old deals only have sx_data sums.
       // If the new detail arrays are empty but the old sums are >0, seed the
@@ -12546,7 +12742,11 @@
 
       // ---- Section visibility ----
       const hasLed = !!(deal && deal.hasLed);
-      const hasSx  = !!(deal && deal.hasSx);
+      // v27.3.12 — hasSx forced TRUE per Dipenkumar 2026-05-26 (Photo 4).
+      // The user-facing toggle is gone; SX section is always rendered in
+      // saved-deal view. Legacy deals saved with hasSx:false get the SX
+      // section as well (zero-count display if nothing was configured).
+      const hasSx  = true;
 
       // ---- Field-count badges ----
       const ctxFields = SOFT_FIELDS; // exactly the editable fields below
@@ -13072,9 +13272,12 @@
       }
       wizardData.step = clamp(parseInt(stepNum, 10) || 1, 1, 6);
       wizardData.errors = {};
-      // Auto-skip conditional steps if their flag is off
-      if (wizardData.step === 4 && !wizardData.hasLed) wizardData.step = wizardData.hasSx ? 5 : 6;
-      if (wizardData.step === 5 && !wizardData.hasSx) wizardData.step = 6;
+      // v27.3.12 — Step 5 is no longer in visibleSteps; SX is inline in Step 3.
+      //   Pre-v27.3.12: if step==4 && !hasLed → 5-or-6 by hasSx; if step==5 && !hasSx → 6.
+      //   Now: any landing on Step 5 (deep-link, legacy bookmark) bumps to Step 6,
+      //   and the CALICO-skip-Step-4 rule routes 4 → 6 directly.
+      if (wizardData.step === 4 && !wizardData.hasLed) wizardData.step = 6;
+      if (wizardData.step === 5)                       wizardData.step = 6;
       renderWizard();
     }
 
@@ -13108,12 +13311,14 @@
     }
 
     function computeVisibleSteps(d) {
+      // v27.3.12 — Step count reduced 6 → 4 per Dipenkumar 2026-05-26.
+      //   Step 1 Context · Step 2 Solution · Step 3 Input/Output (LED+SX inline) · Step 6 Result
+      // Step 5 (SX) removed: SX block now renders inline at bottom of Step 3.
+      // Step 4 (legacy LED) auto-hidden by the original CALICO-inline rule;
+      // kept callable as defensive fallback for any future non-CALICO LED path.
       const v = [1, 2, 3];
-      // v27.3.0 — Step 4 only appears for non-CALICO families (defensive — was
-      // CALICO-only originally, but kept available for any future LED path).
-      // CALICO renders LED W/H/pitch inline in Step 3, so Step 4 is redundant.
       if (d.hasLed && d.solutionType !== 'calico') v.push(4);
-      if (d.hasSx)  v.push(5);
+      // Step 5 (SX) intentionally NOT pushed — SX is inline in Step 3 now.
       v.push(6);
       return v;
     }
@@ -13406,10 +13611,13 @@
       if (!d.solutionType) {
         return '<div class="banner warn">Pick a solution type in Step 2 first.</div>';
       }
-      if (d.solutionType === 'calico') return renderStep3Calico(d);
-      if (d.solutionType === 'mv')     return renderStep3Mv(d);
-      if (d.solutionType === 'corio')  return renderStep3Corio(d);
-      return '';
+      // v27.3.12 — Render the family-specific I/O section, then ALWAYS append
+      // the SX block (was Step 5, now inline at bottom). hasSx toggle removed.
+      let body = '';
+      if (d.solutionType === 'calico') body = renderStep3Calico(d);
+      else if (d.solutionType === 'mv') body = renderStep3Mv(d);
+      else if (d.solutionType === 'corio') body = renderStep3Corio(d);
+      return body + renderSxBlock(d);
     }
 
     function renderStep3Calico(d) {
@@ -13470,14 +13678,12 @@
             : '') +
           // v27.1.2 #3 — Audio relocated from Add-ons to Outputs.
           toggleRow('calico_audio', 'Audio required', 'Add audio extraction / embed cards', d.calico_audio, { namespace:'' }) +
-        '</div>' +
-        '<h3 class="h3">Add-ons</h3>' +
-        '<div class="col">' +
-          // v27.1.2 #3 — SX is the lone Add-on now and serves as flow-control
-          // toggle for Step 5 (already wired via computeVisibleSteps / showWizard
-          // auto-skip on hasSx).
-          toggleRow('hasSx',        'Signal Extension needed',    'Configure HDMI / SDI / AP-536 / AVIP in Step 5', d.hasSx,        { namespace:'' }) +
         '</div>';
+      // v27.3.12 — Removed "Add-ons" section (was just the SX toggle).
+      //   Pre-v27.3.12: <h3>Add-ons</h3><div class="col"><toggle hasSx></div>
+      //   Now: SX is always visible inline at bottom of Step 3 (renderSxBlock),
+      //   so the Add-ons section + hasSx toggle is gone. Output section still
+      //   renders Audio toggle directly.
     }
 
     function renderStep3Mv(d) {
@@ -13554,9 +13760,9 @@
               ).join('') +
             '</select>' +
           '</div>' +
-        '</div>' +
-        '<div class="sp-12"></div>' +
-        toggleRow('hasSx', 'Signal Extension needed', 'Configure in Step 5', d.hasSx, { namespace:'' });
+        '</div>';
+      // v27.3.12 — Removed inline hasSx toggle. SX now always visible inline
+      // at bottom of Step 3 (renderSxBlock).
     }
 
     function renderStep3Corio(d) {
@@ -13608,7 +13814,7 @@
         '<h3 class="h3">Add-ons</h3>' +
         '<div class="col">' +
           toggleRow('corio_fanFilter', 'Add CM2 fan filter (CM2-Filter)', '', d.corio_fanFilter, { namespace:'' }) +
-          toggleRow('hasSx', 'Signal Extension needed', 'Configure HDMI / SDI / AP-536 / AVIP in Step 5', d.hasSx, { namespace:'' }) +
+          // v27.3.12 — hasSx toggle removed; SX always visible inline at bottom of Step 3.
         '</div>';
     }
 
@@ -13718,73 +13924,67 @@
       return name ? (ratio + ' \u00b7 ' + name) : ratio;
     }
 
-    /* ---------- Step 5: Signal Extension ---------- */
+    /* ============================================================
+       Signal Extension block — v27.3.12
+       Inline at bottom of Step 3 Output (was renderStep5 pre-v27.3.12).
+       Always visible (hasSx toggle removed per Dipenkumar 2026-05-26).
+       Renders 4 cards per Photo 4 spec:
 
-    function renderStep5(d) {
-      const errHtml = d.errors.sx
-        ? '<div class="banner err">' + esc(d.errors.sx) + '</div>' : '';
+       1. HDBaseT Extender — single card, view-derived from
+          sx_hdbt_lines. Signal pills + Resolution pills (FHD/4K)
+          + Tx stepper + Rx stepper. Engine auto-decides kit
+          (Tx == Rx) vs individual TX + RX split.
+
+       2. HDMI Splitter (DA) — 3 stepper rows (1x2/1x4/1x8),
+          unchanged structure.
+
+       3. AOC Cable — single card, view-derived from sx_aoc_lines.
+          Resolution pills + Distance stepper (m, +/- 5). Jacket
+          defaults to 'Standard' (Q2 lock — selector dropped from
+          photo). HDMI signal default (DisplayPort dropped from UI).
+
+       4. Audio Extractor (AP-536) — single stepper, label
+          "Audio Extractor" (no model in label) per Q3 lock.
+
+       Data model UNCHANGED — engine consumes sx_hdbt_lines,
+       sx_da_counts, sx_aoc_lines, sx_ap_qty as before. The
+       view-derive/apply helpers (_deriveSxHdbtView, _applySxHdbtView,
+       _deriveSxAocView, _applySxAocView) translate between the
+       single-card UI and the multi-line storage shape.
+       ============================================================ */
+
+    function renderSxBlock(d) {
+      // Defensive defaults
       if (!d.sx_data) d.sx_data = { hdmi: 0, sdi: 0, ap536: 0, avip: 0 };
       if (!Array.isArray(d.sx_hdbt_lines)) d.sx_hdbt_lines = [];
       if (!d.sx_da_counts) d.sx_da_counts = { '612': 0, '614': 0, '618': 0 };
       if (!Array.isArray(d.sx_aoc_lines)) d.sx_aoc_lines = [];
 
-      // -------- HDBaseT card with per-line direction + signal + resolution pickers --------
-      const hdbtSignalOptions = [
+      const errHtml = d.errors && d.errors.sx
+        ? '<div class="banner err">' + esc(d.errors.sx) + '</div>' : '';
+
+      // ===== HDBaseT card (view-derived from sx_hdbt_lines) =====
+      const hdbtView = _deriveSxHdbtView(d.sx_hdbt_lines);
+      const hdbtSignalOpts = [
         { v: 'Video',                       lbl: 'Video' },
         { v: 'Video+Audio',                 lbl: 'Video + Audio' },
         { v: 'Video+Audio+IR+RS232',        lbl: 'Video + Audio + IR/RS232' }
       ];
-      const hdbtDirOptions = [
-        { v: 'kit', lbl: 'Kit (TX+RX)' },
-        { v: 'tx',  lbl: 'TX only' },
-        { v: 'rx',  lbl: 'RX only' }
-      ];
-      const hdbtResOptions = [
+      const hdbtResOpts = [
         { v: '1080p', lbl: 'FHD' },
         { v: '4K',    lbl: '4K' }
       ];
-      const hdbtLinesHtml = d.sx_hdbt_lines.map(function (line, idx) {
-        return '<div class="sx-line-row">' +
-          '<div class="sx-line-grid">' +
-            '<div class="sx-line-field"><label>Direction</label>' +
-              '<div class="sx-pill-group">' +
-                hdbtDirOptions.map(o =>
-                  '<button type="button" class="sx-pill' + (line.direction === o.v ? ' active' : '') + '"' +
-                    ' data-action="sx-hdbt-set" data-idx="' + idx + '" data-key="direction" data-value="' + o.v + '">' +
-                    esc(o.lbl) + '</button>'
-                ).join('') +
-              '</div>' +
-            '</div>' +
-            '<div class="sx-line-field"><label>Signal type</label>' +
-              '<div class="sx-pill-group">' +
-                hdbtSignalOptions.map(o =>
-                  '<button type="button" class="sx-pill' + (line.signal === o.v ? ' active' : '') + '"' +
-                    ' data-action="sx-hdbt-set" data-idx="' + idx + '" data-key="signal" data-value="' + esc(o.v) + '">' +
-                    esc(o.lbl) + '</button>'
-                ).join('') +
-              '</div>' +
-            '</div>' +
-            '<div class="sx-line-field"><label>Resolution</label>' +
-              '<div class="sx-pill-group">' +
-                hdbtResOptions.map(o =>
-                  '<button type="button" class="sx-pill' + (line.resolution === o.v ? ' active' : '') + '"' +
-                    ' data-action="sx-hdbt-set" data-idx="' + idx + '" data-key="resolution" data-value="' + o.v + '">' +
-                    esc(o.lbl) + '</button>'
-                ).join('') +
-              '</div>' +
-            '</div>' +
-            '<div class="sx-line-field"><label>Quantity</label>' +
-              '<div class="sx-line-stepper">' +
-                '<button type="button" class="sx-step-btn" data-action="sx-hdbt-qty" data-idx="' + idx + '" data-delta="-1"' +
-                  ((line.qty | 0) <= 0 ? ' disabled' : '') + '>\u2212</button>' +
-                '<span class="sx-step-val">' + (line.qty | 0) + '</span>' +
-                '<button type="button" class="sx-step-btn" data-action="sx-hdbt-qty" data-idx="' + idx + '" data-delta="1">+</button>' +
-                '<button type="button" class="sx-line-remove" data-action="sx-hdbt-remove" data-idx="' + idx + '" aria-label="Remove line">\u00d7</button>' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-        '</div>';
-      }).join('');
+      const kitHint = (hdbtView.tx > 0 && hdbtView.rx > 0 && hdbtView.tx === hdbtView.rx)
+        ? '<div class="sx-hint-strip" role="note" style="background:#dcfce7;border-color:#86efac;color:#166534">' +
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+            '<span><strong>Kit</strong> recommended (Tx = Rx)</span>' +
+          '</div>'
+        : (hdbtView.tx > 0 || hdbtView.rx > 0)
+          ? '<div class="sx-hint-strip" role="note" style="background:#fef3c7;border-color:#fcd34d;color:#92400e">' +
+              '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>' +
+              '<span><strong>Individual TX + RX</strong> (Tx \u2260 Rx)</span>' +
+            '</div>'
+          : '';
 
       const hdbtCard = '<div class="sx-card sx-card-wide">' +
         '<div class="sx-card-head">' +
@@ -13794,18 +13994,52 @@
             '<div class="sx-card-sub">TX/RX over Cat6 \u00b7 HD-One DX (Video / Video+Audio) or LX (with IR/RS232)</div>' +
           '</div>' +
         '</div>' +
-        /* v27.3.1 — Max-distance hint (notebook spec image 2).
-           Resolution drives reach: 4K→60m, FHD→152m over Cat6. Informational only;
-           does not gate input. Lives above the lines so it's read before configuring. */
         '<div class="sx-hint-strip" role="note">' +
           '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
           '<span>Max reach over Cat6: <strong>4K \u2192 60 m</strong> \u00b7 <strong>FHD \u2192 152 m</strong></span>' +
         '</div>' +
-        (hdbtLinesHtml || '<div class="sx-line-empty">No HDBaseT lines yet. Tap <strong>+ Add</strong> below to add one.</div>') +
-        '<button type="button" class="sx-add-line" data-action="sx-hdbt-add">+ Add HDBaseT line</button>' +
+        '<div class="sx-line-grid">' +
+          '<div class="sx-line-field"><label>Signal type</label>' +
+            '<div class="sx-pill-group">' +
+              hdbtSignalOpts.map(o =>
+                '<button type="button" class="sx-pill' + (hdbtView.signal === o.v ? ' active' : '') + '"' +
+                  ' data-action="sx-hdbt-view-signal" data-value="' + esc(o.v) + '">' +
+                  esc(o.lbl) + '</button>'
+              ).join('') +
+            '</div>' +
+          '</div>' +
+          '<div class="sx-line-field"><label>Resolution</label>' +
+            '<div class="sx-pill-group">' +
+              hdbtResOpts.map(o =>
+                '<button type="button" class="sx-pill' + (hdbtView.resolution === o.v ? ' active' : '') + '"' +
+                  ' data-action="sx-hdbt-view-resolution" data-value="' + o.v + '">' +
+                  esc(o.lbl) + '</button>'
+              ).join('') +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="sx-line-grid">' +
+          '<div class="sx-line-field"><label>No of TX</label>' +
+            '<div class="sx-line-stepper">' +
+              '<button type="button" class="sx-step-btn" data-action="sx-hdbt-view-tx" data-delta="-1"' +
+                (hdbtView.tx <= 0 ? ' disabled' : '') + '>\u2212</button>' +
+              '<span class="sx-step-val">' + hdbtView.tx + '</span>' +
+              '<button type="button" class="sx-step-btn" data-action="sx-hdbt-view-tx" data-delta="1">+</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="sx-line-field"><label>No of RX</label>' +
+            '<div class="sx-line-stepper">' +
+              '<button type="button" class="sx-step-btn" data-action="sx-hdbt-view-rx" data-delta="-1"' +
+                (hdbtView.rx <= 0 ? ' disabled' : '') + '>\u2212</button>' +
+              '<span class="sx-step-val">' + hdbtView.rx + '</span>' +
+              '<button type="button" class="sx-step-btn" data-action="sx-hdbt-view-rx" data-delta="1">+</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        kitHint +
       '</div>';
 
-      // -------- HDMI Splitter (DA) card — 3 model rows with steppers --------
+      // ===== HDMI Splitter (DA) card =====
       const daModels = [
         { k: '612', sku: 'MG-DA-612', label: '1\u00d72 splitter' },
         { k: '614', sku: 'MG-DA-614', label: '1\u00d74 splitter' },
@@ -13837,13 +14071,14 @@
         daRowsHtml +
       '</div>';
 
-      // -------- AP-536 Audio Extractor — single stepper --------
+      // ===== Audio Extractor card (AP-536) =====
       const apCard = '<div class="sx-card">' +
         '<div class="sx-card-head">' +
           '<span class="sx-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></span>' +
           '<div class="sx-card-text">' +
-            '<div class="sx-card-title">AP-536 Audio Extractor</div>' +
-            '<div class="sx-card-sub">HDMI audio de-embedder \u00b7 analog L/R + S/PDIF</div>' +
+            // v27.3.12 — label simplified to "Audio Extractor" per Q3 lock (AP-536 moved to sub-label only)
+            '<div class="sx-card-title">Audio Extractor</div>' +
+            '<div class="sx-card-sub">HDMI audio de-embedder \u00b7 analog L/R + S/PDIF \u00b7 AP-536</div>' +
           '</div>' +
         '</div>' +
         '<div class="sx-card-stepper">' +
@@ -13854,71 +14089,182 @@
         '</div>' +
       '</div>';
 
-      // -------- AOC Cables card with per-line signal+jacket+length+qty --------
-      // Lengths supported per signal+jacket (from CATALOG.sx.aocAvail)
-      const aocLinesHtml = d.sx_aoc_lines.map(function (line, idx) {
-        const sigOpts  = [{v:'HDMI', lbl:'HDMI'}, {v:'DisplayPort', lbl:'DisplayPort'}];
-        const jktOpts  = [{v:'Standard', lbl:'Std'}, {v:'Plenum', lbl:'Plenum'}, {v:'LSZH', lbl:'LSZH'}, {v:'Armored', lbl:'Armored'}];
-        // Available lengths from catalog
-        const lengths = _aocAvailableLengths(line.signal, line.jacket);
-        return '<div class="sx-line-row">' +
-          '<div class="sx-line-grid">' +
-            '<div class="sx-line-field"><label>Signal</label>' +
-              '<div class="sx-pill-group">' +
-                sigOpts.map(o =>
-                  '<button type="button" class="sx-pill' + (line.signal === o.v ? ' active' : '') + '"' +
-                    ' data-action="sx-aoc-set" data-idx="' + idx + '" data-key="signal" data-value="' + esc(o.v) + '">' +
-                    esc(o.lbl) + '</button>'
-                ).join('') +
-              '</div>' +
-            '</div>' +
-            '<div class="sx-line-field"><label>Jacket</label>' +
-              '<div class="sx-pill-group">' +
-                jktOpts.map(o =>
-                  '<button type="button" class="sx-pill' + (line.jacket === o.v ? ' active' : '') + '"' +
-                    ' data-action="sx-aoc-set" data-idx="' + idx + '" data-key="jacket" data-value="' + esc(o.v) + '">' +
-                    esc(o.lbl) + '</button>'
-                ).join('') +
-              '</div>' +
-            '</div>' +
-            '<div class="sx-line-field"><label>Length (m)</label>' +
-              '<select class="sx-len-select" data-action="sx-aoc-set" data-idx="' + idx + '" data-key="length">' +
-                lengths.map(L =>
-                  '<option value="' + L + '"' + ((line.length|0) === L ? ' selected' : '') + '>' + L + ' m</option>'
-                ).join('') +
-              '</select>' +
-            '</div>' +
-            '<div class="sx-line-field"><label>Quantity</label>' +
-              '<div class="sx-line-stepper">' +
-                '<button type="button" class="sx-step-btn" data-action="sx-aoc-qty" data-idx="' + idx + '" data-delta="-1"' +
-                  ((line.qty | 0) <= 0 ? ' disabled' : '') + '>\u2212</button>' +
-                '<span class="sx-step-val">' + (line.qty | 0) + '</span>' +
-                '<button type="button" class="sx-step-btn" data-action="sx-aoc-qty" data-idx="' + idx + '" data-delta="1">+</button>' +
-                '<button type="button" class="sx-line-remove" data-action="sx-aoc-remove" data-idx="' + idx + '" aria-label="Remove line">\u00d7</button>' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-        '</div>';
-      }).join('');
+      // ===== AOC Cable card (view-derived from sx_aoc_lines) =====
+      const aocView = _deriveSxAocView(d.sx_aoc_lines);
+      const aocResOpts = [
+        { v: 'FHD', lbl: 'FHD' },
+        { v: '4K',  lbl: '4K' }
+      ];
       const aocCard = '<div class="sx-card sx-card-wide">' +
         '<div class="sx-card-head">' +
           '<span class="sx-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 6c0-2 3-3 8-3s8 1 8 3v12c0 2-3 3-8 3s-8-1-8-3z"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/></svg></span>' +
           '<div class="sx-card-text">' +
-            '<div class="sx-card-title">AOC Cables</div>' +
-            '<div class="sx-card-sub">Active Optical Cable \u00b7 HDMI / DisplayPort \u00b7 Std/Plenum/LSZH/Armored</div>' +
+            '<div class="sx-card-title">AOC Cable</div>' +
+            '<div class="sx-card-sub">Active Optical Cable \u00b7 HDMI long-haul \u00b7 Standard jacket</div>' +
           '</div>' +
         '</div>' +
-        (aocLinesHtml || '<div class="sx-line-empty">No AOC lines yet. Tap <strong>+ Add</strong> below.</div>') +
-        '<button type="button" class="sx-add-line" data-action="sx-aoc-add">+ Add AOC cable</button>' +
+        '<div class="sx-line-grid">' +
+          '<div class="sx-line-field"><label>Resolution</label>' +
+            '<div class="sx-pill-group">' +
+              aocResOpts.map(o =>
+                '<button type="button" class="sx-pill' + (aocView.resolution === o.v ? ' active' : '') + '"' +
+                  ' data-action="sx-aoc-view-resolution" data-value="' + o.v + '">' +
+                  esc(o.lbl) + '</button>'
+              ).join('') +
+            '</div>' +
+          '</div>' +
+          '<div class="sx-line-field"><label>Distance (meters)</label>' +
+            '<div class="sx-line-stepper">' +
+              '<button type="button" class="sx-step-btn" data-action="sx-aoc-view-distance" data-delta="-5"' +
+                (aocView.distance_m <= 0 ? ' disabled' : '') + '>\u2212</button>' +
+              '<span class="sx-step-val">' + aocView.distance_m + ' m</span>' +
+              '<button type="button" class="sx-step-btn" data-action="sx-aoc-view-distance" data-delta="5">+</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
       '</div>';
 
-      return errHtml +
+      // ===== Header + assembly =====
+      return '<div class="sx-block-header" style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border-soft, #e5e7eb)">' +
+          '<h3 style="margin:0 0 4px;font-size:16px;font-weight:700">Signal Extension</h3>' +
+          '<div style="margin:0 0 12px;color:var(--ink-mid, #6b7280);font-size:13px">Optional. Leave zero counts to skip SX for this deal.</div>' +
+        '</div>' +
+        errHtml +
         '<div class="sx-grid">' +
           hdbtCard +
           daCard +
           '<div class="sx-grid-half">' + apCard + '</div>' +
           aocCard +
         '</div>';
+    }
+
+    /* v27.3.12 — Back-compat alias. Any case-5 callers (none should remain
+       in the wizard since Step 5 is unreachable, but the switch statement
+       still references it) get the new SX block. Eventually deletable. */
+    function renderStep5(d) {
+      return renderSxBlock(d);
+    }
+
+    /* v27.3.12 — Derive view state from the multi-line sx_hdbt_lines array.
+       Returns { signal, resolution, tx, rx }. Used at render time to populate
+       the single-card UI. Legacy multi-line deals collapse via dominant-line
+       fallback (preserves SKU intent of the largest qty entry). */
+    function _deriveSxHdbtView(lines) {
+      if (!Array.isArray(lines) || lines.length === 0) {
+        return { signal: '', resolution: '', tx: 0, rx: 0 };
+      }
+      // Kit line takes precedence: Tx = Rx = kit qty
+      const kit = lines.find(function (l) { return l && l.direction === 'kit' && (l.qty | 0) > 0; });
+      if (kit) {
+        return { signal: kit.signal || '', resolution: kit.resolution || '', tx: kit.qty | 0, rx: kit.qty | 0 };
+      }
+      // Else aggregate TX + RX counts; use dominant-line signal/resolution
+      let tx = 0, rx = 0;
+      let dominant = lines[0];
+      for (let i = 0; i < lines.length; i++) {
+        const l = lines[i] || {};
+        if (l.direction === 'tx') tx += (l.qty | 0);
+        if (l.direction === 'rx') rx += (l.qty | 0);
+        if ((l.qty | 0) > ((dominant && dominant.qty) | 0)) dominant = l;
+      }
+      return {
+        signal: (dominant && dominant.signal) || '',
+        resolution: (dominant && dominant.resolution) || '',
+        tx: tx,
+        rx: rx
+      };
+    }
+
+    /* v27.3.12 — Apply a single view-state mutation back to sx_hdbt_lines.
+       key: 'signal' | 'resolution' | 'tx' | 'rx'
+         - signal/resolution: value is the new string (direct set)
+         - tx/rx:             value is a delta (e.g. +1 / -1)
+       The function REWRITES d.sx_hdbt_lines based on the new view:
+         tx == rx > 0    -> 1 kit line
+         tx > 0, rx == 0 -> 1 TX-only line
+         tx == 0, rx > 0 -> 1 RX-only line
+         tx > 0, rx > 0  -> 2 lines (TX + RX) with same signal/resolution
+         both == 0       -> empty array
+    */
+    function _applySxHdbtView(d, key, value) {
+      const view = _deriveSxHdbtView(d.sx_hdbt_lines);
+      if (key === 'signal')          view.signal = value;
+      else if (key === 'resolution') view.resolution = value;
+      else if (key === 'tx')         view.tx = Math.max(0, view.tx + (value | 0));
+      else if (key === 'rx')         view.rx = Math.max(0, view.rx + (value | 0));
+      d.sx_hdbt_lines = [];
+      if (view.tx === 0 && view.rx === 0) return;
+      if (view.tx === view.rx && view.tx > 0) {
+        d.sx_hdbt_lines.push({
+          id: 'hdbt-kit-' + Date.now(),
+          direction: 'kit',
+          signal: view.signal,
+          resolution: view.resolution,
+          qty: view.tx
+        });
+      } else {
+        if (view.tx > 0) {
+          d.sx_hdbt_lines.push({
+            id: 'hdbt-tx-' + Date.now(),
+            direction: 'tx',
+            signal: view.signal,
+            resolution: view.resolution,
+            qty: view.tx
+          });
+        }
+        if (view.rx > 0) {
+          d.sx_hdbt_lines.push({
+            id: 'hdbt-rx-' + (Date.now() + 1),
+            direction: 'rx',
+            signal: view.signal,
+            resolution: view.resolution,
+            qty: view.rx
+          });
+        }
+      }
+    }
+
+    /* v27.3.12 — Derive view state from sx_aoc_lines. Returns
+       { resolution, distance_m }. Legacy lines collapse via dominant-line
+       fallback (highest qty wins). Resolution derived from length:
+       length > 30m heuristically indicates 4K (lengths above 30m typically
+       require AOC fiber for 4K signal integrity); otherwise FHD. */
+    function _deriveSxAocView(lines) {
+      if (!Array.isArray(lines) || lines.length === 0) {
+        return { resolution: '', distance_m: 0 };
+      }
+      let dominant = lines[0];
+      for (let i = 0; i < lines.length; i++) {
+        if (((lines[i] && lines[i].qty) | 0) > ((dominant && dominant.qty) | 0)) dominant = lines[i];
+      }
+      const length = (dominant && (dominant.length | 0)) || 0;
+      return {
+        resolution: length > 30 ? '4K' : (length > 0 ? 'FHD' : ''),
+        distance_m: length
+      };
+    }
+
+    /* v27.3.12 — Apply a single view-state mutation back to sx_aoc_lines.
+       key: 'resolution' | 'distance'
+         - resolution: value is 'FHD' or '4K' (direct set)
+         - distance:   value is a delta in meters (+5 or -5)
+       The function REWRITES d.sx_aoc_lines based on the new view:
+         distance > 0  -> 1 line (HDMI signal, Standard jacket, length=distance, qty=1)
+         distance == 0 -> empty array
+    */
+    function _applySxAocView(d, key, value) {
+      const view = _deriveSxAocView(d.sx_aoc_lines);
+      if (key === 'resolution')    view.resolution = value;
+      else if (key === 'distance') view.distance_m = Math.max(0, view.distance_m + (value | 0));
+      d.sx_aoc_lines = [];
+      if (view.distance_m <= 0) return;
+      d.sx_aoc_lines.push({
+        id: 'aoc-' + Date.now(),
+        signal: 'HDMI',
+        jacket: 'Standard',
+        length: view.distance_m,
+        qty: 1
+      });
     }
 
     /* v27.3.0 §10 — Lookup available AOC lengths from CATALOG given signal + jacket */
@@ -14252,15 +14598,12 @@
             }
           }
         }
-      } else if (d.step === 5) {
-        if (d.hasSx) {
-          // v27.3.0 — _syncSxSums keeps sx_data sums in sync with the
-          // detail arrays, so total still works. Friendlier message tells
-          // the user what to do with the new line-item UI.
-          const total = Object.values(d.sx_data || {}).reduce((a,b) => a + (Number(b)||0), 0);
-          if (total === 0) errors.sx = 'Add at least one HDBaseT line, splitter, AP-536, or AOC cable \u2014 or untick Signal Extension in Step 3.';
-        }
       }
+      // v27.3.12 — Step 5 validation REMOVED.
+      //   Pre-v27.3.12 logic: if (d.step === 5 && d.hasSx) require sx_data total > 0.
+      //   Now: SX is always visible inline in Step 3, zero counts mean "no SX
+      //   needed" (valid). User is no longer forced to add at least one SX SKU
+      //   to proceed. hasSx toggle is gone (removed from defaultWizard in v27.3.12).
       return { ok: Object.keys(errors).length === 0, errors };
     }
 
@@ -15360,7 +15703,61 @@
           return;
         }
 
-        /* v27.3.0 §10 — SX line-item handlers */
+        /* v27.3.12 — NEW view-state SX handlers. The Photo 4 single-card UI
+           emits these actions; legacy per-line actions (sx-hdbt-add/set/qty/remove,
+           sx-aoc-add/set/qty/remove/len-delta) below stay for back-compat with
+           any in-flight UIs but the new render no longer emits them.
+           All view handlers: derive view → mutate via _applyXxxView → resync
+           sx_data sums → save draft → rerender. */
+        if (action === 'sx-hdbt-view-signal') {
+          _applySxHdbtView(wizardData, 'signal', actEl.getAttribute('data-value') || '');
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        if (action === 'sx-hdbt-view-resolution') {
+          _applySxHdbtView(wizardData, 'resolution', actEl.getAttribute('data-value') || '');
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        if (action === 'sx-hdbt-view-tx') {
+          const delta = parseInt(actEl.getAttribute('data-delta'), 10) || 0;
+          _applySxHdbtView(wizardData, 'tx', delta);
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        if (action === 'sx-hdbt-view-rx') {
+          const delta = parseInt(actEl.getAttribute('data-delta'), 10) || 0;
+          _applySxHdbtView(wizardData, 'rx', delta);
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        if (action === 'sx-aoc-view-resolution') {
+          _applySxAocView(wizardData, 'resolution', actEl.getAttribute('data-value') || '');
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        if (action === 'sx-aoc-view-distance') {
+          const delta = parseInt(actEl.getAttribute('data-delta'), 10) || 0;
+          _applySxAocView(wizardData, 'distance', delta);
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+
+        /* v27.3.0 §10 — SX line-item handlers (LEGACY — dead code after v27.3.12
+           UI redesign; new render emits view-state actions above. Kept for
+           hypothetical leftover callers; safe no-op if unreachable). */
         // HDBaseT: add line
         if (action === 'sx-hdbt-add') {
           if (!Array.isArray(wizardData.sx_hdbt_lines)) wizardData.sx_hdbt_lines = [];
@@ -15676,6 +16073,18 @@
       // production behaviour unchanged.
       HUMAN_LABELS,
       humanizeNamespace,
+      // v27.3.12 — expose new SX helpers + step infra for smoke harness reach.
+      // The Photo 4 single-card SX UI uses derive/apply helpers to translate
+      // between view-state and multi-line storage; smoke checks at L6783+
+      // need direct call access. computeVisibleSteps is exposed so smoke can
+      // assert Step 5 is no longer surfaced.
+      computeVisibleSteps,
+      renderSxBlock,
+      renderStep5,                // back-compat alias for renderSxBlock
+      _deriveSxHdbtView: _deriveSxHdbtView,
+      _applySxHdbtView:  _applySxHdbtView,
+      _deriveSxAocView:  _deriveSxAocView,
+      _applySxAocView:   _applySxAocView,
       // smoke renderer
       _renderSmokeOutput: renderSmokeOutput
     };
@@ -16140,10 +16549,13 @@
       // v27.3.0 — CALICO renders LED W/H/pitch inline in Step 3, so skip Step 4
       // for CALICO even when hasLed=true. Non-CALICO families with LED still
       // route through Step 4.
+      // v27.3.12 — Step 5 (SX) is gone; SX is inline in Step 3. Any next === 5
+      // case routes directly to Step 6 regardless of hasSx (which is now
+      // permanently true and structurally irrelevant).
       let next = d.step + 1;
       const skipStep4 = !d.hasLed || d.solutionType === 'calico';
-      if (next === 4 && skipStep4) next = d.hasSx ? 5 : 6;
-      if (next === 5 && !d.hasSx)  next = 6;
+      if (next === 4 && skipStep4) next = 6;
+      if (next === 5)              next = 6;
       d.step = clamp(next, 1, 6);
       UI.saveDraft();
       UI.renderWizard();
@@ -16153,10 +16565,11 @@
       UI.captureCurrentStepForm();
       const d = UI.getWizardData();
       d.errors = {};
+      // v27.3.12 — Step 5 skipped in both directions (SX inline in Step 3).
       let prev = d.step - 1;
       const skipStep4 = !d.hasLed || d.solutionType === 'calico';
-      if (prev === 5 && !d.hasSx)    prev = skipStep4 ? 3 : 4;
-      if (prev === 4 && skipStep4)   prev = 3;
+      if (prev === 5)              prev = skipStep4 ? 3 : 4;
+      if (prev === 4 && skipStep4) prev = 3;
       d.step = clamp(prev, 1, 6);
       UI.saveDraft();
       UI.renderWizard();
