@@ -2293,6 +2293,52 @@
       grid-template-columns: repeat(2, 1fr);
     }
     @media (min-width: 540px) { .region-grid { grid-template-columns: repeat(4, 1fr); } }
+    /* v27.3.3 — Entity tile (used by Cases-by-solution + Active-relationships rows) */
+    .entity-tile-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .entity-tile {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-left: 3px solid var(--ent-color, var(--accent));
+      border-radius: var(--r-md);
+      transition: transform var(--dur-base) var(--ease-out),
+                  box-shadow var(--dur-base) var(--ease-out);
+    }
+    .entity-tile:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(15,14,12,0.06);
+    }
+    html[data-theme="dark"] .entity-tile:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.40); }
+    .entity-tile-icon {
+      width: 36px; height: 36px; flex: none;
+      border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: center;
+      background: color-mix(in srgb, var(--ent-color, var(--accent)) 12%, transparent);
+      color: var(--ent-color, var(--accent));
+    }
+    .entity-tile-icon svg { width: 18px; height: 18px; }
+    .entity-tile-text { min-width: 0; }
+    .entity-tile-value {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 22px; line-height: 1;
+      color: var(--ink-strong);
+      font-variant-numeric: tabular-nums;
+    }
+    .entity-tile-label {
+      font-family: var(--font-display); font-weight: 500;
+      font-size: 11.5px; color: var(--ink-soft);
+      margin-top: 4px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    @media (max-width: 480px) {
+      .entity-tile { padding: 12px 10px; gap: 10px; }
+      .entity-tile-icon { width: 32px; height: 32px; }
+      .entity-tile-value { font-size: 18px; }
+    }
     .region-tile {
       background: var(--bg-card);
       border: 1px solid var(--border-soft);
@@ -2713,6 +2759,48 @@
       margin-bottom: var(--s-5);
     }
     @media (min-width: 720px) { .home-stats { grid-template-columns: repeat(4, 1fr); } }
+    /* v27.3.2 — 5-card variant per spec photo 3 (Open · Closing M · Closing Q · Won Q · Slippage) */
+    .home-stats-5 { grid-template-columns: repeat(2, 1fr); }
+    @media (min-width: 540px) { .home-stats-5 { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 880px) { .home-stats-5 { grid-template-columns: repeat(5, 1fr); } }
+    /* v27.3.2 — Top-5 deal-list-row layout used by Home page list cards. */
+    .deal-list-row {
+      display: grid;
+      grid-template-columns: 22px 1fr auto;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-top: 0.5px solid var(--border-soft);
+      cursor: pointer;
+      transition: background var(--dur-base) var(--ease-out);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .deal-list-row:first-child { border-top: none; }
+    .deal-list-row:hover { background: var(--bg-card-hover); }
+    .deal-list-row-num {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 11px;
+      background: var(--bg-subtle); color: var(--ink-soft);
+      flex: none;
+    }
+    .deal-list-row-main { min-width: 0; }
+    .deal-list-row-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 13px; color: var(--ink-strong);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .deal-list-row-sub {
+      font-size: 11px; color: var(--ink-soft); margin-top: 2px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .deal-list-row-aside {
+      text-align: right;
+      font-size: 11px;
+      flex: none;
+    }
     .home-stat {
       appearance: none; border: 1px solid var(--border-soft);
       background: var(--bg-card);
@@ -3960,7 +4048,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.3.1',
+      version: 'v27.3.3',
       constants,
       calico,
       mv,
@@ -6457,8 +6545,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.3.1"',
-      () => CATALOG.version === 'v27.3.1' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.3.3"',
+      () => CATALOG.version === 'v27.3.3' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.1.2 invariants ---------- */
     // §1.2 — HUMAN_LABELS structural shape
@@ -9191,7 +9279,9 @@
         if (hash === '#/home') {
           armed = true;
           reloader = function () {
-            return Promise.all([loadHomeSimpleStats(), loadHomeRecent()]);
+            // v27.3.2 — single unified Home loader (5 KPIs + 3 lists).
+            const u = STORE.currentUser() || {};
+            return loadHomeAll(u.permission_tier === 'super');
           };
         } else if (hash === '#/dashboard') {
           armed = true;
@@ -9430,6 +9520,7 @@
       showChrome(true);
       updateNavActive('#/home');
       const u = STORE.currentUser() || {};
+      const isSuper = u.permission_tier === 'super';
       const greeting = (function () {
         const h = new Date().getHours();
         if (h < 12) return 'Good morning';
@@ -9442,7 +9533,7 @@
           '<header class="home-hero">' +
             '<div class="home-hero-text">' +
               '<div class="home-greet">' + esc(greeting) + (firstName ? ', ' + esc(firstName) : '') + '</div>' +
-              '<h1 class="home-hero-title">Here\'s your snapshot</h1>' +
+              '<h1 class="home-hero-title">All deals at a glance</h1>' +
             '</div>' +
             '<button class="home-cta" type="button" data-nav="#/quote/new">' +
               '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
@@ -9450,30 +9541,53 @@
             '</button>' +
           '</header>' +
 
-          /* ---- 4 simple personal stat cards ---- */
-          '<section class="home-stats">' +
-            simpleStatCard('open',    'Open pipeline',     'Active deals',   '#3B82F6', '#/history?filter=open',
+          /* v27.3.2 — 5 KPI stat cards per spec photo 3:
+             Open pipeline · Closing this month · Closing this quarter · Won this quarter · Slippage */
+          '<section class="home-stats home-stats-5">' +
+            simpleStatCard('open',    'Open pipeline',         'Active deals',         '#3B82F6', '#/history?filter=open',
               '<path d="M3 7h18M3 12h18M3 17h12"/><circle cx="20" cy="17" r="2"/>') +
-            simpleStatCard('closing', 'Closing this month', 'Due in current month', '#F59E0B', '#/history?filter=closing-this-month',
+            simpleStatCard('closingm', 'Closing this month',   'Due in current month', '#F59E0B', '#/history?filter=closing-this-month',
               '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>') +
-            simpleStatCard('won',     'Won this quarter',  'Closed wins',    '#22C55E', '#/history?filter=won',
+            simpleStatCard('closingq', 'Closing this quarter', 'Due this quarter',     '#A855F7', '#/history?filter=closing-this-quarter',
+              '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>') +
+            simpleStatCard('won',     'Won this quarter',      'Closed wins',          '#22C55E', '#/history?filter=won',
               '<path d="M6 9H4.5A2.5 2.5 0 0 1 2 6.5V5h4"/><path d="M18 9h1.5A2.5 2.5 0 0 0 22 6.5V5h-4"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>') +
-            simpleStatCard('stuck',   'Stuck > 14d',       'Needs a nudge',  '#EF4444', '#/history?filter=stuck',
-              '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>') +
+            simpleStatCard('slip',    'Slippage cases',        'Total till date',      '#EF4444', '#/history?filter=slipped',
+              '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>') +
           '</section>' +
 
-          /* ---- My Deals (recent) ---- */
+          /* v27.3.2 — Top-5 list cards per spec photo 3 */
           '<section class="deal-list-card">' +
             '<header class="deal-list-head">' +
-              '<h2>My Deals</h2>' +
+              '<h2>Closing this month</h2>' +
               '<span class="meta">' +
-                '<a data-nav="#/history" class="home-link">See all \u2192</a>' +
+                '<a data-nav="#/history?filter=closing-this-month" class="home-link">See all \u2192</a>' +
               '</span>' +
             '</header>' +
-            '<div id="home-recent">' + _skelDealRows(4) + '</div>' +
+            '<div id="home-list-month">' + _skelDealRows(3) + '</div>' +
           '</section>' +
 
-          /* ---- Footer cue to dashboard ---- */
+          '<section class="deal-list-card">' +
+            '<header class="deal-list-head">' +
+              '<h2>Closing this quarter</h2>' +
+              '<span class="meta">' +
+                '<a data-nav="#/history?filter=closing-this-quarter" class="home-link">See all \u2192</a>' +
+              '</span>' +
+            '</header>' +
+            '<div id="home-list-quarter">' + _skelDealRows(3) + '</div>' +
+          '</section>' +
+
+          '<section class="deal-list-card">' +
+            '<header class="deal-list-head">' +
+              '<h2>Slippage \u2014 with days of slippage</h2>' +
+              '<span class="meta">' +
+                '<a data-nav="#/history?filter=slipped" class="home-link">See all \u2192</a>' +
+              '</span>' +
+            '</header>' +
+            '<div id="home-list-slippage">' + _skelDealRows(3) + '</div>' +
+          '</section>' +
+
+          /* Footer cue to dashboard */
           '<div class="home-dash-cta">' +
             '<a data-nav="#/dashboard" class="home-dash-link">' +
               '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>' +
@@ -9482,8 +9596,7 @@
           '</div>' +
         '</div>'
       );
-      loadHomeSimpleStats();
-      loadHomeRecent();
+      loadHomeAll(isSuper);
     }
 
     /* Simple stat card — colored icon + big number + title + sub */
@@ -9498,37 +9611,184 @@
       '</button>';
     }
 
-    /* Simple stats loader — only computes the 4 numbers Home shows. */
-    async function loadHomeSimpleStats() {
+    /* v27.3.2 — Unified Home loader per spec photo 3.
+       Computes 5 KPIs + 3 top-5 lists (this-month closing / this-quarter
+       closing / slippage with days). Scope: own deals for non-leadership;
+       Super sees all; BU Head sees regional union (own + region match).
+
+       Slippage = open deals whose `close_month` is *strictly before* the
+       current YYYY-MM. "Days slipped" is days since the close_month's
+       last day. */
+    async function loadHomeAll(isSuper) {
       try {
-        const r = await STORE.listDeals({ limit: 300, offset: 0 });
+        const r = await STORE.listDeals({ limit: 500, offset: 0 });
         const all = (r && r.rows) || [];
         const u = STORE.currentUser() || {};
         const uid = u.id;
-        const mine = uid ? all.filter(d => d.sales_person_id === uid || d.presales_person_id === uid) : all;
-        const active = mine.filter(d => !d.deleted_at);
-        const open  = active.filter(d => _isOpenStage(d.stage));
-        const won   = active.filter(d => d.stage === 'Closed Won');
-        const curM  = _currentYYYYMM();
-        const closingNow = open.filter(d => String(d.close_month || '').slice(0, 7) === curM);
-        const stuck14 = open.filter(d => _daysSince(d.updated_at || d.created_at) > 14);
+        const isBuHead = u.org_function === 'BU Head';
+        // Scope
+        let scoped;
+        if (isSuper) {
+          scoped = all;
+        } else if (isBuHead && u.region) {
+          const myRegions = String(u.region || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+          scoped = all.filter(d => {
+            const r = String(d.region_owner || d.region || '').toLowerCase();
+            return d.sales_person_id === uid || d.presales_person_id === uid ||
+                   (r && myRegions.indexOf(r) >= 0);
+          });
+        } else {
+          scoped = uid ? all.filter(d => d.sales_person_id === uid || d.presales_person_id === uid) : all;
+        }
+        const active = scoped.filter(d => !d.deleted_at);
+        const open = active.filter(d => _isOpenStage(d.stage));
+        const won  = active.filter(d => d.stage === 'Closed Won');
+
+        const curM = _currentYYYYMM();                 // 'YYYY-MM'
+        const curQ = _currentQuarterMonths();          // ['YYYY-MM', 'YYYY-MM', 'YYYY-MM']
         const qStart = (function () {
           const d = new Date(); const m = d.getMonth();
           const qm = Math.floor(m / 3) * 3;
           return new Date(d.getFullYear(), qm, 1);
         })();
-        const wonQ = won.filter(d => new Date(d.updated_at || d.created_at || 0) >= qStart);
-        setText('home-stat-open-val',    String(open.length));
-        setText('home-stat-open-sub',    open.length === 0 ? 'Nothing open' : (open.length === 1 ? '1 active deal' : open.length + ' active deals'));
-        setText('home-stat-closing-val', String(closingNow.length));
-        setText('home-stat-closing-sub', closingNow.length === 0 ? 'Nothing due' : 'Due in current month');
-        setText('home-stat-won-val',     String(wonQ.length));
-        setText('home-stat-won-sub',     wonQ.length === 0 ? 'No wins yet' : (wonQ.length === 1 ? '1 win this quarter' : wonQ.length + ' wins this quarter'));
-        setText('home-stat-stuck-val',   String(stuck14.length));
-        setText('home-stat-stuck-sub',   stuck14.length === 0 ? 'All current' : 'Need a nudge');
+
+        const closingMonth = open
+          .filter(d => _ymOf(d.close_month) === curM);
+        const closingQuarter = open
+          .filter(d => curQ.indexOf(_ymOf(d.close_month)) >= 0);
+        const wonQ = won
+          .filter(d => new Date(d.updated_at || d.created_at || 0) >= qStart);
+        const slipped = open
+          .filter(d => {
+            const ym = _ymOf(d.close_month);
+            return ym && ym < curM;
+          });
+
+        // KPI fills (with count-up animation if available)
+        const setK = (typeof _animateCount === 'function') ? _animateCount : setText;
+        setK('home-stat-open-val',     String(open.length));
+        setText('home-stat-open-sub',  open.length === 0 ? 'Nothing open' : (open.length === 1 ? '1 active deal' : open.length + ' active deals'));
+        setK('home-stat-closingm-val', String(closingMonth.length));
+        setText('home-stat-closingm-sub', closingMonth.length === 0 ? 'Nothing due' : 'Due in current month');
+        setK('home-stat-closingq-val', String(closingQuarter.length));
+        setText('home-stat-closingq-sub', closingQuarter.length === 0 ? 'Nothing due' : 'Due this quarter');
+        setK('home-stat-won-val',      String(wonQ.length));
+        setText('home-stat-won-sub',   wonQ.length === 0 ? 'No wins yet' : (wonQ.length === 1 ? '1 win this quarter' : wonQ.length + ' wins this quarter'));
+        setK('home-stat-slip-val',     String(slipped.length));
+        setText('home-stat-slip-sub',  slipped.length === 0 ? 'On track' : (slipped.length === 1 ? '1 deal slipped' : slipped.length + ' deals slipped'));
+
+        // 3 list renders — top 5 each
+        _renderHomeList('home-list-month',    closingMonth,    'month',    isSuper);
+        _renderHomeList('home-list-quarter',  closingQuarter,  'quarter',  isSuper);
+        _renderHomeList('home-list-slippage', slipped,         'slippage', isSuper);
+
       } catch (e) {
-        console.error('loadHomeSimpleStats failed:', e);
+        console.error('loadHomeAll failed:', e);
+        _renderLoadError && _renderLoadError('home-list-month',    'Couldn\u2019t load deals', () => loadHomeAll(isSuper));
       }
+    }
+
+    /* Render one of the 3 Home list cards. `kind` controls the secondary
+       column (close month for month/quarter lists; "X days slipped" for
+       slippage). Sorts:
+         - month:    by close_month asc, then by updated_at desc
+         - quarter:  same
+         - slippage: by days-slipped desc (worst first) */
+    function _renderHomeList(hostId, deals, kind, isSuper) {
+      const host = $(hostId);
+      if (!host) return;
+      if (!deals || deals.length === 0) {
+        const emptyMsg = kind === 'month' ? 'Nothing closing this month.'
+                       : kind === 'quarter' ? 'Nothing closing this quarter.'
+                       : 'Nothing slipped \u2014 you\u2019re on track.';
+        host.innerHTML =
+          '<div class="empty-state" style="padding:24px 16px">' +
+            '<div class="empty-state-illustration"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>' +
+            '<p class="empty-state-body">' + esc(emptyMsg) + '</p>' +
+          '</div>';
+        return;
+      }
+      // Sort
+      const sorted = deals.slice();
+      if (kind === 'slippage') {
+        sorted.sort(function (a, b) {
+          return _daysSlippedFor(b) - _daysSlippedFor(a);
+        });
+      } else {
+        sorted.sort(function (a, b) {
+          const am = _ymOf(a.close_month), bm = _ymOf(b.close_month);
+          if (am !== bm) return am < bm ? -1 : 1;
+          return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+        });
+      }
+      const top = sorted.slice(0, 5);
+      host.innerHTML = top.map(function (d, idx) {
+        const ref = d.display_ref || d.ref || '\u2014';
+        const stageCls = _stageChipClassName(d.stage);
+        let aside;
+        if (kind === 'slippage') {
+          const days = _daysSlippedFor(d);
+          aside = '<span class="stuck-days' + (days > 60 ? ' stuck-days-bad' : '') + '">' + days + 'd slipped</span>';
+        } else {
+          aside = '<span class="meta">' + esc(d.close_month || '\u2014') + '</span>';
+        }
+        // Super: show value chip when present (tvONE pricing currently nil, so falls through)
+        const valChip = (isSuper && Number(d.deal_value_inr) > 0)
+          ? '<span class="meta" style="margin-left:8px">\u20B9' + _fmtLakh(Number(d.deal_value_inr)) + '</span>'
+          : '';
+        return '<div class="deal-list-row" data-nav="#/quote/' + esc(ref) + '">' +
+          '<div class="deal-list-row-num">' + (idx + 1) + '</div>' +
+          '<div class="deal-list-row-main">' +
+            '<div class="deal-list-row-title">' + esc(d.project || '\u2014') + '</div>' +
+            '<div class="deal-list-row-sub">' + esc(ref) +
+              (d.customer_name ? ' \u00b7 ' + esc(d.customer_name) : '') +
+              valChip +
+            '</div>' +
+          '</div>' +
+          '<div class="deal-list-row-aside">' +
+            '<span class="' + stageCls + '" style="font-size:10px">' + esc(d.stage || '\u2014') + '</span>' +
+            '<div style="margin-top:4px">' + aside + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    /* Days slipped = days since the LAST day of the deal's close_month.
+       e.g. close_month='2026-04' on 2026-05-25 → April ended 2026-04-30 →
+       25 days slipped. Returns 0 if no close_month or it's not in the past. */
+    function _daysSlippedFor(d) {
+      const ym = _ymOf(d.close_month);
+      if (!ym) return 0;
+      const curM = _currentYYYYMM();
+      if (ym >= curM) return 0;
+      const m = ym.match(/^(\d{4})-(\d{2})$/);
+      if (!m) return 0;
+      const year = Number(m[1]), monthIdx = Number(m[2]) - 1;
+      // Last day of that month = day 0 of next month
+      const lastDay = new Date(year, monthIdx + 1, 0);
+      const ms = Date.now() - lastDay.getTime();
+      return Math.max(0, Math.floor(ms / 86400000));
+    }
+
+    /* 'YYYY-MM' from a close_month string ('YYYY-MM-DD' or 'YYYY-MM'). */
+    function _ymOf(s) {
+      const str = String(s || '').trim();
+      if (!str) return '';
+      return str.slice(0, 7);
+    }
+
+    /* Returns array of 3 'YYYY-MM' strings covering the current quarter. */
+    function _currentQuarterMonths() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = d.getMonth();              // 0..11
+      const qm = Math.floor(m / 3) * 3;    // 0,3,6,9
+      const out = [];
+      for (let i = 0; i < 3; i++) {
+        const mm = qm + i;
+        out.push(y + '-' + String(mm + 1).padStart(2, '0'));
+      }
+      return out;
     }
 
     /* ============================================================
@@ -9656,6 +9916,38 @@
             '</div>' +
           '</section>' +
 
+          /* v27.3.3 — Product family case-count breakdown per spec image 2 */
+          '<section class="dash-section">' +
+            '<header class="dash-section-head">' +
+              '<h2>Cases by solution</h2>' +
+              '<span class="meta">Active pipeline</span>' +
+            '</header>' +
+            '<div class="entity-tile-grid" id="fam-tile-grid">' +
+              entityTile('fam-mv',     'Multiviewer', '#06B6D4',
+                '<rect x="3" y="4" width="18" height="14" rx="2"/><line x1="12" y1="4" x2="12" y2="18"/><line x1="3" y1="11" x2="21" y2="11"/>') +
+              entityTile('fam-calico', 'CALICO',      '#A855F7',
+                '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="7" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="17" cy="12" r="1.5"/>') +
+              entityTile('fam-corio',  'CORIO',       '#EC4899',
+                '<rect x="3" y="3" width="18" height="6" rx="1"/><rect x="3" y="13" width="18" height="6" rx="1"/><line x1="7" y1="6" x2="9" y2="6"/><line x1="7" y1="16" x2="9" y2="16"/>') +
+            '</div>' +
+          '</section>' +
+
+          /* v27.3.3 — Active entity counts per spec image 1 */
+          '<section class="dash-section">' +
+            '<header class="dash-section-head">' +
+              '<h2>Active relationships</h2>' +
+              '<span class="meta">Distinct in open deals</span>' +
+            '</header>' +
+            '<div class="entity-tile-grid" id="ent-tile-grid">' +
+              entityTile('ent-end',    'Endusers',    '#10B981',
+                '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>') +
+              entityTile('ent-part',   'Partners',    '#3B82F6',
+                '<path d="M17 11a3 3 0 1 0-2.83-4M13 11a3 3 0 1 0-2.83-4M11 11a3 3 0 1 1 2.83-4"/><path d="M21 19a6 6 0 0 0-9-5.2"/><path d="M3 19a6 6 0 0 1 9-5.2"/>') +
+              entityTile('ent-cons',   'Consultants', '#F59E0B',
+                '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>') +
+            '</div>' +
+          '</section>' +
+
           '<section class="dash-section">' +
             '<header class="dash-section-head">' +
               '<h2>Pipeline funnel</h2>' +
@@ -9702,6 +9994,19 @@
           '<div class="kpi-value" id="kpi-' + id + '-val">\u2014</div></div>' +
         '<div class="kpi-sub" id="kpi-' + id + '-sub">' + esc(sub) + '</div>' +
       '</button>';
+    }
+
+    /* v27.3.3 — Tile used by "Cases by solution" + "Active relationships"
+       rows. Lighter than kpiTile; no nav, no sub-text. Colored icon + big
+       count + label. Each tile is independently animated on data land. */
+    function entityTile(id, label, color, iconPath) {
+      return '<div class="entity-tile" style="--ent-color:' + color + '">' +
+        '<span class="entity-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + iconPath + '</svg></span>' +
+        '<div class="entity-tile-text">' +
+          '<div class="entity-tile-value" id="' + id + '-val">\u2014</div>' +
+          '<div class="entity-tile-label">' + esc(label) + '</div>' +
+        '</div>' +
+      '</div>';
     }
 
     /* Stage chip class mapping (v27.3.0 §8) */
@@ -10102,6 +10407,37 @@
         renderSourceDonut(active);
         renderStageVelocity(active);
         renderLeaderboard(wonQ, u);
+
+        // -- v27.3.3 Product family case counts (per spec image 2) --
+        // Solution type is in raw_submission.solutionType (jsonb-packed at save).
+        // For open + active deals, count by solutionType.
+        const famCounts = { mv: 0, calico: 0, corio: 0 };
+        active.forEach(function (d) {
+          const st = String((d.raw_submission && d.raw_submission.solutionType) || d.solution_type || '').toLowerCase();
+          if (st === 'mv' || st === 'multiviewer' || st === 'multi viewer') famCounts.mv++;
+          else if (st === 'calico') famCounts.calico++;
+          else if (st === 'corio') famCounts.corio++;
+        });
+        const animK = (typeof _animateCount === 'function') ? _animateCount : setText;
+        animK('fam-mv-val',     String(famCounts.mv));
+        animK('fam-calico-val', String(famCounts.calico));
+        animK('fam-corio-val',  String(famCounts.corio));
+
+        // -- v27.3.3 Active relationships (per spec image 1) --
+        // Distinct count of customer_name / partner_name / consultant_name
+        // strings across open deals. Case-insensitive + trimmed for dedup.
+        const openOnly = open;  // already filtered
+        const distinct = function (key) {
+          const s = new Set();
+          openOnly.forEach(function (d) {
+            const v = String(d[key] || '').trim().toLowerCase();
+            if (v) s.add(v);
+          });
+          return s.size;
+        };
+        animK('ent-end-val',  String(distinct('customer_name')));
+        animK('ent-part-val', String(distinct('partner_name')));
+        animK('ent-cons-val', String(distinct('consultant_name')));
 
       } catch (e) {
         console.error('loadHomeKpis failed:', e);
