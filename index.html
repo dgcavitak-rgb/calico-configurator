@@ -13,6 +13,59 @@
        once the user lands on /dashboard. ~330KB gzipped. Pinned to a stable minor (5.5.x). -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
   <!--
+    v27.3.14a — SX ACCORDION (Issue G, 2026-05-26)
+    Spec: /mnt/user-data/outputs/SPEC-G-sx-accordion.md (sign-off "Ok go ahead")
+    Single focused ship — SX cards default to collapsed, expand on tap, force-open
+    when content present. Pure UI; data model untouched.
+
+    1. defaultWizard() — new field `_sxExpanded: {hdbt:false, da:false, ap:false, aoc:false}`.
+       Added to STRUCTURAL_FIELDS so the manual-expand flags round-trip via raw_submission.
+
+    2. hydrateWizardFromDeal() — defensive shape backfill for legacy deals
+       (pre-v27.3.14a) that lack _sxExpanded. Backfill missing per-key booleans too.
+
+    3. renderSxBlock() — added `_sxExpanded` defensive default + per-card expanded
+       computation (manual OR has-content). Two new helpers above the function:
+         - _sxCardHasContent(d, key): pure bool predicate for each of hdbt/da/ap/aoc
+         - _sxCardHead(key, expanded, hasContent, iconSvg, title, sub): returns head HTML
+           with chevron + optional "+ Add" pill, click target = entire .sx-card-head
+       Each of the 4 card builds now: outer div carries data-key + data-expanded
+       + data-has-content; head replaced with helper call; body wrapped in
+       (expanded ? '<div class="sx-card-body">...</div>' : ''). When collapsed the
+       body div doesn't render at all (matches OP 2.7 modal-handling principle).
+
+    4. Action handler — new case 'sx-toggle' just below 'sx-da-qty'. Computes
+       hasContent via _sxCardHasContent; if true, click is a silent no-op
+       (cards with content cannot be collapsed — prevents accidental data hiding).
+       Otherwise flips _sxExpanded[key], saves draft, re-renders preserving scroll.
+
+    5. CSS — 4 new rule blocks just before .sx-card-wide:
+         .sx-card-head { cursor: pointer; user-select: none; }
+         .sx-card[data-has-content="true"] .sx-card-head { cursor: default; }
+         .sx-card-chevron — 16px right-aligned, rotates 0→90deg via [data-expanded]
+         .sx-card-add-pill — small "+ Add" pill, pointer-events:none so parent owns click
+         .sx-card-body — margin-top + flex column (matches original card layout)
+
+    6. Smoke — 4 new checks (96 → 100):
+         a. defaultWizard()._sxExpanded all-false
+         b. card with content force-expanded even when manual flag is false
+         c. fresh wizard renders zero sx-card-body divs (all 4 collapsed)
+         d. _sxExpanded present in UI._STRUCTURAL_FIELDS
+
+    No data-model change. No engine touch. No new validation. SX block continues
+    to render at bottom of Step 3 (per v27.3.12 step-reduction). Old saved deals
+    open with their content cards auto-expanded via the hasContent OR.
+
+    Pending after this ship (from v27.3.13 handoff queue):
+    - C/D — LED + output persistence (need DevTools Network evidence)
+    - F — CORIO Micro/Mini chassis selection ALREADY SHIPPED in v27.3.1 (handoff
+           inherited stale 04-FIELDS-BY-BRANCH.md §3.3 note); §3.3 to be refreshed
+    - H — sticky chips broken (need DevTools Elements evidence on parent overflow)
+    - E — saved-deal enrichment (awaiting Dipenkumar's field pick)
+    - v27.3.14b — PDF/Excel/Email polish + D16 Profile Gate restore + T&C reconcile
+  -->
+
+  <!--
     v27.3.13 — TWO TARGETED UX FIXES (2026-05-26 late evening)
     Self-tested in this chat against deployed v27.3.12 + post-deploy
     user-reported issues. Two surgical fixes shipped here; the larger
@@ -2021,6 +2074,33 @@
       font-variant-numeric: tabular-nums;
       min-width: 32px; text-align: center;
     }
+
+    /* --- v27.3.14a SX ACCORDION (Issue G) --- */
+    .sx-card-head { cursor: pointer; user-select: none; }
+    .sx-card[data-has-content="true"] .sx-card-head { cursor: default; }
+    .sx-card-chevron {
+      margin-left: auto;
+      flex-shrink: 0;
+      width: 16px; height: 16px;
+      color: var(--ink-soft);
+      transition: transform 180ms ease;
+      transform: rotate(0deg);
+    }
+    .sx-card[data-expanded="true"] .sx-card-chevron { transform: rotate(90deg); }
+    .sx-card-add-pill {
+      margin-left: auto;
+      margin-right: 8px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-soft);
+      border-radius: 999px;
+      color: var(--ink-mid);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .sx-card-body { margin-top: 12px; display: flex; flex-direction: column; gap: var(--s-3); }
 
     /* --- v27.3.0 §10 SX LINE-ITEM PICKERS --- */
     .sx-card-wide { grid-column: 1 / -1; }
@@ -4313,7 +4393,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.3.13',
+      version: 'v27.3.14a',
       constants,
       calico,
       mv,
@@ -6835,8 +6915,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.3.13"',
-      () => CATALOG.version === 'v27.3.13' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.3.14a"',
+      () => CATALOG.version === 'v27.3.14a' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.3.12 invariants — SX redesign + step reduction ---------- */
     // Source: /mnt/user-data/outputs/SPEC-v27.3.12-sx-redesign-step-reduction.md
@@ -6941,6 +7021,42 @@
         return (r && r.ok === true && !r.errors.sx)
           || ('got: ' + JSON.stringify(r));
       });
+
+    /* ---------- v27.3.14a invariants — SX accordion (Issue G) ---------- */
+    // Spec: /mnt/user-data/outputs/SPEC-G-sx-accordion.md
+    // Four sign-offs locked: default-collapsed, has-content forces-open,
+    // _sxExpanded persists via STRUCTURAL_FIELDS, "+ Add" pill on collapsed empties.
+    check('v27.3.14a: _sxExpanded defaults all false on fresh wizard',
+      () => {
+        const d = UI.defaultWizard();
+        return (d._sxExpanded
+          && d._sxExpanded.hdbt === false
+          && d._sxExpanded.da === false
+          && d._sxExpanded.ap === false
+          && d._sxExpanded.aoc === false)
+          || 'got: ' + JSON.stringify(d._sxExpanded);
+      });
+    check('v27.3.14a: card with content is force-expanded regardless of _sxExpanded flag',
+      () => {
+        const d = UI.defaultWizard();
+        d.sx_ap_qty = 2;
+        d._sxExpanded.ap = false;  // explicitly false; hasContent should override
+        const html = UI.renderSxBlock(d);
+        // The AP card outer div carries data-key="ap" + data-expanded="true".
+        // Crude but reliable: substring search for that exact attribute combo.
+        return html.indexOf('data-key="ap" data-expanded="true"') !== -1
+          || 'expected data-expanded=true on ap card with content';
+      });
+    check('v27.3.14a: empty cards render no sx-card-body on fresh wizard',
+      () => {
+        const d = UI.defaultWizard();
+        const html = UI.renderSxBlock(d);
+        const bodyHits = (html.match(/sx-card-body/g) || []).length;
+        return bodyHits === 0 || 'got ' + bodyHits + ' sx-card-body div(s)';
+      });
+    check('v27.3.14a: _sxExpanded round-trips via STRUCTURAL_FIELDS',
+      () => UI._STRUCTURAL_FIELDS.indexOf('_sxExpanded') >= 0
+        || 'missing _sxExpanded in STRUCTURAL_FIELDS');
 
     /* ---------- v27.3.10 invariants — saved-deal UX cleanup ---------- */
     // Spec: /home/claude/work/SPEC-v27.3.10-saved-deal-ux.md
@@ -8468,7 +8584,10 @@
       'hasSx', 'sx_data',
       // v27.3.0 §10 — per-variant SX detail arrays (TX/RX, splitter model,
       // AOC signal+jacket+length). Engine emits real SKUs per line.
-      'sx_hdbt_lines', 'sx_da_counts', 'sx_ap_qty', 'sx_aoc_lines'
+      'sx_hdbt_lines', 'sx_da_counts', 'sx_ap_qty', 'sx_aoc_lines',
+      // v27.3.14a — SX accordion: per-card manual-expand flags. Persisted
+      // so a user's "open these cards" choice survives re-edit of a saved deal.
+      '_sxExpanded'
     ];
 
     // Module-level autosave state (one saved-deal is viewed at a time).
@@ -9039,6 +9158,12 @@
         // v27.3.12 UI writes 0-1 entry per the photo's single-card view
         // (jacket defaults to 'Standard' since photo dropped the jacket selector).
         sx_aoc_lines: [],
+        // v27.3.14a — SX accordion: per-card manual-expand flags. Default
+        // all-collapsed. Effective expanded = _sxExpanded[k] || hasContent(k).
+        // Cards with content cannot be manually collapsed (prevents accidental
+        // data hiding). Persisted via STRUCTURAL_FIELDS so saved deals re-open
+        // with the same expand state.
+        _sxExpanded: { hdbt: false, da: false, ap: false, aoc: false },
         reco: null,
         errors: {}
       };
@@ -9183,6 +9308,18 @@
           length: 10,
           qty: Number(sxData.avip) || 0
         }];
+      }
+      // v27.3.14a — Defensive shape for _sxExpanded. Legacy deals (pre-v27.3.14a)
+      // saved no _sxExpanded; rebuild from scratch with all-collapsed. The
+      // effective expanded state still picks up cards with content via the
+      // hasContent OR, so this default is safe.
+      if (!w._sxExpanded || typeof w._sxExpanded !== 'object') {
+        w._sxExpanded = { hdbt: false, da: false, ap: false, aoc: false };
+      } else {
+        // Backfill any missing keys (forward-compat insurance).
+        ['hdbt', 'da', 'ap', 'aoc'].forEach(function(k) {
+          if (typeof w._sxExpanded[k] !== 'boolean') w._sxExpanded[k] = false;
+        });
       }
       // v27.1.2 OQ 1A — lazy remap of v27.1.1 deal shape:
       //   - hasLed was a top-level boolean; v27.1.2 still uses it but Step 3
@@ -14049,12 +14186,68 @@
        single-card UI and the multi-line storage shape.
        ============================================================ */
 
+    /* v27.3.14a (Issue G) — Accordion helpers.
+       _sxCardHasContent: pure bool predicate per card key. Drives the
+       force-expanded behaviour (cards with content cannot be collapsed).
+       _sxCardHead: returns the .sx-card-head fragment with chevron +
+       optional "+ Add" pill. The whole head is the click target with
+       data-action="sx-toggle" data-key="K"; the pill is pointer-events:none
+       so the parent owns the click. */
+    function _sxCardHasContent(d, key) {
+      if (!d) return false;
+      if (key === 'hdbt') {
+        const view = _deriveSxHdbtView(d.sx_hdbt_lines || []);
+        return (view.tx | 0) > 0 || (view.rx | 0) > 0;
+      }
+      if (key === 'da') {
+        const c = d.sx_da_counts || {};
+        return ((c['612'] | 0) + (c['614'] | 0) + (c['618'] | 0)) > 0;
+      }
+      if (key === 'ap') {
+        return (d.sx_ap_qty | 0) > 0;
+      }
+      if (key === 'aoc') {
+        const view = _deriveSxAocView(d.sx_aoc_lines || []);
+        return (view.distance_m | 0) > 0;
+      }
+      return false;
+    }
+
+    function _sxCardHead(key, expanded, hasContent, iconSvg, title, subTitle) {
+      const chevron = '<svg class="sx-card-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>';
+      const addPill = (!expanded && !hasContent)
+        ? '<span class="sx-card-add-pill">+ Add</span>'
+        : '';
+      return '<div class="sx-card-head" data-action="sx-toggle" data-key="' + key + '">' +
+        '<span class="sx-card-icon">' + iconSvg + '</span>' +
+        '<div class="sx-card-text">' +
+          '<div class="sx-card-title">' + esc(title) + '</div>' +
+          '<div class="sx-card-sub">' + subTitle + '</div>' +
+        '</div>' +
+        addPill +
+        chevron +
+      '</div>';
+    }
+
     function renderSxBlock(d) {
       // Defensive defaults
       if (!d.sx_data) d.sx_data = { hdmi: 0, sdi: 0, ap536: 0, avip: 0 };
       if (!Array.isArray(d.sx_hdbt_lines)) d.sx_hdbt_lines = [];
       if (!d.sx_da_counts) d.sx_da_counts = { '612': 0, '614': 0, '618': 0 };
       if (!Array.isArray(d.sx_aoc_lines)) d.sx_aoc_lines = [];
+      // v27.3.14a — _sxExpanded defense (legacy deals / stale wizard shape).
+      if (!d._sxExpanded || typeof d._sxExpanded !== 'object') {
+        d._sxExpanded = { hdbt: false, da: false, ap: false, aoc: false };
+      }
+      // Effective expanded state per card: manual flag OR has-content.
+      const hcHdbt = _sxCardHasContent(d, 'hdbt');
+      const hcDa   = _sxCardHasContent(d, 'da');
+      const hcAp   = _sxCardHasContent(d, 'ap');
+      const hcAoc  = _sxCardHasContent(d, 'aoc');
+      const exHdbt = !!d._sxExpanded.hdbt || hcHdbt;
+      const exDa   = !!d._sxExpanded.da   || hcDa;
+      const exAp   = !!d._sxExpanded.ap   || hcAp;
+      const exAoc  = !!d._sxExpanded.aoc  || hcAoc;
 
       const errHtml = d.errors && d.errors.sx
         ? '<div class="banner err">' + esc(d.errors.sx) + '</div>' : '';
@@ -14082,14 +14275,9 @@
             '</div>'
           : '';
 
-      const hdbtCard = '<div class="sx-card sx-card-wide">' +
-        '<div class="sx-card-head">' +
-          '<span class="sx-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="2" y="9" width="8" height="6" rx="1"/><rect x="14" y="9" width="8" height="6" rx="1"/><line x1="10" y1="12" x2="14" y2="12" stroke-dasharray="2 2"/></svg></span>' +
-          '<div class="sx-card-text">' +
-            '<div class="sx-card-title">HDBaseT Extender</div>' +
-            '<div class="sx-card-sub">TX/RX over Cat6 \u00b7 HD-One DX (Video / Video+Audio) or LX (with IR/RS232)</div>' +
-          '</div>' +
-        '</div>' +
+      const hdbtIconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="2" y="9" width="8" height="6" rx="1"/><rect x="14" y="9" width="8" height="6" rx="1"/><line x1="10" y1="12" x2="14" y2="12" stroke-dasharray="2 2"/></svg>';
+      const hdbtBody = exHdbt ? (
+        '<div class="sx-card-body">' +
         '<div class="sx-hint-strip" role="note">' +
           '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
           '<span>Max reach over Cat6: <strong>4K \u2192 60 m</strong> \u00b7 <strong>FHD \u2192 152 m</strong></span>' +
@@ -14133,6 +14321,12 @@
           '</div>' +
         '</div>' +
         kitHint +
+        '</div>'
+      ) : '';
+
+      const hdbtCard = '<div class="sx-card sx-card-wide" data-key="hdbt" data-expanded="' + (exHdbt ? 'true' : 'false') + '" data-has-content="' + (hcHdbt ? 'true' : 'false') + '">' +
+        _sxCardHead('hdbt', exHdbt, hcHdbt, hdbtIconSvg, 'HDBaseT Extender', 'TX/RX over Cat6 \u00b7 HD-One DX (Video / Video+Audio) or LX (with IR/RS232)') +
+        hdbtBody +
       '</div>';
 
       // ===== HDMI Splitter (DA) card =====
@@ -14156,33 +14350,27 @@
           '</div>' +
         '</div>';
       }).join('');
-      const daCard = '<div class="sx-card sx-card-wide">' +
-        '<div class="sx-card-head">' +
-          '<span class="sx-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="2" y="10" width="6" height="4" rx="1"/><path d="M8 12h4M12 12v-4h4M12 12v4h4M16 6h6M16 12h6M16 18h6"/></svg></span>' +
-          '<div class="sx-card-text">' +
-            '<div class="sx-card-title">HDMI Splitter (DA)</div>' +
-            '<div class="sx-card-sub">4K60 HDMI 2.0 \u00b7 HDCP 2.2 \u00b7 with downscaling</div>' +
-          '</div>' +
-        '</div>' +
-        daRowsHtml +
+      const daIconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="2" y="10" width="6" height="4" rx="1"/><path d="M8 12h4M12 12v-4h4M12 12v4h4M16 6h6M16 12h6M16 18h6"/></svg>';
+      const daBody = exDa ? ('<div class="sx-card-body">' + daRowsHtml + '</div>') : '';
+      const daCard = '<div class="sx-card sx-card-wide" data-key="da" data-expanded="' + (exDa ? 'true' : 'false') + '" data-has-content="' + (hcDa ? 'true' : 'false') + '">' +
+        _sxCardHead('da', exDa, hcDa, daIconSvg, 'HDMI Splitter (DA)', '4K60 HDMI 2.0 \u00b7 HDCP 2.2 \u00b7 with downscaling') +
+        daBody +
       '</div>';
 
-      // ===== Audio Extractor card (AP-536) =====
-      const apCard = '<div class="sx-card">' +
-        '<div class="sx-card-head">' +
-          '<span class="sx-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></span>' +
-          '<div class="sx-card-text">' +
-            // v27.3.12 — label simplified to "Audio Extractor" per Q3 lock (AP-536 moved to sub-label only)
-            '<div class="sx-card-title">Audio Extractor</div>' +
-            '<div class="sx-card-sub">HDMI audio de-embedder \u00b7 analog L/R + S/PDIF \u00b7 AP-536</div>' +
+      const apIconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
+      const apBody = exAp ? (
+        '<div class="sx-card-body">' +
+          '<div class="sx-card-stepper">' +
+            '<button type="button" class="sx-step-btn" data-action="sx-ap-qty" data-delta="-1"' +
+              ((d.sx_ap_qty | 0) <= 0 ? ' disabled' : '') + '>\u2212</button>' +
+            '<span class="sx-step-val">' + (d.sx_ap_qty | 0) + '</span>' +
+            '<button type="button" class="sx-step-btn" data-action="sx-ap-qty" data-delta="1">+</button>' +
           '</div>' +
-        '</div>' +
-        '<div class="sx-card-stepper">' +
-          '<button type="button" class="sx-step-btn" data-action="sx-ap-qty" data-delta="-1"' +
-            ((d.sx_ap_qty | 0) <= 0 ? ' disabled' : '') + '>\u2212</button>' +
-          '<span class="sx-step-val">' + (d.sx_ap_qty | 0) + '</span>' +
-          '<button type="button" class="sx-step-btn" data-action="sx-ap-qty" data-delta="1">+</button>' +
-        '</div>' +
+        '</div>'
+      ) : '';
+      const apCard = '<div class="sx-card" data-key="ap" data-expanded="' + (exAp ? 'true' : 'false') + '" data-has-content="' + (hcAp ? 'true' : 'false') + '">' +
+        _sxCardHead('ap', exAp, hcAp, apIconSvg, 'Audio Extractor', 'HDMI audio de-embedder \u00b7 analog L/R + S/PDIF \u00b7 AP-536') +
+        apBody +
       '</div>';
 
       // ===== AOC Cable card (view-derived from sx_aoc_lines) =====
@@ -14191,14 +14379,9 @@
         { v: 'FHD', lbl: 'FHD' },
         { v: '4K',  lbl: '4K' }
       ];
-      const aocCard = '<div class="sx-card sx-card-wide">' +
-        '<div class="sx-card-head">' +
-          '<span class="sx-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 6c0-2 3-3 8-3s8 1 8 3v12c0 2-3 3-8 3s-8-1-8-3z"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/></svg></span>' +
-          '<div class="sx-card-text">' +
-            '<div class="sx-card-title">AOC Cable</div>' +
-            '<div class="sx-card-sub">Active Optical Cable \u00b7 HDMI long-haul \u00b7 Standard jacket</div>' +
-          '</div>' +
-        '</div>' +
+      const aocIconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 6c0-2 3-3 8-3s8 1 8 3v12c0 2-3 3-8 3s-8-1-8-3z"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/></svg>';
+      const aocBody = exAoc ? (
+        '<div class="sx-card-body">' +
         '<div class="sx-line-grid">' +
           '<div class="sx-line-field"><label>Resolution</label>' +
             '<div class="sx-pill-group">' +
@@ -14218,6 +14401,11 @@
             '</div>' +
           '</div>' +
         '</div>' +
+        '</div>'
+      ) : '';
+      const aocCard = '<div class="sx-card sx-card-wide" data-key="aoc" data-expanded="' + (exAoc ? 'true' : 'false') + '" data-has-content="' + (hcAoc ? 'true' : 'false') + '">' +
+        _sxCardHead('aoc', exAoc, hcAoc, aocIconSvg, 'AOC Cable', 'Active Optical Cable \u00b7 HDMI long-haul \u00b7 Standard jacket') +
+        aocBody +
       '</div>';
 
       // ===== Header + assembly =====
@@ -15914,6 +16102,25 @@
           if (!wizardData.sx_da_counts) wizardData.sx_da_counts = { '612': 0, '614': 0, '618': 0 };
           wizardData.sx_da_counts[key] = Math.max(0, (wizardData.sx_da_counts[key] | 0) + delta);
           _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        // v27.3.14a (Issue G) — SX card accordion toggle.
+        // No-op when the card has content (forced-open prevents data hiding).
+        // Click target is the entire .sx-card-head; the "+ Add" pill inside
+        // has pointer-events:none so the parent owns the click.
+        if (action === 'sx-toggle') {
+          const k = actEl.getAttribute('data-key');
+          if (!k) return;
+          if (!wizardData._sxExpanded || typeof wizardData._sxExpanded !== 'object') {
+            wizardData._sxExpanded = { hdbt: false, da: false, ap: false, aoc: false };
+          }
+          if (_sxCardHasContent(wizardData, k)) {
+            // Forced-open; ignore click. (No haptic, no toast — silent no-op.)
+            return;
+          }
+          wizardData._sxExpanded[k] = !wizardData._sxExpanded[k];
           saveDraft();
           rerenderPreservingScroll();
           return;
