@@ -680,6 +680,27 @@
     .sd-summary::-webkit-details-marker { display: none; }
     .sd-summary-title { flex: 1 1 auto; }
     .sd-summary-meta { display: flex; align-items: center; gap: 8px; }
+    /* v27.3.0 — section + chip icons */
+    .sd-section-icon {
+      width: 32px; height: 32px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      background: var(--accent-soft, #fff3e6);
+      color: var(--accent-deep, #d97316);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-right: 4px;
+    }
+    .sd-section-icon svg { width: 17px; height: 17px; }
+    .sd-chip-icon {
+      display: inline-flex; align-items: center;
+      width: 14px; height: 14px;
+      margin-right: 6px;
+      color: var(--ink-soft, #6b6660);
+      vertical-align: middle;
+    }
+    .sd-chip-icon svg { width: 14px; height: 14px; }
+    .sd-chip.active .sd-chip-icon,
+    .sd-chip:hover .sd-chip-icon { color: var(--accent-deep, #d97316); }
     .sd-badge {
       font: 600 11px/1 var(--f-mono);
       padding: 4px 8px;
@@ -1591,6 +1612,22 @@
       color: white;
       box-shadow: 0 4px 14px rgba(22,163,74,0.22);
     }
+    /* v27.3.0 — slim aggregate summary replacing the loud green band.
+       Per-screen pills cover the per-screen detail; this just rolls up totals. */
+    .led-summary {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px;
+      margin-top: var(--s-3);
+      background: var(--accent-soft);
+      border-radius: var(--r-sm);
+      border: 0.5px solid var(--border-soft);
+      font-size: 12.5px;
+      color: var(--ink-mid);
+      font-family: var(--font-display);
+    }
+    .led-summary svg { color: var(--accent-deep); flex-shrink: 0; }
+    .led-summary strong { color: var(--accent-deep); font-weight: 700; font-variant-numeric: tabular-nums; }
+    html[data-theme="dark"] .led-summary strong { color: var(--accent); }
     /* v27.3.0 — LED cards inline in CALICO Step 3 (Outputs card). Tighter
        spacing and a subtle divider so they read as a sub-block. */
     .calico-led-inline {
@@ -7675,17 +7712,27 @@
         return deal.sx_data ? Object.values(deal.sx_data).filter(v => Number(v) > 0).length : 0;
       })();
 
+      // v27.3.0 — section icons. Lucide-style strokes, 18×18, currentColor.
+      const SD_ICON = {
+        ctx: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+        sol: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M7 7V4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3"/></svg>',
+        io:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><polyline points="15 17 20 12 15 7"/></svg>',
+        led: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+        sx:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="8" height="6" rx="1"/><rect x="14" y="9" width="8" height="6" rx="1"/><line x1="10" y1="12" x2="14" y2="12" stroke-dasharray="2 2"/></svg>'
+      };
+
       // ---- Chip nav (sticky) ----
       const chips = [
-        { id:'sec-ctx', label:'Context'  },
-        { id:'sec-sol', label:'Solution' },
-        { id:'sec-io',  label:'I/O'      }
+        { id:'sec-ctx', label:'Context',  icon: SD_ICON.ctx },
+        { id:'sec-sol', label:'Solution', icon: SD_ICON.sol },
+        { id:'sec-io',  label:'I/O',      icon: SD_ICON.io }
       ];
-      if (hasLed) chips.push({ id:'sec-led', label:'LED' });
-      if (hasSx)  chips.push({ id:'sec-sx',  label:'SX'  });
+      if (hasLed) chips.push({ id:'sec-led', label:'LED', icon: SD_ICON.led });
+      if (hasSx)  chips.push({ id:'sec-sx',  label:'SX',  icon: SD_ICON.sx });
       const chipNavHtml = '<nav class="sd-chipnav" aria-label="Section nav">' +
         chips.map(c =>
           '<button class="sd-chip" type="button" data-action="sd-jump" data-target="' + esc(c.id) + '">' +
+            '<span class="sd-chip-icon">' + c.icon + '</span>' +
             esc(c.label) +
           '</button>'
         ).join('') +
@@ -7699,9 +7746,13 @@
             '<div class="sd-row-v">' + esc(v) + '</div>' +
           '</div>';
       }
-      function sectionHeader(title, count, unit) {
+      function sectionHeader(title, count, unit, iconSvg) {
         const unitWord = unit || 'field';
+        const icon = iconSvg
+          ? '<span class="sd-section-icon">' + iconSvg + '</span>'
+          : '';
         return '<summary class="sd-summary">' +
+            icon +
             '<span class="sd-summary-title">' + esc(title) + '</span>' +
             '<span class="sd-summary-meta">' +
               '<span class="sd-badge">' + count + ' ' + unitWord + (count === 1 ? '' : 's') + '</span>' +
@@ -7871,30 +7922,30 @@
           '<div class="sd-accordion">' +
 
             '<details class="sd-section" id="sec-ctx" open>' +
-              sectionHeader('Project context', ctxCount) +
+              sectionHeader('Project context', ctxCount, 'field', SD_ICON.ctx) +
               '<div class="sd-section-body">' + ctxBody + '</div>' +
             '</details>' +
 
             '<details class="sd-section" id="sec-sol">' +
-              sectionHeader('Solution type', deal.solutionType ? 1 : 0) +
+              sectionHeader('Solution type', deal.solutionType ? 1 : 0, 'field', SD_ICON.sol) +
               '<div class="sd-section-body">' + solBody + '</div>' +
             '</details>' +
 
             '<details class="sd-section" id="sec-io">' +
-              sectionHeader('Inputs & outputs', ioCount) +
+              sectionHeader('Inputs & outputs', ioCount, 'field', SD_ICON.io) +
               '<div class="sd-section-body">' + ioBody + '</div>' +
             '</details>' +
 
             (hasLed
               ? '<details class="sd-section" id="sec-led">' +
-                  sectionHeader('LED screens', ledCount, 'screen') +
+                  sectionHeader('LED screens', ledCount, 'screen', SD_ICON.led) +
                   '<div class="sd-section-body">' + ledBody + '</div>' +
                 '</details>'
               : '') +
 
             (hasSx
               ? '<details class="sd-section" id="sec-sx">' +
-                  sectionHeader('Signal extension', sxCount, 'line') +
+                  sectionHeader('Signal extension', sxCount, 'line', SD_ICON.sx) +
                   '<div class="sd-section-body">' + sxBody + '</div>' +
                 '</details>'
               : '') +
@@ -8621,12 +8672,19 @@
         '</div>';
       }).join('');
       const projectorCt = Number((d.calico_outputs && d.calico_outputs.projector) || 0);
-      const aggregateHtml = '<div class="led-aggregate">' +
-        '<div class="led-agg-item"><div class="led-agg-k">LED Pixels</div><div class="led-agg-v">' + totals.pixels.toLocaleString('en-IN') + '</div></div>' +
-        '<div class="led-agg-item"><div class="led-agg-k">LED Output Ports</div><div class="led-agg-v">' + totals.ledPorts + '</div></div>' +
-        '<div class="led-agg-item"><div class="led-agg-k">Projector Ports</div><div class="led-agg-v">' + projectorCt + '</div></div>' +
-        '<div class="led-agg-item"><div class="led-agg-k">Total Ports Needed</div><div class="led-agg-v">' + (totals.hdmiFeeds + projectorCt) + '</div></div>' +
-      '</div>';
+      const totalPorts = totals.hdmiFeeds + projectorCt;
+      // v27.3.0 — slim aggregate summary. Per-screen pills already show
+      // Pixels / RJ45 / HDMI feeds / Aspect, so no need to repeat them.
+      // This line just totals across all screens + projector ports.
+      const aggregateHtml = (d.screens.length > 1 || projectorCt > 0)
+        ? '<div class="led-summary">' +
+            '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
+            '<span><strong>' + totals.pixels.toLocaleString('en-IN') + '</strong> total pixels \u00b7 ' +
+              '<strong>' + totals.ledPorts + '</strong> RJ45 \u00b7 ' +
+              '<strong>' + totalPorts + '</strong> total feeds (' + totals.hdmiFeeds + ' LED + ' + projectorCt + ' projector)' +
+            '</span>' +
+          '</div>'
+        : '';
       return screensHtml + aggregateHtml;
     }
 
@@ -9122,6 +9180,27 @@
           if (inSum === 0 && outSum === 0) {
             errors.calico_io = 'At least one input or output is required.';
           }
+          // v27.3.0 — CALICO renders LED W/H/pitch inline in Step 3 (Step 4
+          // is skipped for CALICO), so validate screens here too.
+          if (d.hasLed) {
+            if (!d.screens || d.screens.length === 0) {
+              errors.screens = 'Set Active LED screens > 0, or untick LED.';
+            } else {
+              const bad = [];
+              for (let i = 0; i < d.screens.length; i++) {
+                const s = d.screens[i] || {};
+                const w = Number(s.w), h = Number(s.h);
+                const p = s.pitch === '' || s.pitch == null ? NaN : Number(s.pitch);
+                if (!(w >= 64 && w <= 16384)) bad.push('Screen ' + (i+1) + ' width');
+                if (!(h >= 64 && h <= 16384)) bad.push('Screen ' + (i+1) + ' height');
+                if (!(p >= 0.50 && p <= 50.00)) bad.push('Screen ' + (i+1) + ' pitch');
+              }
+              if (bad.length) {
+                errors.screens = 'Fix: ' + bad.join(', ') + '. ' +
+                  'W/H must be integer 64\u201316384 px. Pitch must be 0.50\u201350.00 mm.';
+              }
+            }
+          }
         } else if (d.solutionType === 'mv') {
           const validInputs = d.mv_inputs.filter(r => r && r.signal && Number(r.qty) > 0);
           if (validInputs.length === 0) errors.mv_io = 'Add at least one input row with signal + qty.';
@@ -9137,6 +9216,7 @@
         // v27.1.2 #5 — full screen validation: W, H integers within
         // [64, 16384]; pitch decimal within [0.50, 50.00] (2dp).
         // Only fires when hasLed (other paths auto-skip to 5 or 6).
+        // v27.3.0 — CALICO never reaches Step 4 (validation moved to Step 3).
         if (d.hasLed) {
           if (!d.screens || d.screens.length === 0) {
             errors.screens = 'Set Active LED screens > 0 in Step 3, or untick LED.';
@@ -9158,8 +9238,11 @@
         }
       } else if (d.step === 5) {
         if (d.hasSx) {
-          const total = Object.values(d.sx_data).reduce((a,b) => a + (Number(b)||0), 0);
-          if (total === 0) errors.sx = 'Set at least one SX quantity > 0, or untick SX in Step 3.';
+          // v27.3.0 — _syncSxSums keeps sx_data sums in sync with the
+          // detail arrays, so total still works. Friendlier message tells
+          // the user what to do with the new line-item UI.
+          const total = Object.values(d.sx_data || {}).reduce((a,b) => a + (Number(b)||0), 0);
+          if (total === 0) errors.sx = 'Add at least one HDBaseT line, splitter, AP-536, or AOC cable \u2014 or untick Signal Extension in Step 3.';
         }
       }
       return { ok: Object.keys(errors).length === 0, errors };
@@ -10770,9 +10853,13 @@
         return;
       }
       d.errors = {};
-      // Advance with auto-skip for conditional steps
+      // Advance with auto-skip for conditional steps.
+      // v27.3.0 — CALICO renders LED W/H/pitch inline in Step 3, so skip Step 4
+      // for CALICO even when hasLed=true. Non-CALICO families with LED still
+      // route through Step 4.
       let next = d.step + 1;
-      if (next === 4 && !d.hasLed) next = d.hasSx ? 5 : 6;
+      const skipStep4 = !d.hasLed || d.solutionType === 'calico';
+      if (next === 4 && skipStep4) next = d.hasSx ? 5 : 6;
       if (next === 5 && !d.hasSx)  next = 6;
       d.step = clamp(next, 1, 6);
       UI.saveDraft();
@@ -10784,8 +10871,9 @@
       const d = UI.getWizardData();
       d.errors = {};
       let prev = d.step - 1;
-      if (prev === 5 && !d.hasSx)  prev = d.hasLed ? 4 : 3;
-      if (prev === 4 && !d.hasLed) prev = 3;
+      const skipStep4 = !d.hasLed || d.solutionType === 'calico';
+      if (prev === 5 && !d.hasSx)    prev = skipStep4 ? 3 : 4;
+      if (prev === 4 && skipStep4)   prev = 3;
       d.step = clamp(prev, 1, 6);
       UI.saveDraft();
       UI.renderWizard();
