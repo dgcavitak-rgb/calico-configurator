@@ -1007,7 +1007,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.2.4',
+      version: 'v27.2.6',
       constants,
       calico,
       mv,
@@ -3124,8 +3124,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.2.4"',
-      () => CATALOG.version === 'v27.2.4' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.2.6"',
+      () => CATALOG.version === 'v27.2.6' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.1.2 invariants ---------- */
     // §1.2 — HUMAN_LABELS structural shape
@@ -6354,15 +6354,27 @@
       '</div>';
     }
 
+    // v27.2.6 — Compact checkbox-row renderer. Replaces the prior .tile
+    // card-banner style. Renders a single line: [✓] Name — sub. Tap target
+    // remains full-row (label wraps the input), so usability on Z Fold is
+    // unchanged. Same data-action="toggle" wiring as before, so the event
+    // delegation handler in onSubmit doesn't need to change.
     function toggleRow(key, name, sub, checked, opts) {
       opts = opts || {};
       const ns = opts.namespace || '';
-      return '<label class="tile" style="margin-bottom:8px"' +
-        ' data-checked="' + (checked ? 'true' : 'false') + '"' +
-        ' data-action="toggle" data-ns="' + esc(ns) + '" data-key="' + esc(key) + '">' +
-        '<input type="checkbox"' + (checked ? ' checked' : '') + '>' +
-        '<div class="tile-title">' + esc(name) + '</div>' +
-        (sub ? '<div class="tile-sub">' + esc(sub) + '</div>' : '') +
+      return '<label class="check-row"' +
+        ' data-action="toggle" data-ns="' + esc(ns) + '" data-key="' + esc(key) + '"' +
+        ' style="display:flex;align-items:center;gap:12px;' +
+                'padding:14px 12px;margin:0;' +
+                'border-bottom:1px solid #eee;cursor:pointer;' +
+                'min-height:48px;">' +
+        '<input type="checkbox"' + (checked ? ' checked' : '') +
+          ' style="width:22px;height:22px;margin:0;flex:0 0 auto;' +
+                  'accent-color:#1F4E1F;cursor:pointer;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-weight:600;font-size:15px;color:#1a1a1a;">' + esc(name) + '</div>' +
+          (sub ? '<div style="font-size:13px;color:#666;margin-top:2px;">' + esc(sub) + '</div>' : '') +
+        '</div>' +
       '</label>';
     }
 
@@ -6613,10 +6625,12 @@
       const errHtml = d.errors.sx
         ? '<div class="banner err">' + esc(d.errors.sx) + '</div>' : '';
       return errHtml +
-        '<div class="banner warn">' +
-          '<strong>Heads-up:</strong> Signal Extension SKUs are captured here but ' +
-          'not yet rolled into the BoM card in this version. Detailed per-family sub-wizards ' +
-          '(kit-vs-tx/rx, fiber distance, distribution fanout) land in an upcoming version.' +
+        '<div class="banner info">' +
+          '<strong>Note:</strong> SX SKUs ARE included in your BoM and exports. ' +
+          'Defaults: HDBaseT &rarr; HD-One DX kit (2211079-03), HDMI Splitter &rarr; ' +
+          'MG-DA-614 (1&times;4), Audio Extractor &rarr; AP-536, AOC &rarr; placeholder ' +
+          '(jacket and length to be specified before PO). Per-variant pickers ' +
+          '(kit vs TX/RX, fiber distance, fanout, cable length) land in a future release.' +
         '</div>' +
         '<h3 class="h3">Quantities</h3>' +
         '<div class="card">' +
@@ -7048,6 +7062,12 @@
 
         // Toggle (tile w/ checkbox)
         if (action === 'toggle') {
+          // v27.2.6 — the new check-row layout puts the checkbox inside the
+          // label. Clicking the checkbox itself fires the browser's default
+          // toggle BEFORE this handler runs, then we flip wizardData again,
+          // which makes it look like nothing happened. Prevent default so
+          // wizardData is the only source of truth; the next render reflects it.
+          if (e && typeof e.preventDefault === 'function') e.preventDefault();
           const ns  = actEl.getAttribute('data-ns');
           const key = actEl.getAttribute('data-key');
           if (ns) {
