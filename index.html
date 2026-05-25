@@ -2465,7 +2465,6 @@
     }
     .home-dash-link:hover { background: var(--accent-soft); }
 
-<<<<<<< HEAD
     /* --- v27.3.0 Stage transitions timeline --- */
     .st-timeline {
       padding: 16px 18px 12px 18px;
@@ -2617,8 +2616,91 @@
       line-height: 1.35;
     }
 
-=======
->>>>>>> b8f9cccb543b48a9fa34878e10d709f395624a87
+    /* --- v27.3.0 History page upgrade --- */
+    .search-bar {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-pill);
+      padding: 4px 10px 4px 14px;
+      margin-bottom: 12px;
+      transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+    }
+    .search-bar:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    @supports not (background: color-mix(in srgb, red 50%, blue)) {
+      .search-bar:focus-within { box-shadow: 0 0 0 3px rgba(247,148,29,0.18); }
+    }
+    .search-icon {
+      color: var(--ink-soft);
+      display: inline-flex; align-items: center;
+      flex-shrink: 0;
+    }
+    .search-input {
+      appearance: none;
+      border: 0; outline: 0; background: transparent;
+      flex: 1; min-width: 0;
+      font-family: var(--font-display);
+      font-size: 14px;
+      color: var(--ink-strong);
+      padding: 10px 0;
+    }
+    .search-input::placeholder { color: var(--ink-faint); }
+    .search-input::-webkit-search-cancel-button { display: none; }
+    .search-clear {
+      appearance: none; border: 0;
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: var(--bg-subtle);
+      color: var(--ink-soft);
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
+    }
+    .search-clear:hover { background: var(--ink-soft); color: var(--bg-card); }
+
+    .hist-chip-row {
+      display: flex; gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 12px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .hist-chip-row::-webkit-scrollbar { display: none; }
+    .hist-chip {
+      appearance: none; border: 1px solid var(--border-soft);
+      background: var(--bg-card);
+      color: var(--ink-mid);
+      border-radius: var(--r-pill);
+      padding: 6px 12px;
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 12px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-spring);
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hist-chip:hover { border-color: var(--accent); color: var(--ink-strong); }
+    .hist-chip:active { transform: scale(0.96); }
+    .hist-chip-active {
+      background: var(--accent);
+      color: var(--ink-on-brand);
+      border-color: var(--accent);
+    }
+    .hist-chip-active:hover { background: var(--accent-deep); border-color: var(--accent-deep); color: var(--ink-on-brand); }
+
+    .hist-meta {
+      font-family: var(--font-display); font-weight: 500;
+      font-size: 11.5px; color: var(--ink-soft);
+      margin-bottom: 10px;
+      letter-spacing: 0.005em;
+    }
+
     /* --- v27.3.0 NOTIFICATION SHEET (D6-D9 restore) --- */
     .notif-sheet { padding: 4px 0 16px; }
     .notif-sheet-head {
@@ -4280,7 +4362,6 @@
       return (r && r.rows) || (Array.isArray(r) ? r : []);
     }
 
-<<<<<<< HEAD
     /* v27.3.0 — Stage transitions history (silent-drop restore).
        Each deal records a row in stage_transitions on every stage change.
        The RPC takes an array of ref IDs (batch); we wrap single-ref usage. */
@@ -4294,8 +4375,24 @@
       });
     }
 
-=======
->>>>>>> b8f9cccb543b48a9fa34878e10d709f395624a87
+    /* v27.3.0 — Write a stage transition row.
+       Called by the saved-deal autosave whenever stage changes. The RPC takes
+       (p_ref_id, p_from_stage, p_to_stage, p_actor, p_notes). Failures are
+       logged but don't block the save itself — autosave is the source of truth
+       for the new stage; the transitions table is an append-only audit trail. */
+    async function stageTransitionWrite(args) {
+      if (!args || !args.refId || !args.toStage) {
+        throw new Error('stageTransitionWrite: refId + toStage required');
+      }
+      return rpc('stage_transition_write', {
+        p_ref_id:    String(args.refId),
+        p_from_stage: args.fromStage || null,
+        p_to_stage:   args.toStage,
+        p_actor:      args.actor || null,
+        p_notes:      args.notes || null
+      });
+    }
+
     /* v27.3.0 — Customer Directory + 360 + Merge (D1-D3 silent-drop restores).
        All 4 RPCs (customer_list, customer_upsert, customer_delete, customer_merge)
        already exist in Supabase. This is UI-only build on top of an existing
@@ -4354,11 +4451,8 @@
       resetPasswordRequest, resetPasswordListPending, resetPasswordApprove,
       // v27.3.0 — duplicate + custom stages (v27.7 partial restore)
       duplicateDeal, stageList,
-<<<<<<< HEAD
       // v27.3.0 — Stage transitions history (silent-drop restore)
-      stageTransitionsList,
-=======
->>>>>>> b8f9cccb543b48a9fa34878e10d709f395624a87
+      stageTransitionsList, stageTransitionWrite,
       // v27.3.0 — Customer directory + 360 + merge (D1-D3 silent-drop restores)
       customerList, customerUpsert, customerDelete, customerMerge, customer360,
       // internals exposed for debug only
@@ -4534,107 +4628,145 @@
       } catch (_e) { /* leave reco null */ }
 
       const wb = new ExcelJS.Workbook();
-      wb.creator = 'tvONE Product Selector';
-      wb.created = new Date();
+      wb.creator  = 'tvONE Product Selector';
+      wb.company  = 'Cavitak Marketing Pvt Ltd';
+      wb.created  = new Date();
 
       const ws = wb.addWorksheet('Quote', {
         pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true,
-          margins: { left: 0.5, right: 0.5, top: 0.5, bottom: 0.5,
-                     header: 0.3, footer: 0.3 } }
+          fitToWidth: 1, fitToHeight: 0,
+          margins: { left: 0.5, right: 0.5, top: 0.5, bottom: 0.7,
+                     header: 0.3, footer: 0.4 } },
+        headerFooter: {
+          oddFooter: '&L&8&I Cavitak Marketing Pvt Ltd  ·  tvONE India Distributor&R&8&I Page &P of &N'
+        }
       });
 
-      // Column widths
+      // v27.3.0 — Polish palette. ARGB strings for ExcelJS.
+      // tvONE brand amber replaces the legacy forest-green palette.
+      const AMBER      = 'FFE8731C'; // primary brand amber
+      const AMBER_DEEP = 'FFB45309'; // deep amber for column header
+      const AMBER_LIGHT= 'FFFCE7C8'; // accent-soft band fill
+      const AMBER_PALE = 'FFFFF7ED'; // row banding (alt rows)
+      const INK_STRONG = 'FF111827';
+      const INK_SOFT   = 'FF6B7280';
+      const WHITE      = 'FFFFFFFF';
+      const DANGER     = 'FFB91C1C';
+      const SUCCESS    = 'FF15803D';
+
+      // Column widths — give more to Description, narrower Sr column.
       ws.columns = [
-        { width:  6 },   // Sr
-        { width: 44 },   // Description
-        { width: 20 },   // Model
+        { width:  5 },   // Sr
+        { width: 50 },   // Description
+        { width: 22 },   // Model
         { width:  8 }    // Qty
       ];
 
-      // ---- Title ----
+      // ---- Title band (amber, white text) ----
       ws.mergeCells('A1:D1');
       const titleCell = ws.getCell('A1');
-      titleCell.value = 'tvONE Product Selector \u2014 Quote';
-      titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF1F4E1F' }};
+      titleCell.value = 'tvONE Product Selector';
+      titleCell.font = { name: 'Calibri', size: 22, bold: true, color: { argb: WHITE } };
       titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-      ws.getRow(1).height = 28;
+      titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: AMBER } };
+      ws.getRow(1).height = 36;
 
-      // ---- Ref + date ----
+      // ---- Subtitle band (amber-deep, white text) ----
       ws.mergeCells('A2:D2');
-      const refCell = ws.getCell('A2');
+      const subCell = ws.getCell('A2');
+      subCell.value = 'Cavitak Marketing Pvt Ltd  \u00b7  tvONE India Distributor';
+      subCell.font = { name: 'Calibri', size: 10.5, italic: true, color: { argb: WHITE } };
+      subCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: AMBER_DEEP } };
+      ws.getRow(2).height = 18;
+
+      // ---- Ref + date row (clean below the band) ----
+      ws.mergeCells('A3:D3');
+      const refCell = ws.getCell('A3');
       const ref = deal.display_ref || deal.ref || 'NOREF';
-      refCell.value = ref + '  \u00b7  Generated ' + new Date().toISOString().slice(0, 10);
-      refCell.font = { name: 'Arial', size: 10, italic: true, color: { argb: 'FF666666' }};
-      refCell.alignment = { horizontal: 'center' };
+      refCell.value = 'Quote ref: ' + ref + '   \u00b7   Generated ' + new Date().toISOString().slice(0, 10);
+      refCell.font = { name: 'Calibri', size: 10, color: { argb: INK_SOFT } };
+      refCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      ws.getRow(3).height = 18;
 
       // ---- Project context (2-column) ----
+      // v27.3.0 — labels uppercase + INK_SOFT; values bold INK_STRONG.
+      // Thin amber bottom border on each row for clean visual grouping.
       function ctxRow(rowIdx, k1, v1, k2, v2) {
         const r = ws.getRow(rowIdx);
-        r.getCell(1).value = k1; r.getCell(1).font = { bold: true, size: 10 };
-        r.getCell(2).value = (v1 == null || v1 === '') ? '\u2014' : String(v1);
-        r.getCell(3).value = k2; r.getCell(3).font = { bold: true, size: 10 };
-        r.getCell(4).value = (v2 == null || v2 === '') ? '\u2014' : String(v2);
-        r.getCell(2).alignment = { wrapText: true };
-        r.getCell(4).alignment = { wrapText: true };
+        const c1 = r.getCell(1), c2 = r.getCell(2), c3 = r.getCell(3), c4 = r.getCell(4);
+        c1.value = k1; c1.font = { name:'Calibri', size: 9, bold: true, color: { argb: INK_SOFT } };
+        c1.alignment = { vertical: 'middle' };
+        c2.value = (v1 == null || v1 === '') ? '\u2014' : String(v1);
+        c2.font  = { name:'Calibri', size: 10.5, color: { argb: INK_STRONG } };
+        c2.alignment = { wrapText: true, vertical: 'middle' };
+        c3.value = k2; c3.font = { name:'Calibri', size: 9, bold: true, color: { argb: INK_SOFT } };
+        c3.alignment = { vertical: 'middle' };
+        c4.value = (v2 == null || v2 === '') ? '\u2014' : String(v2);
+        c4.font  = { name:'Calibri', size: 10.5, color: { argb: INK_STRONG } };
+        c4.alignment = { wrapText: true, vertical: 'middle' };
+        // Light amber bottom border for row divider
+        [1,2,3,4].forEach(function(ci) {
+          r.getCell(ci).border = { bottom: { style: 'hair', color: { argb: AMBER_LIGHT } } };
+        });
+        r.height = 17;
       }
-      ctxRow(4,  'Project',     deal.project,         'End User',         deal.customer_name);
-      ctxRow(5,  'Partner',     deal.partner_name,    'Consultant',       deal.consultant_name);
-      ctxRow(6,  'Venue type',  deal.venue_type,      'City',             deal.city);
-      ctxRow(7,  'State',       deal.state,           'Stage',            deal.stage);
-      ctxRow(8,  'Lead Origin', deal.lead_source,     'Expected closure', deal.close_month);
-      ctxRow(9,  'Salesperson', UI._labelFor(deal.sales_person_id, UI._SALES_TEAM), 'Presales', UI._labelFor(deal.presales_person_id, UI._PRESALES_TEAM));
+      // Row 4 spacer
+      ws.getRow(4).height = 6;
+      ctxRow(5,  'PROJECT',     deal.project,         'END USER',         deal.customer_name);
+      ctxRow(6,  'PARTNER',     deal.partner_name,    'CONSULTANT',       deal.consultant_name);
+      ctxRow(7,  'VENUE TYPE',  deal.venue_type,      'CITY',             deal.city);
+      ctxRow(8,  'STATE',       deal.state,           'STAGE',            deal.stage);
+      ctxRow(9,  'LEAD ORIGIN', deal.lead_source,     'EXPECTED CLOSURE', deal.close_month);
+      ctxRow(10, 'SALESPERSON', UI._labelFor(deal.sales_person_id, UI._SALES_TEAM), 'PRESALES', UI._labelFor(deal.presales_person_id, UI._PRESALES_TEAM));
 
-      // v27.1.1 — Partner contact (Name + Phone + Email). Skip when blank so
-      // we don't leave an empty row. Single merged row 10 with all three
-      // chunks separated by " \u00b7 " for readability.
+      // v27.1.1 — Partner contact (Name + Phone + Email). Skip when blank.
       const contactParts = [];
       if (deal.contact_name  && String(deal.contact_name).trim())  contactParts.push(String(deal.contact_name).trim());
       if (deal.contact_phone && String(deal.contact_phone).trim()) contactParts.push(String(deal.contact_phone).trim());
       if (deal.contact_email && String(deal.contact_email).trim()) contactParts.push(String(deal.contact_email).trim());
       if (contactParts.length > 0) {
-        ws.mergeCells('A10:D10');
-        const cc = ws.getRow(10).getCell(1);
-        cc.value = 'Partner contact: ' + contactParts.join(' \u00b7 ');
-        cc.font = { size: 10 };
-        cc.alignment = { wrapText: true, vertical: 'top' };
-        ws.getRow(10).height = 20;
+        ws.mergeCells('A11:D11');
+        const cc = ws.getRow(11).getCell(1);
+        cc.value = 'Partner contact:  ' + contactParts.join('  \u00b7  ');
+        cc.font = { name:'Calibri', size: 10, color: { argb: INK_STRONG } };
+        cc.alignment = { wrapText: true, vertical: 'middle' };
+        ws.getRow(11).height = 22;
+        cc.border = { bottom: { style: 'hair', color: { argb: AMBER_LIGHT } } };
       }
 
       // v27.1.1 — External notes only (internal notes are hidden from exports).
-      // Row 11 (was row 10 in v27.1.0). BoM header stays at row 13 regardless.
       if (deal.external_notes && String(deal.external_notes).trim()) {
-        ws.mergeCells('A11:D11');
-        const notesCell = ws.getRow(11).getCell(1);
-        notesCell.value = 'Notes: ' + String(deal.external_notes).trim();
-        notesCell.font = { size: 10 };
-        notesCell.alignment = { wrapText: true, vertical: 'top' };
-        ws.getRow(11).height = Math.min(80, Math.max(20, String(deal.external_notes).length / 4));
+        ws.mergeCells('A12:D12');
+        const notesCell = ws.getRow(12).getCell(1);
+        notesCell.value = 'Notes:  ' + String(deal.external_notes).trim();
+        notesCell.font = { name:'Calibri', size: 10, italic: true, color: { argb: INK_STRONG } };
+        notesCell.alignment = { wrapText: true, vertical: 'top', indent: 0 };
+        notesCell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb: AMBER_PALE } };
+        ws.getRow(12).height = Math.min(80, Math.max(24, String(deal.external_notes).length / 4));
       }
 
-      // ---- BoM header ----
-      ws.mergeCells('A13:D13');
-      const bomHdr = ws.getCell('A13');
-      bomHdr.value = 'Bill of Materials';
-      bomHdr.font  = { bold: true, size: 13, color: { argb: 'FF1F4E1F' }};
-      bomHdr.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F1E8' }};
+      // ---- BoM section band (amber, white text) ----
+      ws.mergeCells('A14:D14');
+      const bomHdr = ws.getCell('A14');
+      bomHdr.value = 'BILL OF MATERIALS';
+      bomHdr.font  = { name:'Calibri', size: 13, bold: true, color: { argb: WHITE }};
+      bomHdr.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: AMBER }};
       bomHdr.alignment = { horizontal: 'center', vertical: 'middle' };
-      ws.getRow(13).height = 22;
+      ws.getRow(14).height = 26;
 
-      // ---- Column headers ----
-      const COL_LABELS = ['Sr', 'Description', 'Model', 'Qty'];
+      // ---- Column headers (amber-deep band, white text) ----
+      const COL_LABELS = ['SR', 'DESCRIPTION', 'MODEL', 'QTY'];
       const COL_ALIGNS = ['center', 'left', 'left', 'right'];
-      const headerRow = ws.getRow(14);
+      const headerRow = ws.getRow(15);
       COL_LABELS.forEach(function(label, i) {
         const cell = headerRow.getCell(i + 1);
         cell.value = label;
-        cell.font  = { bold: true, size: 10 };
-        cell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' }};
-        cell.alignment = { horizontal: COL_ALIGNS[i], vertical: 'middle' };
-        cell.border = {
-          top:    { style: 'thin' },
-          bottom: { style: 'thin' }
-        };
+        cell.font  = { name:'Calibri', size: 10, bold: true, color: { argb: WHITE } };
+        cell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: AMBER_DEEP }};
+        cell.alignment = { horizontal: COL_ALIGNS[i], vertical: 'middle', indent: i===1 ? 1 : 0 };
       });
+      headerRow.height = 22;
 
       // ---- Line rows ----
       // Build from reco (matches UI BoM card). Chassis prepended if not in cards.
@@ -4668,48 +4800,67 @@
         });
       }
 
-      let curRow = 15;
+      let curRow = 16;
       if (lineRows.length === 0) {
         ws.mergeCells(curRow, 1, curRow, 4);
         const empty = ws.getCell(curRow, 1);
         empty.value = '(No BoM lines \u2014 set solution type + I/O and rebuild)';
-        empty.font = { italic: true, color: { argb: 'FF888888' }};
-        empty.alignment = { horizontal: 'center' };
+        empty.font = { name:'Calibri', italic: true, size: 10.5, color: { argb: INK_SOFT }};
+        empty.alignment = { horizontal: 'center', vertical: 'middle' };
+        ws.getRow(curRow).height = 22;
         curRow++;
       } else {
         lineRows.forEach(function(line, i) {
           const r = ws.getRow(curRow);
+          const isAlt = (i % 2 === 1);
+          const fill = isAlt
+            ? { type:'pattern', pattern:'solid', fgColor:{ argb: AMBER_PALE } }
+            : null;
           r.getCell(1).value = i + 1;
-          r.getCell(1).alignment = { horizontal: 'center', vertical: 'top' };
+          r.getCell(1).font = { name:'Calibri', size: 10.5, color: { argb: INK_SOFT } };
+          r.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
           r.getCell(2).value = line.desc;
-          r.getCell(2).alignment = { wrapText: true, vertical: 'top' };
+          r.getCell(2).font = { name:'Calibri', size: 10.5, color: { argb: INK_STRONG } };
+          r.getCell(2).alignment = { wrapText: true, vertical: 'middle', indent: 1 };
           r.getCell(3).value = line.sku;
-          r.getCell(3).alignment = { vertical: 'top' };
-          r.getCell(3).font = { name: 'Courier New', size: 10 };
+          r.getCell(3).alignment = { vertical: 'middle' };
+          r.getCell(3).font = { name: 'Consolas', size: 10, color: { argb: INK_STRONG } };
           r.getCell(4).value = line.qty;
-          r.getCell(4).alignment = { horizontal: 'right', vertical: 'top' };
-          // Light row border so reps can see line separation in print
+          r.getCell(4).font = { name:'Calibri', size: 10.5, bold: true, color: { argb: AMBER_DEEP } };
+          r.getCell(4).alignment = { horizontal: 'right', vertical: 'middle' };
+          // Apply fill + light amber bottom border on each row
           [1,2,3,4].forEach(function(c) {
-            r.getCell(c).border = { bottom: { style: 'hair', color: { argb: 'FFCCCCCC' }}};
+            if (fill) r.getCell(c).fill = fill;
+            r.getCell(c).border = { bottom: { style: 'hair', color: { argb: AMBER_LIGHT } } };
           });
+          r.height = 20;
           curRow++;
         });
+      }
+
+      // -- Helper for section bands (amber, white text) --
+      function sectionBand(rowIdx, label, color) {
+        ws.mergeCells(rowIdx, 1, rowIdx, 4);
+        const h = ws.getCell(rowIdx, 1);
+        h.value = label;
+        h.font  = { name:'Calibri', size: 11.5, bold: true, color: { argb: WHITE } };
+        h.fill  = { type:'pattern', pattern:'solid', fgColor: { argb: color || AMBER } };
+        h.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+        ws.getRow(rowIdx).height = 22;
       }
 
       // ---- Concerns block ----
       if (reco && Array.isArray(reco.concerns) && reco.concerns.length > 0) {
         curRow += 1;
-        ws.mergeCells(curRow, 1, curRow, 4);
-        const h = ws.getCell(curRow, 1);
-        h.value = 'Concerns';
-        h.font  = { bold: true, size: 11, color: { argb: 'FFB91C1C' }};
+        sectionBand(curRow, 'CONCERNS', DANGER);
         curRow++;
         reco.concerns.forEach(function(c) {
           ws.mergeCells(curRow, 1, curRow, 4);
           const cell = ws.getCell(curRow, 1);
-          cell.value = '\u2022 ' + c;
-          cell.alignment = { wrapText: true, vertical: 'top' };
-          cell.font = { size: 10 };
+          cell.value = '\u2022  ' + c;
+          cell.alignment = { wrapText: true, vertical: 'top', indent: 1 };
+          cell.font = { name:'Calibri', size: 10.5, color: { argb: INK_STRONG } };
+          ws.getRow(curRow).height = Math.max(18, Math.ceil(c.length / 65) * 14);
           curRow++;
         });
       }
@@ -4717,17 +4868,15 @@
       // ---- Value-adds block ----
       if (reco && Array.isArray(reco.valueAdds) && reco.valueAdds.length > 0) {
         curRow += 1;
-        ws.mergeCells(curRow, 1, curRow, 4);
-        const h = ws.getCell(curRow, 1);
-        h.value = 'Value-adds';
-        h.font  = { bold: true, size: 11, color: { argb: 'FF1F4E1F' }};
+        sectionBand(curRow, 'VALUE-ADDS', SUCCESS);
         curRow++;
         reco.valueAdds.forEach(function(v) {
           ws.mergeCells(curRow, 1, curRow, 4);
           const cell = ws.getCell(curRow, 1);
-          cell.value = '\u2022 ' + v;
-          cell.alignment = { wrapText: true, vertical: 'top' };
-          cell.font = { size: 10 };
+          cell.value = '\u2022  ' + v;
+          cell.alignment = { wrapText: true, vertical: 'top', indent: 1 };
+          cell.font = { name:'Calibri', size: 10.5, color: { argb: INK_STRONG } };
+          ws.getRow(curRow).height = Math.max(18, Math.ceil(v.length / 65) * 14);
           curRow++;
         });
       }
@@ -4742,74 +4891,74 @@
           : [];
         if (screens.length > 0) {
           curRow += 2;  // spacer
-          ws.mergeCells(curRow, 1, curRow, 4);
-          const scHdr = ws.getCell(curRow, 1);
-          scHdr.value = 'SCREEN CONFIGURATION';
-          scHdr.font  = { bold: true, size: 11, color: { argb: 'FF1F4E1F' }};
-          scHdr.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F1E8' }};
-          scHdr.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
-          ws.getRow(curRow).height = 20;
+          sectionBand(curRow, 'SCREEN CONFIGURATION', AMBER);
+          curRow++;
 
           // Column header row
-          curRow++;
           const colHdr = ws.getRow(curRow);
-          colHdr.getCell(1).value = 'Screen';
-          colHdr.getCell(2).value = 'Pixels (W \u00d7 H)';
-          colHdr.getCell(3).value = 'Pitch';
-          colHdr.getCell(4).value = 'Physical size';
+          colHdr.getCell(1).value = 'SCREEN';
+          colHdr.getCell(2).value = 'PIXELS (W \u00d7 H)';
+          colHdr.getCell(3).value = 'PITCH';
+          colHdr.getCell(4).value = 'PHYSICAL SIZE';
           for (let c = 1; c <= 4; c++) {
-            colHdr.getCell(c).font = { bold: true, size: 9, color: { argb: 'FF555555' } };
-            colHdr.getCell(c).alignment = { vertical: 'middle' };
+            colHdr.getCell(c).font = { name:'Calibri', bold: true, size: 9, color: { argb: WHITE } };
+            colHdr.getCell(c).fill = { type:'pattern', pattern:'solid', fgColor: { argb: AMBER_DEEP } };
+            colHdr.getCell(c).alignment = { vertical: 'middle', horizontal: c===1 ? 'left' : 'left', indent: c===1 ? 1 : 0 };
           }
+          colHdr.height = 20;
 
           screens.forEach(function(s, i) {
             curRow++;
             const r = ws.getRow(curRow);
+            const isAlt = (i % 2 === 1);
+            const fill = isAlt
+              ? { type:'pattern', pattern:'solid', fgColor:{ argb: AMBER_PALE } }
+              : null;
             const dims = UI._screenDimensions(s.w, s.h, s.pitch);
             r.getCell(1).value = 'Screen ' + (i + 1);
             r.getCell(2).value = String(s.w) + ' \u00d7 ' + String(s.h);
             r.getCell(3).value = (s.pitch ? String(s.pitch) + ' mm' : '\u2014');
             r.getCell(4).value = dims.ok ? dims.pretty : '\u2014';
             for (let c = 1; c <= 4; c++) {
-              r.getCell(c).font = { size: 9 };
-              r.getCell(c).alignment = { vertical: 'top' };
+              r.getCell(c).font = { name:'Calibri', size: 10, color: { argb: INK_STRONG } };
+              r.getCell(c).alignment = { vertical: 'middle', indent: c===1 ? 1 : 0 };
+              if (fill) r.getCell(c).fill = fill;
+              r.getCell(c).border = { bottom: { style: 'hair', color: { argb: AMBER_LIGHT } } };
             }
-            r.height = 16;
+            r.height = 18;
           });
         }
       }
 
       // ---- v27.2.0 — C1 Cavitak T&C / Warranty block ----
-      // Mandatory on every export per OP §3.8 (contract C1). Section
-      // header in BoM-header style, then 11 rows of "Label / Text"
-      // pulled from UI._tncItems with today's date interpolated into
-      // the Validity row.
+      // Mandatory on every export per OP §3.8 (contract C1).
       {
         const _today = UI._formatQuoteDate(new Date());
         const _tnc   = UI._tncItems(_today);
 
         curRow += 2;  // spacer above T&C
-        ws.mergeCells(curRow, 1, curRow, 4);
-        const tncHdr = ws.getCell(curRow, 1);
-        tncHdr.value = 'TERMS & CONDITIONS';
-        tncHdr.font  = { bold: true, size: 11, color: { argb: 'FF1F4E1F' }};
-        tncHdr.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F1E8' }};
-        tncHdr.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
-        ws.getRow(curRow).height = 20;
+        // v27.3.0 — Force T&C to start on a fresh page when the BoM
+        // is long enough that splitting would orphan the rules.
+        ws.getRow(curRow).addPageBreak = true;
+        sectionBand(curRow, 'TERMS & CONDITIONS', AMBER);
 
-        _tnc.forEach(function(pair) {
+        _tnc.forEach(function(pair, idx) {
           curRow++;
           const r = ws.getRow(curRow);
           ws.mergeCells(curRow, 2, curRow, 4);
+          const isAlt = (idx % 2 === 1);
+          if (isAlt) {
+            r.getCell(1).fill = { type:'pattern', pattern:'solid', fgColor:{ argb: AMBER_PALE } };
+            r.getCell(2).fill = { type:'pattern', pattern:'solid', fgColor:{ argb: AMBER_PALE } };
+          }
           r.getCell(1).value = pair[0];
-          r.getCell(1).font  = { bold: true, size: 9 };
-          r.getCell(1).alignment = { vertical: 'top' };
+          r.getCell(1).font  = { name:'Calibri', bold: true, size: 9, color: { argb: AMBER_DEEP } };
+          r.getCell(1).alignment = { vertical: 'top', indent: 1 };
           r.getCell(2).value = pair[1];
-          r.getCell(2).font  = { size: 9 };
-          r.getCell(2).alignment = { wrapText: true, vertical: 'top' };
-          // Auto-grow row height for longer items (Forex, Returns,
-          // Cancellation typically wrap on portrait A4).
-          r.height = pair[1].length > 80 ? 28 : 16;
+          r.getCell(2).font  = { name:'Calibri', size: 9.5, color: { argb: INK_STRONG } };
+          r.getCell(2).alignment = { wrapText: true, vertical: 'top', indent: 1 };
+          // Auto-grow row height for longer items
+          r.height = pair[1].length > 80 ? 32 : 18;
         });
       }
 
@@ -4844,17 +4993,22 @@
           return label + ': ' + UI._joinParts(parts, ' \u00b7 ');
         };
 
-        const _writeRow = function(text, italic) {
+        const _writeRow = function(text, italic, accent) {
           if (!text) return;
           curRow++;
           ws.mergeCells(curRow, 1, curRow, 4);
           const cell = ws.getCell(curRow, 1);
           cell.value = text;
-          cell.font  = { size: 9, italic: !!italic, color: { argb: 'FF555555' } };
-          cell.alignment = { wrapText: true };
+          cell.font  = {
+            name: 'Calibri', size: 10, italic: !!italic,
+            color: { argb: accent ? AMBER_DEEP : INK_STRONG }
+          };
+          cell.alignment = { wrapText: true, vertical: 'middle', indent: 1 };
+          ws.getRow(curRow).height = 18;
         };
 
         curRow += 2;  // spacer above the block
+        sectionBand(curRow, 'CONTACTS', AMBER);
 
         _writeRow(_composeLine('Sales',    deal.sales_person_id,    UI._SALES_TEAM));
         _writeRow(_composeLine('Presales', deal.presales_person_id, UI._PRESALES_TEAM));
@@ -4871,20 +5025,23 @@
             'For pricing escalation: Dipenkumar Gajjar \u00b7 ' + dipTitle +
             ' \u00b7 Phone: +91 ' + dipPhone +
             ' \u00b7 Email: ' + dipEmail,
-            true  // italic
+            true,  // italic
+            true   // accent (amber)
           );
         }
 
-        _writeRow('Issued by: Cavitak Marketing Pvt Ltd');
+        _writeRow('Issued by: Cavitak Marketing Pvt Ltd', false, true);
       }
 
-      // ---- Footer (Cavitak attribution) ----
+      // ---- Footer attribution band (amber-deep, white text) ----
       curRow += 2;
       ws.mergeCells(curRow, 1, curRow, 4);
       const foot = ws.getCell(curRow, 1);
-      foot.value = 'Cavitak Marketing Pvt Ltd  \u00b7  tvONE India distributor';
-      foot.font = { italic: true, size: 9, color: { argb: 'FF666666' }};
-      foot.alignment = { horizontal: 'center' };
+      foot.value = 'Cavitak Marketing Pvt Ltd  \u00b7  tvONE India Distributor  \u00b7  www.cavitak.com';
+      foot.font = { name:'Calibri', italic: true, size: 9, color: { argb: WHITE }};
+      foot.fill = { type:'pattern', pattern:'solid', fgColor: { argb: AMBER_DEEP } };
+      foot.alignment = { horizontal: 'center', vertical: 'middle' };
+      ws.getRow(curRow).height = 22;
 
       // ---- Generate blob ----
       const buffer = await wb.xlsx.writeBuffer();
@@ -4928,24 +5085,54 @@
       const M = 40;
       let y = 0;
 
-      // ---- Title bar ----
-      doc.setFillColor(31, 78, 31); // forest green
-      doc.rect(0, 0, W, 50, 'F');
-      doc.setTextColor(255, 255, 255);
+      // v27.3.0 — Polished palette helpers. RGB triplets for jsPDF.
+      // Use these instead of forest-green legacy colors throughout.
+      const AMBER       = [232, 115, 28];     // brand amber #E8731C
+      const AMBER_DEEP  = [180, 83, 9];       // deep amber #B45309
+      const AMBER_LIGHT = [252, 231, 200];    // soft amber band #FCE7C8
+      const AMBER_PALE  = [255, 247, 237];    // alt-row pale #FFF7ED
+      const INK_STRONG  = [17, 24, 39];
+      const INK_SOFT    = [107, 114, 128];
+      const WHITE       = [255, 255, 255];
+      const DANGER      = [185, 28, 28];
+      const SUCCESS     = [21, 128, 61];
+      const fill   = function(rgb) { doc.setFillColor(rgb[0], rgb[1], rgb[2]); };
+      const stroke = function(rgb) { doc.setDrawColor(rgb[0], rgb[1], rgb[2]); };
+      const ink    = function(rgb) { doc.setTextColor(rgb[0], rgb[1], rgb[2]); };
+
+      // ---- Title band (amber, 75pt tall, with subtitle) ----
+      fill(AMBER);
+      doc.rect(0, 0, W, 60, 'F');
+      // Deeper amber strip beneath for the subtitle
+      fill(AMBER_DEEP);
+      doc.rect(0, 60, W, 18, 'F');
+
+      ink(WHITE);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.text('tvONE Product Selector \u2014 Quote', W / 2, 32, { align: 'center' });
+      doc.setFontSize(22);
+      doc.text('tvONE Product Selector', W / 2, 36, { align: 'center' });
 
-      y = 70;
-
-      // ---- Ref + date ----
-      const ref = deal.display_ref || deal.ref || 'NOREF';
-      doc.setTextColor(102, 102, 102);
+      ink(WHITE);
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(10);
-      doc.text(ref + '  \u00b7  Generated ' + new Date().toISOString().slice(0, 10),
-        W / 2, y, { align: 'center' });
-      y += 25;
+      doc.text('Cavitak Marketing Pvt Ltd  \u00b7  tvONE India Distributor', W / 2, 72, { align: 'center' });
+
+      y = 100;
+
+      // ---- Ref + date in a clean amber-pale pill ----
+      const ref = deal.display_ref || deal.ref || 'NOREF';
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const refLabel = 'Quote ref: ' + ref + '   \u00b7   Generated ' + dateStr;
+      // Compute width for pill
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      const refW = doc.getTextWidth(refLabel) + 24;
+      fill(AMBER_LIGHT);
+      doc.roundedRect((W - refW) / 2, y - 12, refW, 18, 9, 9, 'F');
+      ink(AMBER_DEEP);
+      doc.setFont('helvetica', 'bold');
+      doc.text(refLabel, W / 2, y, { align: 'center' });
+      y += 20;
 
       // ---- Project context (2-column) ----
       doc.setTextColor(0, 0, 0);
@@ -4956,15 +5143,24 @@
       const colB_value  = W / 2 + 105;
 
       function ctxRow(k1, v1, k2, v2) {
+        // v27.3.0 — uppercase keys in INK_SOFT (small caps look), values in INK_STRONG
+        ink(INK_SOFT);
         doc.setFont('helvetica', 'bold');
-        doc.text(k1, colA_label, y);
-        if (k2) doc.text(k2, colB_label, y);
+        doc.setFontSize(8);
+        doc.text(k1.toUpperCase(), colA_label, y);
+        if (k2) doc.text(k2.toUpperCase(), colB_label, y);
+        ink(INK_STRONG);
         doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
         const v1s = (v1 == null || v1 === '') ? '\u2014' : String(v1);
         const v2s = (v2 == null || v2 === '') ? '\u2014' : String(v2);
         doc.text(v1s, colA_value, y, { maxWidth: (colB_label - colA_value - 5) });
         if (k2) doc.text(v2s, colB_value, y, { maxWidth: (W - M - colB_value) });
-        y += 15;
+        // Thin amber divider beneath each row
+        stroke(AMBER_LIGHT);
+        doc.setLineWidth(0.5);
+        doc.line(M, y + 4, W - M, y + 4);
+        y += 16;
       }
 
       ctxRow('Project',     deal.project,         'End User',         deal.customer_name);
@@ -4981,59 +5177,72 @@
       if (deal.contact_email && String(deal.contact_email).trim()) contactParts.push(String(deal.contact_email).trim());
       if (contactParts.length > 0) {
         y += 6;
-        doc.setFont('helvetica', 'bold');
-        doc.text('Partner contact:', colA_label, y);
-        doc.setFont('helvetica', 'normal');
-        doc.text(contactParts.join(' \u00b7 '), colA_label + 90, y, { maxWidth: W - 2 * M - 90 });
-        y += 15;
+        ink(INK_SOFT); doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+        doc.text('PARTNER CONTACT', colA_label, y);
+        ink(INK_STRONG); doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+        doc.text(contactParts.join('  \u00b7  '), colA_label + 110, y, { maxWidth: W - 2 * M - 110 });
+        y += 16;
       }
 
       // v27.1.1 — External notes only (internal_notes is hidden from exports).
       if (deal.external_notes && String(deal.external_notes).trim()) {
-        y += 6;
-        doc.setFont('helvetica', 'bold');
-        doc.text('Notes:', colA_label, y);
-        doc.setFont('helvetica', 'normal');
-        const notesLines = doc.splitTextToSize(String(deal.external_notes).trim(), W - 2 * M - 40);
-        doc.text(notesLines, colA_label + 40, y);
-        y += notesLines.length * 12;
+        y += 4;
+        const notesText = String(deal.external_notes).trim();
+        const notesLines = doc.splitTextToSize(notesText, W - 2 * M - 16);
+        const notesH = notesLines.length * 12 + 14;
+        // amber-pale background panel
+        fill(AMBER_PALE);
+        doc.rect(M, y, W - 2 * M, notesH, 'F');
+        // amber left edge accent
+        fill(AMBER);
+        doc.rect(M, y, 3, notesH, 'F');
+        ink(AMBER_DEEP); doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+        doc.text('NOTES', M + 10, y + 12);
+        ink(INK_STRONG); doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+        doc.text(notesLines, M + 10, y + 26);
+        y += notesH + 4;
       }
 
       y += 10;
 
       // ---- Page-break helper (reserves footer space) ----
       function checkPageBreak(needed) {
-        if (y + needed > H - M - 30) {
+        if (y + needed > H - M - 40) {
           doc.addPage();
           y = M;
         }
       }
 
-      // ---- BoM header ----
-      checkPageBreak(28);
-      doc.setFillColor(232, 241, 232); // accent light
-      doc.rect(M, y, W - 2 * M, 22, 'F');
-      doc.setTextColor(31, 78, 31);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
-      doc.text('Bill of Materials', W / 2, y + 15, { align: 'center' });
-      y += 28;
+      // ---- Section band helper (full-width amber band, white text) ----
+      function sectionBand(label, color) {
+        checkPageBreak(28);
+        fill(color || AMBER);
+        doc.rect(M, y, W - 2 * M, 22, 'F');
+        ink(WHITE);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11.5);
+        doc.text(label, M + 10, y + 15);
+        y += 28;
+      }
 
-      // ---- Column headers ----
+      // ---- BoM section band ----
+      sectionBand('BILL OF MATERIALS', AMBER);
+
+      // ---- Column headers (amber-deep band, white text) ----
       const colSr    = M + 5;
-      const colDesc  = M + 45;
+      const colDesc  = M + 40;
       const colModel = W - M - 170;
       const colQty   = W - M - 5;
 
-      doc.setFillColor(240, 240, 240);
-      doc.rect(M, y, W - 2 * M, 18, 'F');
-      doc.setTextColor(0, 0, 0);
+      fill(AMBER_DEEP);
+      doc.rect(M, y, W - 2 * M, 20, 'F');
+      ink(WHITE);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.text('Sr',          colSr,    y + 12);
-      doc.text('Description', colDesc,  y + 12);
-      doc.text('Model',       colModel, y + 12);
-      doc.text('Qty',         colQty,   y + 12, { align: 'right' });
+      doc.setFontSize(9.5);
+      doc.text('SR',          colSr,    y + 13);
+      doc.text('DESCRIPTION', colDesc,  y + 13);
+      doc.text('MODEL',       colModel, y + 13);
+      doc.text('QTY',         colQty,   y + 13, { align: 'right' });
       y += 22;
 
       // ---- Line items ----
@@ -5070,73 +5279,84 @@
       if (lineRows.length === 0) {
         checkPageBreak(20);
         doc.setFont('helvetica', 'italic');
-        doc.setTextColor(136, 136, 136);
+        ink(INK_SOFT);
+        doc.setFontSize(10);
         doc.text('(No BoM lines \u2014 set solution type + I/O and rebuild)',
           W / 2, y + 10, { align: 'center' });
         y += 22;
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(0, 0, 0);
+        ink(INK_STRONG);
       } else {
         lineRows.forEach(function(line, i) {
           const descWidth = colModel - colDesc - 10;
           const descLines = doc.splitTextToSize(String(line.desc), descWidth);
-          const rowHeight = Math.max(14, descLines.length * 12 + 2);
+          const rowHeight = Math.max(18, descLines.length * 12 + 6);
           checkPageBreak(rowHeight + 4);
 
-          doc.text(String(i + 1), colSr, y + 10);
-          doc.text(descLines,     colDesc, y + 10);
-          doc.setFont('courier', 'normal');
-          doc.text(String(line.sku), colModel, y + 10);
-          doc.setFont('helvetica', 'normal');
-          doc.text(String(line.qty), colQty, y + 10, { align: 'right' });
+          // Alt-row banding
+          if (i % 2 === 1) {
+            fill(AMBER_PALE);
+            doc.rect(M, y, W - 2 * M, rowHeight, 'F');
+          }
 
-          // Hair separator under row
-          doc.setDrawColor(204, 204, 204);
-          doc.setLineWidth(0.3);
+          ink(INK_SOFT);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10);
+          doc.text(String(i + 1), colSr, y + 13);
+
+          ink(INK_STRONG);
+          doc.setFontSize(10);
+          doc.text(descLines, colDesc, y + 13);
+
+          doc.setFont('courier', 'normal');
+          ink(INK_STRONG);
+          doc.text(String(line.sku), colModel, y + 13);
+
+          doc.setFont('helvetica', 'bold');
+          ink(AMBER_DEEP);
+          doc.text(String(line.qty), colQty, y + 13, { align: 'right' });
+
+          // Thin amber-light bottom border
+          stroke(AMBER_LIGHT);
+          doc.setLineWidth(0.5);
           doc.line(M, y + rowHeight, W - M, y + rowHeight);
 
-          y += rowHeight + 3;
+          y += rowHeight;
         });
       }
 
-      // ---- Concerns ----
+      // Reset state after BoM
+      ink(INK_STRONG);
+      doc.setFont('helvetica', 'normal');
+
+      // ---- Concerns block (red band) ----
       if (reco && Array.isArray(reco.concerns) && reco.concerns.length > 0) {
         y += 12;
-        checkPageBreak(40);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(185, 28, 28);
-        doc.setFontSize(11);
-        doc.text('Concerns', M, y + 10);
-        y += 18;
+        sectionBand('CONCERNS', DANGER);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(0, 0, 0);
+        ink(INK_STRONG);
         doc.setFontSize(10);
         reco.concerns.forEach(function(c) {
-          const wrapped = doc.splitTextToSize('\u2022 ' + c, W - 2 * M);
-          const blockH = wrapped.length * 13 + 4;
+          const wrapped = doc.splitTextToSize('\u2022  ' + c, W - 2 * M - 20);
+          const blockH = wrapped.length * 13 + 6;
           checkPageBreak(blockH);
-          doc.text(wrapped, M, y);
+          doc.text(wrapped, M + 10, y + 4);
           y += blockH;
         });
       }
 
-      // ---- Value-adds ----
+      // ---- Value-adds block (green band) ----
       if (reco && Array.isArray(reco.valueAdds) && reco.valueAdds.length > 0) {
         y += 12;
-        checkPageBreak(40);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(31, 78, 31);
-        doc.setFontSize(11);
-        doc.text('Value-adds', M, y + 10);
-        y += 18;
+        sectionBand('VALUE-ADDS', SUCCESS);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(0, 0, 0);
+        ink(INK_STRONG);
         doc.setFontSize(10);
         reco.valueAdds.forEach(function(v) {
-          const wrapped = doc.splitTextToSize('\u2022 ' + v, W - 2 * M);
-          const blockH = wrapped.length * 13 + 4;
+          const wrapped = doc.splitTextToSize('\u2022  ' + v, W - 2 * M - 20);
+          const blockH = wrapped.length * 13 + 6;
           checkPageBreak(blockH);
-          doc.text(wrapped, M, y);
+          doc.text(wrapped, M + 10, y + 4);
           y += blockH;
         });
       }
@@ -5150,44 +5370,44 @@
           ? deal.screens.filter(function(s) { return s && Number(s.w) > 0 && Number(s.h) > 0; })
           : [];
         if (screens.length > 0) {
-          const rowH    = 13;
-          const headerH = 22;
-          const blockH  = headerH + (screens.length + 1) * (rowH + 2) + 8;
-          checkPageBreak(Math.min(blockH, 80));
-          y += 10;
+          y += 12;
+          sectionBand('SCREEN CONFIGURATION', AMBER);
 
-          // Section header
-          doc.setFillColor(232, 241, 232);
+          // Column header (amber-deep band)
+          fill(AMBER_DEEP);
           doc.rect(M, y, W - 2 * M, 18, 'F');
-          doc.setTextColor(31, 78, 31);
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(11);
-          doc.text('SCREEN CONFIGURATION', M + 6, y + 12);
-          y += headerH;
-
-          // Column header
-          const col1 = M;
-          const col2 = M + 60;
-          const col3 = M + 160;
-          const col4 = M + 215;
+          ink(WHITE);
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(9);
-          doc.setTextColor(85, 85, 85);
-          doc.text('Screen',        col1, y);
-          doc.text('Pixels (W \u00d7 H)', col2, y);
-          doc.text('Pitch',         col3, y);
-          doc.text('Physical size', col4, y);
-          y += rowH;
-          doc.setTextColor(0, 0, 0);
+          const col1 = M + 6;
+          const col2 = M + 70;
+          const col3 = M + 180;
+          const col4 = M + 235;
+          doc.text('SCREEN',        col1, y + 12);
+          doc.text('PIXELS (W \u00d7 H)', col2, y + 12);
+          doc.text('PITCH',         col3, y + 12);
+          doc.text('PHYSICAL SIZE', col4, y + 12);
+          y += 18;
 
           screens.forEach(function(s, i) {
+            const rowH = 16;
             checkPageBreak(rowH + 4);
+            if (i % 2 === 1) {
+              fill(AMBER_PALE);
+              doc.rect(M, y, W - 2 * M, rowH, 'F');
+            }
             const dims = UI._screenDimensions(s.w, s.h, s.pitch);
+            ink(INK_STRONG);
             doc.setFont('helvetica', 'normal');
-            doc.text('Screen ' + (i + 1), col1, y);
-            doc.text(String(s.w) + ' \u00d7 ' + String(s.h), col2, y);
-            doc.text(s.pitch ? String(s.pitch) + ' mm' : '\u2014', col3, y);
-            doc.text(dims.ok ? dims.pretty : '\u2014', col4, y);
+            doc.setFontSize(9.5);
+            doc.text('Screen ' + (i + 1), col1, y + 11);
+            doc.text(String(s.w) + ' \u00d7 ' + String(s.h), col2, y + 11);
+            doc.text(s.pitch ? String(s.pitch) + ' mm' : '\u2014', col3, y + 11);
+            doc.text(dims.ok ? dims.pretty : '\u2014', col4, y + 11);
+            // Thin bottom border
+            stroke(AMBER_LIGHT);
+            doc.setLineWidth(0.5);
+            doc.line(M, y + rowH, W - M, y + rowH);
             y += rowH;
           });
           y += 4;
@@ -5195,46 +5415,42 @@
       }
 
       // ---- v27.2.0 — C1 Cavitak T&C / Warranty block ----
-      // Mandatory on every export per OP §3.8 (contract C1). Same canonical
-      // text source as Excel via UI._tncItems. Pre-wraps to compute block
-      // height + reserves space for the section header so the heading +
-      // first item never sit alone above a page break.
+      // Mandatory on every export per OP §3.8 (contract C1).
       {
         const _today = UI._formatQuoteDate(new Date());
         const _tnc   = UI._tncItems(_today);
 
         // Pre-wrap to size the block.
-        const _labelW = 70;
-        const _textW  = W - 2 * M - _labelW - 6;
+        const _labelW = 90;
+        const _textW  = W - 2 * M - _labelW - 16;
         doc.setFontSize(9);
         const _rows = _tnc.map(function(pair) {
           const wrap = doc.splitTextToSize(pair[1], _textW);
-          return { label: pair[0], wrap: wrap, h: Math.max(wrap.length * 11, 13) };
+          return { label: pair[0], wrap: wrap, h: Math.max(wrap.length * 11, 14) };
         });
-        const _blockH = 24 + _rows.reduce(function(a, r) { return a + r.h + 4; }, 0);
 
-        // Try to keep header + first item together on the same page.
-        checkPageBreak(Math.min(_blockH, 80));
-        y += 10;
+        y += 12;
+        // Try to keep band + first item together; force new page if tight.
+        if (y + 60 > H - M - 40) { doc.addPage(); y = M; }
+        sectionBand('TERMS & CONDITIONS', AMBER);
 
-        // Section header band — matches BoM-header style.
-        doc.setFillColor(232, 241, 232);
-        doc.rect(M, y, W - 2 * M, 18, 'F');
-        doc.setTextColor(31, 78, 31);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.text('TERMS & CONDITIONS', M + 6, y + 12);
-        y += 22;
-
-        doc.setTextColor(0, 0, 0);
+        ink(INK_STRONG);
         doc.setFontSize(9);
-        _rows.forEach(function(r) {
-          checkPageBreak(r.h + 4);
+        _rows.forEach(function(r, i) {
+          const rowH = r.h + 8;
+          checkPageBreak(rowH);
+          // Alt-row fill
+          if (i % 2 === 1) {
+            fill(AMBER_PALE);
+            doc.rect(M, y - 2, W - 2 * M, rowH, 'F');
+          }
+          ink(AMBER_DEEP);
           doc.setFont('helvetica', 'bold');
-          doc.text(r.label, M, y);
+          doc.text(r.label, M + 6, y + 8);
+          ink(INK_STRONG);
           doc.setFont('helvetica', 'normal');
-          doc.text(r.wrap, M + _labelW, y);
-          y += r.h + 4;
+          doc.text(r.wrap, M + _labelW + 6, y + 8);
+          y += rowH;
         });
       }
 
@@ -5268,8 +5484,8 @@
         const lines = [];
         const salesLn = _composeLine('Sales',    deal.sales_person_id,    UI._SALES_TEAM);
         const presLn  = _composeLine('Presales', deal.presales_person_id, UI._PRESALES_TEAM);
-        if (salesLn) lines.push({ text: salesLn, italic: false });
-        if (presLn)  lines.push({ text: presLn,  italic: false });
+        if (salesLn) lines.push({ text: salesLn, italic: false, accent: false });
+        if (presLn)  lines.push({ text: presLn,  italic: false, accent: false });
         if (!_isSuper) {
           const DIPENKUMAR_UUID = '155b257a-ec1a-4ee9-ac89-31ba47c4c610';
           const dipRich  = UI._userRichFor(DIPENKUMAR_UUID);
@@ -5281,41 +5497,49 @@
             text: 'For pricing escalation: Dipenkumar Gajjar \u00b7 ' + dipTitle +
                   ' \u00b7 Phone: +91 ' + dipPhone +
                   ' \u00b7 Email: ' + dipEmail,
-            italic: true
+            italic: true,
+            accent: true
           });
         }
-        lines.push({ text: 'Issued by: Cavitak Marketing Pvt Ltd', italic: false });
+        lines.push({ text: 'Issued by: Cavitak Marketing Pvt Ltd', italic: false, accent: true });
 
-        // Pre-wrap to compute block height, then page-break once for the
-        // whole block so contact info isn't split mid-row across pages.
-        doc.setFontSize(9);
-        doc.setTextColor(85, 85, 85);
+        // Pre-wrap to compute block height
+        doc.setFontSize(9.5);
         const wrappedLines = lines.map(function(ln) {
-          const wrap = doc.splitTextToSize(ln.text, W - 2 * M);
-          return { wrap: wrap, italic: ln.italic, h: wrap.length * 11 };
+          const wrap = doc.splitTextToSize(ln.text, W - 2 * M - 16);
+          return { wrap: wrap, italic: ln.italic, accent: ln.accent, h: wrap.length * 12 };
         });
-        const blockH = wrappedLines.reduce(function(a, w) { return a + w.h + 2; }, 8);
+        const blockH = 32 + wrappedLines.reduce(function(a, w) { return a + w.h + 4; }, 0);
         checkPageBreak(blockH);
-        y += 10;  // spacer above block
+
+        y += 12;
+        sectionBand('CONTACTS', AMBER);
+
         wrappedLines.forEach(function(w) {
           doc.setFont('helvetica', w.italic ? 'italic' : 'normal');
-          doc.text(w.wrap, M, y);
-          y += w.h + 2;
+          doc.setFontSize(9.5);
+          ink(w.accent ? AMBER_DEEP : INK_STRONG);
+          doc.text(w.wrap, M + 6, y + 4);
+          y += w.h + 4;
         });
-        // Reset text colour for the per-page footer loop below.
-        doc.setTextColor(0, 0, 0);
+        ink(INK_STRONG);
       }
 
-      // ---- Footer on every page (set after all content) ----
+      // ---- Per-page footer: amber strip + attribution + Page N of M ----
       const pageCount = doc.internal.getNumberOfPages();
       for (let p = 1; p <= pageCount; p++) {
         doc.setPage(p);
+        // Bottom amber band (28pt)
+        fill(AMBER_DEEP);
+        doc.rect(0, H - 26, W, 26, 'F');
+        ink(WHITE);
         doc.setFont('helvetica', 'italic');
-        doc.setTextColor(102, 102, 102);
         doc.setFontSize(9);
-        doc.text('Cavitak Marketing Pvt Ltd  \u00b7  tvONE India distributor',
-          W / 2, H - 20, { align: 'center' });
-        doc.text('Page ' + p + ' of ' + pageCount, W - M, H - 20, { align: 'right' });
+        doc.text('Cavitak Marketing Pvt Ltd  \u00b7  tvONE India Distributor  \u00b7  www.cavitak.com',
+          W / 2, H - 10, { align: 'center' });
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.text('Page ' + p + ' of ' + pageCount, W - M, H - 10, { align: 'right' });
       }
 
       return doc.output('blob');
@@ -6873,6 +7097,7 @@
       const prevStage = _savedDealLastSavedStage;
       const newStage = _savedDealData && _savedDealData.stage;
       const transitionedToWon = (newStage === 'Closed Won' && prevStage !== 'Closed Won');
+      const stageChanged = (prevStage != null && newStage && newStage !== prevStage);
       STORE.saveDeal(payload).then(function(_r) {
         _autosaveInFlight = false;
         if (_savedDealRefId !== inflightRefId) return; // navigated away
@@ -6880,6 +7105,25 @@
         _savedDealLastSavedStage = newStage;
         if (transitionedToWon) {
           try { fireConfetti(); toast('Deal won! \uD83C\uDF89', 'ok'); } catch (e) {}
+        }
+        // v27.3.0 — append a row to stage_transitions when the stage changes.
+        // Fire-and-forget; failures shouldn't block the saved-deal flow.
+        if (stageChanged) {
+          try {
+            const u = STORE.currentUser();
+            const actor = u && (u.id || u.username) || null;
+            STORE.stageTransitionWrite({
+              refId:    _savedDealData.display_ref || _savedDealData.ref_id || _savedDealRefId,
+              fromStage: prevStage,
+              toStage:   newStage,
+              actor:     actor,
+              notes:     null
+            }).catch(function (e) {
+              console.warn('stage_transition_write failed:', e);
+            });
+          } catch (e) {
+            console.warn('stage_transition_write threw:', e);
+          }
         }
       }).catch(function(err) {
         _autosaveInFlight = false;
@@ -8765,27 +9009,93 @@
     }
 
     /* ============================================================
-       VIEW: History
+       VIEW: History — full quote list with search + filter chips.
+       v27.3.0 — Modernized with v273-page wrapper, debounced search,
+       expanded filter chips (closing-this-month/stuck/stale/deleted).
        ============================================================ */
+
+    let _historySearchTimer = null;
 
     function showHistory() {
       showChrome(true);
       updateNavActive('#/history');
-      historyState = { filter: 'all', limit: 20, offset: 0, total: 0 };
+      // Parse filter from URL query if present (e.g. #/history?filter=stuck)
+      const hash = location.hash || '';
+      const queryStart = hash.indexOf('?');
+      let urlFilter = null;
+      if (queryStart >= 0) {
+        const query = hash.slice(queryStart + 1);
+        query.split('&').forEach(function (kv) {
+          const eq = kv.indexOf('=');
+          if (eq < 0) return;
+          const k = kv.slice(0, eq);
+          const v = decodeURIComponent(kv.slice(eq + 1));
+          if (k === 'filter') urlFilter = v;
+        });
+      }
+      historyState = {
+        filter: urlFilter || 'all',
+        search: '',
+        limit: 100,
+        offset: 0,
+        total: 0
+      };
+      const chips = [
+        { id: 'all',                label: 'All' },
+        { id: 'open',               label: 'Open' },
+        { id: 'closing-this-month', label: 'Closing now' },
+        { id: 'stuck',              label: 'Stuck >14d' },
+        { id: 'stale',              label: 'Stale >30d' },
+        { id: 'won',                label: 'Won' },
+        { id: 'lost',               label: 'Lost' },
+        { id: 'deleted',            label: 'Deleted' }
+      ];
       setRoot(
-        '<div class="v">' +
-          '<div class="h1">History</div>' +
-          '<div class="chip-row" id="hist-chips">' +
-            ['all','open','won','lost','deleted'].map(f =>
-              '<button class="chip" data-action="hist-filter" data-value="' + f + '"' +
-              (historyState.filter === f ? ' aria-current="true"' : '') + '>' +
-              (f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)) +
-              '</button>'
-            ).join('') +
+        '<div class="v273-page">' +
+          '<header class="page-header">' +
+            '<span class="eyebrow">QUOTES</span>' +
+            '<h1>All quotes</h1>' +
+            '<p>Search and filter your saved deals.</p>' +
+          '</header>' +
+          /* Search bar */
+          '<div class="search-bar">' +
+            '<span class="search-icon">' +
+              '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+            '</span>' +
+            '<input id="hist-search" class="search-input" type="search" placeholder="Search by project, customer, or ref..." autocomplete="off">' +
+            '<button class="search-clear" type="button" data-action="hist-clear-search" hidden>' +
+              '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+            '</button>' +
           '</div>' +
-          '<div id="hist-list"><div class="muted small">Loading\u2026</div></div>' +
+          /* Filter chips */
+          '<div class="hist-chip-row" id="hist-chips" role="tablist">' +
+            chips.map(function (c) {
+              const isActive = historyState.filter === c.id;
+              return '<button class="hist-chip' + (isActive ? ' hist-chip-active' : '') + '" type="button" data-action="hist-filter" data-value="' + c.id + '" role="tab" aria-selected="' + (isActive ? 'true' : 'false') + '">' +
+                esc(c.label) +
+              '</button>';
+            }).join('') +
+          '</div>' +
+          /* Result count meta */
+          '<div class="hist-meta" id="hist-meta">Loading\u2026</div>' +
+          /* Results */
+          '<div id="hist-list"><div class="muted small" style="padding:32px;text-align:center">Loading\u2026</div></div>' +
         '</div>'
       );
+      // Wire search input with debounce
+      const searchInput = $('hist-search');
+      const clearBtn = document.querySelector('[data-action="hist-clear-search"]');
+      if (searchInput) {
+        searchInput.addEventListener('input', function (ev) {
+          const val = ev.target.value || '';
+          if (clearBtn) clearBtn.hidden = !val;
+          if (_historySearchTimer) clearTimeout(_historySearchTimer);
+          _historySearchTimer = setTimeout(function () {
+            historyState.search = val.trim().toLowerCase();
+            loadHistoryList();
+          }, 250);
+        });
+      }
       loadHistoryList();
     }
 
@@ -8799,35 +9109,66 @@
         });
         historyState.total = (r && r.total) || 0;
         const allRows = (r && r.rows) || [];
-        const filtered = allRows.filter(d => {
-          // alpha.8.3: explicitly handle deleted state
+        const curM = _currentYYYYMM();
+        // v27.3.0 — apply stage filter + new dashboard filters
+        let filtered = allRows.filter(d => {
           if (historyState.filter === 'deleted') return !!d.deleted_at;
-          // All other filters exclude deleted (defence-in-depth)
           if (d.deleted_at) return false;
           if (historyState.filter === 'all')  return true;
-          if (historyState.filter === 'open') return d.stage !== 'Closed Won' && d.stage !== 'Closed Lost';
+          if (historyState.filter === 'open') return _isOpenStage(d.stage);
           if (historyState.filter === 'won')  return d.stage === 'Closed Won';
           if (historyState.filter === 'lost') return d.stage === 'Closed Lost';
+          if (historyState.filter === 'closing-this-month') {
+            return _isOpenStage(d.stage) && String(d.close_month || '').slice(0, 7) === curM;
+          }
+          if (historyState.filter === 'stuck') {
+            return _isOpenStage(d.stage) && _daysSince(d.updated_at || d.created_at) > 14;
+          }
+          if (historyState.filter === 'stale') {
+            return _isOpenStage(d.stage) && _daysSince(d.updated_at || d.created_at) > 30;
+          }
           return true;
         });
+        // v27.3.0 — text search across ref + project + customer
+        if (historyState.search) {
+          const q = historyState.search;
+          filtered = filtered.filter(function (d) {
+            return ((d.display_ref || d.ref_id || '').toLowerCase().indexOf(q) >= 0)
+                || ((d.project || '').toLowerCase().indexOf(q) >= 0)
+                || ((d.customer_name || '').toLowerCase().indexOf(q) >= 0)
+                || ((d.partner_name || '').toLowerCase().indexOf(q) >= 0);
+          });
+        }
+        // Result count
+        const meta = $('hist-meta');
+        if (meta) {
+          if (historyState.search) {
+            meta.textContent = filtered.length + ' result' + (filtered.length === 1 ? '' : 's') + ' for "' + historyState.search + '"';
+          } else {
+            meta.textContent = filtered.length + ' of ' + allRows.length + (allRows.length === 1 ? ' deal' : ' deals');
+          }
+        }
         const host = $('hist-list');
         if (!host) return;
         if (filtered.length === 0) {
-          const emptyMsg = historyState.filter === 'deleted'
-            ? 'No deleted deals.'
-            : 'No deals match the filter.';
+          // Friendly empty states per filter
+          const emptyByFilter = {
+            'deleted': { icon:'🗑️', msg:'No deleted deals.' },
+            'closing-this-month': { icon:'📅', msg:'Nothing closing this month.' },
+            'stuck': { icon:'✓', msg:'No deals are stuck. Nice.' },
+            'stale': { icon:'✓', msg:'No deals have gone stale.' },
+            'won': { icon:'🏆', msg:'No wins logged yet.' },
+            'lost': { icon:'—', msg:'No losses recorded.' }
+          };
+          const e = emptyByFilter[historyState.filter] || { icon:'📭', msg:'No deals match this filter.' };
           host.innerHTML =
-            '<div class="empty">' +
-              '<div class="ico">\uD83D\uDCED</div>' +
-              '<div>' + emptyMsg + '</div>' +
+            '<div class="empty-state" style="padding:32px 16px;text-align:center">' +
+              '<div class="empty-state-illustration" style="font-size:32px;margin-bottom:8px">' + e.icon + '</div>' +
+              '<p class="empty-state-body">' + (historyState.search ? 'No results for "' + esc(historyState.search) + '".' : e.msg) + '</p>' +
             '</div>';
           return;
         }
-        host.innerHTML = filtered.map(renderHistoryRow).join('') +
-          (historyState.total > historyState.limit
-            ? '<div class="muted small t-center">Showing ' + filtered.length +
-              ' of ' + historyState.total + '. Pagination in v27.1.</div>'
-            : '');
+        host.innerHTML = filtered.map(renderHistoryRow).join('');
       } catch (e) {
         const host = $('hist-list');
         if (host) host.innerHTML =
@@ -8838,9 +9179,10 @@
 
     function setHistoryFilter(f) {
       historyState.filter = f;
-      document.querySelectorAll('#hist-chips .chip').forEach(c => {
-        if (c.getAttribute('data-value') === f) c.setAttribute('aria-current', 'true');
-        else c.removeAttribute('aria-current');
+      document.querySelectorAll('#hist-chips .hist-chip').forEach(c => {
+        const isActive = c.getAttribute('data-value') === f;
+        c.classList.toggle('hist-chip-active', isActive);
+        c.setAttribute('aria-selected', isActive ? 'true' : 'false');
       });
       loadHistoryList();
     }
@@ -11143,6 +11485,19 @@
         if (action === 'hist-filter') {
           const f = actEl.getAttribute('data-value');
           setHistoryFilter(f);
+          return;
+        }
+
+        // v27.3.0 — clear search input
+        if (action === 'hist-clear-search') {
+          const inp = $('hist-search');
+          if (inp) {
+            inp.value = '';
+            inp.focus();
+          }
+          actEl.hidden = true;
+          historyState.search = '';
+          loadHistoryList();
           return;
         }
 
