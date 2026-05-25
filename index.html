@@ -680,6 +680,27 @@
     .sd-summary::-webkit-details-marker { display: none; }
     .sd-summary-title { flex: 1 1 auto; }
     .sd-summary-meta { display: flex; align-items: center; gap: 8px; }
+    /* v27.3.0 — section + chip icons */
+    .sd-section-icon {
+      width: 32px; height: 32px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      background: var(--accent-soft, #fff3e6);
+      color: var(--accent-deep, #d97316);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-right: 4px;
+    }
+    .sd-section-icon svg { width: 17px; height: 17px; }
+    .sd-chip-icon {
+      display: inline-flex; align-items: center;
+      width: 14px; height: 14px;
+      margin-right: 6px;
+      color: var(--ink-soft, #6b6660);
+      vertical-align: middle;
+    }
+    .sd-chip-icon svg { width: 14px; height: 14px; }
+    .sd-chip.active .sd-chip-icon,
+    .sd-chip:hover .sd-chip-icon { color: var(--accent-deep, #d97316); }
     .sd-badge {
       font: 600 11px/1 var(--f-mono);
       padding: 4px 8px;
@@ -1591,6 +1612,22 @@
       color: white;
       box-shadow: 0 4px 14px rgba(22,163,74,0.22);
     }
+    /* v27.3.0 — slim aggregate summary replacing the loud green band.
+       Per-screen pills cover the per-screen detail; this just rolls up totals. */
+    .led-summary {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px;
+      margin-top: var(--s-3);
+      background: var(--accent-soft);
+      border-radius: var(--r-sm);
+      border: 0.5px solid var(--border-soft);
+      font-size: 12.5px;
+      color: var(--ink-mid);
+      font-family: var(--font-display);
+    }
+    .led-summary svg { color: var(--accent-deep); flex-shrink: 0; }
+    .led-summary strong { color: var(--accent-deep); font-weight: 700; font-variant-numeric: tabular-nums; }
+    html[data-theme="dark"] .led-summary strong { color: var(--accent); }
     /* v27.3.0 — LED cards inline in CALICO Step 3 (Outputs card). Tighter
        spacing and a subtle divider so they read as a sub-block. */
     .calico-led-inline {
@@ -1793,6 +1830,792 @@
     .sx-da-title { font-family: var(--font-display); font-weight: 600; font-size: 13.5px; color: var(--ink-strong); }
     .sx-da-sub { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
 
+    /* --- v27.3.0 CUSTOMER DIRECTORY (D1-D3 silent-drop restore) --- */
+    .cust-toolbar {
+      display: flex; flex-direction: column; gap: var(--s-3);
+      margin-bottom: var(--s-3);
+    }
+    .cust-search {
+      position: relative;
+      display: flex; align-items: center;
+    }
+    .cust-search svg {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--ink-soft);
+      pointer-events: none;
+    }
+    .cust-search input {
+      width: 100%;
+      padding: 10px 12px 10px 36px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--r-sm);
+      font-family: var(--font-system); font-size: 14px;
+      color: var(--ink-strong);
+      transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+    }
+    .cust-search input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    .cust-filter-chips {
+      display: flex; gap: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 4px;
+    }
+    .cust-filter-chips::-webkit-scrollbar { display: none; }
+    .cust-chip {
+      appearance: none; border: 1px solid var(--border-mid);
+      background: var(--bg-card);
+      color: var(--ink-mid);
+      padding: 6px 12px;
+      border-radius: var(--r-pill);
+      font-family: var(--font-display); font-weight: 600; font-size: 12.5px;
+      cursor: pointer;
+      transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+      white-space: nowrap;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cust-chip:hover { border-color: var(--accent); color: var(--ink-strong); }
+    .cust-chip.active {
+      background: var(--accent); color: var(--ink-on-brand);
+      border-color: var(--accent);
+    }
+    .cust-row {
+      appearance: none; border: none;
+      display: flex; align-items: center; gap: var(--s-3);
+      width: 100%; padding: 12px 14px;
+      background: var(--bg-card);
+      border-bottom: 0.5px solid var(--border-soft);
+      text-align: left; cursor: pointer;
+      font-family: inherit;
+      transition: background var(--dur-base) var(--ease-out);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cust-row:hover { background: var(--bg-card-hover); }
+    .cust-row:first-of-type { border-top-left-radius: var(--r-md); border-top-right-radius: var(--r-md); }
+    .cust-row:last-of-type { border-bottom: none; border-bottom-left-radius: var(--r-md); border-bottom-right-radius: var(--r-md); }
+    .cust-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      color: white;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-weight: 700; font-size: 14px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(232,115,28,0.20);
+    }
+    .cust-avatar-lg { width: 52px; height: 52px; font-size: 18px; }
+    .cust-body { flex: 1; min-width: 0; }
+    .cust-name {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 14.5px; color: var(--ink-strong);
+      line-height: 1.3;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .cust-sub {
+      font-size: 12px; color: var(--ink-soft);
+      margin-top: 2px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      text-transform: capitalize;
+    }
+    .cust-type-icon {
+      width: 22px; height: 22px;
+      color: var(--ink-faint);
+      flex-shrink: 0;
+    }
+    .cust-type-icon svg { width: 100%; height: 100%; }
+
+    /* Customer 360 sheet header */
+    .cust-360-head {
+      display: flex; align-items: center; gap: var(--s-3);
+      padding: 16px;
+      border-bottom: 0.5px solid var(--border-soft);
+    }
+    .cust-360-name {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 18px; color: var(--ink-strong);
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+    .cust-360-sub {
+      font-size: 12.5px; color: var(--ink-soft);
+      margin-top: 2px;
+      text-transform: capitalize;
+    }
+    .cust-360-actions {
+      display: flex; gap: 6px;
+      padding: 12px 16px;
+      border-bottom: 0.5px solid var(--border-soft);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .cust-360-actions::-webkit-scrollbar { display: none; }
+    .cust-360-kpis {
+      display: grid; gap: 1px;
+      grid-template-columns: repeat(4, 1fr);
+      background: var(--border-soft);
+      border-bottom: 0.5px solid var(--border-soft);
+    }
+    .cust-360-kpi {
+      background: var(--bg-card);
+      padding: 12px 8px;
+      text-align: center;
+    }
+    .cust-360-kpi-k {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 9.5px; color: var(--ink-soft);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+    .cust-360-kpi-v {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 18px; color: var(--ink-strong);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .page-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: var(--s-3);
+      margin-bottom: var(--s-3);
+    }
+    .page-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--t-h1, 24px);
+      color: var(--ink-strong);
+      margin: 0;
+      letter-spacing: -0.015em;
+    }
+
+    /* --- v27.3.0 LOGIN REFRESH --- */
+    .login-bg-v3 {
+      position: fixed; inset: 0;
+      background: var(--bg-page);
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+      overflow: hidden;
+    }
+    .login-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(72px);
+      opacity: 0.55;
+      pointer-events: none;
+      will-change: transform;
+    }
+    .login-orb-1 {
+      width: 460px; height: 460px;
+      background: radial-gradient(circle, #F7941D 0%, transparent 65%);
+      top: -120px; left: -120px;
+      animation: orb-drift-a 18s ease-in-out infinite alternate;
+    }
+    .login-orb-2 {
+      width: 380px; height: 380px;
+      background: radial-gradient(circle, #FAC172 0%, transparent 65%);
+      bottom: -100px; right: -100px;
+      animation: orb-drift-b 22s ease-in-out infinite alternate;
+    }
+    html[data-theme="dark"] .login-orb { opacity: 0.32; }
+    @keyframes orb-drift-a {
+      0%   { transform: translate3d(0,0,0) scale(1); }
+      100% { transform: translate3d(60px, 40px, 0) scale(1.08); }
+    }
+    @keyframes orb-drift-b {
+      0%   { transform: translate3d(0,0,0) scale(1); }
+      100% { transform: translate3d(-40px, -50px, 0) scale(1.12); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .login-orb { animation: none !important; }
+    }
+    .login-card-v3 {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 380px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: 20px;
+      padding: 32px 24px 20px;
+      box-shadow: 0 24px 60px rgba(15,14,12,0.10), 0 4px 12px rgba(15,14,12,0.06);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    html[data-theme="dark"] .login-card-v3 {
+      box-shadow: 0 24px 60px rgba(0,0,0,0.50), 0 4px 12px rgba(0,0,0,0.30);
+    }
+    .login-brand {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .login-logos {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      margin-bottom: 14px;
+    }
+    .login-tvone-logo { color: #F7941D; display: inline-flex; }
+    .login-logo-divider {
+      width: 1px; height: 22px;
+      background: var(--border-mid);
+    }
+    .login-cavitak-logo { display: inline-flex; }
+    .login-title {
+      font-family: var(--font-display);
+      font-weight: 700; font-size: 20px;
+      color: var(--ink-strong);
+      margin: 0 0 4px;
+      letter-spacing: -0.02em;
+    }
+    .login-subtitle {
+      font-size: 12.5px;
+      color: var(--ink-soft);
+    }
+    .login-input-wrap {
+      position: relative; display: flex; align-items: center;
+    }
+    .login-input-icon {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--ink-soft);
+      pointer-events: none;
+    }
+    .input-v3-iconed { padding-left: 36px !important; }
+    .login-submit {
+      width: 100%;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 4px;
+    }
+    .login-forgot {
+      appearance: none; border: none; background: transparent;
+      color: var(--accent-deep);
+      font-family: var(--font-display); font-weight: 600; font-size: 12.5px;
+      cursor: pointer;
+      display: block;
+      margin: 14px auto 0;
+      padding: 6px 10px;
+      border-radius: var(--r-sm);
+      transition: background var(--dur-base) var(--ease-out);
+    }
+    .login-forgot:hover { background: var(--accent-soft); }
+    .login-foot {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 0.5px solid var(--border-soft);
+      text-align: center;
+    }
+    .login-ver {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--ink-faint);
+      letter-spacing: 0.05em;
+    }
+
+    /* --- v27.3.0 DASHBOARD UPGRADE — 8 KPI tiles --- */
+    .kpi-grid-8 {
+      display: grid; gap: 8px;
+      grid-template-columns: repeat(2, 1fr);
+      margin-bottom: var(--s-4);
+    }
+    @media (min-width: 540px) { .kpi-grid-8 { grid-template-columns: repeat(4, 1fr); } }
+    @media (min-width: 880px) { .kpi-grid-8 { grid-template-columns: repeat(8, 1fr); } }
+    /* Color variants for the 4 new tiles (red/gray/cyan/pink) */
+    .kpi-tile-red    { background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); }
+    .kpi-tile-red    .kpi-tile-icon { background: #EF4444; color: white; }
+    .kpi-tile-red    .kpi-value     { color: #991B1B; }
+    .kpi-tile-gray   { background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%); }
+    .kpi-tile-gray   .kpi-tile-icon { background: #6B7280; color: white; }
+    .kpi-tile-gray   .kpi-value     { color: #1F2937; }
+    .kpi-tile-cyan   { background: linear-gradient(135deg, #CFFAFE 0%, #A5F3FC 100%); }
+    .kpi-tile-cyan   .kpi-tile-icon { background: #06B6D4; color: white; }
+    .kpi-tile-cyan   .kpi-value     { color: #155E75; }
+    .kpi-tile-pink   { background: linear-gradient(135deg, #FCE7F3 0%, #FBCFE8 100%); }
+    .kpi-tile-pink   .kpi-tile-icon { background: #EC4899; color: white; }
+    .kpi-tile-pink   .kpi-value     { color: #9D174D; }
+    html[data-theme="dark"] .kpi-tile-red    { background: linear-gradient(135deg, rgba(239,68,68,0.18) 0%, rgba(239,68,68,0.08) 100%); }
+    html[data-theme="dark"] .kpi-tile-red    .kpi-value { color: #FCA5A5; }
+    html[data-theme="dark"] .kpi-tile-gray   { background: linear-gradient(135deg, rgba(107,114,128,0.20) 0%, rgba(107,114,128,0.10) 100%); }
+    html[data-theme="dark"] .kpi-tile-gray   .kpi-value { color: #D1D5DB; }
+    html[data-theme="dark"] .kpi-tile-cyan   { background: linear-gradient(135deg, rgba(6,182,212,0.18) 0%, rgba(6,182,212,0.08) 100%); }
+    html[data-theme="dark"] .kpi-tile-cyan   .kpi-value { color: #67E8F9; }
+    html[data-theme="dark"] .kpi-tile-pink   { background: linear-gradient(135deg, rgba(236,72,153,0.18) 0%, rgba(236,72,153,0.08) 100%); }
+    html[data-theme="dark"] .kpi-tile-pink   .kpi-value { color: #F9A8D4; }
+
+    /* Dashboard sections */
+    .dash-section {
+      margin-bottom: var(--s-5);
+    }
+    .dash-section-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: var(--s-3);
+    }
+    .dash-section-head h2 {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 16px; color: var(--ink-strong);
+      margin: 0; letter-spacing: -0.01em;
+    }
+    .dash-section-head .meta {
+      font-size: 11.5px; color: var(--ink-soft);
+      font-family: var(--font-display); font-weight: 500;
+    }
+
+    /* Stage funnel */
+    .stage-funnel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .funnel-row {
+      display: grid; gap: 10px;
+      grid-template-columns: 100px 1fr 32px;
+      align-items: center;
+    }
+    @media (min-width: 540px) { .funnel-row { grid-template-columns: 160px 1fr 40px; } }
+    .funnel-stage {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 12px; color: var(--ink-mid);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .funnel-bar-wrap {
+      height: 18px;
+      background: var(--bg-subtle);
+      border-radius: var(--r-pill);
+      overflow: hidden;
+    }
+    .funnel-bar {
+      height: 100%;
+      border-radius: var(--r-pill);
+      transition: width 600ms var(--ease-out);
+    }
+    .funnel-count {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 13px; color: var(--ink-strong);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Region tiles */
+    .region-grid {
+      display: grid; gap: 8px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (min-width: 540px) { .region-grid { grid-template-columns: repeat(4, 1fr); } }
+    .region-tile {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-left: 3px solid var(--zone-color, var(--accent));
+      border-radius: var(--r-md);
+      padding: 12px;
+      transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+    }
+    .region-tile:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,14,12,0.05); }
+    .region-tile-head {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 10px;
+    }
+    .region-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+    .region-name {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 13px; color: var(--ink-strong);
+    }
+    .region-stats {
+      display: grid; gap: 6px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .region-stat-k {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 9.5px; color: var(--ink-soft);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 2px;
+    }
+    .region-stat-v {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 16px; color: var(--ink-strong);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Stuck/slipped table */
+    .stuck-table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      overflow: hidden;
+    }
+    .stuck-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 13px;
+    }
+    .stuck-table thead th {
+      background: var(--bg-subtle);
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 10.5px;
+      color: var(--ink-soft);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 9px 12px;
+      text-align: left;
+      border-bottom: 0.5px solid var(--border-soft);
+    }
+    .stuck-table thead th.num { text-align: right; }
+    .stuck-table tbody tr {
+      cursor: pointer;
+      border-bottom: 0.5px solid var(--border-soft);
+      transition: background var(--dur-base) var(--ease-out);
+    }
+    .stuck-table tbody tr:hover { background: var(--bg-card-hover); }
+    .stuck-table tbody tr:last-child { border-bottom: none; }
+    .stuck-table td {
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+    .stuck-table td.num { text-align: right; white-space: nowrap; }
+    .stuck-project {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 13px; color: var(--ink-strong);
+    }
+    .stuck-meta {
+      font-size: 11px; color: var(--ink-soft);
+      margin-top: 2px;
+    }
+    .stuck-days {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 13px;
+      color: var(--warning, #F59E0B);
+      font-variant-numeric: tabular-nums;
+    }
+    .stuck-days-bad { color: var(--danger, #EF4444); }
+    .stuck-table-more {
+      padding: 10px 12px;
+      text-align: center;
+      font-size: 12px; color: var(--ink-soft);
+      background: var(--bg-subtle);
+    }
+    .stuck-table-more a {
+      color: var(--accent-deep);
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .stuck-table-more a:hover { text-decoration: underline; }
+
+    /* --- v27.3.0 saved-deal SX read-only summary --- */
+    .sd-sx-list {
+      display: flex; flex-direction: column; gap: 8px;
+      margin-bottom: 12px;
+    }
+    .sd-sx-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-subtle);
+      border-radius: var(--r-sm);
+      border: 0.5px solid var(--border-soft);
+    }
+    .sd-sx-icon {
+      width: 32px; height: 32px;
+      border-radius: var(--r-xs);
+      background: var(--accent-soft);
+      color: var(--accent-deep);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .sd-sx-icon svg { width: 16px; height: 16px; }
+    .sd-sx-text { flex: 1; min-width: 0; }
+    .sd-sx-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 13.5px; color: var(--ink-strong);
+      line-height: 1.3;
+    }
+    .sd-sx-sub {
+      font-size: 11.5px; color: var(--ink-soft);
+      margin-top: 2px;
+    }
+    .sd-sx-qty {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 16px; color: var(--accent-deep);
+      font-variant-numeric: tabular-nums;
+      padding: 4px 10px;
+      background: var(--bg-card);
+      border-radius: var(--r-pill);
+      border: 1px solid var(--border-soft);
+    }
+
+    /* --- v27.3.0 SIMPLE HOME --- */
+    .home-hero {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: var(--s-3);
+      margin-bottom: var(--s-4);
+      padding-top: var(--s-2);
+    }
+    .home-hero-text { flex: 1; min-width: 0; }
+    .home-greet {
+      font-family: var(--font-display); font-weight: 500;
+      font-size: 13px; color: var(--ink-soft);
+      letter-spacing: 0.005em;
+      margin-bottom: 2px;
+    }
+    .home-hero-title {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 24px; color: var(--ink-strong);
+      margin: 0; letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    .home-cta {
+      appearance: none; border: none;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px;
+      background: var(--accent); color: var(--ink-on-brand);
+      border-radius: var(--r-pill);
+      font-family: var(--font-display); font-weight: 600; font-size: 12.5px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(232,115,28,0.25);
+      transition: transform var(--dur-fast) var(--ease-spring), background var(--dur-base) var(--ease-out);
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .home-cta:hover { background: var(--accent-deep); }
+    .home-cta:active { transform: scale(0.97); }
+    .home-stats {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(2, 1fr);
+      margin-bottom: var(--s-5);
+    }
+    @media (min-width: 720px) { .home-stats { grid-template-columns: repeat(4, 1fr); } }
+    .home-stat {
+      appearance: none; border: 1px solid var(--border-soft);
+      background: var(--bg-card);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    .home-stat::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--stat-color, var(--accent));
+    }
+    .home-stat:hover {
+      transform: translateY(-2px);
+      border-color: var(--stat-color, var(--accent));
+      box-shadow: 0 6px 18px rgba(15,14,12,0.06);
+    }
+    html[data-theme="dark"] .home-stat:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.40); }
+    .home-stat-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--stat-color) 12%, transparent);
+      color: var(--stat-color);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    @supports not (background: color-mix(in srgb, red 50%, blue)) {
+      .home-stat-icon { background: rgba(247,148,29,0.12); }
+    }
+    .home-stat-icon svg { width: 18px; height: 18px; }
+    .home-stat-text { width: 100%; }
+    .home-stat-value {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 26px; line-height: 1;
+      color: var(--ink-strong);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .home-stat-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 12.5px; color: var(--ink-strong);
+      margin-bottom: 2px;
+    }
+    .home-stat-sub {
+      font-size: 11.5px; color: var(--ink-soft);
+    }
+    .home-link {
+      color: var(--accent-deep);
+      font-weight: 600;
+      font-size: 12.5px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .home-link:hover { text-decoration: underline; }
+    .home-dash-cta {
+      margin-top: var(--s-4);
+      padding: 14px;
+      background: var(--bg-card);
+      border: 1px dashed var(--border-mid);
+      border-radius: var(--r-md);
+      text-align: center;
+    }
+    .home-dash-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--accent-deep);
+      font-family: var(--font-display); font-weight: 600; font-size: 13.5px;
+      text-decoration: none;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: var(--r-sm);
+      transition: background var(--dur-base) var(--ease-out);
+    }
+    .home-dash-link:hover { background: var(--accent-soft); }
+
+    /* --- v27.3.0 Stage transitions timeline --- */
+    .st-timeline {
+      padding: 16px 18px 12px 18px;
+      display: flex; flex-direction: column;
+    }
+    .st-row {
+      display: grid;
+      grid-template-columns: 20px 1fr;
+      gap: 12px;
+      padding-bottom: 18px;
+    }
+    .st-row:last-child { padding-bottom: 4px; }
+    .st-marker {
+      display: flex; flex-direction: column; align-items: center;
+      padding-top: 4px;
+    }
+    .st-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--ink-soft);
+      border: 2px solid var(--bg-card);
+      box-shadow: 0 0 0 1px var(--border-soft);
+      flex-shrink: 0;
+    }
+    .st-row-current .st-dot {
+      background: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    .st-line {
+      flex: 1;
+      width: 2px;
+      background: var(--border-soft);
+      margin-top: 4px;
+      min-height: 16px;
+    }
+    .st-body {
+      min-width: 0;
+      padding-top: 1px;
+    }
+    .st-stages {
+      display: flex; align-items: center;
+      flex-wrap: wrap;
+      gap: 2px;
+      margin-bottom: 4px;
+    }
+    .st-meta {
+      font-size: 11.5px;
+      color: var(--ink-soft);
+      font-variant-numeric: tabular-nums;
+    }
+    .st-notes {
+      margin-top: 6px;
+      padding: 8px 10px;
+      background: var(--bg-subtle);
+      border-radius: var(--r-sm);
+      font-size: 12.5px;
+      color: var(--ink-mid);
+      line-height: 1.4;
+    }
+
+    /* Stage badge → clickable history link */
+    .sd-stage-link {
+      appearance: none;
+      border: 0;
+      font-family: var(--font-display);
+      font-weight: inherit;
+      transition: transform var(--dur-fast) var(--ease-spring), filter var(--dur-base) var(--ease-out);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sd-stage-link:hover { filter: brightness(0.96); transform: translateY(-1px); }
+    .sd-stage-link:active { transform: scale(0.97); }
+
+    /* --- v27.3.0 Pull-to-refresh --- */
+    .ptr-indicator {
+      position: fixed;
+      top: var(--topbar-h, 56px);
+      left: 50%;
+      transform: translate(-50%, -100%);
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      box-shadow: 0 4px 12px rgba(15,14,12,0.10);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 80;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--dur-base) var(--ease-out);
+    }
+    .ptr-indicator.is-visible { opacity: 1; }
+    .ptr-indicator svg {
+      width: 18px; height: 18px;
+      color: var(--accent-deep);
+    }
+    .ptr-indicator.is-spinning svg {
+      animation: ptr-spin 0.8s linear infinite;
+    }
+    @keyframes ptr-spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ptr-indicator { transition: none; }
+      .ptr-indicator.is-spinning svg { animation: none; }
+    }
+
+    /* --- v27.3.0 Export mode picker --- */
+    .export-mode-grid {
+      display: grid; gap: 10px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 540px) { .export-mode-grid { grid-template-columns: 1fr 1fr; } }
+    .export-mode-card {
+      appearance: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      padding: 14px;
+      display: flex; align-items: center; gap: 12px;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .export-mode-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+      box-shadow: 0 4px 14px rgba(15,14,12,0.06);
+    }
+    .export-mode-card:active { transform: scale(0.98); }
+    .export-mode-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      color: var(--accent-deep);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .export-mode-icon svg { width: 20px; height: 20px; }
+    .export-mode-text { flex: 1; min-width: 0; }
+    .export-mode-title {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 14px; color: var(--ink-strong);
+      margin-bottom: 2px;
+    }
+    .export-mode-sub {
+      font-size: 11.5px; color: var(--ink-soft);
+      line-height: 1.35;
+    }
+
     /* --- v27.3.0 NOTIFICATION SHEET (D6-D9 restore) --- */
     .notif-sheet { padding: 4px 0 16px; }
     .notif-sheet-head {
@@ -1924,6 +2747,10 @@
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9.5L12 2l9 7.5"/><path d="M5 9v12h4v-7h6v7h4V9"/></svg>
         Home
       </button>
+      <button data-nav="#/dashboard" type="button" aria-label="Dashboard">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Dashboard
+      </button>
       <button data-nav="#/quote/new" type="button" aria-label="New Quote">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         New
@@ -1932,9 +2759,9 @@
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
         Quotes
       </button>
-      <button data-nav="#/profile" type="button" aria-label="Profile">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
-        Profile
+      <button data-nav="#/customers" type="button" aria-label="Customers">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Customers
       </button>
     </nav>
     <div class="tricolor-bar" id="tricolor" hidden></div>
@@ -3450,6 +4277,62 @@
       return (r && r.rows) || (Array.isArray(r) ? r : []);
     }
 
+    /* v27.3.0 — Stage transitions history (silent-drop restore).
+       Each deal records a row in stage_transitions on every stage change.
+       The RPC takes an array of ref IDs (batch); we wrap single-ref usage. */
+    async function stageTransitionsList(refId) {
+      if (!refId) return [];
+      const r = await rpc('stage_transition_list', { p_ref_ids: [String(refId)] });
+      const rows = (r && r.rows) || (Array.isArray(r) ? r : []);
+      // Sort newest first (RPC may not guarantee order)
+      return rows.sort(function (a, b) {
+        return new Date(b.transitioned_at || 0) - new Date(a.transitioned_at || 0);
+      });
+    }
+
+    /* v27.3.0 — Customer Directory + 360 + Merge (D1-D3 silent-drop restores).
+       All 4 RPCs (customer_list, customer_upsert, customer_delete, customer_merge)
+       already exist in Supabase. This is UI-only build on top of an existing
+       backend. */
+    async function customerList(opts) {
+      opts = opts || {};
+      const r = await rpc('customer_list', {
+        p_app: APP_TAG,
+        p_search: String(opts.search || '').trim() || null,
+        p_limit: opts.limit || 200
+      });
+      return (r && r.rows) || (Array.isArray(r) ? r : []);
+    }
+    async function customerUpsert(payload) {
+      return rpc('customer_upsert', { p_payload: payload, p_app: APP_TAG });
+    }
+    async function customerDelete(customerId) {
+      return rpc('customer_delete', { p_customer_id: String(customerId) });
+    }
+    async function customerMerge(sourceId, targetId) {
+      return rpc('customer_merge', {
+        p_source_id: String(sourceId),
+        p_target_id: String(targetId)
+      });
+    }
+    /* Customer 360 — list of deals for a given customer party. Falls back to
+       client-side filter of listDeals when no dedicated RPC exists. */
+    async function customer360(customerId) {
+      // Try a dedicated RPC if present
+      try {
+        const r = await rpc('customer_360', {
+          p_customer_id: String(customerId),
+          p_app: APP_TAG
+        });
+        return (r && r.rows) || (Array.isArray(r) ? r : []);
+      } catch (e) {
+        // Fallback: list all deals and filter by customer_party_id
+        const all = await listDeals({ limit: 500 });
+        const rows = (all && all.rows) || (Array.isArray(all) ? all : []);
+        return rows.filter(d => d.customer_party_id === customerId);
+      }
+    }
+
     return Object.freeze({
       // auth
       login, logout, currentUser, onAuthChange, changePassword,
@@ -3465,6 +4348,10 @@
       resetPasswordRequest, resetPasswordListPending, resetPasswordApprove,
       // v27.3.0 — duplicate + custom stages (v27.7 partial restore)
       duplicateDeal, stageList,
+      // v27.3.0 — Stage transitions history (silent-drop restore)
+      stageTransitionsList,
+      // v27.3.0 — Customer directory + 360 + merge (D1-D3 silent-drop restores)
+      customerList, customerUpsert, customerDelete, customerMerge, customer360,
       // internals exposed for debug only
       _rpc: rpc, _sha256Hex: sha256Hex
     });
@@ -3592,10 +4479,13 @@
     }
 
     // Filename pattern (per SPEC §5.1)
-    function filename(deal, ext) {
+    function filename(deal, ext, opts) {
       const ref = (deal && (deal.display_ref || deal.ref || 'NOREF'));
       const date = new Date().toISOString().slice(0, 10);
-      return 'tvONE_Quote_' + ref + '_' + date + '.' + ext;
+      const mode = opts && opts.mode ? String(opts.mode).toUpperCase() : null;
+      const modePart = mode ? '_' + mode : '';
+      // v27.3.0 — Filename pattern: tvONE_Quote_<ref>_<date>[_BOQ|BOM].<ext>
+      return 'tvONE_Quote_' + ref + modePart + '_' + date + '.' + ext;
     }
 
     // alpha.8.1 — Excel generation
@@ -3616,8 +4506,14 @@
     // what the user sees in the BoM card on the saved-deal view. If the
     // user has unsaved structural edits, both the on-screen BoM and the
     // Excel reflect current state (consistent UX).
-    async function excel(deal) {
+    async function excel(deal, opts) {
       if (!deal) throw new Error('excel: deal required');
+      // v27.3.0 — `opts.mode` ('boq' | 'bom') controls pricing column visibility.
+      // Until pricing migration lands (v27.4), both modes produce the same
+      // sheet because no pricing data exists yet. Mode is carried through to
+      // the filename so the user knows what they got.
+      const mode = (opts && opts.mode) || 'boq';
+      const showPricing = mode === 'boq';
       const ExcelJS = await loadExcelJS();
 
       // Compute fresh reco — matches the BoM card on saved-deal view.
@@ -4000,8 +4896,11 @@
     //
     // Native (not html2canvas) for sharp text + small files. Hybrid
     // (rendered BoM card image at top) is a polish item if reps want it.
-    async function pdf(deal) {
+    async function pdf(deal, opts) {
       if (!deal) throw new Error('pdf: deal required');
+      // v27.3.0 — see excel() above for mode semantics.
+      const mode = (opts && opts.mode) || 'boq';
+      const showPricing = mode === 'boq';
       const jspdf = await loadJsPDF();
       const JsPDFCtor = jspdf.jsPDF;
 
@@ -6626,6 +7525,62 @@
       }
     }
 
+    /* v27.3.0 — Stage transitions timeline (silent-drop restore).
+       Shows full history of stage changes for one deal: from/to stages, when,
+       by whom, optional notes. Most recent on top. */
+    async function showStageTransitionsSheet(refId) {
+      openSheet(
+        '<div class="notif-sheet">' +
+          '<div class="notif-sheet-head">' +
+            '<h3>Stage history</h3>' +
+            (refId ? '<span class="chip-v3 chip-info">' + esc(refId) + '</span>' : '') +
+          '</div>' +
+          '<div id="st-list"><div class="muted small" style="padding:16px;text-align:center">Loading\u2026</div></div>' +
+        '</div>'
+      );
+      try {
+        const rows = await STORE.stageTransitionsList(refId);
+        const list = $('st-list');
+        if (!list) return;
+        if (!rows || rows.length === 0) {
+          list.innerHTML = '<div class="empty-state" style="padding:32px 16px"><p class="empty-state-body">No stage changes logged yet.</p></div>';
+          return;
+        }
+        list.innerHTML =
+          '<div class="st-timeline">' +
+            rows.map(function (r, idx) {
+              const when = String(r.transitioned_at || '').replace('T', ' ').slice(0, 16);
+              const fromS = r.from_stage_name || r.from_stage || '—';
+              const toS   = r.to_stage_name || r.to_stage || '—';
+              const fromCls = _stageChipClassName(fromS);
+              const toCls = _stageChipClassName(toS);
+              const isFirst = idx === 0;
+              return '<div class="st-row' + (isFirst ? ' st-row-current' : '') + '">' +
+                '<div class="st-marker">' +
+                  '<span class="st-dot"></span>' +
+                  (idx < rows.length - 1 ? '<span class="st-line"></span>' : '') +
+                '</div>' +
+                '<div class="st-body">' +
+                  '<div class="st-stages">' +
+                    '<span class="' + fromCls + '" style="font-size:10.5px">' + esc(fromS) + '</span>' +
+                    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink-soft);margin:0 4px"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>' +
+                    '<span class="' + toCls + '" style="font-size:10.5px">' + esc(toS) + '</span>' +
+                  '</div>' +
+                  '<div class="st-meta">' +
+                    esc(when) +
+                    (r.transitioned_by_name || r.transitioned_by ? ' \u00b7 by ' + esc(r.transitioned_by_name || r.transitioned_by) : '') +
+                  '</div>' +
+                  (r.notes ? '<div class="st-notes">' + esc(r.notes) + '</div>' : '') +
+                '</div>' +
+              '</div>';
+            }).join('') +
+          '</div>';
+      } catch (e) {
+        const list = $('st-list');
+        if (list) list.innerHTML = '<div class="banner err" style="margin:12px">Could not load: ' + esc(e.message || String(e)) + '</div>';
+      }
+    }
+
     /* v27.3.0 — User menu sheet (avatar dropdown replacement, Super sees admin tools) */
     function showUserMenuSheet() {
       const u = STORE.currentUser();
@@ -6770,7 +7725,191 @@
     function setRoot(html) {
       $('view-root').innerHTML = html;
       window.scrollTo(0, 0);
+      // v27.3.0 — re-arm pull-to-refresh on each view swap so the right
+      // reloader fires for the current route.
+      _ptr.armForCurrentRoute();
     }
+
+    /* v27.3.0 — Export mode picker.
+       Opens a small sheet with Quote (BoQ) vs Spec sheet (BoM). User taps one,
+       export runs. BoQ = full deliverable with pricing if available;
+       BoM = component list, no pricing column. Filename gets mode suffix. */
+    function _openExportModePicker(fmt /* 'xlsx' | 'pdf' */, deal) {
+      const isExcel = fmt === 'xlsx';
+      const fmtLabel = isExcel ? 'Excel' : 'PDF';
+      openSheet(
+        '<div class="notif-sheet" style="padding:0 16px 16px">' +
+          '<div class="notif-sheet-head" style="padding-left:0;padding-right:0">' +
+            '<h3>Export as ' + fmtLabel + '</h3>' +
+          '</div>' +
+          '<p style="font-size:13px;color:var(--ink-soft);margin:0 0 14px">Choose the format you want:</p>' +
+          '<div class="export-mode-grid">' +
+            '<button class="export-mode-card" type="button" data-action="export-go" data-fmt="' + fmt + '" data-mode="boq">' +
+              '<span class="export-mode-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>' +
+              '<div class="export-mode-text">' +
+                '<div class="export-mode-title">Quote (BoQ)</div>' +
+                '<div class="export-mode-sub">Full quotation with pricing if available</div>' +
+              '</div>' +
+            '</button>' +
+            '<button class="export-mode-card" type="button" data-action="export-go" data-fmt="' + fmt + '" data-mode="bom">' +
+              '<span class="export-mode-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>' +
+              '<div class="export-mode-text">' +
+                '<div class="export-mode-title">Spec sheet (BoM)</div>' +
+                '<div class="export-mode-sub">Component list \u2014 no pricing</div>' +
+              '</div>' +
+            '</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+
+    /* v27.3.0 — Run the export with chosen mode. Called from the picker. */
+    function _runExport(fmt, mode, deal) {
+      const fn = EXPORT.filename(deal, fmt, { mode: mode });
+      const promise = fmt === 'xlsx'
+        ? EXPORT.excel(deal, { mode: mode })
+        : EXPORT.pdf(deal, { mode: mode });
+      return promise.then(function (blob) {
+        EXPORT.download(blob, fn);
+        toast((fmt === 'xlsx' ? 'Excel' : 'PDF') + ' exported: ' + fn, 'ok');
+      }).catch(function (err) {
+        const msg = (err && err.message) ? err.message : String(err);
+        toast((fmt === 'xlsx' ? 'Excel' : 'PDF') + ' export failed: ' + msg, 'err');
+      });
+    }
+    /* v27.3.0 — Pull-to-refresh manager.
+       Single delegated touchstart/touchmove/touchend listener on <body>.
+       Activates only when window.scrollTop === 0 and the swipe is clearly
+       vertical-down. When deltaY crosses threshold (80px), the indicator
+       enters its "ready" state; on release, it spins and calls the route's
+       reloader. Skipped entirely if prefers-reduced-motion. */
+    const _ptr = (function () {
+      const TRIGGER = 80;
+      const MAX_PULL = 140;
+      let indicator = null;
+      let startY = 0;
+      let lastY = 0;
+      let pulling = false;
+      let ready = false;
+      let armed = false;            // current route allows PTR
+      let reloader = null;          // current route's refresh callback
+      const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function ensureIndicator() {
+        if (indicator) return indicator;
+        indicator = document.createElement('div');
+        indicator.className = 'ptr-indicator';
+        indicator.innerHTML =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="23 4 23 10 17 10"/>' +
+            '<path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>' +
+          '</svg>';
+        document.body.appendChild(indicator);
+        return indicator;
+      }
+
+      function setIndicatorPos(delta) {
+        if (!indicator) return;
+        const clamped = Math.min(MAX_PULL, Math.max(0, delta));
+        const y = -100 + Math.min(180, clamped * 1.3);
+        indicator.style.transform = 'translate(-50%, ' + y + '%)';
+      }
+
+      function onStart(ev) {
+        if (!armed) return;
+        if (reduceMotion) return;
+        if (window.scrollY > 0) return;
+        const t = ev.touches && ev.touches[0];
+        if (!t) return;
+        startY = t.clientY;
+        lastY = startY;
+        pulling = true;
+        ready = false;
+      }
+
+      function onMove(ev) {
+        if (!pulling || !armed) return;
+        const t = ev.touches && ev.touches[0];
+        if (!t) return;
+        const delta = t.clientY - startY;
+        if (delta <= 0) {
+          // scrolling up — cancel
+          if (indicator) indicator.classList.remove('is-visible');
+          pulling = false;
+          return;
+        }
+        // Only kick in for clearly-vertical swipes
+        if (delta < 12) return;
+        // We're holding a downward pull from scrollTop=0 → take over the gesture
+        ensureIndicator();
+        indicator.classList.add('is-visible');
+        // Resist beyond trigger
+        const shown = delta < TRIGGER ? delta : TRIGGER + (delta - TRIGGER) * 0.35;
+        setIndicatorPos(shown);
+        ready = delta >= TRIGGER;
+        lastY = t.clientY;
+        // Prevent overscroll bounce on iOS while pulling
+        if (ev.cancelable) ev.preventDefault();
+      }
+
+      function onEnd() {
+        if (!pulling) return;
+        pulling = false;
+        if (!indicator) return;
+        if (ready && reloader) {
+          indicator.classList.add('is-spinning');
+          // Hold indicator near the threshold while reloader runs
+          setIndicatorPos(TRIGGER);
+          Promise.resolve()
+            .then(function () { return reloader(); })
+            .catch(function (e) { console.warn('PTR reload failed:', e); })
+            .then(function () {
+              setTimeout(function () {
+                indicator.classList.remove('is-spinning', 'is-visible');
+                setIndicatorPos(0);
+              }, 240);
+            });
+        } else {
+          indicator.classList.remove('is-visible');
+          setIndicatorPos(0);
+        }
+        ready = false;
+      }
+
+      function armForCurrentRoute() {
+        const hash = location.hash || '#/home';
+        if (hash === '#/home') {
+          armed = true;
+          reloader = function () {
+            return Promise.all([loadHomeSimpleStats(), loadHomeRecent()]);
+          };
+        } else if (hash === '#/dashboard') {
+          armed = true;
+          reloader = function () { return loadHomeKpis(); };
+        } else if (hash === '#/history' || hash.indexOf('#/history?') === 0) {
+          armed = true;
+          reloader = function () {
+            return typeof loadHistoryList === 'function' ? loadHistoryList() : null;
+          };
+        } else if (hash === '#/customers') {
+          armed = true;
+          reloader = function () {
+            return typeof loadCustomerList === 'function' ? loadCustomerList() : null;
+          };
+        } else {
+          armed = false;
+          reloader = null;
+        }
+      }
+
+      // Single delegated set of listeners on document — install once.
+      document.addEventListener('touchstart', onStart, { passive: true });
+      document.addEventListener('touchmove',  onMove,  { passive: false });
+      document.addEventListener('touchend',   onEnd,   { passive: true });
+      document.addEventListener('touchcancel', onEnd,  { passive: true });
+
+      return { armForCurrentRoute: armForCurrentRoute };
+    })();
 
     function setFieldError(fieldId, msg) {
       const f = $(fieldId);
@@ -6816,15 +7955,37 @@
         loginMode === 'force-pw'      ? renderForcePwForm() :
         loginMode === 'force-profile' ? renderProfileSetupForm() :
                                         renderLoginForm();
+      // v27.3.0 — login surface refreshed with the v27.3.0 design language:
+      // real tvONE chevron + Cavitak red-lightning logos in the brand block,
+      // ambient orbs in the background, amber accents, General Sans typography.
       const html =
-        '<div class="login-bg">' +
-          '<div class="login-card">' +
-            '<div class="brand">' +
-              '<div class="logo">tv</div>' +
-              '<div style="font-size:18px;font-weight:700;text-align:center;">tvONE Product Selector</div>' +
-              '<div class="ver-tag">' + esc(CATALOG.version) + '</div>' +
+        '<div class="login-bg login-bg-v3">' +
+          '<div class="login-orb login-orb-1" aria-hidden="true"></div>' +
+          '<div class="login-orb login-orb-2" aria-hidden="true"></div>' +
+          '<div class="login-card login-card-v3">' +
+            '<div class="login-brand">' +
+              '<div class="login-logos">' +
+                '<span class="login-tvone-logo">' +
+                  '<svg viewBox="0 0 64 32" width="56" height="28" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">' +
+                    '<polyline points="8,8 22,16 8,24"/>' +
+                    '<polyline points="28,8 42,16 28,24"/>' +
+                  '</svg>' +
+                '</span>' +
+                '<span class="login-logo-divider"></span>' +
+                '<span class="login-cavitak-logo">' +
+                  '<svg viewBox="0 0 32 32" width="28" height="28">' +
+                    '<circle cx="16" cy="16" r="14" fill="#DC2626"/>' +
+                    '<path d="M19 7 L11 18 L16 18 L13 25 L21 14 L16 14 Z" fill="white"/>' +
+                  '</svg>' +
+                '</span>' +
+              '</div>' +
+              '<h1 class="login-title">tvONE Product Selector</h1>' +
+              '<div class="login-subtitle">Cavitak Marketing \u00b7 sign in to continue</div>' +
             '</div>' +
             inner +
+            '<div class="login-foot">' +
+              '<span class="login-ver">' + esc(CATALOG.version) + '</span>' +
+            '</div>' +
           '</div>' +
         '</div>';
       setRoot(html);
@@ -6833,23 +7994,31 @@
     function renderLoginForm() {
       return '' +
         '<form id="login-form" autocomplete="off" novalidate>' +
-          '<div class="field" id="f-username">' +
+          '<div class="field-v3" id="f-username">' +
             '<label for="i-username">Username</label>' +
-            '<input id="i-username" name="username" type="text" ' +
+            '<div class="login-input-wrap">' +
+              '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-input-icon"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>' +
+              '<input class="input-v3 input-v3-iconed" id="i-username" name="username" type="text" ' +
                    'autocomplete="username" autocapitalize="off" autocorrect="off" ' +
-                   'spellcheck="false" required>' +
+                   'spellcheck="false" placeholder="your.username" required>' +
+            '</div>' +
             '<div class="err" hidden></div>' +
           '</div>' +
-          '<div class="field" id="f-password">' +
+          '<div class="field-v3" id="f-password">' +
             '<label for="i-password">Password</label>' +
-            '<input id="i-password" name="password" type="password" ' +
-                   'autocomplete="current-password" required>' +
+            '<div class="login-input-wrap">' +
+              '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-input-icon"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
+              '<input class="input-v3 input-v3-iconed" id="i-password" name="password" type="password" ' +
+                   'autocomplete="current-password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" required>' +
+            '</div>' +
             '<div class="err" hidden></div>' +
           '</div>' +
-          '<button class="btn btn-block" type="submit" id="btn-login">Sign in</button>' +
+          '<button class="btn-v3 btn-primary btn-md login-submit" type="submit" id="btn-login">' +
+            '<span>Sign in</span>' +
+            '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>' +
+          '</button>' +
         '</form>' +
-        '<div class="sp-12"></div>' +
-        '<div class="tiny muted t-center">Trouble signing in? Contact Dipenkumar.</div>';
+        '<button type="button" class="login-forgot" data-action="rp-show">Trouble signing in?</button>';
     }
 
     function renderForcePwForm() {
@@ -6943,42 +8112,166 @@
        VIEW: Home
        ============================================================ */
 
+    /* ============================================================
+       VIEW: Home — simple personal snapshot
+       4 quick KPIs + My Deals list. Heavy analytics live in #/dashboard.
+       ============================================================ */
     function showHome() {
       showChrome(true);
       updateNavActive('#/home');
+      const u = STORE.currentUser() || {};
+      const greeting = (function () {
+        const h = new Date().getHours();
+        if (h < 12) return 'Good morning';
+        if (h < 17) return 'Good afternoon';
+        return 'Good evening';
+      })();
+      const firstName = String(u.full_name || u.username || '').trim().split(/\s+/)[0] || '';
+      setRoot(
+        '<div class="v273-page">' +
+          '<header class="home-hero">' +
+            '<div class="home-hero-text">' +
+              '<div class="home-greet">' + esc(greeting) + (firstName ? ', ' + esc(firstName) : '') + '</div>' +
+              '<h1 class="home-hero-title">Here\'s your snapshot</h1>' +
+            '</div>' +
+            '<button class="home-cta" type="button" data-nav="#/quote/new">' +
+              '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+              ' New quote' +
+            '</button>' +
+          '</header>' +
+
+          /* ---- 4 simple personal stat cards ---- */
+          '<section class="home-stats">' +
+            simpleStatCard('open',    'Open pipeline',     'Active deals',   '#3B82F6', '#/history?filter=open',
+              '<path d="M3 7h18M3 12h18M3 17h12"/><circle cx="20" cy="17" r="2"/>') +
+            simpleStatCard('closing', 'Closing this month', 'Due in current month', '#F59E0B', '#/history?filter=closing-this-month',
+              '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>') +
+            simpleStatCard('won',     'Won this quarter',  'Closed wins',    '#22C55E', '#/history?filter=won',
+              '<path d="M6 9H4.5A2.5 2.5 0 0 1 2 6.5V5h4"/><path d="M18 9h1.5A2.5 2.5 0 0 0 22 6.5V5h-4"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>') +
+            simpleStatCard('stuck',   'Stuck > 14d',       'Needs a nudge',  '#EF4444', '#/history?filter=stuck',
+              '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>') +
+          '</section>' +
+
+          /* ---- My Deals (recent) ---- */
+          '<section class="deal-list-card">' +
+            '<header class="deal-list-head">' +
+              '<h2>My Deals</h2>' +
+              '<span class="meta">' +
+                '<a data-nav="#/history" class="home-link">See all \u2192</a>' +
+              '</span>' +
+            '</header>' +
+            '<div id="home-recent"><div class="muted small" style="padding:16px">Loading\u2026</div></div>' +
+          '</section>' +
+
+          /* ---- Footer cue to dashboard ---- */
+          '<div class="home-dash-cta">' +
+            '<a data-nav="#/dashboard" class="home-dash-link">' +
+              '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>' +
+              '<span>Open full dashboard \u2192</span>' +
+            '</a>' +
+          '</div>' +
+        '</div>'
+      );
+      loadHomeSimpleStats();
+      loadHomeRecent();
+    }
+
+    /* Simple stat card — colored icon + big number + title + sub */
+    function simpleStatCard(id, title, sub, color, navHref, iconPath) {
+      return '<button class="home-stat" type="button" data-nav="' + esc(navHref) + '" style="--stat-color:' + color + '">' +
+        '<span class="home-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + iconPath + '</svg></span>' +
+        '<div class="home-stat-text">' +
+          '<div class="home-stat-value" id="home-stat-' + id + '-val">\u2014</div>' +
+          '<div class="home-stat-title">' + esc(title) + '</div>' +
+          '<div class="home-stat-sub" id="home-stat-' + id + '-sub">' + esc(sub) + '</div>' +
+        '</div>' +
+      '</button>';
+    }
+
+    /* Simple stats loader — only computes the 4 numbers Home shows. */
+    async function loadHomeSimpleStats() {
+      try {
+        const r = await STORE.listDeals({ limit: 300, offset: 0 });
+        const all = (r && r.rows) || [];
+        const u = STORE.currentUser() || {};
+        const uid = u.id;
+        const mine = uid ? all.filter(d => d.sales_person_id === uid || d.presales_person_id === uid) : all;
+        const active = mine.filter(d => !d.deleted_at);
+        const open  = active.filter(d => _isOpenStage(d.stage));
+        const won   = active.filter(d => d.stage === 'Closed Won');
+        const curM  = _currentYYYYMM();
+        const closingNow = open.filter(d => String(d.close_month || '').slice(0, 7) === curM);
+        const stuck14 = open.filter(d => _daysSince(d.updated_at || d.created_at) > 14);
+        const qStart = (function () {
+          const d = new Date(); const m = d.getMonth();
+          const qm = Math.floor(m / 3) * 3;
+          return new Date(d.getFullYear(), qm, 1);
+        })();
+        const wonQ = won.filter(d => new Date(d.updated_at || d.created_at || 0) >= qStart);
+        setText('home-stat-open-val',    String(open.length));
+        setText('home-stat-open-sub',    open.length === 0 ? 'Nothing open' : (open.length === 1 ? '1 active deal' : open.length + ' active deals'));
+        setText('home-stat-closing-val', String(closingNow.length));
+        setText('home-stat-closing-sub', closingNow.length === 0 ? 'Nothing due' : 'Due in current month');
+        setText('home-stat-won-val',     String(wonQ.length));
+        setText('home-stat-won-sub',     wonQ.length === 0 ? 'No wins yet' : (wonQ.length === 1 ? '1 win this quarter' : wonQ.length + ' wins this quarter'));
+        setText('home-stat-stuck-val',   String(stuck14.length));
+        setText('home-stat-stuck-sub',   stuck14.length === 0 ? 'All current' : 'Need a nudge');
+      } catch (e) {
+        console.error('loadHomeSimpleStats failed:', e);
+      }
+    }
+
+    /* ============================================================
+       VIEW: Dashboard — full analytics
+       8 KPI tiles + attention strip + stage funnel + region zones
+       + stuck/slipped table.
+       ============================================================ */
+    function showDashboard() {
+      showChrome(true);
+      updateNavActive('#/dashboard');
+      const u = STORE.currentUser() || {};
+      const isSuper = u.permission_tier === 'super';
+      const isBuHead = u.org_function === 'BU Head';
+      const showRegions = isSuper || isBuHead;
       setRoot(
         '<div class="v273-page">' +
           '<header class="page-header">' +
-            '<span class="eyebrow">MY PIPELINE</span>' +
-            '<h1>My deals at a glance</h1>' +
-            '<p>Your open deals, deals due to close this month, and stuck items needing attention.</p>' +
+            '<span class="eyebrow">' + (isSuper ? 'PAN-INDIA' : isBuHead ? 'REGION DASHBOARD' : 'MY PIPELINE') + '</span>' +
+            '<h1>' + (isSuper ? 'All deals at a glance' : 'Deals at a glance') + '</h1>' +
+            '<p>Open deals, deals due to close this month, and items needing attention.</p>' +
           '</header>' +
-          '<section class="kpi-grid">' +
-            '<button class="kpi-tile kpi-tile-blue" data-nav="#/history?filter=open" type="button">' +
-              '<span class="kpi-tile-icon"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h12"/><circle cx="20" cy="17" r="2"/></svg></span>' +
-              '<div><div class="kpi-eyebrow">MY OPEN PIPELINE</div><div class="kpi-value" id="kpi-open-val">\u2014</div></div>' +
-              '<div class="kpi-sub" id="kpi-open-sub">\u2014</div>' +
-            '</button>' +
-            '<button class="kpi-tile kpi-tile-green" data-nav="#/history?filter=won" type="button">' +
-              '<span class="kpi-tile-icon"><svg viewBox="0 0 24 24"><path d="M6 9H4.5A2.5 2.5 0 0 1 2 6.5V5h4"/><path d="M18 9h1.5A2.5 2.5 0 0 0 22 6.5V5h-4"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></span>' +
-              '<div><div class="kpi-eyebrow">MY WON THIS QUARTER</div><div class="kpi-value" id="kpi-won-val">\u2014</div></div>' +
-              '<div class="kpi-sub" id="kpi-won-sub">\u2014</div>' +
-            '</button>' +
-            '<button class="kpi-tile kpi-tile-purple" type="button">' +
-              '<span class="kpi-tile-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>' +
-              '<div><div class="kpi-eyebrow">MY WIN RATE</div><div class="kpi-value" id="kpi-wr-val">\u2014</div></div>' +
-              '<div class="kpi-sub" id="kpi-wr-sub">\u2014</div>' +
-            '</button>' +
-            '<button class="kpi-tile kpi-tile-amber" data-nav="#/history?filter=closing-this-month" type="button">' +
-              '<span class="kpi-tile-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>' +
-              '<div><div class="kpi-eyebrow">CLOSING THIS MONTH</div><div class="kpi-value" id="kpi-cm-val">\u2014</div></div>' +
-              '<div class="kpi-sub" id="kpi-cm-sub">due in current month</div>' +
-            '</button>' +
+
+          '<section class="kpi-grid kpi-grid-8">' +
+            kpiTile('open',    'kpi-tile-blue',   'OPEN PIPELINE',     'Active deals',
+              '<path d="M3 7h18M3 12h18M3 17h12"/><circle cx="20" cy="17" r="2"/>',
+              '#/history?filter=open') +
+            kpiTile('won',     'kpi-tile-green',  'WON THIS QUARTER',  'Closed wins',
+              '<path d="M6 9H4.5A2.5 2.5 0 0 1 2 6.5V5h4"/><path d="M18 9h1.5A2.5 2.5 0 0 0 22 6.5V5h-4"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+              '#/history?filter=won') +
+            kpiTile('wr',      'kpi-tile-purple', 'WIN RATE',          'last 90 days',
+              '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+              null) +
+            kpiTile('cm',      'kpi-tile-amber',  'CLOSING THIS MONTH', 'Due in current month',
+              '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+              '#/history?filter=closing-this-month') +
+            kpiTile('stuck',   'kpi-tile-red',    'STUCK > 14d',       'No update in 14+ days',
+              '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+              '#/history?filter=stuck') +
+            kpiTile('lost',    'kpi-tile-gray',   'LOST THIS QUARTER', 'Closed losses',
+              '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+              '#/history?filter=lost') +
+            kpiTile('cycle',   'kpi-tile-cyan',   'AVG SALES CYCLE',   'Created \u2192 closed',
+              '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+              null) +
+            kpiTile('velocity','kpi-tile-pink',   'VELOCITY',          'Closed / month',
+              '<polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/>',
+              null) +
           '</section>' +
+
           '<section class="attention-row">' +
             '<a class="attention-card attention-card-danger" data-nav="#/history?filter=closing-this-month">' +
               '<div class="attention-head">' +
-                '<span class="attention-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6"/><path d="M22 6l-3-3"/></svg></span>' +
+                '<span class="attention-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/></svg></span>' +
                 '<span class="attention-title">Closing this month</span>' +
                 '<span class="attention-count" id="att-closing">0</span>' +
               '</div>' +
@@ -6986,7 +8279,7 @@
             '</a>' +
             '<a class="attention-card attention-card-warning" data-nav="#/history?filter=stuck">' +
               '<div class="attention-head">' +
-                '<span class="attention-icon"><svg viewBox="0 0 24 24"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg></span>' +
+                '<span class="attention-icon"><svg viewBox="0 0 24 24"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/></svg></span>' +
                 '<span class="attention-title">Stuck &gt;14 days</span>' +
                 '<span class="attention-count" id="att-stuck">0</span>' +
               '</div>' +
@@ -6994,24 +8287,60 @@
             '</a>' +
             '<a class="attention-card attention-card-stale" data-nav="#/history?filter=stale">' +
               '<div class="attention-head">' +
-                '<span class="attention-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="14" x2="14" y2="18"/><line x1="14" y1="14" x2="10" y2="18"/></svg></span>' +
+                '<span class="attention-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="14" x2="14" y2="18"/></svg></span>' +
                 '<span class="attention-title">Stale &gt;30 days</span>' +
                 '<span class="attention-count" id="att-stale">0</span>' +
               '</div>' +
               '<div class="attention-empty" id="att-stale-empty">No deals here \u2713</div>' +
             '</a>' +
           '</section>' +
-          '<section class="deal-list-card">' +
-            '<header class="deal-list-head">' +
-              '<h2>My Deals</h2>' +
-              '<span class="meta" id="home-deal-count">\u2014</span>' +
+
+          '<section class="dash-section">' +
+            '<header class="dash-section-head">' +
+              '<h2>Pipeline funnel</h2>' +
+              '<span class="meta">By stage</span>' +
             '</header>' +
-            '<div id="home-recent"><div class="muted small" style="padding:16px">Loading\u2026</div></div>' +
+            '<div id="stage-funnel" class="stage-funnel">' +
+              '<div class="muted small" style="padding:24px;text-align:center">Loading\u2026</div>' +
+            '</div>' +
+          '</section>' +
+
+          (showRegions
+            ? '<section class="dash-section">' +
+                '<header class="dash-section-head">' +
+                  '<h2>Regions</h2>' +
+                  '<span class="meta">' + (isSuper ? 'Pan-India' : 'Your zones') + '</span>' +
+                '</header>' +
+                '<div id="region-tiles" class="region-grid">' +
+                  '<div class="muted small" style="padding:24px;text-align:center;grid-column:1/-1">Loading\u2026</div>' +
+                '</div>' +
+              '</section>'
+            : '') +
+
+          '<section class="dash-section">' +
+            '<header class="dash-section-head">' +
+              '<h2>Needs attention</h2>' +
+              '<span class="meta">Stuck + slipped open deals</span>' +
+            '</header>' +
+            '<div id="stuck-table" class="stuck-table-wrap">' +
+              '<div class="muted small" style="padding:24px;text-align:center">Loading\u2026</div>' +
+            '</div>' +
           '</section>' +
         '</div>'
       );
       loadHomeKpis();
-      loadHomeRecent();
+    }
+
+
+    /* v27.3.0 — KPI tile helper. Generates one tile w/ icon + value + sub. */
+    function kpiTile(id, colorClass, eyebrow, sub, iconPath, navHref) {
+      const navAttr = navHref ? ' data-nav="' + esc(navHref) + '"' : '';
+      return '<button class="kpi-tile ' + colorClass + '" type="button"' + navAttr + '>' +
+        '<span class="kpi-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + iconPath + '</svg></span>' +
+        '<div><div class="kpi-eyebrow">' + esc(eyebrow) + '</div>' +
+          '<div class="kpi-value" id="kpi-' + id + '-val">\u2014</div></div>' +
+        '<div class="kpi-sub" id="kpi-' + id + '-sub">' + esc(sub) + '</div>' +
+      '</button>';
     }
 
     /* Stage chip class mapping (v27.3.0 §8) */
@@ -7102,51 +8431,248 @@
 
     async function loadHomeKpis() {
       try {
-        const r = await STORE.listDeals({ limit: 200, offset: 0 });
+        const r = await STORE.listDeals({ limit: 500, offset: 0 });
         const all = (r && r.rows) || [];
-        const u = STORE.currentUser();
-        // Filter to "mine" — sales or presales is current user
-        const uid = u && u.id;
-        const mine = uid
-          ? all.filter(d => d.sales_person_id === uid || d.presales_person_id === uid)
-          : all;
-        const open  = mine.filter(d => _isOpenStage(d.stage) && !d.deleted_at);
-        const won   = mine.filter(d => d.stage === 'Closed Won' && !d.deleted_at);
-        const lost  = mine.filter(d => d.stage === 'Closed Lost' && !d.deleted_at);
+        const u = STORE.currentUser() || {};
+        const uid = u.id;
+        const isSuper = u.permission_tier === 'super';
+        const isBuHead = u.org_function === 'BU Head';
+        // Scope: Super sees all, BU Head sees regional, everyone else sees own
+        let scoped;
+        if (isSuper) {
+          scoped = all;
+        } else if (isBuHead && u.region) {
+          // BU Head — match by region (handle multi-region like 'South,East')
+          const myRegions = String(u.region || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+          scoped = all.filter(d => {
+            const ownerRegion = String(d.region_owner || d.region || '').toLowerCase();
+            // No region column on deals — fall back to mine + reports
+            return d.sales_person_id === uid || d.presales_person_id === uid ||
+                   (ownerRegion && myRegions.indexOf(ownerRegion) >= 0);
+          });
+        } else {
+          scoped = uid ? all.filter(d => d.sales_person_id === uid || d.presales_person_id === uid) : all;
+        }
+        const active = scoped.filter(d => !d.deleted_at);
+        const open  = active.filter(d => _isOpenStage(d.stage));
+        const won   = active.filter(d => d.stage === 'Closed Won');
+        const lost  = active.filter(d => d.stage === 'Closed Lost');
         const curM  = _currentYYYYMM();
         const closingNow = open.filter(d => String(d.close_month || '').slice(0, 7) === curM);
         const stuck14 = open.filter(d => _daysSince(d.updated_at || d.created_at) > 14);
         const stale30 = open.filter(d => _daysSince(d.updated_at || d.created_at) > 30);
-        // KPI Open
-        const openVal = open.reduce((s, d) => s + (Number(d.deal_value_inr) || 0), 0);
-        setText('kpi-open-val', _fmtLakh(openVal));
-        setText('kpi-open-sub', open.length + (open.length === 1 ? ' deal' : ' deals'));
-        // KPI Won this quarter
+
+        // -- Quarter window --
         const qStart = (function () {
           const d = new Date(); const m = d.getMonth();
           const qm = Math.floor(m / 3) * 3;
           return new Date(d.getFullYear(), qm, 1);
         })();
-        const wonQ = won.filter(d => new Date(d.updated_at || d.created_at || 0) >= qStart);
+        const wonQ  = won.filter(d => new Date(d.updated_at || d.created_at || 0) >= qStart);
+        const lostQ = lost.filter(d => new Date(d.updated_at || d.created_at || 0) >= qStart);
+
+        // -- Win rate (last 90 days) --
+        const since90 = new Date(Date.now() - 90 * 86400000);
+        const won90 = won.filter(d => new Date(d.updated_at || 0) >= since90).length;
+        const lost90 = lost.filter(d => new Date(d.updated_at || 0) >= since90).length;
+        const resolved90 = won90 + lost90;
+        const winRate90 = resolved90 ? Math.round(won90 * 100 / resolved90) : null;
+
+        // -- Avg sales cycle (won deals — days from created to updated) --
+        const wonWithDates = won.filter(d => d.created_at && d.updated_at);
+        const avgCycleDays = wonWithDates.length
+          ? Math.round(wonWithDates.reduce((s, d) => {
+              const ms = new Date(d.updated_at).getTime() - new Date(d.created_at).getTime();
+              return s + (ms / 86400000);
+            }, 0) / wonWithDates.length)
+          : null;
+
+        // -- Velocity (deals closed/month over last 3 months) --
+        const since90d = Date.now() - 90 * 86400000;
+        const closed90 = won.concat(lost).filter(d =>
+          new Date(d.updated_at || 0).getTime() >= since90d
+        ).length;
+        const velocity = (closed90 / 3).toFixed(1);
+
+        // -- KPI fills --
+        const openVal = open.reduce((s, d) => s + (Number(d.deal_value_inr) || 0), 0);
         const wonVal = wonQ.reduce((s, d) => s + (Number(d.deal_value_inr) || 0), 0);
-        setText('kpi-won-val', wonQ.length ? _fmtLakh(wonVal) : '\u20B90');
-        setText('kpi-won-sub', wonQ.length + (wonQ.length === 1 ? ' win' : ' wins'));
-        // KPI Win rate (lifetime)
-        const resolved = won.length + lost.length;
-        setText('kpi-wr-val', resolved ? (Math.round(won.length * 100 / resolved) + '%') : '\u2014');
-        setText('kpi-wr-sub', resolved + ' resolved');
-        // KPI Closing this month
-        setText('kpi-cm-val', String(closingNow.length));
-        setText('kpi-cm-sub', closingNow.length === 0 ? 'nothing due this month' : 'due in current month');
-        // Attention counts
+        setText('kpi-open-val',  openVal > 0 ? _fmtLakh(openVal) : String(open.length));
+        setText('kpi-open-sub',  open.length + (open.length === 1 ? ' deal' : ' deals'));
+        setText('kpi-won-val',   wonVal > 0 ? _fmtLakh(wonVal) : String(wonQ.length));
+        setText('kpi-won-sub',   wonQ.length + (wonQ.length === 1 ? ' win' : ' wins') + ' this quarter');
+        setText('kpi-wr-val',    winRate90 != null ? (winRate90 + '%') : '\u2014');
+        setText('kpi-wr-sub',    resolved90 + ' resolved');
+        setText('kpi-cm-val',    String(closingNow.length));
+        setText('kpi-cm-sub',    closingNow.length ? 'due this month' : 'nothing due');
+        setText('kpi-stuck-val', String(stuck14.length));
+        setText('kpi-stuck-sub', stuck14.length ? 'need a nudge' : 'all current');
+        setText('kpi-lost-val',  String(lostQ.length));
+        setText('kpi-lost-sub',  lostQ.length === 1 ? '1 loss' : (lostQ.length + ' losses'));
+        setText('kpi-cycle-val', avgCycleDays != null ? (avgCycleDays + 'd') : '\u2014');
+        setText('kpi-cycle-sub', wonWithDates.length + ' wins sampled');
+        setText('kpi-velocity-val', velocity);
+        setText('kpi-velocity-sub', 'deals / mo (90d)');
+
+        // -- Attention counts --
         setText('att-closing', String(closingNow.length));
-        setText('att-stuck', String(stuck14.length));
-        setText('att-stale', String(stale30.length));
-        // Total deal count for "My Deals" section
-        setText('home-deal-count', mine.length + (mine.length === 1 ? ' deal' : ' deals'));
+        setText('att-stuck',   String(stuck14.length));
+        setText('att-stale',   String(stale30.length));
+        setText('home-deal-count', scoped.length + (scoped.length === 1 ? ' deal' : ' deals'));
+
+        // -- Stage funnel --
+        renderStageFunnel(active);
+
+        // -- Region tiles (BU Head + Super only) --
+        if ($('region-tiles')) {
+          renderRegionTiles(active, u);
+        }
+
+        // -- Stuck/slipped table --
+        renderStuckTable(stuck14.concat(stale30).filter((v, i, a) => a.indexOf(v) === i));
+
       } catch (e) {
-        // graceful — leave em dashes
+        console.error('loadHomeKpis failed:', e);
       }
+    }
+
+    /* v27.3.0 — Stage funnel as horizontal bar chart (inline SVG, no library) */
+    function renderStageFunnel(deals) {
+      const host = $('stage-funnel');
+      if (!host) return;
+      const stageOrder = ['Qualified','Proposal','Budget Approval','Technical Approval','Negotiation','Awarded','Closed Won','Closed Lost'];
+      const counts = {};
+      stageOrder.forEach(s => counts[s] = 0);
+      deals.forEach(d => {
+        if (counts[d.stage] != null) counts[d.stage] += 1;
+      });
+      const max = Math.max.apply(null, stageOrder.map(s => counts[s])) || 1;
+      const stageColor = {
+        'Qualified':          '#3B82F6',
+        'Proposal':           '#EC4899',
+        'Budget Approval':    '#06B6D4',
+        'Technical Approval': '#8B5CF6',
+        'Negotiation':        '#F59E0B',
+        'Awarded':            '#F7941D',
+        'Closed Won':         '#22C55E',
+        'Closed Lost':        '#94A3B8'
+      };
+      host.innerHTML = stageOrder.map(function (s) {
+        const ct = counts[s];
+        const pct = Math.max(2, Math.round(ct * 100 / max));
+        return '<div class="funnel-row">' +
+          '<span class="funnel-stage">' + esc(s) + '</span>' +
+          '<div class="funnel-bar-wrap">' +
+            '<div class="funnel-bar" style="width:' + pct + '%;background:' + stageColor[s] + '"></div>' +
+          '</div>' +
+          '<span class="funnel-count">' + ct + '</span>' +
+        '</div>';
+      }).join('');
+    }
+
+    /* v27.3.0 — Region zone tiles (BU Head + Super only).
+       For Super: shows all 4 zones (W/N/S/E) aggregating all deals.
+       For BU Head: shows their assigned region(s) only. */
+    function renderRegionTiles(deals, u) {
+      const host = $('region-tiles');
+      if (!host) return;
+      const isSuper = u && u.permission_tier === 'super';
+      const allZones = ['West', 'North', 'South', 'East'];
+      let zones;
+      if (isSuper) {
+        zones = allZones;
+      } else {
+        zones = String(u.region || '').split(',').map(s => s.trim()).filter(Boolean);
+        if (zones.length === 0) zones = allZones; // fallback
+      }
+      // Group deals by zone — uses state-to-region mapping fallback if no region field
+      const stateRegion = {
+        'Maharashtra':'West','Gujarat':'West','Rajasthan':'West','Goa':'West','Madhya Pradesh':'West',
+        'Delhi':'North','Punjab':'North','Haryana':'North','Uttar Pradesh':'North','Uttarakhand':'North','Himachal Pradesh':'North','Jammu and Kashmir':'North','Chandigarh':'North',
+        'Karnataka':'South','Tamil Nadu':'South','Kerala':'South','Andhra Pradesh':'South','Telangana':'South','Puducherry':'South',
+        'West Bengal':'East','Bihar':'East','Jharkhand':'East','Odisha':'East','Assam':'East','Sikkim':'East','Manipur':'East','Meghalaya':'East','Mizoram':'East','Nagaland':'East','Tripura':'East','Arunachal Pradesh':'East'
+      };
+      const zoneStats = {};
+      zones.forEach(z => { zoneStats[z] = { open: 0, won: 0, lost: 0, value: 0 }; });
+      deals.forEach(function (d) {
+        const z = d.region || stateRegion[d.state] || null;
+        if (!z || !zoneStats[z]) return;
+        if (d.stage === 'Closed Won') {
+          zoneStats[z].won += 1;
+          zoneStats[z].value += Number(d.deal_value_inr) || 0;
+        } else if (d.stage === 'Closed Lost') {
+          zoneStats[z].lost += 1;
+        } else if (_isOpenStage(d.stage)) {
+          zoneStats[z].open += 1;
+        }
+      });
+      const zoneColor = { 'West':'#F7941D', 'North':'#3B82F6', 'South':'#22C55E', 'East':'#A855F7' };
+      host.innerHTML = zones.map(function (z) {
+        const s = zoneStats[z] || { open: 0, won: 0, lost: 0, value: 0 };
+        const resolved = s.won + s.lost;
+        const wr = resolved ? Math.round(s.won * 100 / resolved) : null;
+        return '<div class="region-tile" style="--zone-color:' + zoneColor[z] + '">' +
+          '<div class="region-tile-head">' +
+            '<span class="region-dot" style="background:' + zoneColor[z] + '"></span>' +
+            '<span class="region-name">' + esc(z) + '</span>' +
+          '</div>' +
+          '<div class="region-stats">' +
+            '<div class="region-stat"><div class="region-stat-k">Open</div><div class="region-stat-v">' + s.open + '</div></div>' +
+            '<div class="region-stat"><div class="region-stat-k">Won</div><div class="region-stat-v">' + s.won + '</div></div>' +
+            '<div class="region-stat"><div class="region-stat-k">Win %</div><div class="region-stat-v">' + (wr != null ? wr + '%' : '\u2014') + '</div></div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    /* v27.3.0 — Stuck/slipped table. Open deals not updated in 14+ days. */
+    function renderStuckTable(rows) {
+      const host = $('stuck-table');
+      if (!host) return;
+      if (!rows || rows.length === 0) {
+        host.innerHTML =
+          '<div class="empty-state" style="padding:24px 16px">' +
+            '<div class="empty-state-illustration"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>' +
+            '<p class="empty-state-body">All open deals updated recently. Nice work.</p>' +
+          '</div>';
+        return;
+      }
+      // Sort: most stuck first
+      rows.sort(function (a, b) {
+        const da = _daysSince(a.updated_at || a.created_at);
+        const db = _daysSince(b.updated_at || b.created_at);
+        return db - da;
+      });
+      const top = rows.slice(0, 8);
+      host.innerHTML =
+        '<table class="stuck-table">' +
+          '<thead><tr>' +
+            '<th>Project</th>' +
+            '<th>Stage</th>' +
+            '<th class="num">Idle</th>' +
+          '</tr></thead>' +
+          '<tbody>' +
+            top.map(function (d) {
+              const ref = d.display_ref || d.ref || '\u2014';
+              const days = _daysSince(d.updated_at || d.created_at);
+              const stageCls = _stageChipClassName(d.stage);
+              return '<tr data-nav="#/quote/' + esc(ref) + '">' +
+                '<td>' +
+                  '<div class="stuck-project">' + esc(d.project || '\u2014') + '</div>' +
+                  '<div class="stuck-meta">' + esc(ref) + (d.customer_name ? ' \u00b7 ' + esc(d.customer_name) : '') + '</div>' +
+                '</td>' +
+                '<td><span class="' + stageCls + '" style="font-size:10.5px">' + esc(d.stage || '\u2014') + '</span></td>' +
+                '<td class="num"><span class="stuck-days' + (days > 30 ? ' stuck-days-bad' : '') + '">' + days + 'd</span></td>' +
+              '</tr>';
+            }).join('') +
+          '</tbody>' +
+        '</table>' +
+        (rows.length > top.length
+          ? '<div class="stuck-table-more">' +
+              'Showing ' + top.length + ' of ' + rows.length + '. ' +
+              '<a data-nav="#/history?filter=stuck">See all \u2192</a>' +
+            '</div>'
+          : '');
     }
 
     function setText(id, v) { const el = $(id); if (el) el.textContent = v; }
@@ -7311,8 +8837,268 @@
     }
 
     /* ============================================================
-       VIEW: Profile (account + change PW + dev panel)
+       VIEW: Customers (D1-D3 silent-drop restore)
+       Lists parties (customer / partner / consultant / end_user). Click a
+       row → Customer 360 sheet showing deals, totals, value. Super users
+       can merge duplicates.
        ============================================================ */
+
+    let _customersCache = [];
+    let _customersFilter = 'all';
+    let _customersSearch = '';
+
+    function showCustomers() {
+      showChrome(true);
+      updateNavActive('#/customers');
+      const u = STORE.currentUser() || {};
+      const isSuper = u.permission_tier === 'super';
+      setRoot(
+        '<div class="v">' +
+          '<div class="page-head">' +
+            '<h1 class="page-title">Customers</h1>' +
+            '<button class="btn-v3 btn-primary btn-sm" type="button" data-action="cust-new">' +
+              '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+              ' Add' +
+            '</button>' +
+          '</div>' +
+          '<div class="cust-toolbar">' +
+            '<div class="cust-search">' +
+              '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+              '<input type="search" id="cust-search-input" placeholder="Search by name, city, industry\u2026" autocomplete="off">' +
+            '</div>' +
+            '<div class="cust-filter-chips">' +
+              ['all', 'customer', 'partner', 'consultant', 'end_user'].map(function (t) {
+                const lbl = t === 'all' ? 'All' :
+                            t === 'customer' ? 'Customers' :
+                            t === 'partner' ? 'Partners' :
+                            t === 'consultant' ? 'Consultants' :
+                            'End users';
+                return '<button class="cust-chip' + (t === _customersFilter ? ' active' : '') + '"' +
+                  ' type="button" data-action="cust-filter" data-value="' + t + '">' + lbl + '</button>';
+              }).join('') +
+            '</div>' +
+          '</div>' +
+          (isSuper
+            ? '<div class="banner info" style="margin-bottom:8px">' +
+                '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
+                ' <strong>SUPER tools:</strong> long-press a customer to merge duplicates.' +
+              '</div>'
+            : '') +
+          '<div id="cust-list">' +
+            '<div class="muted small" style="padding:24px;text-align:center">Loading\u2026</div>' +
+          '</div>' +
+        '</div>'
+      );
+      // Wire search input (debounced)
+      const searchInput = $('cust-search-input');
+      if (searchInput) {
+        searchInput.value = _customersSearch;
+        let t = null;
+        searchInput.addEventListener('input', function (e) {
+          clearTimeout(t);
+          _customersSearch = String(e.target.value || '').trim();
+          t = setTimeout(loadCustomerList, 250);
+        });
+      }
+      loadCustomerList();
+    }
+
+    function loadCustomerList() {
+      const listEl = $('cust-list');
+      if (!listEl) return;
+      STORE.customerList({ search: _customersSearch, limit: 300 }).then(function (rows) {
+        _customersCache = Array.isArray(rows) ? rows : [];
+        renderCustomerList();
+      }).catch(function (err) {
+        listEl.innerHTML = '<div class="banner err">Could not load customers: ' +
+          esc(err && err.message || String(err)) + '</div>';
+      });
+    }
+
+    function renderCustomerList() {
+      const listEl = $('cust-list');
+      if (!listEl) return;
+      let rows = _customersCache;
+      if (_customersFilter !== 'all') {
+        rows = rows.filter(r => r.party_type === _customersFilter);
+      }
+      if (rows.length === 0) {
+        listEl.innerHTML =
+          '<div class="empty-state" style="padding:48px 16px">' +
+            '<div class="empty-state-illustration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>' +
+            '<h2 class="empty-state-title">No customers yet</h2>' +
+            '<p class="empty-state-body">' +
+              (_customersSearch ? 'No matches for "' + esc(_customersSearch) + '". Try a different search.'
+                                : 'Tap <strong>+ Add</strong> to create your first customer entry.') +
+            '</p>' +
+          '</div>';
+        return;
+      }
+      const typeIcon = {
+        'customer':   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="9" y1="12" x2="9" y2="12.01"/><line x1="9" y1="15" x2="9" y2="15.01"/></svg>',
+        'partner':    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+        'consultant': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-7L11 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>',
+        'end_user':   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>'
+      };
+      listEl.innerHTML = rows.map(function (c) {
+        const name = String(c.name || '\u2014');
+        const init = name.split(/\s+/).map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
+        const subParts = [];
+        if (c.party_type) subParts.push(c.party_type.replace('_', ' '));
+        if (c.industry)   subParts.push(c.industry);
+        if (c.city)       subParts.push(c.city + (c.state ? ', ' + c.state : ''));
+        const icon = typeIcon[c.party_type] || typeIcon.customer;
+        return '<button class="cust-row" type="button" data-action="cust-open" data-id="' + esc(c.id || '') + '">' +
+          '<span class="cust-avatar">' + init + '</span>' +
+          '<div class="cust-body">' +
+            '<div class="cust-name">' + esc(name) + '</div>' +
+            '<div class="cust-sub">' + esc(subParts.join(' \u00b7 ')) + '</div>' +
+          '</div>' +
+          '<span class="cust-type-icon">' + icon + '</span>' +
+        '</button>';
+      }).join('');
+    }
+
+    function setCustomerFilter(filter) {
+      _customersFilter = filter;
+      // Re-render the chip row to reflect active state
+      document.querySelectorAll('.cust-chip').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-value') === filter);
+      });
+      renderCustomerList();
+    }
+
+    /* Customer 360 sheet — show deals + value totals for a single customer */
+    async function showCustomer360(customerId) {
+      const cust = _customersCache.find(c => c.id === customerId);
+      if (!cust) { UI.toast('Customer not found', 'err'); return; }
+      const name = String(cust.name || '\u2014');
+      const init = name.split(/\s+/).map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
+      const u = STORE.currentUser() || {};
+      const isSuper = u.permission_tier === 'super';
+      openSheet(
+        '<div class="notif-sheet">' +
+          '<div class="cust-360-head">' +
+            '<span class="cust-avatar cust-avatar-lg">' + init + '</span>' +
+            '<div style="flex:1;min-width:0">' +
+              '<div class="cust-360-name">' + esc(name) + '</div>' +
+              '<div class="cust-360-sub">' +
+                esc(cust.party_type || 'customer') +
+                (cust.city ? ' \u00b7 ' + esc(cust.city) : '') +
+                (cust.industry ? ' \u00b7 ' + esc(cust.industry) : '') +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="cust-360-actions">' +
+            '<button class="btn-v3 btn-ghost btn-sm" type="button" data-action="cust-edit" data-id="' + esc(customerId) + '">' +
+              '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit' +
+            '</button>' +
+            (isSuper
+              ? '<button class="btn-v3 btn-ghost btn-sm" type="button" data-action="cust-merge" data-id="' + esc(customerId) + '">' +
+                  '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v6a4 4 0 0 0 4 4 4 4 0 0 0 4 4v4"/><path d="M16 3v6a4 4 0 0 1-4 4"/></svg> Merge' +
+                '</button>' +
+              '<button class="btn-v3 btn-ghost btn-sm" type="button" data-action="cust-delete" data-id="' + esc(customerId) + '" style="color:var(--danger)">' +
+                '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>' +
+                '</button>'
+              : '') +
+          '</div>' +
+          '<div class="cust-360-kpis" id="cust-360-kpis">' +
+            '<div class="cust-360-kpi"><div class="cust-360-kpi-k">Deals</div><div class="cust-360-kpi-v">\u2014</div></div>' +
+            '<div class="cust-360-kpi"><div class="cust-360-kpi-k">Open</div><div class="cust-360-kpi-v">\u2014</div></div>' +
+            '<div class="cust-360-kpi"><div class="cust-360-kpi-k">Won</div><div class="cust-360-kpi-v">\u2014</div></div>' +
+            '<div class="cust-360-kpi"><div class="cust-360-kpi-k">Value (L)</div><div class="cust-360-kpi-v">\u2014</div></div>' +
+          '</div>' +
+          '<h4 style="padding:12px 16px 6px;margin:0;font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.06em">Recent deals</h4>' +
+          '<div id="cust-360-deals"><div class="muted small" style="padding:16px;text-align:center">Loading\u2026</div></div>' +
+        '</div>'
+      );
+      // Load deals async
+      try {
+        const deals = await STORE.customer360(customerId);
+        const wonValue = deals.filter(d => d.stage === 'Closed Won').reduce((s, d) => s + (Number(d.deal_value_inr) || 0), 0);
+        const openCount = deals.filter(d => d.stage && d.stage !== 'Closed Won' && d.stage !== 'Closed Lost' && !d.deleted_at).length;
+        const wonCount  = deals.filter(d => d.stage === 'Closed Won').length;
+        const kpiEl = $('cust-360-kpis');
+        if (kpiEl) {
+          const vEls = kpiEl.querySelectorAll('.cust-360-kpi-v');
+          if (vEls[0]) vEls[0].textContent = deals.length;
+          if (vEls[1]) vEls[1].textContent = openCount;
+          if (vEls[2]) vEls[2].textContent = wonCount;
+          if (vEls[3]) vEls[3].textContent = wonValue > 0 ? (wonValue / 100000).toFixed(1) : '\u2014';
+        }
+        const dealsEl = $('cust-360-deals');
+        if (dealsEl) {
+          if (deals.length === 0) {
+            dealsEl.innerHTML = '<div class="empty-state" style="padding:24px 16px"><p class="empty-state-body">No deals yet for this customer.</p></div>';
+          } else {
+            dealsEl.innerHTML = deals.slice(0, 20).map(function (d) {
+              const ref = d.display_ref || d.ref || '\u2014';
+              const stageCls = _stageChipClassName(d.stage);
+              return '<button class="notif-row" type="button" data-nav="#/quote/' + esc(ref) + '">' +
+                '<span class="notif-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>' +
+                '<div class="notif-body">' +
+                  '<div class="notif-msg">' + esc(d.project || '\u2014') + '</div>' +
+                  '<div class="notif-meta">' + esc(ref) + ' \u00b7 ' +
+                    '<span class="' + stageCls + '" style="font-size:10px;padding:1px 6px">' + esc(d.stage || '\u2014') + '</span>' +
+                    (d.deal_value_inr ? ' \u00b7 \u20B9' + Number(d.deal_value_inr).toLocaleString('en-IN') : '') +
+                  '</div>' +
+                '</div>' +
+              '</button>';
+            }).join('');
+          }
+        }
+      } catch (e) {
+        const dealsEl = $('cust-360-deals');
+        if (dealsEl) dealsEl.innerHTML = '<div class="banner err" style="margin:12px">' + esc(e.message || String(e)) + '</div>';
+      }
+    }
+
+    /* Add / edit customer modal */
+    function showCustomerEditor(customerId) {
+      const cust = customerId ? _customersCache.find(c => c.id === customerId) : null;
+      const isEdit = !!cust;
+      openSheet(
+        '<div class="notif-sheet" style="padding:0 16px 16px">' +
+          '<div class="notif-sheet-head" style="padding-left:0;padding-right:0">' +
+            '<h3>' + (isEdit ? 'Edit customer' : 'Add customer') + '</h3>' +
+          '</div>' +
+          '<div class="field-v3"><label>Name *</label>' +
+            '<input class="input-v3" id="ce-name" type="text" value="' + esc(cust && cust.name || '') + '" placeholder="Customer or company name">' +
+          '</div>' +
+          '<div class="field-v3"><label>Type</label>' +
+            '<select class="input-v3" id="ce-type">' +
+              ['customer','partner','consultant','end_user'].map(t =>
+                '<option value="' + t + '"' + ((cust && cust.party_type) === t ? ' selected' : (!cust && t === 'customer' ? ' selected' : '')) + '>' +
+                  (t === 'end_user' ? 'End user' : t.charAt(0).toUpperCase() + t.slice(1)) +
+                '</option>'
+              ).join('') +
+            '</select>' +
+          '</div>' +
+          '<div class="row gap-2">' +
+            '<div class="field-v3" style="flex:1"><label>City</label>' +
+              '<input class="input-v3" id="ce-city" type="text" value="' + esc(cust && cust.city || '') + '">' +
+            '</div>' +
+            '<div class="field-v3" style="flex:1"><label>State</label>' +
+              '<input class="input-v3" id="ce-state" type="text" value="' + esc(cust && cust.state || '') + '">' +
+            '</div>' +
+          '</div>' +
+          '<div class="field-v3"><label>Industry</label>' +
+            '<input class="input-v3" id="ce-industry" type="text" value="' + esc(cust && cust.industry || '') + '" placeholder="e.g. Hospitality, Education, Broadcast">' +
+          '</div>' +
+          '<div class="field-v3"><label>Website</label>' +
+            '<input class="input-v3" id="ce-website" type="url" value="' + esc(cust && cust.website || '') + '" placeholder="https://\u2026">' +
+          '</div>' +
+          '<div class="field-v3"><label>Notes</label>' +
+            '<textarea class="textarea-v3" id="ce-notes" rows="3" placeholder="Any internal notes\u2026">' + esc(cust && cust.notes || '') + '</textarea>' +
+          '</div>' +
+          '<button class="btn-v3 btn-primary btn-md" type="button" data-action="cust-save"' +
+            (customerId ? ' data-id="' + esc(customerId) + '"' : '') + ' style="width:100%">' +
+            (isEdit ? 'Update' : 'Create') +
+          '</button>' +
+        '</div>'
+      );
+    }
+
 
     function showProfile() {
       showChrome(true);
@@ -7582,7 +9368,15 @@
         : '';
 
       // Customer · stage · closing — line 3. closeStr appended only if present.
-      const line3Parts = [esc(customer), esc(stage)];
+      // v27.3.0 — stage badge is now clickable → opens stage history sheet
+      const stageCls = _stageChipClassName(stage);
+      const stageHtml = stage
+        ? '<button type="button" class="' + stageCls + ' sd-stage-link" data-action="sd-history" style="font-size:10.5px;padding:2px 8px;cursor:pointer" title="View stage history">' +
+            esc(stage) +
+            '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:-1px;opacity:0.65"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
+          '</button>'
+        : esc(stage);
+      const line3Parts = [esc(customer), stageHtml];
       if (closeStr) line3Parts.push('Closing ' + esc(closeStr));
       const line3Html = '<div class="sd-meta-line">' + line3Parts.join(' \u00b7 ') + '</div>';
 
@@ -7653,24 +9447,49 @@
         return 0;
       })();
 
+      // v27.3.0 — Count of LED screen SLOTS (not filled fields). When LED is
+      // on but W/H/pitch are blank, we still want the section to show "1
+      // screen" so the user knows there's a screen to fill in — not "0
+      // fields" which reads as broken.
       const ledCount = (hasLed && Array.isArray(deal.screens))
-        ? deal.screens.filter(s => Number(s.w) > 0 && Number(s.h) > 0).length
+        ? deal.screens.length
         : 0;
-      const sxCount  = (hasSx && deal.sx_data)
-        ? Object.values(deal.sx_data).filter(v => Number(v) > 0).length
-        : 0;
+      // v27.3.0 — SX count = sum of detail lines across all 4 families.
+      // Falls back to legacy sx_data sums when detail arrays absent (old deals).
+      const sxCount = (function () {
+        if (!hasSx) return 0;
+        const hdbtN = Array.isArray(deal.sx_hdbt_lines) ? deal.sx_hdbt_lines.filter(l => Number(l.qty) > 0).length : 0;
+        const da = deal.sx_da_counts || {};
+        const daN  = ((da['612']|0) > 0 ? 1 : 0) + ((da['614']|0) > 0 ? 1 : 0) + ((da['618']|0) > 0 ? 1 : 0);
+        const apN  = (Number(deal.sx_ap_qty) > 0) ? 1 : 0;
+        const aocN = Array.isArray(deal.sx_aoc_lines) ? deal.sx_aoc_lines.filter(l => Number(l.qty) > 0).length : 0;
+        const newTotal = hdbtN + daN + apN + aocN;
+        if (newTotal > 0) return newTotal;
+        // Legacy fallback
+        return deal.sx_data ? Object.values(deal.sx_data).filter(v => Number(v) > 0).length : 0;
+      })();
+
+      // v27.3.0 — section icons. Lucide-style strokes, 18×18, currentColor.
+      const SD_ICON = {
+        ctx: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+        sol: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M7 7V4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3"/></svg>',
+        io:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><polyline points="15 17 20 12 15 7"/></svg>',
+        led: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+        sx:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="8" height="6" rx="1"/><rect x="14" y="9" width="8" height="6" rx="1"/><line x1="10" y1="12" x2="14" y2="12" stroke-dasharray="2 2"/></svg>'
+      };
 
       // ---- Chip nav (sticky) ----
       const chips = [
-        { id:'sec-ctx', label:'Context'  },
-        { id:'sec-sol', label:'Solution' },
-        { id:'sec-io',  label:'I/O'      }
+        { id:'sec-ctx', label:'Context',  icon: SD_ICON.ctx },
+        { id:'sec-sol', label:'Solution', icon: SD_ICON.sol },
+        { id:'sec-io',  label:'I/O',      icon: SD_ICON.io }
       ];
-      if (hasLed) chips.push({ id:'sec-led', label:'LED' });
-      if (hasSx)  chips.push({ id:'sec-sx',  label:'SX'  });
+      if (hasLed) chips.push({ id:'sec-led', label:'LED', icon: SD_ICON.led });
+      if (hasSx)  chips.push({ id:'sec-sx',  label:'SX',  icon: SD_ICON.sx });
       const chipNavHtml = '<nav class="sd-chipnav" aria-label="Section nav">' +
         chips.map(c =>
           '<button class="sd-chip" type="button" data-action="sd-jump" data-target="' + esc(c.id) + '">' +
+            '<span class="sd-chip-icon">' + c.icon + '</span>' +
             esc(c.label) +
           '</button>'
         ).join('') +
@@ -7684,11 +9503,16 @@
             '<div class="sd-row-v">' + esc(v) + '</div>' +
           '</div>';
       }
-      function sectionHeader(title, count) {
+      function sectionHeader(title, count, unit, iconSvg) {
+        const unitWord = unit || 'field';
+        const icon = iconSvg
+          ? '<span class="sd-section-icon">' + iconSvg + '</span>'
+          : '';
         return '<summary class="sd-summary">' +
+            icon +
             '<span class="sd-summary-title">' + esc(title) + '</span>' +
             '<span class="sd-summary-meta">' +
-              '<span class="sd-badge">' + count + (count === 1 ? ' field' : ' fields') + '</span>' +
+              '<span class="sd-badge">' + count + ' ' + unitWord + (count === 1 ? '' : 's') + '</span>' +
               '<span class="sd-chevron" aria-hidden="true">\u203a</span>' +
             '</span>' +
           '</summary>';
@@ -7775,12 +9599,79 @@
 
       const sxBody = hasSx
         ? (function() {
-            // Defensive: ensure sx_data exists so steppers don't NaN.
-            if (!deal.sx_data) deal.sx_data = { hdmi:0, sdi:0, ap536:0, avip:0 };
-            return SX_EDITORIAL.map(s =>
-              sdStepperRow(s.id, s.label, s.hint, deal.sx_data[s.id] || 0, { namespace: 'sx_data' })
-            ).join('') +
-            '<div class="sd-edit-note small soft">Edits set the Rebuild banner above. Tap <strong>Rebuild</strong> to recompute the BoM.</div>';
+            // v27.3.0 — Show the new per-variant detail. Read-only summary
+            // because editing per-variant pickers inline in the saved-deal
+            // accordion would explode the layout. To edit details, user taps
+            // "Edit" in the action bar which re-enters the wizard.
+            const lines = [];
+            // HDBaseT lines
+            const hdbtLines = Array.isArray(deal.sx_hdbt_lines) ? deal.sx_hdbt_lines : [];
+            hdbtLines.forEach(function (l) {
+              if (Number(l.qty) <= 0) return;
+              const dirLbl = l.direction === 'tx' ? 'TX only' : l.direction === 'rx' ? 'RX only' : 'Kit (TX+RX)';
+              lines.push({
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="2" y="9" width="8" height="6" rx="1"/><rect x="14" y="9" width="8" height="6" rx="1"/><line x1="10" y1="12" x2="14" y2="12" stroke-dasharray="2 2"/></svg>',
+                title: 'HDBaseT ' + dirLbl,
+                sub: l.signal + ' \u00b7 ' + (l.resolution || '1080p'),
+                qty: l.qty
+              });
+            });
+            // Splitter counts
+            const da = deal.sx_da_counts || {};
+            [['612','1×2'], ['614','1×4'], ['618','1×8']].forEach(function (p) {
+              const q = Number(da[p[0]]) || 0;
+              if (q <= 0) return;
+              lines.push({
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="2" y="10" width="6" height="4" rx="1"/><path d="M8 12h4M12 12v-4h4M12 12v4h4M16 6h6M16 12h6M16 18h6"/></svg>',
+                title: 'HDMI Splitter ' + p[1],
+                sub: 'MG-DA-' + p[0] + ' \u00b7 4K60 HDMI 2.0',
+                qty: q
+              });
+            });
+            // AP-536
+            if (Number(deal.sx_ap_qty) > 0) {
+              lines.push({
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
+                title: 'AP-536 Audio Extractor',
+                sub: 'HDMI audio de-embedder',
+                qty: deal.sx_ap_qty
+              });
+            }
+            // AOC lines
+            const aocLines = Array.isArray(deal.sx_aoc_lines) ? deal.sx_aoc_lines : [];
+            aocLines.forEach(function (l) {
+              if (Number(l.qty) <= 0) return;
+              lines.push({
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 6c0-2 3-3 8-3s8 1 8 3v12c0 2-3 3-8 3s-8-1-8-3z"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/></svg>',
+                title: 'AOC ' + (l.signal || 'HDMI'),
+                sub: (l.jacket || 'Standard') + ' \u00b7 ' + (l.length || 10) + ' m',
+                qty: l.qty
+              });
+            });
+            // Legacy fallback — old deals with just sx_data sums
+            if (lines.length === 0) {
+              const sx = deal.sx_data || {};
+              if (Number(sx.hdmi)  > 0) lines.push({ icon:'', title:'HDBaseT Extender (legacy)', sub:'\u2014', qty: sx.hdmi });
+              if (Number(sx.sdi)   > 0) lines.push({ icon:'', title:'HDMI Splitter (legacy)',    sub:'\u2014', qty: sx.sdi });
+              if (Number(sx.ap536) > 0) lines.push({ icon:'', title:'AP-536 (legacy)',           sub:'\u2014', qty: sx.ap536 });
+              if (Number(sx.avip)  > 0) lines.push({ icon:'', title:'AOC Cables (legacy)',      sub:'\u2014', qty: sx.avip });
+            }
+            if (lines.length === 0) {
+              return '<div class="muted small" style="padding:12px 0">No SX lines configured. Tap <strong>Edit</strong> to add.</div>';
+            }
+            return '<div class="sd-sx-list">' +
+              lines.map(function (l) {
+                return '<div class="sd-sx-row">' +
+                  '<span class="sd-sx-icon">' + l.icon + '</span>' +
+                  '<div class="sd-sx-text">' +
+                    '<div class="sd-sx-title">' + esc(l.title) + '</div>' +
+                    '<div class="sd-sx-sub">' + esc(l.sub) + '</div>' +
+                  '</div>' +
+                  '<div class="sd-sx-qty">\u00d7' + l.qty + '</div>' +
+                '</div>';
+              }).join('') +
+            '</div>' +
+            '<div class="sd-edit-note small soft">Tap <strong>Edit</strong> in the action bar to change SX configuration.</div>';
           })()
         : '';
 
@@ -7831,7 +9722,7 @@
                 '<span class="label">Excel</span>' +
               '</button>' +
               '<button class="action-btn-v3 act-pdf" type="button" data-action="sd-pdf" id="sd-btn-pdf">' +
-                '<svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="7.5" y="19" font-size="6" font-weight="700" fill="currentColor" stroke="none" font-family="Arial">PDF</text></svg>' +
+                '<svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>' +
                 '<span class="label">PDF</span>' +
               '</button>' +
               '<button class="action-btn-v3 act-wa" type="button" data-action="sd-whatsapp" id="sd-btn-wa">' +
@@ -7855,30 +9746,30 @@
           '<div class="sd-accordion">' +
 
             '<details class="sd-section" id="sec-ctx" open>' +
-              sectionHeader('Project context', ctxCount) +
+              sectionHeader('Project context', ctxCount, 'field', SD_ICON.ctx) +
               '<div class="sd-section-body">' + ctxBody + '</div>' +
             '</details>' +
 
             '<details class="sd-section" id="sec-sol">' +
-              sectionHeader('Solution type', deal.solutionType ? 1 : 0) +
+              sectionHeader('Solution type', deal.solutionType ? 1 : 0, 'field', SD_ICON.sol) +
               '<div class="sd-section-body">' + solBody + '</div>' +
             '</details>' +
 
             '<details class="sd-section" id="sec-io">' +
-              sectionHeader('Inputs & outputs', ioCount) +
+              sectionHeader('Inputs & outputs', ioCount, 'field', SD_ICON.io) +
               '<div class="sd-section-body">' + ioBody + '</div>' +
             '</details>' +
 
             (hasLed
               ? '<details class="sd-section" id="sec-led">' +
-                  sectionHeader('LED screens', ledCount) +
+                  sectionHeader('LED screens', ledCount, 'screen', SD_ICON.led) +
                   '<div class="sd-section-body">' + ledBody + '</div>' +
                 '</details>'
               : '') +
 
             (hasSx
               ? '<details class="sd-section" id="sec-sx">' +
-                  sectionHeader('Signal extension', sxCount) +
+                  sectionHeader('Signal extension', sxCount, 'line', SD_ICON.sx) +
                   '<div class="sd-section-body">' + sxBody + '</div>' +
                 '</details>'
               : '') +
@@ -8131,8 +10022,8 @@
           '<div class="grow"></div>' +
           (isLast
             ? (d.reco
-                ? '<button class="btn btn-ghost" type="button" data-action="wiz-rebuild">Rebuild BoM</button>'
-                : '<button class="btn" type="button" data-action="wiz-build">Build quote \u2192</button>')
+                ? '<button class="btn" type="button" data-action="wiz-rebuild">Rebuild &amp; save \u2192</button>'
+                : '<button class="btn" type="button" data-action="wiz-build">Build &amp; save quote \u2192</button>')
             : '<button class="btn" type="button" data-action="wiz-next">Next \u2192</button>') +
         '</div>';
     }
@@ -8605,12 +10496,19 @@
         '</div>';
       }).join('');
       const projectorCt = Number((d.calico_outputs && d.calico_outputs.projector) || 0);
-      const aggregateHtml = '<div class="led-aggregate">' +
-        '<div class="led-agg-item"><div class="led-agg-k">LED Pixels</div><div class="led-agg-v">' + totals.pixels.toLocaleString('en-IN') + '</div></div>' +
-        '<div class="led-agg-item"><div class="led-agg-k">LED Output Ports</div><div class="led-agg-v">' + totals.ledPorts + '</div></div>' +
-        '<div class="led-agg-item"><div class="led-agg-k">Projector Ports</div><div class="led-agg-v">' + projectorCt + '</div></div>' +
-        '<div class="led-agg-item"><div class="led-agg-k">Total Ports Needed</div><div class="led-agg-v">' + (totals.hdmiFeeds + projectorCt) + '</div></div>' +
-      '</div>';
+      const totalPorts = totals.hdmiFeeds + projectorCt;
+      // v27.3.0 — slim aggregate summary. Per-screen pills already show
+      // Pixels / RJ45 / HDMI feeds / Aspect, so no need to repeat them.
+      // This line just totals across all screens + projector ports.
+      const aggregateHtml = (d.screens.length > 1 || projectorCt > 0)
+        ? '<div class="led-summary">' +
+            '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
+            '<span><strong>' + totals.pixels.toLocaleString('en-IN') + '</strong> total pixels \u00b7 ' +
+              '<strong>' + totals.ledPorts + '</strong> RJ45 \u00b7 ' +
+              '<strong>' + totalPorts + '</strong> total feeds (' + totals.hdmiFeeds + ' LED + ' + projectorCt + ' projector)' +
+            '</span>' +
+          '</div>'
+        : '';
       return screensHtml + aggregateHtml;
     }
 
@@ -8939,20 +10837,20 @@
           ).join('') +
         '</div>';
 
-      // BoM section (post-Build)
+      // BoM section (post-Build). v27.3.0 — auto-save flow: when Build succeeds
+      // we navigate directly to the saved-deal view (which has the glass action
+      // bar w/ Excel/PDF/WhatsApp/Email). BoM here only appears on the
+      // error/no-chassis path so the user can see what failed before going back.
       const bomHtml = d.reco
         ? '<h2 class="h2">Bill of Materials</h2>' + renderBomCard(d.reco, d.solutionType) +
-          '<section class="card">' +
-            '<div class="h3">Save</div>' +
-            '<div class="small muted" style="margin:0 0 10px">' +
-              'Persists to Supabase and opens the saved-deal view. ' +
-              'You can keep editing soft fields with autosave from there.' +
-            '</div>' +
-            '<button class="btn" type="button" data-action="wiz-save">Save quote</button>' +
-            ' <button class="btn btn-ghost" type="button" data-action="wiz-new">Start new</button>' +
-          '</section>'
+          (d.reco.error || !d.reco.chassis
+            ? '<div class="banner warn" style="margin-top:12px">' +
+                'Adjust your inputs and tap <strong>Build &amp; save quote</strong> again.' +
+              '</div>'
+            : '')
         : '<div class="banner info" style="margin-top:16px">' +
-            'Tap <strong>Build quote \u2192</strong> below to compute the BoM, then save.' +
+            'Tap <strong>Build &amp; save quote</strong> below to compute the BoM. ' +
+            'Your deal is saved automatically and the BoM opens with Excel / PDF / WhatsApp / Email actions.' +
           '</div>';
 
       return bomHtml + summaryHtml;
@@ -9106,6 +11004,27 @@
           if (inSum === 0 && outSum === 0) {
             errors.calico_io = 'At least one input or output is required.';
           }
+          // v27.3.0 — CALICO renders LED W/H/pitch inline in Step 3 (Step 4
+          // is skipped for CALICO), so validate screens here too.
+          if (d.hasLed) {
+            if (!d.screens || d.screens.length === 0) {
+              errors.screens = 'Set Active LED screens > 0, or untick LED.';
+            } else {
+              const bad = [];
+              for (let i = 0; i < d.screens.length; i++) {
+                const s = d.screens[i] || {};
+                const w = Number(s.w), h = Number(s.h);
+                const p = s.pitch === '' || s.pitch == null ? NaN : Number(s.pitch);
+                if (!(w >= 64 && w <= 16384)) bad.push('Screen ' + (i+1) + ' width');
+                if (!(h >= 64 && h <= 16384)) bad.push('Screen ' + (i+1) + ' height');
+                if (!(p >= 0.50 && p <= 50.00)) bad.push('Screen ' + (i+1) + ' pitch');
+              }
+              if (bad.length) {
+                errors.screens = 'Fix: ' + bad.join(', ') + '. ' +
+                  'W/H must be integer 64\u201316384 px. Pitch must be 0.50\u201350.00 mm.';
+              }
+            }
+          }
         } else if (d.solutionType === 'mv') {
           const validInputs = d.mv_inputs.filter(r => r && r.signal && Number(r.qty) > 0);
           if (validInputs.length === 0) errors.mv_io = 'Add at least one input row with signal + qty.';
@@ -9121,6 +11040,7 @@
         // v27.1.2 #5 — full screen validation: W, H integers within
         // [64, 16384]; pitch decimal within [0.50, 50.00] (2dp).
         // Only fires when hasLed (other paths auto-skip to 5 or 6).
+        // v27.3.0 — CALICO never reaches Step 4 (validation moved to Step 3).
         if (d.hasLed) {
           if (!d.screens || d.screens.length === 0) {
             errors.screens = 'Set Active LED screens > 0 in Step 3, or untick LED.';
@@ -9142,8 +11062,11 @@
         }
       } else if (d.step === 5) {
         if (d.hasSx) {
-          const total = Object.values(d.sx_data).reduce((a,b) => a + (Number(b)||0), 0);
-          if (total === 0) errors.sx = 'Set at least one SX quantity > 0, or untick SX in Step 3.';
+          // v27.3.0 — _syncSxSums keeps sx_data sums in sync with the
+          // detail arrays, so total still works. Friendlier message tells
+          // the user what to do with the new line-item UI.
+          const total = Object.values(d.sx_data || {}).reduce((a,b) => a + (Number(b)||0), 0);
+          if (total === 0) errors.sx = 'Add at least one HDBaseT line, splitter, AP-536, or AOC cable \u2014 or untick Signal Extension in Step 3.';
         }
       }
       return { ok: Object.keys(errors).length === 0, errors };
@@ -9380,7 +11303,7 @@
         // refId from data-ref. Avoids touching the hash (which wouldn't re-fire
         // if the user is already on #/quote/<ref>).
         if (action === 'saved-retry') {
-          const ref = t.getAttribute('data-ref') || '';
+          const ref = actEl.getAttribute('data-ref') || '';
           if (ref) showSavedDeal(ref);
           return;
         }
@@ -9389,7 +11312,7 @@
         // The <details> element needs `open` set explicitly before scrollIntoView
         // so the browser scrolls to the expanded position, not the collapsed one.
         if (action === 'sd-jump') {
-          const targetId = t.getAttribute('data-target') || '';
+          const targetId = actEl.getAttribute('data-target') || '';
           const el = document.getElementById(targetId);
           if (el) {
             if (el.tagName === 'DETAILS') el.open = true;
@@ -9398,6 +11321,118 @@
               el.scrollIntoView({ behavior:'smooth', block:'start' });
             });
           }
+          return;
+        }
+
+        // v27.3.0 — Customer Directory actions
+        if (action === 'cust-new') {
+          UI.showCustomerEditor(null);
+          return;
+        }
+
+        // v27.3.0 — Login "Trouble signing in?" link opens the reset password
+        // request sheet (D10).
+        if (action === 'rp-show') {
+          showResetPasswordRequest();
+          return;
+        }
+        if (action === 'cust-filter') {
+          const v = actEl.getAttribute('data-value') || 'all';
+          setCustomerFilter(v);
+          return;
+        }
+        if (action === 'cust-open') {
+          const id = actEl.getAttribute('data-id');
+          if (id) UI.showCustomer360(id);
+          return;
+        }
+        if (action === 'cust-edit') {
+          const id = actEl.getAttribute('data-id');
+          if (id) UI.showCustomerEditor(id);
+          return;
+        }
+        if (action === 'cust-save') {
+          const id = actEl.getAttribute('data-id');  // null for new
+          const payload = {
+            name:       ($('ce-name')     && $('ce-name').value || '').trim(),
+            party_type: ($('ce-type')     && $('ce-type').value) || 'customer',
+            city:       ($('ce-city')     && $('ce-city').value || '').trim(),
+            state:      ($('ce-state')    && $('ce-state').value || '').trim(),
+            industry:   ($('ce-industry') && $('ce-industry').value || '').trim(),
+            website:    ($('ce-website')  && $('ce-website').value || '').trim(),
+            notes:      ($('ce-notes')    && $('ce-notes').value || '').trim()
+          };
+          if (!payload.name) { toast('Name is required', 'err'); return; }
+          if (id) payload.id = id;
+          STORE.customerUpsert(payload).then(function (r) {
+            if (r && r.ok === false) { toast('Save failed: ' + (r.error || 'unknown'), 'err'); return; }
+            closeSheet();
+            toast(id ? 'Updated' : 'Created', 'ok');
+            loadCustomerList();
+          }).catch(function (err) {
+            toast('Save failed: ' + (err && err.message || String(err)), 'err');
+          });
+          return;
+        }
+        if (action === 'cust-delete') {
+          const id = actEl.getAttribute('data-id');
+          if (!id) return;
+          if (!confirm('Delete this customer? Linked deals will be unlinked but not deleted.')) return;
+          STORE.customerDelete(id).then(function () {
+            closeSheet();
+            toast('Deleted', 'ok');
+            loadCustomerList();
+          }).catch(function (err) {
+            toast('Delete failed: ' + (err && err.message || String(err)), 'err');
+          });
+          return;
+        }
+        if (action === 'cust-merge') {
+          const sourceId = actEl.getAttribute('data-id');
+          if (!sourceId) return;
+          // Show merge picker — list other customers to merge INTO
+          const others = _customersCache.filter(c => c.id !== sourceId);
+          if (others.length === 0) {
+            toast('Need at least 2 customers to merge', 'warn');
+            return;
+          }
+          const sourceName = (_customersCache.find(c => c.id === sourceId) || {}).name || '';
+          openSheet(
+            '<div class="notif-sheet" style="padding:0 16px 16px">' +
+              '<div class="notif-sheet-head" style="padding-left:0;padding-right:0">' +
+                '<h3>Merge into\u2026</h3>' +
+              '</div>' +
+              '<p style="font-size:13px;color:var(--ink-soft);margin:0 0 12px">' +
+                'All deals on <strong>' + esc(sourceName) + '</strong> will be reassigned to the chosen target. ' +
+                'The source customer will be deleted. This cannot be undone.' +
+              '</p>' +
+              '<div class="field-v3"><label>Target customer</label>' +
+                '<select class="input-v3" id="cm-target">' +
+                  '<option value="">\u2014 pick one \u2014</option>' +
+                  others.map(c =>
+                    '<option value="' + esc(c.id) + '">' + esc(c.name || '') +
+                    (c.city ? ' (' + esc(c.city) + ')' : '') + '</option>'
+                  ).join('') +
+                '</select>' +
+              '</div>' +
+              '<button class="btn-v3 btn-primary btn-md" type="button" data-action="cust-merge-confirm" data-source="' + esc(sourceId) + '" style="width:100%">' +
+                'Merge \u2192' +
+              '</button>' +
+            '</div>'
+          );
+          return;
+        }
+        if (action === 'cust-merge-confirm') {
+          const sourceId = actEl.getAttribute('data-source');
+          const targetId = $('cm-target') && $('cm-target').value;
+          if (!sourceId || !targetId) { toast('Pick a target customer', 'err'); return; }
+          STORE.customerMerge(sourceId, targetId).then(function () {
+            closeSheet();
+            toast('Merged successfully', 'ok');
+            loadCustomerList();
+          }).catch(function (err) {
+            toast('Merge failed: ' + (err && err.message || String(err)), 'err');
+          });
           return;
         }
 
@@ -9493,6 +11528,14 @@
           if (!_savedDealData) return;
           const ref = _savedDealData.display_ref || _savedDealData.ref_id;
           showRevisionsSheet(ref);
+          return;
+        }
+
+        // v27.3.0 — Saved-deal: open stage transitions history for this ref
+        if (action === 'sd-history') {
+          if (!_savedDealData) return;
+          const ref = _savedDealData.display_ref || _savedDealData.ref_id;
+          showStageTransitionsSheet(ref);
           return;
         }
 
@@ -9631,42 +11674,24 @@
         // alpha.8.0 — Excel export
         if (action === 'sd-excel') {
           if (!_savedDealData) return;
-          const btn = actEl;
-          const orig = btn.textContent;
-          btn.disabled = true;
-          btn.textContent = 'Generating\u2026';
-          EXPORT.excel(_savedDealData).then(function(blob) {
-            const fn = EXPORT.filename(_savedDealData, 'xlsx');
-            EXPORT.download(blob, fn);
-            toast('Excel exported: ' + fn, 'ok');
-          }).catch(function(err) {
-            const msg = (err && err.message) ? err.message : String(err);
-            toast('Excel export failed: ' + msg, 'err');
-          }).then(function() {
-            btn.disabled = false;
-            btn.textContent = orig;
-          });
+          _openExportModePicker('xlsx', _savedDealData);
           return;
         }
 
         // alpha.8.0 — PDF export
         if (action === 'sd-pdf') {
           if (!_savedDealData) return;
-          const btn = actEl;
-          const orig = btn.textContent;
-          btn.disabled = true;
-          btn.textContent = 'Generating\u2026';
-          EXPORT.pdf(_savedDealData).then(function(blob) {
-            const fn = EXPORT.filename(_savedDealData, 'pdf');
-            EXPORT.download(blob, fn);
-            toast('PDF exported: ' + fn, 'ok');
-          }).catch(function(err) {
-            const msg = (err && err.message) ? err.message : String(err);
-            toast('PDF export failed: ' + msg, 'err');
-          }).then(function() {
-            btn.disabled = false;
-            btn.textContent = orig;
-          });
+          _openExportModePicker('pdf', _savedDealData);
+          return;
+        }
+
+        // v27.3.0 — Export mode picker chose a format/mode → run it
+        if (action === 'export-go') {
+          if (!_savedDealData) return;
+          const fmt  = actEl.getAttribute('data-fmt')  || 'xlsx';
+          const mode = actEl.getAttribute('data-mode') || 'boq';
+          closeSheet();
+          _runExport(fmt, mode, _savedDealData);
           return;
         }
 
@@ -10262,6 +12287,7 @@
       mount, toast, openSheet, closeSheet,
       showLogin, showForcePw, showProfileSetup,
       showHome, showHistory, showProfile, showSavedDeal, showWizard,
+      showCustomers, showCustomer360, showCustomerEditor, showDashboard,
       updateNavActive, showChrome,
       // expose for APP
       getWizardData: () => wizardData,
@@ -10412,7 +12438,9 @@
       // Route resolution
       if (hash === '#/login') { UI.showLogin(); return; }
       if (hash === '#/home')  { UI.showHome();  return; }
+      if (hash === '#/dashboard') { UI.showDashboard(); return; }
       if (hash === '#/history') { UI.showHistory(); return; }
+      if (hash === '#/customers') { UI.showCustomers(); return; }
       if (hash === '#/profile') { UI.showProfile(); return; }
       if (hash === '#/quote/new' ||
           hash.indexOf('#/quote/new/') === 0) {
@@ -10754,9 +12782,13 @@
         return;
       }
       d.errors = {};
-      // Advance with auto-skip for conditional steps
+      // Advance with auto-skip for conditional steps.
+      // v27.3.0 — CALICO renders LED W/H/pitch inline in Step 3, so skip Step 4
+      // for CALICO even when hasLed=true. Non-CALICO families with LED still
+      // route through Step 4.
       let next = d.step + 1;
-      if (next === 4 && !d.hasLed) next = d.hasSx ? 5 : 6;
+      const skipStep4 = !d.hasLed || d.solutionType === 'calico';
+      if (next === 4 && skipStep4) next = d.hasSx ? 5 : 6;
       if (next === 5 && !d.hasSx)  next = 6;
       d.step = clamp(next, 1, 6);
       UI.saveDraft();
@@ -10768,8 +12800,9 @@
       const d = UI.getWizardData();
       d.errors = {};
       let prev = d.step - 1;
-      if (prev === 5 && !d.hasSx)  prev = d.hasLed ? 4 : 3;
-      if (prev === 4 && !d.hasLed) prev = 3;
+      const skipStep4 = !d.hasLed || d.solutionType === 'calico';
+      if (prev === 5 && !d.hasSx)    prev = skipStep4 ? 3 : 4;
+      if (prev === 4 && skipStep4)   prev = 3;
       d.step = clamp(prev, 1, 6);
       UI.saveDraft();
       UI.renderWizard();
@@ -10777,63 +12810,81 @@
 
     function wizBuild() {
       const d = UI.getWizardData();
-      try {
-        d.reco = computeReco(d);
-        UI.saveDraft();
-        UI.renderWizard();
-        if (d.reco && d.reco.error) {
-          UI.toast(d.reco.error, 'err');
-        } else if (d.reco && !d.reco.chassis) {
-          UI.toast('No chassis recommended for current inputs.', 'warn');
-        } else {
-          UI.toast('BoM built. Scroll to review.', 'ok');
-        }
-      } catch (e) {
-        UI.toast('Build failed: ' + (e && e.message || String(e)), 'err');
-      }
-    }
 
-    // alpha.7.4 — Save the wizard's current state as a new deal.
-    // v27.1.1: Required-field validation in Step-1 enforces all 15 fields
-    // (validateStep). This bottom-guard is defense-in-depth only; reaching
-    // Step 6 implies the 15-field gate already passed.
-    function wizSave() {
-      const d = UI.getWizardData();
+      // v27.3.0 — Auto-save on Build. Flow:
+      //   1. Validate required Step-1 fields (defense-in-depth; gate already ran).
+      //   2. Compute reco.
+      //   3. If reco errored / no chassis: render the wizard so user sees the BoM
+      //      error inline + a toast — do NOT save.
+      //   4. If reco OK: build save payload, write to Supabase, navigate to
+      //      saved-deal view (which has the glass action bar w/ Excel/PDF/
+      //      WhatsApp/Email — that's our new "footer").
+      //
+      // Removes the old two-step flow ("Build quote" then "Save quote") that
+      // Dipenkumar wanted gone — one click does it all now.
+
       if (!d.project || !d.customer_name || !d.stage) {
         UI.toast('Missing project, end user, or stage \u2014 go back to step 1.', 'err');
         return;
       }
-      if (!d.reco) {
-        UI.toast('Build the BoM first.', 'warn');
+
+      try {
+        d.reco = computeReco(d);
+      } catch (e) {
+        UI.toast('Build failed: ' + (e && e.message || String(e)), 'err');
+        UI.saveDraft();
+        UI.renderWizard();
         return;
       }
+
+      // Error path — show BoM error inline, don't save
+      if (d.reco && d.reco.error) {
+        UI.saveDraft();
+        UI.renderWizard();
+        UI.toast(d.reco.error, 'err');
+        return;
+      }
+      if (d.reco && !d.reco.chassis) {
+        UI.saveDraft();
+        UI.renderWizard();
+        UI.toast('No chassis recommended for current inputs. Revise and rebuild.', 'warn');
+        return;
+      }
+
+      // Success path — auto-save + navigate
       const payload = UI.buildSavePayload(d);
       if (!payload) {
         UI.toast('Could not build save payload.', 'err');
+        UI.saveDraft();
+        UI.renderWizard();
         return;
       }
-      // v27.1.2 #6 — distinguish update (edit-mode) vs insert (new). buildSavePayload
-      // already includes payload.id in edit-mode (set by hydrateWizardFromDeal),
-      // which STORE.saveDeal routes to the deal_save RPC update path. Here we
-      // only adjust the user-facing toast and the post-save navigation.
       const isEdit = !!payload.id;
       UI.toast(isEdit ? 'Updating\u2026' : 'Saving\u2026', 'info');
-      STORE.saveDeal(payload).then(function(r) {
+      STORE.saveDeal(payload).then(function (r) {
         const ref = r && r.display_ref;
         if (!ref) {
           UI.toast('Save returned no display_ref \u2014 something is off.', 'err');
+          // Render wizard so user can retry with the Build button
+          UI.renderWizard();
           return;
         }
         UI.clearDraft();
-        UI.toast(isEdit ? ('Updated ' + ref) : ('Saved as ' + ref), 'ok');
-        // Navigate to the saved-deal view. onRouteChange picks up the hash
-        // change and dispatches to showSavedDeal.
+        UI.toast(isEdit ? ('Updated ' + ref) : ('Quote ready: ' + ref), 'ok');
+        // Navigate to saved-deal view. Glass action bar (Edit / Confirm / Excel
+        // / PDF / WhatsApp / Email / Delete) renders automatically there.
         location.hash = '#/quote/' + ref;
-      }).catch(function(err) {
+      }).catch(function (err) {
         const msg = (err && err.message) ? err.message : String(err);
         UI.toast((isEdit ? 'Update' : 'Save') + ' failed: ' + msg, 'err');
+        UI.renderWizard();
       });
     }
+
+    // v27.3.0 — wizSave retained as a thin alias for wizBuild for any legacy
+    // callers (e.g. saved drafts that still emit data-action="wiz-save"). The
+    // inline Save card was removed from Step 6 — Build does the save now.
+    function wizSave() { return wizBuild(); }
 
     // v27.2.3 — Append SX SKUs to a recommendation's `cards` array based
     // on wizardData's sx_data quantities. Called by computeReco after the
