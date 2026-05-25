@@ -7653,12 +7653,27 @@
         return 0;
       })();
 
+      // v27.3.0 — Count of LED screen SLOTS (not filled fields). When LED is
+      // on but W/H/pitch are blank, we still want the section to show "1
+      // screen" so the user knows there's a screen to fill in — not "0
+      // fields" which reads as broken.
       const ledCount = (hasLed && Array.isArray(deal.screens))
-        ? deal.screens.filter(s => Number(s.w) > 0 && Number(s.h) > 0).length
+        ? deal.screens.length
         : 0;
-      const sxCount  = (hasSx && deal.sx_data)
-        ? Object.values(deal.sx_data).filter(v => Number(v) > 0).length
-        : 0;
+      // v27.3.0 — SX count = sum of detail lines across all 4 families.
+      // Falls back to legacy sx_data sums when detail arrays absent (old deals).
+      const sxCount = (function () {
+        if (!hasSx) return 0;
+        const hdbtN = Array.isArray(deal.sx_hdbt_lines) ? deal.sx_hdbt_lines.filter(l => Number(l.qty) > 0).length : 0;
+        const da = deal.sx_da_counts || {};
+        const daN  = ((da['612']|0) > 0 ? 1 : 0) + ((da['614']|0) > 0 ? 1 : 0) + ((da['618']|0) > 0 ? 1 : 0);
+        const apN  = (Number(deal.sx_ap_qty) > 0) ? 1 : 0;
+        const aocN = Array.isArray(deal.sx_aoc_lines) ? deal.sx_aoc_lines.filter(l => Number(l.qty) > 0).length : 0;
+        const newTotal = hdbtN + daN + apN + aocN;
+        if (newTotal > 0) return newTotal;
+        // Legacy fallback
+        return deal.sx_data ? Object.values(deal.sx_data).filter(v => Number(v) > 0).length : 0;
+      })();
 
       // ---- Chip nav (sticky) ----
       const chips = [
@@ -7684,11 +7699,12 @@
             '<div class="sd-row-v">' + esc(v) + '</div>' +
           '</div>';
       }
-      function sectionHeader(title, count) {
+      function sectionHeader(title, count, unit) {
+        const unitWord = unit || 'field';
         return '<summary class="sd-summary">' +
             '<span class="sd-summary-title">' + esc(title) + '</span>' +
             '<span class="sd-summary-meta">' +
-              '<span class="sd-badge">' + count + (count === 1 ? ' field' : ' fields') + '</span>' +
+              '<span class="sd-badge">' + count + ' ' + unitWord + (count === 1 ? '' : 's') + '</span>' +
               '<span class="sd-chevron" aria-hidden="true">\u203a</span>' +
             '</span>' +
           '</summary>';
@@ -7831,7 +7847,7 @@
                 '<span class="label">Excel</span>' +
               '</button>' +
               '<button class="action-btn-v3 act-pdf" type="button" data-action="sd-pdf" id="sd-btn-pdf">' +
-                '<svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="7.5" y="19" font-size="6" font-weight="700" fill="currentColor" stroke="none" font-family="Arial">PDF</text></svg>' +
+                '<svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/></svg>' +
                 '<span class="label">PDF</span>' +
               '</button>' +
               '<button class="action-btn-v3 act-wa" type="button" data-action="sd-whatsapp" id="sd-btn-wa">' +
@@ -7871,14 +7887,14 @@
 
             (hasLed
               ? '<details class="sd-section" id="sec-led">' +
-                  sectionHeader('LED screens', ledCount) +
+                  sectionHeader('LED screens', ledCount, 'screen') +
                   '<div class="sd-section-body">' + ledBody + '</div>' +
                 '</details>'
               : '') +
 
             (hasSx
               ? '<details class="sd-section" id="sec-sx">' +
-                  sectionHeader('Signal extension', sxCount) +
+                  sectionHeader('Signal extension', sxCount, 'line') +
                   '<div class="sd-section-body">' + sxBody + '</div>' +
                 '</details>'
               : '') +
@@ -8131,8 +8147,8 @@
           '<div class="grow"></div>' +
           (isLast
             ? (d.reco
-                ? '<button class="btn btn-ghost" type="button" data-action="wiz-rebuild">Rebuild BoM</button>'
-                : '<button class="btn" type="button" data-action="wiz-build">Build quote \u2192</button>')
+                ? '<button class="btn" type="button" data-action="wiz-rebuild">Rebuild &amp; save \u2192</button>'
+                : '<button class="btn" type="button" data-action="wiz-build">Build &amp; save quote \u2192</button>')
             : '<button class="btn" type="button" data-action="wiz-next">Next \u2192</button>') +
         '</div>';
     }
@@ -8939,20 +8955,20 @@
           ).join('') +
         '</div>';
 
-      // BoM section (post-Build)
+      // BoM section (post-Build). v27.3.0 — auto-save flow: when Build succeeds
+      // we navigate directly to the saved-deal view (which has the glass action
+      // bar w/ Excel/PDF/WhatsApp/Email). BoM here only appears on the
+      // error/no-chassis path so the user can see what failed before going back.
       const bomHtml = d.reco
         ? '<h2 class="h2">Bill of Materials</h2>' + renderBomCard(d.reco, d.solutionType) +
-          '<section class="card">' +
-            '<div class="h3">Save</div>' +
-            '<div class="small muted" style="margin:0 0 10px">' +
-              'Persists to Supabase and opens the saved-deal view. ' +
-              'You can keep editing soft fields with autosave from there.' +
-            '</div>' +
-            '<button class="btn" type="button" data-action="wiz-save">Save quote</button>' +
-            ' <button class="btn btn-ghost" type="button" data-action="wiz-new">Start new</button>' +
-          '</section>'
+          (d.reco.error || !d.reco.chassis
+            ? '<div class="banner warn" style="margin-top:12px">' +
+                'Adjust your inputs and tap <strong>Build &amp; save quote</strong> again.' +
+              '</div>'
+            : '')
         : '<div class="banner info" style="margin-top:16px">' +
-            'Tap <strong>Build quote \u2192</strong> below to compute the BoM, then save.' +
+            'Tap <strong>Build &amp; save quote</strong> below to compute the BoM. ' +
+            'Your deal is saved automatically and the BoM opens with Excel / PDF / WhatsApp / Email actions.' +
           '</div>';
 
       return bomHtml + summaryHtml;
@@ -9380,7 +9396,7 @@
         // refId from data-ref. Avoids touching the hash (which wouldn't re-fire
         // if the user is already on #/quote/<ref>).
         if (action === 'saved-retry') {
-          const ref = t.getAttribute('data-ref') || '';
+          const ref = actEl.getAttribute('data-ref') || '';
           if (ref) showSavedDeal(ref);
           return;
         }
@@ -9389,7 +9405,7 @@
         // The <details> element needs `open` set explicitly before scrollIntoView
         // so the browser scrolls to the expanded position, not the collapsed one.
         if (action === 'sd-jump') {
-          const targetId = t.getAttribute('data-target') || '';
+          const targetId = actEl.getAttribute('data-target') || '';
           const el = document.getElementById(targetId);
           if (el) {
             if (el.tagName === 'DETAILS') el.open = true;
@@ -10777,63 +10793,81 @@
 
     function wizBuild() {
       const d = UI.getWizardData();
-      try {
-        d.reco = computeReco(d);
-        UI.saveDraft();
-        UI.renderWizard();
-        if (d.reco && d.reco.error) {
-          UI.toast(d.reco.error, 'err');
-        } else if (d.reco && !d.reco.chassis) {
-          UI.toast('No chassis recommended for current inputs.', 'warn');
-        } else {
-          UI.toast('BoM built. Scroll to review.', 'ok');
-        }
-      } catch (e) {
-        UI.toast('Build failed: ' + (e && e.message || String(e)), 'err');
-      }
-    }
 
-    // alpha.7.4 — Save the wizard's current state as a new deal.
-    // v27.1.1: Required-field validation in Step-1 enforces all 15 fields
-    // (validateStep). This bottom-guard is defense-in-depth only; reaching
-    // Step 6 implies the 15-field gate already passed.
-    function wizSave() {
-      const d = UI.getWizardData();
+      // v27.3.0 — Auto-save on Build. Flow:
+      //   1. Validate required Step-1 fields (defense-in-depth; gate already ran).
+      //   2. Compute reco.
+      //   3. If reco errored / no chassis: render the wizard so user sees the BoM
+      //      error inline + a toast — do NOT save.
+      //   4. If reco OK: build save payload, write to Supabase, navigate to
+      //      saved-deal view (which has the glass action bar w/ Excel/PDF/
+      //      WhatsApp/Email — that's our new "footer").
+      //
+      // Removes the old two-step flow ("Build quote" then "Save quote") that
+      // Dipenkumar wanted gone — one click does it all now.
+
       if (!d.project || !d.customer_name || !d.stage) {
         UI.toast('Missing project, end user, or stage \u2014 go back to step 1.', 'err');
         return;
       }
-      if (!d.reco) {
-        UI.toast('Build the BoM first.', 'warn');
+
+      try {
+        d.reco = computeReco(d);
+      } catch (e) {
+        UI.toast('Build failed: ' + (e && e.message || String(e)), 'err');
+        UI.saveDraft();
+        UI.renderWizard();
         return;
       }
+
+      // Error path — show BoM error inline, don't save
+      if (d.reco && d.reco.error) {
+        UI.saveDraft();
+        UI.renderWizard();
+        UI.toast(d.reco.error, 'err');
+        return;
+      }
+      if (d.reco && !d.reco.chassis) {
+        UI.saveDraft();
+        UI.renderWizard();
+        UI.toast('No chassis recommended for current inputs. Revise and rebuild.', 'warn');
+        return;
+      }
+
+      // Success path — auto-save + navigate
       const payload = UI.buildSavePayload(d);
       if (!payload) {
         UI.toast('Could not build save payload.', 'err');
+        UI.saveDraft();
+        UI.renderWizard();
         return;
       }
-      // v27.1.2 #6 — distinguish update (edit-mode) vs insert (new). buildSavePayload
-      // already includes payload.id in edit-mode (set by hydrateWizardFromDeal),
-      // which STORE.saveDeal routes to the deal_save RPC update path. Here we
-      // only adjust the user-facing toast and the post-save navigation.
       const isEdit = !!payload.id;
       UI.toast(isEdit ? 'Updating\u2026' : 'Saving\u2026', 'info');
-      STORE.saveDeal(payload).then(function(r) {
+      STORE.saveDeal(payload).then(function (r) {
         const ref = r && r.display_ref;
         if (!ref) {
           UI.toast('Save returned no display_ref \u2014 something is off.', 'err');
+          // Render wizard so user can retry with the Build button
+          UI.renderWizard();
           return;
         }
         UI.clearDraft();
-        UI.toast(isEdit ? ('Updated ' + ref) : ('Saved as ' + ref), 'ok');
-        // Navigate to the saved-deal view. onRouteChange picks up the hash
-        // change and dispatches to showSavedDeal.
+        UI.toast(isEdit ? ('Updated ' + ref) : ('Quote ready: ' + ref), 'ok');
+        // Navigate to saved-deal view. Glass action bar (Edit / Confirm / Excel
+        // / PDF / WhatsApp / Email / Delete) renders automatically there.
         location.hash = '#/quote/' + ref;
-      }).catch(function(err) {
+      }).catch(function (err) {
         const msg = (err && err.message) ? err.message : String(err);
         UI.toast((isEdit ? 'Update' : 'Save') + ' failed: ' + msg, 'err');
+        UI.renderWizard();
       });
     }
+
+    // v27.3.0 — wizSave retained as a thin alias for wizBuild for any legacy
+    // callers (e.g. saved drafts that still emit data-action="wiz-save"). The
+    // inline Save card was removed from Step 6 — Build does the save now.
+    function wizSave() { return wizBuild(); }
 
     // v27.2.3 — Append SX SKUs to a recommendation's `cards` array based
     // on wizardData's sx_data quantities. Called by computeReco after the
