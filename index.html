@@ -13,6 +13,51 @@
        once the user lands on /dashboard. ~330KB gzipped. Pinned to a stable minor (5.5.x). -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
   <!--
+    v27.3.13 — TWO TARGETED UX FIXES (2026-05-26 late evening)
+    Self-tested in this chat against deployed v27.3.12 + post-deploy
+    user-reported issues. Two surgical fixes shipped here; the larger
+    items (data-loss bugs C/D, CORIO Micro/Mini engine logic, SX
+    collapse, sticky chip parent-overflow investigation, history
+    project-card enrichment, PDF/Excel polish) are queued for a
+    fresh chat with full inventory + console-evidence uploads.
+
+    Fixes in this ship:
+
+    1. Issue A — Step 2 dual-highlight (renderStep2 ~L13531).
+       Pre-v27.3.13: VIDEO PROCESSOR parent tile got data-checked="true"
+       whenever a sub-tile (CALICO or CORIO) was selected, causing
+       BOTH parent and child to render orange. Confusing.
+       Now: parent only highlights when explicitly tapped open with
+       no sub picked yet (transient state). Once a sub is picked,
+       the sub is the source of truth and the parent goes back to
+       neutral. Single-line predicate change:
+         data-checked = (!isVP && _step2_videoProcessorOpen)
+
+    2. Issue B — Physical dimensions as pills (renderStep4 LED card,
+       ~L13880). Pre-v27.3.13: physical width × height + diagonal
+       rendered as an inline strip BELOW the 4 derived pills (Pixels,
+       RJ45 ports, HDMI feeds, Aspect). Inconsistent visual hierarchy.
+       Now: two new pills (Size, Diagonal) inside the same .led-badge-row,
+       making it a 6-pill row. .led-physical div removed.
+
+    Items NOT shipped this turn (next chat):
+    - Issue C: LED screens data loss (save/hydrate code looks correct
+      from inspection; needs live DevTools to confirm root cause)
+    - Issue D: Output empty on edit (same — code path looks intact;
+      needs runtime evidence)
+    - Issue E: Saved-deal richer info (suggestion proposed; needs sign-off)
+    - Issue F: CORIO Micro/Mini chassis selection per notebook spec
+      (engine logic change — needs dedicated session)
+    - Issue G: SX cards collapse-by-default (UI state mgmt, ~150L)
+    - Issue H: Sticky chips investigation (CSS already says sticky;
+      parent overflow likely culprit — needs DevTools)
+    - History project card enrichment (3-line meta proposal locked,
+      awaiting your pick of which 3 fields)
+    - PDF/Excel/Email polish + T&C reconciliation (full v27.3.13b scope)
+
+    Smoke: 96 → 96 (version assertion bumped, no new invariants).
+  -->
+  <!--
     v27.3.12 — SX REDESIGN + STEP REDUCTION (2026-05-26)
     Spec: /mnt/user-data/outputs/SPEC-v27.3.12-sx-redesign-step-reduction.md (approved)
     Source: Photo 4 (notebook page transcribed in NOTEBOOK-TRANSCRIPTION-v27.4-and-related.md)
@@ -1046,6 +1091,18 @@
     .history-row .proj { font-weight: 600; margin: 2px 0; font-size: 15px; }
     .history-row .meta { font-size: 12px; color: var(--c-fg-mute);
       display: flex; gap: 10px; flex-wrap: wrap; }
+    /* v27.3.13 — Secondary meta row: solution type + close month.
+       Subtler than primary meta — smaller, mute color, tighter top spacing.
+       Renders only when at least one field has a value (see renderHistoryRow). */
+    .history-row .meta-secondary {
+      margin-top: 2px;
+      gap: 6px;
+      font-size: 11px;
+      opacity: 0.85;
+    }
+    .history-row .meta-secondary .meta-sep {
+      color: var(--c-border-st, var(--c-border));
+    }
 
     /* alpha.8.3 — Soft-deleted history rows: muted, non-clickable container */
     .history-row-deleted { cursor: default; opacity: 0.75; }
@@ -4256,7 +4313,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.3.12',
+      version: 'v27.3.13',
       constants,
       calico,
       mv,
@@ -6778,8 +6835,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.3.12"',
-      () => CATALOG.version === 'v27.3.12' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.3.13"',
+      () => CATALOG.version === 'v27.3.13' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.3.12 invariants — SX redesign + step reduction ---------- */
     // Source: /mnt/user-data/outputs/SPEC-v27.3.12-sx-redesign-step-reduction.md
@@ -11717,6 +11774,25 @@
       const val   = (d.deal_value_inr > 0) ? fmtINR(d.deal_value_inr) : '';
       const stageCls = _stageChipClassName(stage);
 
+      // v27.3.13 — Enrich history rows with 2 productive at-a-glance fields
+      // per Dipenkumar 2026-05-26 (request: "can we have a little more
+      // productive information shown on them?"). Picks:
+      //   - Solution type (CORIO / CALICO / Multi Viewer) — product mix
+      //     visibility. Sourced from raw_submission.solutionType (jsonb)
+      //     or d.solution_type top-level column, lowercased.
+      //   - Close month (e.g. "Aug 2026") — forecasting / monthly pipeline
+      //     visibility. Sourced from d.close_month (DATE col, sliced to YYYY-MM
+      //     by _formatCloseMonth).
+      // Both fields render only when present; row stays clean when blank.
+      const _solRaw = String(
+        (d.raw_submission && d.raw_submission.solutionType) || d.solution_type || ''
+      ).toLowerCase();
+      const solLabel = _solRaw === 'calico' ? 'CALICO'
+        : _solRaw === 'corio' ? 'CORIO'
+        : _solRaw === 'mv' ? 'Multi Viewer'
+        : '';
+      const closeMonthLabel = d.close_month ? _formatCloseMonth(d.close_month) : '';
+
       // alpha.8.3 — deleted rows: non-clickable, with Restore button
       if (d.deleted_at) {
         const delDate = String(d.deleted_at).slice(0, 10);
@@ -11747,6 +11823,17 @@
             (cust ? '<span>' + esc(cust) + '</span>' : '') +
             (val  ? '<span class="mono">' + esc(val) + '</span>' : '') +
           '</div>' +
+          // v27.3.13 — Second meta row (solution · closes month). Renders only
+          // when at least one of the two fields has a value, keeping cards
+          // tight for legacy or in-progress rows. Separator (·) between fields
+          // only when both present.
+          ((solLabel || closeMonthLabel)
+            ? '<div class="meta meta-secondary">' +
+                (solLabel       ? '<span>' + esc(solLabel) + '</span>' : '') +
+                (solLabel && closeMonthLabel ? '<span class="meta-sep">\u00b7</span>' : '') +
+                (closeMonthLabel ? '<span>Closes ' + esc(closeMonthLabel) + '</span>' : '') +
+              '</div>'
+            : '') +
         '</button>';
     }
 
@@ -13528,8 +13615,13 @@
               '<div class="tile-sub">CORIOview \u00b7 Multi-source preview in one display</div>' +
             '</div>' +
           '</button>' +
-          '<button type="button" class="tile" data-checked="' + (isVP ? 'true' : 'false') + '"' +
+          '<button type="button" class="tile" data-checked="' + ((!isVP && d._step2_videoProcessorOpen === true) ? 'true' : 'false') + '"' +
             ' data-action="solution-vp-toggle">' +
+            // v27.3.13 fix Issue A (Dipenkumar 2026-05-26): when a sub-tile
+            // (CALICO or CORIO) is selected, the leaf is the source of truth;
+            // the parent VIDEO PROCESSOR should NOT also show the orange
+            // selected state. Parent only highlights when explicitly tapped
+            // open with no sub picked yet (transient state).
             '<span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="10"/><line x1="10" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="14" y2="10"/><line x1="18" y1="10" x2="18" y2="10"/><path d="M2 14h20"/></svg></span>' +
             '<div class="tile-text">' +
               '<div class="tile-title">VIDEO PROCESSOR</div>' +
@@ -13878,11 +13970,15 @@
                 '<span class="led-badge"><span class="led-badge-k">RJ45 ports</span><span class="led-badge-v">' + ports + '</span></span>' +
                 '<span class="led-badge"><span class="led-badge-k">HDMI feeds</span><span class="led-badge-v">' + feeds + '</span></span>' +
                 '<span class="led-badge"><span class="led-badge-k">Aspect</span><span class="led-badge-v">' + esc(aspect) + '</span></span>' +
+                // v27.3.13 fix Issue B (Dipenkumar 2026-05-26) — physical
+                // dimensions promoted to pills alongside the other derived
+                // values. Two pills (Size + Diagonal) instead of the prior
+                // inline "Physical: 2898mm × 4410mm · 207.8" strip.
+                (dims.ok
+                  ? '<span class="led-badge"><span class="led-badge-k">Size</span><span class="led-badge-v">' + dims.width_mm + ' \u00d7 ' + dims.height_mm + ' mm</span></span>' +
+                    '<span class="led-badge"><span class="led-badge-k">Diagonal</span><span class="led-badge-v">' + dims.diagonal_inches + '"</span></span>'
+                  : '') +
               '</div>'
-            : '') +
-          (dims.ok
-            ? '<div class="led-physical"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="1"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' +
-              '<span>Physical: ' + esc(dims.pretty) + '</span></div>'
             : '') +
         '</div>';
       }).join('');
