@@ -2820,6 +2820,39 @@
       margin-bottom: 10px;
       letter-spacing: 0.005em;
     }
+    /* --- v27.3.0 History sort row --- */
+    .hist-sort-row {
+      display: flex; align-items: center; gap: 8px;
+      margin: 0 0 10px 0;
+    }
+    .hist-sort-label {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 11px;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .hist-sort-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-sm);
+      padding: 7px 28px 7px 12px;
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 12px;
+      color: var(--ink-strong);
+      cursor: pointer;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 12px;
+    }
+    .hist-sort-select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
     .hist-summary {
       display: grid; gap: 8px;
       grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
@@ -3130,6 +3163,53 @@
     }
     .load-error-retry:hover { background: var(--accent); color: var(--ink-on-brand); }
     .load-error-retry:active { transform: scale(0.97); }
+
+    /* --- v27.3.0 Confirm sheet --- */
+    .confirm-sheet {
+      padding: 24px 20px 20px;
+      text-align: center;
+    }
+    .confirm-icon {
+      width: 56px; height: 56px;
+      margin: 0 auto 14px;
+      border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .confirm-icon svg { width: 28px; height: 28px; }
+    .confirm-icon-danger {
+      background: rgba(239,68,68,0.10);
+      color: var(--danger, #EF4444);
+    }
+    .confirm-icon-info {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .confirm-title {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 17px;
+      color: var(--ink-strong);
+      margin: 0 0 6px 0;
+      letter-spacing: -0.01em;
+      line-height: 1.3;
+    }
+    .confirm-msg {
+      font-size: 13px;
+      color: var(--ink-soft);
+      line-height: 1.5;
+      margin: 0 0 20px 0;
+    }
+    .confirm-actions {
+      display: flex; gap: 8px;
+    }
+    .confirm-actions .btn-v3 { flex: 1; }
+    /* Danger button variant — used by confirm-go in danger mode */
+    .btn-v3.btn-danger {
+      background: var(--danger, #EF4444);
+      color: white;
+      border: 1px solid var(--danger, #EF4444);
+    }
+    .btn-v3.btn-danger:hover { background: #DC2626; border-color: #DC2626; }
+    .btn-v3.btn-danger:active { transform: scale(0.98); }
 
     /* --- v27.3.0 Skeleton loaders --- */
     .skeleton {
@@ -7589,8 +7669,9 @@
           try {
             const u = STORE.currentUser();
             const actor = u && (u.id || u.username) || null;
+            const refForLog = _savedDealData.display_ref || _savedDealData.ref_id || _savedDealRefId;
             STORE.stageTransitionWrite({
-              refId:    _savedDealData.display_ref || _savedDealData.ref_id || _savedDealRefId,
+              refId:    refForLog,
               fromStage: prevStage,
               toStage:   newStage,
               actor:     actor,
@@ -7598,6 +7679,40 @@
             }).catch(function (e) {
               console.warn('stage_transition_write failed:', e);
             });
+
+            // v27.3.0 — Notify stakeholders on stage change.
+            // Recipients: assigned sales rep, assigned presales rep, BU heads
+            // for the deal's region. The current actor is excluded — no point
+            // notifying yourself about your own action.
+            try {
+              const actorUname = u && u.username;
+              const recipients = new Set();
+              if (_savedDealData.sales_person_id)    recipients.add(String(_savedDealData.sales_person_id));
+              if (_savedDealData.presales_person_id) recipients.add(String(_savedDealData.presales_person_id));
+              // Resolve UUIDs/usernames via the roster cache. _userRichFor maps either.
+              const targetUsernames = new Set();
+              recipients.forEach(function (key) {
+                try {
+                  const u2 = UI && UI._userRichFor && UI._userRichFor(key);
+                  if (u2 && u2.username && u2.username !== actorUname) {
+                    targetUsernames.add(u2.username);
+                  }
+                } catch (_) {}
+              });
+              const proj = _savedDealData.project || '';
+              const msg = 'Stage moved from ' + (prevStage || '\u2014') + ' \u2192 ' + (newStage || '\u2014');
+              // Pick notification type by destination stage
+              let notifType = 'info';
+              if (newStage === 'Closed Won')  notifType = 'success';
+              else if (newStage === 'Closed Lost') notifType = 'warn';
+              targetUsernames.forEach(function (uname) {
+                STORE.notifCreate(uname, notifType, refForLog, proj, msg).catch(function (e) {
+                  console.warn('notif_create failed for', uname, e);
+                });
+              });
+            } catch (e) {
+              console.warn('stage-change notify threw:', e);
+            }
           } catch (e) {
             console.warn('stage_transition_write threw:', e);
           }
@@ -8028,6 +8143,34 @@
       $('sheet-host').setAttribute('data-open', 'false');
       $('sheet-host').setAttribute('aria-hidden', 'true');
       $('sheet-body').innerHTML = '';
+    }
+
+    /* v27.3.0 — Custom confirmation sheet. Replaces native window.confirm()
+       which on mobile (esp. Z Fold) renders as an ugly OS dialog far from
+       the trigger. Uses the standard sheet-host + a single one-shot callback.
+       Stored as module-level so closeSheet doesn't strand the callback. */
+    let _pendingConfirmCallback = null;
+    function showConfirmSheet(title, message, opts, onConfirm) {
+      opts = opts || {};
+      _pendingConfirmCallback = (typeof onConfirm === 'function') ? onConfirm : null;
+      const confirmLabel = opts.confirmLabel || 'Confirm';
+      const cancelLabel  = opts.cancelLabel  || 'Cancel';
+      const danger = !!opts.danger;
+      const confirmCls = danger ? 'btn-danger' : 'btn-primary';
+      const icon = danger
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+      openSheet(
+        '<div class="confirm-sheet">' +
+          '<div class="confirm-icon ' + (danger ? 'confirm-icon-danger' : 'confirm-icon-info') + '">' + icon + '</div>' +
+          '<h3 class="confirm-title">' + esc(title) + '</h3>' +
+          (message ? '<p class="confirm-msg">' + esc(message) + '</p>' : '') +
+          '<div class="confirm-actions">' +
+            '<button class="btn-v3 btn-ghost btn-md" type="button" data-action="confirm-cancel">' + esc(cancelLabel) + '</button>' +
+            '<button class="btn-v3 ' + confirmCls + ' btn-md" type="button" data-action="confirm-go">' + esc(confirmLabel) + '</button>' +
+          '</div>' +
+        '</div>'
+      );
     }
 
     function showChrome(show) {
@@ -9698,6 +9841,7 @@
         stage:  urlStage  || null,
         region: urlRegion || null,
         search: '',
+        sort:   'updated_desc',   // v27.3.0 — list sorting (Updated newest first by default)
         limit: 100,
         offset: 0,
         total: 0
@@ -9738,6 +9882,17 @@
               '</button>';
             }).join('') +
           '</div>' +
+          /* v27.3.0 — Sort row */
+          '<div class="hist-sort-row">' +
+            '<label class="hist-sort-label" for="hist-sort">Sort by</label>' +
+            '<select class="hist-sort-select" id="hist-sort">' +
+              '<option value="updated_desc">Recently updated</option>' +
+              '<option value="created_desc">Recently created</option>' +
+              '<option value="project_asc">Project (A\u2192Z)</option>' +
+              '<option value="customer_asc">Customer (A\u2192Z)</option>' +
+              '<option value="value_desc">Highest value</option>' +
+            '</select>' +
+          '</div>' +
           /* Result count meta */
           '<div class="hist-meta" id="hist-meta">&nbsp;</div>' +
           /* v27.3.0 — Summary panel (open / won / lost counts of filtered set) */
@@ -9758,6 +9913,15 @@
             historyState.search = val.trim().toLowerCase();
             loadHistoryList();
           }, 250);
+        });
+      }
+      // v27.3.0 — Wire sort dropdown
+      const sortSelect = $('hist-sort');
+      if (sortSelect) {
+        sortSelect.value = historyState.sort;
+        sortSelect.addEventListener('change', function (ev) {
+          historyState.sort = ev.target.value || 'updated_desc';
+          loadHistoryList();
         });
       }
       loadHistoryList();
@@ -9859,9 +10023,45 @@
             '</div>';
           return;
         }
+        // v27.3.0 — Apply sort just before render
+        filtered = _sortHistoryRows(filtered, historyState.sort);
         host.innerHTML = filtered.map(renderHistoryRow).join('');
       } catch (e) {
         _renderLoadError('hist-list', (e && e.message) || String(e), 'hist-retry');
+      }
+    }
+
+    /* v27.3.0 — History list sort. Stable across re-renders.
+       'updated_desc' is the default and matches list_deals_v2 server order. */
+    function _sortHistoryRows(rows, sort) {
+      if (!Array.isArray(rows) || rows.length === 0) return rows;
+      const arr = rows.slice();
+      const dateVal = function (d, key) {
+        const s = d && d[key];
+        if (!s) return 0;
+        const t = new Date(s).getTime();
+        return isNaN(t) ? 0 : t;
+      };
+      switch (sort) {
+        case 'created_desc':
+          return arr.sort(function (a, b) { return dateVal(b, 'created_at') - dateVal(a, 'created_at'); });
+        case 'project_asc':
+          return arr.sort(function (a, b) {
+            return String(a.project || '').toLowerCase().localeCompare(String(b.project || '').toLowerCase());
+          });
+        case 'customer_asc':
+          return arr.sort(function (a, b) {
+            return String(a.customer_name || '').toLowerCase().localeCompare(String(b.customer_name || '').toLowerCase());
+          });
+        case 'value_desc':
+          return arr.sort(function (a, b) {
+            return (Number(b.deal_value_inr) || 0) - (Number(a.deal_value_inr) || 0);
+          });
+        case 'updated_desc':
+        default:
+          return arr.sort(function (a, b) {
+            return dateVal(b, 'updated_at') - dateVal(a, 'updated_at');
+          });
       }
     }
 
@@ -12439,13 +12639,15 @@
         // Captures the current step's form before navigation so edits don't
         // get lost. Forward jumps (to unreached steps) are blocked by the
         // aria-disabled flag rendered on those pills.
+        // Clearing reco on jump means we don't show a stale recommendation
+        // from the prior path.
         if (action === 'wiz-jump') {
           const target = parseInt(actEl.getAttribute('data-step'), 10);
           if (!target || target < 1 || target > 6) return;
           if (target === wizardData.step) return;  // same step — no-op
-          // Capture form before nav (mirrors wizBack/wizNext)
-          if (wizardData.step === 1) captureStep1Form();
+          captureCurrentStepForm();
           wizardData.step = target;
+          wizardData.reco = null;
           saveDraft();
           renderWizard();
           return;
@@ -12454,26 +12656,28 @@
         if (action === 'wiz-rebuild'){ APP.wizBuild(); return; }
         if (action === 'wiz-save')   { APP.wizSave(); return; }
         if (action === 'wiz-cancel') {
-          if (confirm('Discard this draft quote and start over?')) {
-            clearDraft();
-            location.hash = '#/home';
-          }
-          return;
-        }
-        if (action === 'wiz-jump') {
-          captureCurrentStepForm();
-          const s = parseInt(actEl.getAttribute('data-step'), 10) || 1;
-          wizardData.step = s;
-          wizardData.reco = null;
-          renderWizard();
+          showConfirmSheet(
+            'Discard this draft?',
+            'Your wizard progress will be lost. This can\u2019t be undone.',
+            { confirmLabel: 'Discard', danger: true },
+            function () {
+              clearDraft();
+              location.hash = '#/home';
+            }
+          );
           return;
         }
         if (action === 'wiz-new') {
-          if (confirm('Clear this quote and start a new one?')) {
-            clearDraft();
-            wizardData = defaultWizard();
-            renderWizard();
-          }
+          showConfirmSheet(
+            'Start a new quote?',
+            'The current draft will be cleared.',
+            { confirmLabel: 'Start new', danger: true },
+            function () {
+              clearDraft();
+              wizardData = defaultWizard();
+              renderWizard();
+            }
+          );
           return;
         }
 
@@ -12527,6 +12731,24 @@
         if (action === 'home-retry')  { loadHomeRecent(); loadHomeSimpleStats(); return; }
         if (action === 'hist-retry')  { loadHistoryList(); return; }
         if (action === 'cust-retry')  { loadCustomerList(); return; }
+
+        // v27.3.0 — Custom confirm sheet button handlers.
+        // confirm-go invokes the stored callback then closes the sheet;
+        // confirm-cancel just closes (drops the callback).
+        if (action === 'confirm-cancel') {
+          _pendingConfirmCallback = null;
+          closeSheet();
+          return;
+        }
+        if (action === 'confirm-go') {
+          const cb = _pendingConfirmCallback;
+          _pendingConfirmCallback = null;
+          closeSheet();
+          if (cb) {
+            try { cb(); } catch (e) { console.error('[confirm] callback threw', e); }
+          }
+          return;
+        }
 
         // v27.3.0 — Profile page: save edited contact fields via profile_update.
         if (action === 'profile-save') {
@@ -12659,14 +12881,20 @@
         if (action === 'cust-delete') {
           const id = actEl.getAttribute('data-id');
           if (!id) return;
-          if (!confirm('Delete this customer? Linked deals will be unlinked but not deleted.')) return;
-          STORE.customerDelete(id).then(function () {
-            closeSheet();
-            toast('Deleted', 'ok');
-            loadCustomerList();
-          }).catch(function (err) {
-            toast('Delete failed: ' + (err && err.message || String(err)), 'err');
-          });
+          showConfirmSheet(
+            'Delete this customer?',
+            'Linked deals will be unlinked but not deleted.',
+            { confirmLabel: 'Delete', danger: true },
+            function () {
+              STORE.customerDelete(id).then(function () {
+                closeSheet();
+                toast('Deleted', 'ok');
+                loadCustomerList();
+              }).catch(function (err) {
+                toast('Delete failed: ' + (err && err.message || String(err)), 'err');
+              });
+            }
+          );
           return;
         }
         if (action === 'cust-merge') {
@@ -12849,13 +13077,19 @@
           if (!id) return;
           // Generate a memorable temp password
           const temp = 'temp' + Math.floor(1000 + Math.random() * 9000);
-          if (!confirm('Approve request? Temp password: ' + temp + '\n\nIt will be set as the user\'s password and marked must-change.')) return;
-          STORE.resetPasswordApprove(id, temp).then(function () {
-            toast('Approved. Temp password: ' + temp + ' (share with user)', 'ok');
-            showResetPasswordPanel();
-          }).catch(function (err) {
-            toast('Approve failed: ' + (err && err.message || String(err)), 'err');
-          });
+          showConfirmSheet(
+            'Approve reset request?',
+            'Temp password ' + temp + ' will be set on the account and marked must-change. Share this password with the user securely.',
+            { confirmLabel: 'Approve', danger: false },
+            function () {
+              STORE.resetPasswordApprove(id, temp).then(function () {
+                toast('Approved. Temp password: ' + temp + ' (share with user)', 'ok');
+                showResetPasswordPanel();
+              }).catch(function (err) {
+                toast('Approve failed: ' + (err && err.message || String(err)), 'err');
+              });
+            }
+          );
           return;
         }
 
@@ -12989,32 +13223,36 @@
             toast('Cannot delete: no reference ID.', 'err');
             return;
           }
-          if (!confirm('Delete ' + ref + '?\n\nYou can restore it from History \u2192 Deleted.')) return;
-          const btn = actEl;
-          const orig = btn.textContent;
-          btn.disabled = true;
-          btn.textContent = 'Deleting\u2026';
-          STORE.deleteDeal(ref).then(function(r) {
-            if (r && r.ok === true) {
-              // Cancel any pending autosave so the dispose doesn't fire a save
-              // against a now-deleted deal.
-              if (_autosaveTimer) { clearTimeout(_autosaveTimer); _autosaveTimer = null; }
-              _savedDealData    = null;
-              _savedDealRefId   = null;
-              _autosaveInFlight = false;
-              toast(ref + ' deleted. Restore from History \u2192 Deleted.', 'ok');
-              location.hash = '#/history';
-            } else {
-              toast('Delete returned unexpected response: ' + JSON.stringify(r), 'err');
-              btn.disabled = false;
-              btn.textContent = orig;
+          showConfirmSheet(
+            'Delete ' + ref + '?',
+            'You can restore it from History \u2192 Deleted.',
+            { confirmLabel: 'Delete', danger: true },
+            function () {
+              const btn = actEl;
+              const orig = btn.textContent;
+              btn.disabled = true;
+              btn.textContent = 'Deleting\u2026';
+              STORE.deleteDeal(ref).then(function(r) {
+                if (r && r.ok === true) {
+                  if (_autosaveTimer) { clearTimeout(_autosaveTimer); _autosaveTimer = null; }
+                  _savedDealData    = null;
+                  _savedDealRefId   = null;
+                  _autosaveInFlight = false;
+                  toast(ref + ' deleted. Restore from History \u2192 Deleted.', 'ok');
+                  location.hash = '#/history';
+                } else {
+                  toast('Delete returned unexpected response: ' + JSON.stringify(r), 'err');
+                  btn.disabled = false;
+                  btn.textContent = orig;
+                }
+              }).catch(function(err) {
+                const msg = (err && err.message) ? err.message : String(err);
+                toast('Delete failed: ' + msg, 'err');
+                btn.disabled = false;
+                btn.textContent = orig;
+              });
             }
-          }).catch(function(err) {
-            const msg = (err && err.message) ? err.message : String(err);
-            toast('Delete failed: ' + msg, 'err');
-            btn.disabled = false;
-            btn.textContent = orig;
-          });
+          );
           return;
         }
 
@@ -13022,28 +13260,32 @@
         if (action === 'hist-restore') {
           const ref = actEl.getAttribute('data-ref');
           if (!ref) return;
-          if (!confirm('Restore ' + ref + '?')) return;
-          const btn = actEl;
-          const orig = btn.textContent;
-          btn.disabled = true;
-          btn.textContent = 'Restoring\u2026';
-          STORE.restoreDeal(ref).then(function(r) {
-            if (r && r.ok === true) {
-              toast(ref + ' restored.', 'ok');
-              // Reload the history list — the restored deal disappears from
-              // the Deleted filter and reappears in All / Open / Won / Lost.
-              if (typeof loadHistoryList === 'function') loadHistoryList();
-            } else {
-              toast('Restore returned unexpected response: ' + JSON.stringify(r), 'err');
-              btn.disabled = false;
-              btn.textContent = orig;
+          showConfirmSheet(
+            'Restore ' + ref + '?',
+            'The deal will be reactivated and appear in your regular list.',
+            { confirmLabel: 'Restore', danger: false },
+            function () {
+              const btn = actEl;
+              const orig = btn.textContent;
+              btn.disabled = true;
+              btn.textContent = 'Restoring\u2026';
+              STORE.restoreDeal(ref).then(function(r) {
+                if (r && r.ok === true) {
+                  toast(ref + ' restored.', 'ok');
+                  if (typeof loadHistoryList === 'function') loadHistoryList();
+                } else {
+                  toast('Restore returned unexpected response: ' + JSON.stringify(r), 'err');
+                  btn.disabled = false;
+                  btn.textContent = orig;
+                }
+              }).catch(function(err) {
+                const msg = (err && err.message) ? err.message : String(err);
+                toast('Restore failed: ' + msg, 'err');
+                btn.disabled = false;
+                btn.textContent = orig;
+              });
             }
-          }).catch(function(err) {
-            const msg = (err && err.message) ? err.message : String(err);
-            toast('Restore failed: ' + msg, 'err');
-            btn.disabled = false;
-            btn.textContent = orig;
-          });
+          );
           return;
         }
 
@@ -13117,18 +13359,23 @@
           return;
         }
         if (action === 'run-store-smoke') {
-          if (!confirm('STORE smoke runs a full auth round-trip and will sign you out at the end. Continue?')) return;
-          actEl.disabled = true;
-          const el = $('dev-smoke-out');
-          if (el) { el.hidden = false; el.innerHTML = '<span class="warn-ln">running\u2026</span>'; }
-          window.__smokeStore().then(r => {
-            // If still on Profile, render in-pre; otherwise toast only.
-            if ($('dev-smoke-out')) renderSmokeOutput(r);
-            const lvl = r.ok ? 'ok' : (r.fail > 0 ? 'err' : 'warn');
-            toast('STORE smoke: ' + r.pass + ' passed, ' + r.fail + ' failed', lvl);
-          }).catch(e => {
-            toast('STORE smoke harness threw: ' + esc(e && e.message || String(e)), 'err');
-          }).finally(() => { actEl.disabled = false; });
+          showConfirmSheet(
+            'Run STORE smoke?',
+            'This runs a full auth round-trip and will sign you out at the end.',
+            { confirmLabel: 'Run smoke', danger: false },
+            function () {
+              actEl.disabled = true;
+              const el = $('dev-smoke-out');
+              if (el) { el.hidden = false; el.innerHTML = '<span class="warn-ln">running\u2026</span>'; }
+              window.__smokeStore().then(r => {
+                if ($('dev-smoke-out')) renderSmokeOutput(r);
+                const lvl = r.ok ? 'ok' : (r.fail > 0 ? 'err' : 'warn');
+                toast('STORE smoke: ' + r.pass + ' passed, ' + r.fail + ' failed', lvl);
+              }).catch(e => {
+                toast('STORE smoke harness threw: ' + esc(e && e.message || String(e)), 'err');
+              }).finally(() => { actEl.disabled = false; });
+            }
+          );
           return;
         }
         if (action === 'run-ui-smoke') {
