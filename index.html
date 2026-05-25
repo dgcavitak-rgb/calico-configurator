@@ -2236,6 +2236,17 @@
       padding: 12px;
       transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
     }
+    /* v27.3.0 — Region tile as clickable button */
+    .region-tile-btn {
+      appearance: none;
+      font-family: inherit;
+      cursor: pointer;
+      text-align: left;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .region-tile-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,14,12,0.06); }
+    .region-tile-btn:active { transform: scale(0.99); }
+    .region-tile-btn:hover .region-tile-head svg { opacity: 1 !important; color: var(--zone-color) !important; }
     .region-tile:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,14,12,0.05); }
     .region-tile-head {
       display: flex; align-items: center; gap: 6px;
@@ -2769,6 +2780,81 @@
       font-size: 11.5px; color: var(--ink-soft);
       margin-bottom: 10px;
       letter-spacing: 0.005em;
+    }
+    .hist-summary {
+      display: grid; gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+      margin-bottom: 12px;
+    }
+    .hist-summary-tile {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-left: 3px solid var(--tile-color, var(--accent));
+      border-radius: var(--r-sm);
+      padding: 10px 12px;
+    }
+    .hist-summary-val {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 18px; line-height: 1;
+      color: var(--ink-strong);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.01em;
+      margin-bottom: 4px;
+    }
+    .hist-summary-label {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 10.5px;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* --- v27.3.0 About sheet --- */
+    .about-head {
+      text-align: center;
+      padding: 24px 16px 16px;
+      border-bottom: 1px solid var(--border-soft);
+      margin: 0 -16px 16px;
+    }
+    .about-logo {
+      display: inline-block;
+      padding: 8px 14px;
+      background: var(--accent-soft);
+      border-radius: var(--r-md);
+      margin-bottom: 6px;
+    }
+    .about-grid {
+      display: flex; flex-direction: column;
+      gap: 4px;
+      margin-bottom: 16px;
+    }
+    .about-row {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 12px;
+      padding: 10px 6px;
+      border-bottom: 0.5px solid var(--border-soft);
+      align-items: baseline;
+    }
+    .about-row:last-child { border-bottom: none; }
+    .about-key {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 10.5px;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .about-val {
+      font-size: 13px;
+      color: var(--ink-strong);
+      line-height: 1.4;
+    }
+    .about-val.mono { font-family: var(--font-mono); }
+    .about-footer {
+      padding: 14px 12px 4px;
+      background: var(--accent-soft);
+      border-radius: var(--r-md);
+      margin-top: 4px;
     }
 
     /* --- v27.3.0 Skeleton loaders --- */
@@ -7962,6 +8048,8 @@
         items.push({ label: 'Password resets', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="16" r="1"/><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
           act: 'um-resets' });
       }
+      items.push({ label: 'About this app', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+        act: 'um-about' });
       items.push({ label: 'Sign out', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
         act: 'um-logout' });
       openSheet(
@@ -7978,6 +8066,54 @@
               '</div>' +
             '</button>';
           }).join('') +
+        '</div>'
+      );
+    }
+
+    /* v27.3.0 — About sheet (version + build info + acknowledgments).
+       Accessible from user-menu sheet (avatar dropdown). */
+    function showAboutSheet() {
+      const ver = (typeof CATALOG !== 'undefined' && CATALOG.version) || 'v27.3.0';
+      openSheet(
+        '<div class="notif-sheet" style="padding:0 16px 16px">' +
+          '<div class="about-head">' +
+            '<div class="about-logo">' +
+              '<svg viewBox="0 0 96 32" width="96" height="32" fill="none" stroke="#F7941D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' +
+                '<path d="M8 8 L20 16 L8 24"/>' +
+                '<path d="M24 8 L36 16 L24 24"/>' +
+              '</svg>' +
+            '</div>' +
+            '<h3 style="margin:6px 0 2px;font-size:18px">tvONE Product Selector</h3>' +
+            '<div style="font-size:12px;color:var(--ink-soft)">Cavitak Marketing Pvt Ltd</div>' +
+          '</div>' +
+          '<div class="about-grid">' +
+            '<div class="about-row">' +
+              '<div class="about-key">Version</div>' +
+              '<div class="about-val mono">' + esc(ver) + '</div>' +
+            '</div>' +
+            '<div class="about-row">' +
+              '<div class="about-key">Build date</div>' +
+              '<div class="about-val">' + esc(new Date().toISOString().slice(0,10)) + '</div>' +
+            '</div>' +
+            '<div class="about-row">' +
+              '<div class="about-key">Distributor</div>' +
+              '<div class="about-val">Cavitak Marketing Pvt Ltd</div>' +
+            '</div>' +
+            '<div class="about-row">' +
+              '<div class="about-key">Supports</div>' +
+              '<div class="about-val">CORIO  \u00b7  CALICO  \u00b7  Multi Viewer  \u00b7  Signal Extension</div>' +
+            '</div>' +
+            '<div class="about-row">' +
+              '<div class="about-key">Tech</div>' +
+              '<div class="about-val">Supabase  \u00b7  ECharts  \u00b7  ExcelJS  \u00b7  jsPDF</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="about-footer">' +
+            '<p style="font-size:11.5px;color:var(--ink-soft);text-align:center;margin:0;line-height:1.5">' +
+              'For pricing escalation or support, contact <strong>Dipenkumar Gajjar</strong><br>' +
+              'National Product Lead  \u00b7  dipen.g@cavitak.com  \u00b7  +91 8160756906' +
+            '</p>' +
+          '</div>' +
         '</div>'
       );
     }
@@ -8990,17 +9126,19 @@
         const s = zoneStats[z] || { open: 0, won: 0, lost: 0, value: 0 };
         const resolved = s.won + s.lost;
         const wr = resolved ? Math.round(s.won * 100 / resolved) : null;
-        return '<div class="region-tile" style="--zone-color:' + zoneColor[z] + '">' +
+        const navHref = '#/history?filter=all&region=' + encodeURIComponent(z);
+        return '<button class="region-tile region-tile-btn" type="button" data-nav="' + esc(navHref) + '" style="--zone-color:' + zoneColor[z] + '">' +
           '<div class="region-tile-head">' +
             '<span class="region-dot" style="background:' + zoneColor[z] + '"></span>' +
             '<span class="region-name">' + esc(z) + '</span>' +
+            '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;color:var(--ink-soft);opacity:0.5"><polyline points="9 18 15 12 9 6"/></svg>' +
           '</div>' +
           '<div class="region-stats">' +
             '<div class="region-stat"><div class="region-stat-k">Open</div><div class="region-stat-v">' + s.open + '</div></div>' +
             '<div class="region-stat"><div class="region-stat-k">Won</div><div class="region-stat-v">' + s.won + '</div></div>' +
             '<div class="region-stat"><div class="region-stat-k">Win %</div><div class="region-stat-v">' + (wr != null ? wr + '%' : '\u2014') + '</div></div>' +
           '</div>' +
-        '</div>';
+        '</button>';
       }).join('');
     }
 
@@ -9224,12 +9362,14 @@
     function showHistory() {
       showChrome(true);
       updateNavActive('#/history');
-      // Parse filter + stage from URL query
-      // (e.g. #/history?filter=stuck or #/history?filter=open&stage=Proposal)
+      // Parse filter + stage + region from URL query
+      // (e.g. #/history?filter=stuck or #/history?filter=open&stage=Proposal
+      //  or #/history?filter=all&region=West)
       const hash = location.hash || '';
       const queryStart = hash.indexOf('?');
       let urlFilter = null;
       let urlStage  = null;
+      let urlRegion = null;
       if (queryStart >= 0) {
         const query = hash.slice(queryStart + 1);
         query.split('&').forEach(function (kv) {
@@ -9239,11 +9379,13 @@
           const v = decodeURIComponent(kv.slice(eq + 1));
           if (k === 'filter') urlFilter = v;
           if (k === 'stage')  urlStage  = v;
+          if (k === 'region') urlRegion = v;
         });
       }
       historyState = {
         filter: urlFilter || 'all',
         stage:  urlStage  || null,
+        region: urlRegion || null,
         search: '',
         limit: 100,
         offset: 0,
@@ -9287,6 +9429,8 @@
           '</div>' +
           /* Result count meta */
           '<div class="hist-meta" id="hist-meta">&nbsp;</div>' +
+          /* v27.3.0 — Summary panel (open / won / lost counts of filtered set) */
+          '<div id="hist-summary" class="hist-summary" hidden></div>' +
           /* Results */
           '<div id="hist-list">' + _skelDealRows(6) + '</div>' +
         '</div>'
@@ -9344,6 +9488,21 @@
             return String(d.stage || '').toLowerCase() === String(historyState.stage).toLowerCase();
           });
         }
+        // v27.3.0 — region filter (from clickable region tiles).
+        // Match d.region first, fall back to state→region map.
+        if (historyState.region) {
+          const stateRegion = {
+            'Maharashtra':'West','Gujarat':'West','Rajasthan':'West','Goa':'West','Madhya Pradesh':'West',
+            'Delhi':'North','Punjab':'North','Haryana':'North','Uttar Pradesh':'North','Uttarakhand':'North','Himachal Pradesh':'North','Jammu and Kashmir':'North','Chandigarh':'North',
+            'Karnataka':'South','Tamil Nadu':'South','Kerala':'South','Andhra Pradesh':'South','Telangana':'South','Puducherry':'South',
+            'West Bengal':'East','Bihar':'East','Jharkhand':'East','Odisha':'East','Assam':'East','Sikkim':'East','Manipur':'East','Meghalaya':'East','Mizoram':'East','Nagaland':'East','Tripura':'East','Arunachal Pradesh':'East'
+          };
+          const targetRegion = String(historyState.region).toLowerCase();
+          filtered = filtered.filter(function (d) {
+            const z = (d.region || stateRegion[d.state] || '').toLowerCase();
+            return z === targetRegion;
+          });
+        }
         // v27.3.0 — text search across ref + project + customer
         if (historyState.search) {
           const q = historyState.search;
@@ -9361,10 +9520,14 @@
             meta.textContent = filtered.length + ' result' + (filtered.length === 1 ? '' : 's') + ' for "' + historyState.search + '"';
           } else if (historyState.stage) {
             meta.textContent = filtered.length + ' deal' + (filtered.length === 1 ? '' : 's') + ' in ' + historyState.stage;
+          } else if (historyState.region) {
+            meta.textContent = filtered.length + ' deal' + (filtered.length === 1 ? '' : 's') + ' in ' + historyState.region + ' region';
           } else {
             meta.textContent = filtered.length + ' of ' + allRows.length + (allRows.length === 1 ? ' deal' : ' deals');
           }
         }
+        // v27.3.0 — Summary panel: open/won/lost counts + (when pricing exists) total value
+        renderHistorySummary(filtered);
         const host = $('hist-list');
         if (!host) return;
         if (filtered.length === 0) {
@@ -9394,9 +9557,52 @@
       }
     }
 
+    /* v27.3.0 — History summary panel.
+       Renders 3-4 mini stat tiles above the result rows: Open/Won/Lost
+       counts of the currently-filtered set, plus total deal value when
+       pricing exists. Hidden entirely when results are empty. */
+    function renderHistorySummary(rows) {
+      const host = $('hist-summary');
+      if (!host) return;
+      if (!rows || rows.length === 0) {
+        host.hidden = true;
+        host.innerHTML = '';
+        return;
+      }
+      // Compute counts
+      let open = 0, won = 0, lost = 0, deleted = 0, value = 0;
+      rows.forEach(function (d) {
+        if (d.deleted_at) { deleted += 1; return; }
+        if (d.stage === 'Closed Won')  won  += 1;
+        else if (d.stage === 'Closed Lost') lost += 1;
+        else if (_isOpenStage(d.stage))     open += 1;
+        value += Number(d.deal_value_inr) || 0;
+      });
+      const tiles = [];
+      if (open > 0)   tiles.push({ label: 'Open',    val: String(open),    color: '#3B82F6' });
+      if (won > 0)    tiles.push({ label: 'Won',     val: String(won),     color: '#22C55E' });
+      if (lost > 0)   tiles.push({ label: 'Lost',    val: String(lost),    color: '#94A3B8' });
+      if (deleted > 0)tiles.push({ label: 'Deleted', val: String(deleted), color: '#EF4444' });
+      if (value > 0)  tiles.push({ label: 'Pipeline', val: _fmtLakh(value), color: '#E8731C' });
+      if (tiles.length <= 1) {
+        // Single category — no point showing summary
+        host.hidden = true;
+        host.innerHTML = '';
+        return;
+      }
+      host.hidden = false;
+      host.innerHTML = tiles.map(function (t) {
+        return '<div class="hist-summary-tile" style="--tile-color:' + t.color + '">' +
+          '<div class="hist-summary-val">' + esc(t.val) + '</div>' +
+          '<div class="hist-summary-label">' + esc(t.label) + '</div>' +
+        '</div>';
+      }).join('');
+    }
+
     function setHistoryFilter(f) {
       historyState.filter = f;
-      historyState.stage = null;  // v27.3.0 — chip click clears stage filter
+      historyState.stage = null;   // v27.3.0 — chip click clears stage filter
+      historyState.region = null;  // v27.3.0 — and region filter
       document.querySelectorAll('#hist-chips .hist-chip').forEach(c => {
         const isActive = c.getAttribute('data-value') === f;
         c.classList.toggle('hist-chip-active', isActive);
@@ -12096,6 +12302,10 @@
         }
         if (action === 'um-resets') {
           showResetPasswordPanel();
+          return;
+        }
+        if (action === 'um-about') {
+          showAboutSheet();
           return;
         }
         if (action === 'um-logout') {
