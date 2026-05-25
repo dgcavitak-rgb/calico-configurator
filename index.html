@@ -2465,6 +2465,7 @@
     }
     .home-dash-link:hover { background: var(--accent-soft); }
 
+<<<<<<< HEAD
     /* --- v27.3.0 Stage transitions timeline --- */
     .st-timeline {
       padding: 16px 18px 12px 18px;
@@ -2616,6 +2617,8 @@
       line-height: 1.35;
     }
 
+=======
+>>>>>>> b8f9cccb543b48a9fa34878e10d709f395624a87
     /* --- v27.3.0 NOTIFICATION SHEET (D6-D9 restore) --- */
     .notif-sheet { padding: 4px 0 16px; }
     .notif-sheet-head {
@@ -4277,6 +4280,7 @@
       return (r && r.rows) || (Array.isArray(r) ? r : []);
     }
 
+<<<<<<< HEAD
     /* v27.3.0 — Stage transitions history (silent-drop restore).
        Each deal records a row in stage_transitions on every stage change.
        The RPC takes an array of ref IDs (batch); we wrap single-ref usage. */
@@ -4290,6 +4294,8 @@
       });
     }
 
+=======
+>>>>>>> b8f9cccb543b48a9fa34878e10d709f395624a87
     /* v27.3.0 — Customer Directory + 360 + Merge (D1-D3 silent-drop restores).
        All 4 RPCs (customer_list, customer_upsert, customer_delete, customer_merge)
        already exist in Supabase. This is UI-only build on top of an existing
@@ -4348,8 +4354,11 @@
       resetPasswordRequest, resetPasswordListPending, resetPasswordApprove,
       // v27.3.0 — duplicate + custom stages (v27.7 partial restore)
       duplicateDeal, stageList,
+<<<<<<< HEAD
       // v27.3.0 — Stage transitions history (silent-drop restore)
       stageTransitionsList,
+=======
+>>>>>>> b8f9cccb543b48a9fa34878e10d709f395624a87
       // v27.3.0 — Customer directory + 360 + merge (D1-D3 silent-drop restores)
       customerList, customerUpsert, customerDelete, customerMerge, customer360,
       // internals exposed for debug only
