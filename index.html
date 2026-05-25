@@ -746,22 +746,33 @@
     .sd-ref-row { display: flex; align-items: center; gap: 10px;
       margin-bottom: 6px; flex-wrap: wrap; }
     .sd-status {
-      font: 600 11px/1 var(--f-sans);
-      padding: 4px 10px;
-      border-radius: 999px;
-      letter-spacing: 0.03em;
-      transition: background-color 0.18s ease, color 0.18s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 11px;
+      line-height: 1;
+      padding: 5px 10px;
+      border-radius: var(--r-pill);
+      letter-spacing: 0.02em;
+      transition: background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
     }
-    .sd-status-idle    { background: transparent; color: transparent; }
-    .sd-status-edited  { background: var(--c-warn-lt);   color: var(--c-warn); }
-    .sd-status-saving  { background: var(--c-accent-lt); color: var(--c-accent); }
-    .sd-status-saved   { background: var(--c-accent-lt); color: var(--c-accent); }
-    .sd-status-error   { background: var(--c-err-lt);    color: var(--c-err);
-      /* Errors are sticky — keep them attention-grabbing */
-      border: 1px solid var(--c-err);
+    .sd-status-idle    { opacity: 0; pointer-events: none; }
+    .sd-status-edited  { background: rgba(245,158,11,0.12); color: #B45309; }
+    .sd-status-saving  { background: var(--accent-soft);    color: var(--accent-deep); }
+    .sd-status-saved   { background: rgba(34,197,94,0.12);  color: #15803D; }
+    .sd-status-error   {
+      background: rgba(185,28,28,0.10);
+      color: #B91C1C;
+      border: 1px solid #B91C1C;
+    }
+    .sd-status .spinner-sm {
+      animation: ptr-spin 0.8s linear infinite;
     }
     @media (prefers-reduced-motion: reduce) {
       .sd-status { transition: none; }
+      .sd-status .spinner-sm { animation: none; }
     }
 
     /* alpha.7.2 — Editable form fields inside accordion body */
@@ -1260,14 +1271,42 @@
       display: flex; align-items: center; gap: var(--s-3);
       background: var(--bg-card);
       border: 1px solid var(--border-soft);
-      border-radius: var(--r-pill);
-      padding: 10px var(--s-4) 10px var(--s-3);
+      border-left: 4px solid var(--ink-soft);
+      border-radius: var(--r-md);
+      padding: 12px 18px 12px 14px;
       box-shadow: 0 4px 12px rgba(15,14,12,0.06), 0 12px 32px rgba(15,14,12,0.10);
-      font-size: var(--t-body-sm);
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 13.5px;
       color: var(--ink-strong);
       max-width: 100%;
       transform: translateY(-20px); opacity: 0;
       animation: toast-in var(--dur-slow) var(--ease-spring) forwards;
+    }
+    /* v27.3.0 — Type-specific accent (left edge stripe matches icon color) */
+    #toast-host .toast.ok    { border-left-color: #22C55E; }
+    #toast-host .toast.warn  { border-left-color: #F59E0B; }
+    #toast-host .toast.err   { border-left-color: #EF4444; }
+    #toast-host .toast::before {
+      content: '';
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: 12px;
+    }
+    #toast-host .toast.ok::before {
+      background-color: #22C55E;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>");
+    }
+    #toast-host .toast.warn::before {
+      background-color: #F59E0B;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><line x1='12' y1='9' x2='12' y2='13'/><line x1='12' y1='17' x2='12.01' y2='17'/></svg>");
+    }
+    #toast-host .toast.err::before {
+      background-color: #EF4444;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>");
     }
     @keyframes toast-in { 0% { transform: translateY(-20px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 
@@ -2856,6 +2895,241 @@
       border-radius: var(--r-md);
       margin-top: 4px;
     }
+
+    /* --- v27.3.0 Wizard progress header --- */
+    .wiz-progress {
+      margin-bottom: var(--s-4);
+      padding-top: var(--s-2);
+    }
+    .wiz-progress-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .wiz-progress-eyebrow {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 10.5px;
+      color: var(--accent-deep);
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .wiz-progress-pct {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 11px;
+      color: var(--ink-soft);
+      font-variant-numeric: tabular-nums;
+    }
+    .wiz-progress-title {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 22px;
+      color: var(--ink-strong);
+      margin: 0 0 12px 0;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    .wiz-progress-track {
+      height: 6px;
+      background: var(--bg-subtle);
+      border-radius: var(--r-pill);
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .wiz-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-deep) 100%);
+      border-radius: var(--r-pill);
+      transition: width 380ms var(--ease-out);
+    }
+    .wiz-pills {
+      display: flex; gap: 4px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .wiz-pills::-webkit-scrollbar { display: none; }
+    .wiz-pill {
+      appearance: none;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 10px;
+      border-radius: var(--r-pill);
+      border: 1px solid var(--border-soft);
+      background: var(--bg-card);
+      color: var(--ink-soft);
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 11.5px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-spring);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .wiz-pill:active { transform: scale(0.96); }
+    .wiz-pill-n {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--bg-subtle);
+      color: var(--ink-soft);
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 0 4px;
+    }
+    .wiz-pill-label {
+      font-weight: 600;
+    }
+    /* Past — completed (check) */
+    .wiz-pill-past {
+      color: var(--success, #22C55E);
+      border-color: color-mix(in srgb, var(--success, #22C55E) 35%, var(--border-soft));
+      background: color-mix(in srgb, var(--success, #22C55E) 8%, var(--bg-card));
+    }
+    @supports not (background: color-mix(in srgb, red 50%, blue)) {
+      .wiz-pill-past { border-color: #BFE7CB; background: #F1FBF4; }
+    }
+    /* Current — amber, bold */
+    .wiz-pill-current {
+      color: var(--ink-on-brand);
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .wiz-pill-current .wiz-pill-n {
+      background: rgba(255,255,255,0.25);
+      color: var(--ink-on-brand);
+    }
+    /* Future — muted, disabled affordance */
+    .wiz-pill-future {
+      cursor: default;
+      opacity: 0.6;
+    }
+    .wiz-pill-future:active { transform: none; }
+
+    /* --- v27.3.0 Profile page --- */
+    .profile-hero {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      margin-bottom: var(--s-4);
+    }
+    .profile-avatar {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: var(--brand-grad);
+      color: white;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 22px;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(232,115,28,0.25);
+    }
+    .profile-hero-text { flex: 1; min-width: 0; }
+    .profile-name {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 18px; color: var(--ink-strong);
+      margin: 0 0 3px 0;
+      letter-spacing: -0.015em;
+    }
+    .profile-sub {
+      font-size: 12.5px; color: var(--ink-soft);
+    }
+    .profile-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      padding: 16px;
+      margin-bottom: var(--s-3);
+    }
+    .profile-section-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .profile-section-head h2 {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 14.5px; color: var(--ink-strong);
+      margin: 0; letter-spacing: -0.005em;
+    }
+    .profile-section-head .meta {
+      font-size: 11px; color: var(--ink-soft);
+      font-weight: 500;
+    }
+    .profile-grid {
+      display: flex; flex-direction: column; gap: 2px;
+      margin-bottom: 8px;
+    }
+    .profile-row {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 0.5px solid var(--border-soft);
+      align-items: baseline;
+    }
+    .profile-row:last-child { border-bottom: none; }
+    .profile-key {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 10.5px;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .profile-val {
+      font-size: 13px;
+      color: var(--ink-strong);
+    }
+    .profile-val.mono { font-family: var(--font-mono); }
+    .profile-note {
+      margin-top: 8px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-soft);
+      line-height: 1.5;
+    }
+
+    /* --- v27.3.0 Load-error state with retry --- */
+    .load-error {
+      display: flex; align-items: center; gap: 14px;
+      padding: 18px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--danger, #EF4444);
+      border-radius: var(--r-md);
+      margin: 12px 0;
+    }
+    .load-error-icon {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: rgba(239,68,68,0.10);
+      color: var(--danger, #EF4444);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .load-error-icon svg { width: 20px; height: 20px; }
+    .load-error-text { flex: 1; min-width: 0; }
+    .load-error-title {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 14px;
+      color: var(--ink-strong);
+      margin-bottom: 2px;
+    }
+    .load-error-msg {
+      font-size: 12px;
+      color: var(--ink-soft);
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .load-error-retry {
+      appearance: none; border: 1px solid var(--accent);
+      background: var(--bg-card);
+      color: var(--accent-deep);
+      padding: 8px 14px;
+      border-radius: var(--r-pill);
+      font-family: var(--font-display); font-weight: 600; font-size: 12px;
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 5px;
+      flex-shrink: 0;
+      transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-spring);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .load-error-retry:hover { background: var(--accent); color: var(--ink-on-brand); }
+    .load-error-retry:active { transform: scale(0.97); }
 
     /* --- v27.3.0 Skeleton loaders --- */
     .skeleton {
@@ -7143,11 +7417,16 @@
       const el = document.getElementById('sd-status');
       if (!el) return;
       el.className = 'sd-status sd-status-' + state;
-      if (state === 'idle')    el.textContent = '';
-      if (state === 'edited')  el.textContent = 'Edited \u00b7 saving soon\u2026';
-      if (state === 'saving')  el.textContent = 'Saving\u2026';
-      if (state === 'saved')   el.textContent = 'Saved';
-      if (state === 'error')   el.textContent = 'Save failed' + (detail ? ': ' + detail : '');
+      // v27.3.0 — Icon + label per state
+      const iconAndText = {
+        'idle':    ['', ''],
+        'edited':  ['<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>', 'Edited \u00b7 saving soon\u2026'],
+        'saving':  ['<svg class="spinner-sm" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>', 'Saving\u2026'],
+        'saved':   ['<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>', 'Saved'],
+        'error':   ['<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>', 'Save failed' + (detail ? ': ' + detail : '')]
+      };
+      const item = iconAndText[state] || ['', ''];
+      el.innerHTML = item[0] + (item[1] ? '<span>' + esc(item[1]) + '</span>' : '');
     }
 
     /* ============================================================
@@ -7461,6 +7740,18 @@
       'LED screens',
       'Signal extension',
       'Review & build'
+    ];
+
+    /* v27.3.0 — Compact labels for the wizard step pills (header strip).
+       Full titles are still used in the big "Project context" headline. */
+    const STEP_PILL_LABELS = [
+      null,
+      'Project',
+      'Solution',
+      'I/O',
+      'LED',
+      'SX',
+      'Review'
     ];
 
     /* ---------- Human labels (v27.1.2 #4a) ----------
@@ -9194,6 +9485,29 @@
 
     function setText(id, v) { const el = $(id); if (el) el.textContent = v; }
 
+    /* v27.3.0 — Polished load-error state with a retry button.
+       Used by Home/Dashboard/History/Customers when their data fetch fails. */
+    function _renderLoadError(hostId, msg, retryAction) {
+      const host = $(hostId);
+      if (!host) return;
+      host.innerHTML =
+        '<div class="load-error">' +
+          '<div class="load-error-icon">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+          '</div>' +
+          '<div class="load-error-text">' +
+            '<div class="load-error-title">Couldn\'t load</div>' +
+            '<div class="load-error-msg">' + esc(msg || 'Something went wrong.') + '</div>' +
+          '</div>' +
+          (retryAction
+            ? '<button class="load-error-retry" type="button" data-action="' + esc(retryAction) + '">' +
+                '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>' +
+                ' Retry' +
+              '</button>'
+            : '') +
+        '</div>';
+    }
+
     /* v27.3.0 — Skeleton placeholder helpers.
        Use to replace "Loading…" text with shimmer placeholders. */
     function _skelDealRows(n) {
@@ -9299,10 +9613,7 @@
         }
         host.innerHTML = rows.map(renderHistoryRow).join('');
       } catch (e) {
-        const host = $('home-recent');
-        if (host) host.innerHTML =
-          '<div class="banner err">Could not load recent deals: ' +
-          esc(e && e.message || String(e)) + '</div>';
+        _renderLoadError('home-recent', (e && e.message) || String(e), 'home-retry');
         const cnt = $('home-deal-count');
         if (cnt) cnt.textContent = '\u2014';
       }
@@ -9550,10 +9861,7 @@
         }
         host.innerHTML = filtered.map(renderHistoryRow).join('');
       } catch (e) {
-        const host = $('hist-list');
-        if (host) host.innerHTML =
-          '<div class="banner err">Could not load deals: ' +
-          esc(e && e.message || String(e)) + '</div>';
+        _renderLoadError('hist-list', (e && e.message) || String(e), 'hist-retry');
       }
     }
 
@@ -9685,8 +9993,7 @@
         _customersCache = Array.isArray(rows) ? rows : [];
         renderCustomerList();
       }).catch(function (err) {
-        listEl.innerHTML = '<div class="banner err">Could not load customers: ' +
-          esc(err && err.message || String(err)) + '</div>';
+        _renderLoadError('cust-list', (err && err.message) || String(err), 'cust-retry');
       });
     }
 
@@ -9879,62 +10186,146 @@
       showChrome(true);
       updateNavActive('#/profile');
       const u = STORE.currentUser() || {};
+      const isSuper = u.permission_tier === 'super';
+      const initials = String(u.full_name || u.username || '')
+        .trim().split(/\s+/).map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
       setRoot(
-        '<div class="v">' +
-          '<div class="h1">Profile</div>' +
-
-          '<section class="card">' +
-            '<div class="h3">Account</div>' +
-            '<div class="row between" style="padding:4px 0"><span class="soft small">Username</span>' +
-              '<span class="mono">' + esc(u.username || '\u2014') + '</span></div>' +
-            '<div class="row between" style="padding:4px 0"><span class="soft small">Full name</span>' +
-              '<span>' + esc(u.full_name || '\u2014') + '</span></div>' +
-            '<div class="row between" style="padding:4px 0"><span class="soft small">Email</span>' +
-              '<span class="mono small">' + esc(u.email || '\u2014') + '</span></div>' +
-            '<div class="row between" style="padding:4px 0"><span class="soft small">Tier</span>' +
-              '<span class="tag">' + esc(u.permission_tier || '\u2014') + '</span></div>' +
+        '<div class="v273-page">' +
+          /* Hero card with avatar + name + role */
+          '<section class="profile-hero">' +
+            '<div class="profile-avatar">' + esc(initials) + '</div>' +
+            '<div class="profile-hero-text">' +
+              '<h1 class="profile-name">' + esc(u.full_name || u.username || 'User') + '</h1>' +
+              '<div class="profile-sub">' +
+                (u.professional_title ? esc(u.professional_title) + ' \u00b7 ' : '') +
+                esc(u.org_function || '\u2014') +
+                (u.region ? ' \u00b7 ' + esc(u.region) : '') +
+              '</div>' +
+              (isSuper ? '<span class="chip-v3 chip-accent" style="margin-top:8px">SUPER</span>' : '') +
+            '</div>' +
           '</section>' +
 
-          '<section class="card">' +
-            '<div class="h3">Change password</div>' +
-            '<form id="profile-pw-form" autocomplete="off" novalidate>' +
-              '<div class="field" id="pf-oldpw">' +
-                '<label for="pi-oldpw">Current password</label>' +
-                '<input id="pi-oldpw" type="password" autocomplete="current-password" required>' +
-                '<div class="err" hidden></div>' +
+          /* Editable contact info — feeds C2 export footer + D16 gate */
+          '<section class="profile-section">' +
+            '<div class="profile-section-head">' +
+              '<h2>Contact information</h2>' +
+              '<span class="meta">Shown on every quote you create</span>' +
+            '</div>' +
+            '<form id="profile-info-form" autocomplete="off" novalidate>' +
+              '<div class="field-v3">' +
+                '<label for="pi-fullname">Full name</label>' +
+                '<input id="pi-fullname" class="input-v3" type="text" value="' + esc(u.full_name || '') + '" required>' +
               '</div>' +
-              '<div class="field" id="pf-newpw">' +
-                '<label for="pi-newpw">New password</label>' +
-                '<input id="pi-newpw" type="password" autocomplete="new-password" required>' +
-                '<div class="help">At least 6 characters. No leading/trailing spaces.</div>' +
-                '<div class="err" hidden></div>' +
+              '<div class="field-v3">' +
+                '<label for="pi-title">Professional title</label>' +
+                '<input id="pi-title" class="input-v3" type="text" value="' + esc(u.professional_title || '') + '" placeholder="e.g. Senior Sales Engineer">' +
               '</div>' +
-              '<div class="field" id="pf-newpw2">' +
-                '<label for="pi-newpw2">Confirm</label>' +
-                '<input id="pi-newpw2" type="password" autocomplete="new-password" required>' +
-                '<div class="err" hidden></div>' +
+              '<div class="field-v3">' +
+                '<label for="pi-phone">Phone</label>' +
+                '<input id="pi-phone" class="input-v3" type="tel" inputmode="numeric" maxlength="10" value="' + esc(u.phone || '') + '" placeholder="10-digit number" pattern="[0-9]{10}">' +
+                '<div class="field-help small soft">10-digit Indian mobile, no country code or spaces.</div>' +
               '</div>' +
-              '<button class="btn" type="submit">Update password</button>' +
+              '<div class="field-v3">' +
+                '<label for="pi-email">Email</label>' +
+                '<input id="pi-email" class="input-v3" type="email" value="' + esc(u.email || '') + '" placeholder="name@cavitak.com">' +
+              '</div>' +
+              '<button class="btn-v3 btn-primary btn-md" type="submit" data-action="profile-save">' +
+                '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+                ' Save changes' +
+              '</button>' +
             '</form>' +
           '</section>' +
 
-          '<section class="card">' +
-            '<div class="h3">Sign out</div>' +
-            '<button class="btn btn-danger" type="button" data-action="logout">Sign out</button>' +
+          /* Read-only Account section */
+          '<section class="profile-section">' +
+            '<div class="profile-section-head">' +
+              '<h2>Account</h2>' +
+            '</div>' +
+            '<div class="profile-grid">' +
+              '<div class="profile-row">' +
+                '<div class="profile-key">USERNAME</div>' +
+                '<div class="profile-val mono">' + esc(u.username || '\u2014') + '</div>' +
+              '</div>' +
+              '<div class="profile-row">' +
+                '<div class="profile-key">ROLE</div>' +
+                '<div class="profile-val">' + esc(u.org_function || '\u2014') + '</div>' +
+              '</div>' +
+              (u.region
+                ? '<div class="profile-row">' +
+                    '<div class="profile-key">REGION</div>' +
+                    '<div class="profile-val">' + esc(u.region) + '</div>' +
+                  '</div>'
+                : '') +
+              '<div class="profile-row">' +
+                '<div class="profile-key">TIER</div>' +
+                '<div class="profile-val">' + esc(u.permission_tier || '\u2014') + '</div>' +
+              '</div>' +
+              (u.last_login
+                ? '<div class="profile-row">' +
+                    '<div class="profile-key">LAST LOGIN</div>' +
+                    '<div class="profile-val">' + esc(String(u.last_login).slice(0, 16).replace('T', ' ')) + '</div>' +
+                  '</div>'
+                : '') +
+            '</div>' +
+            '<p class="profile-note small soft">Username, role, region, and tier are managed by your administrator. Contact ' +
+              '<a href="mailto:dipen.g@cavitak.com" style="color:var(--accent-deep);font-weight:600">support</a> if any of these need to change.</p>' +
           '</section>' +
 
-          '<section class="card">' +
-            '<div class="h3">Developer \u00b7 smoke gates</div>' +
-            '<div class="small muted" style="margin:0 0 10px">' +
-              'Console-callable: <code>__smoke()</code> \u00b7 <code>await __smokeStore()</code> \u00b7 <code>__smokeUI()</code>' +
+          /* Change password */
+          '<section class="profile-section">' +
+            '<div class="profile-section-head">' +
+              '<h2>Change password</h2>' +
             '</div>' +
-            '<div class="row gap-2" style="flex-wrap:wrap">' +
-              '<button class="btn btn-ghost" type="button" data-action="run-smoke">Run sync smoke</button>' +
-              '<button class="btn btn-ghost" type="button" data-action="run-store-smoke">Run STORE smoke</button>' +
-              '<button class="btn btn-ghost" type="button" data-action="run-ui-smoke">Run UI smoke</button>' +
-            '</div>' +
-            '<pre id="dev-smoke-out" hidden></pre>' +
+            '<form id="profile-pw-form" autocomplete="off" novalidate>' +
+              '<div class="field-v3" id="pf-oldpw">' +
+                '<label for="pi-oldpw">Current password</label>' +
+                '<input id="pi-oldpw" class="input-v3" type="password" autocomplete="current-password" required>' +
+                '<div class="err" hidden></div>' +
+              '</div>' +
+              '<div class="field-v3" id="pf-newpw">' +
+                '<label for="pi-newpw">New password</label>' +
+                '<input id="pi-newpw" class="input-v3" type="password" autocomplete="new-password" required>' +
+                '<div class="field-help small soft">At least 6 characters. No leading/trailing spaces.</div>' +
+                '<div class="err" hidden></div>' +
+              '</div>' +
+              '<div class="field-v3" id="pf-newpw2">' +
+                '<label for="pi-newpw2">Confirm new password</label>' +
+                '<input id="pi-newpw2" class="input-v3" type="password" autocomplete="new-password" required>' +
+                '<div class="err" hidden></div>' +
+              '</div>' +
+              '<button class="btn-v3 btn-primary btn-md" type="submit">' +
+                '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
+                ' Update password' +
+              '</button>' +
+            '</form>' +
           '</section>' +
+
+          /* Sign out */
+          '<section class="profile-section">' +
+            '<button class="btn-v3 btn-ghost btn-md" type="button" data-action="logout" style="color:var(--danger,#EF4444);border-color:color-mix(in srgb,var(--danger,#EF4444) 30%,var(--border-soft))">' +
+              '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>' +
+              ' Sign out of this account' +
+            '</button>' +
+          '</section>' +
+
+          /* Super-only developer panel */
+          (isSuper
+            ? '<section class="profile-section">' +
+                '<div class="profile-section-head">' +
+                  '<h2>Developer \u00b7 smoke gates</h2>' +
+                  '<span class="meta">Super only</span>' +
+                '</div>' +
+                '<p class="small soft" style="margin:0 0 10px">' +
+                  'Console-callable: <code>__smoke()</code> \u00b7 <code>await __smokeStore()</code> \u00b7 <code>__smokeUI()</code>' +
+                '</p>' +
+                '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+                  '<button class="btn-v3 btn-ghost btn-sm" type="button" data-action="run-smoke">Run sync smoke</button>' +
+                  '<button class="btn-v3 btn-ghost btn-sm" type="button" data-action="run-store-smoke">Run STORE smoke</button>' +
+                  '<button class="btn-v3 btn-ghost btn-sm" type="button" data-action="run-ui-smoke">Run UI smoke</button>' +
+                '</div>' +
+                '<pre id="dev-smoke-out" hidden style="margin-top:12px;background:var(--bg-subtle);padding:12px;border-radius:var(--r-sm);font-size:11px;overflow-x:auto"></pre>' +
+              '</section>'
+            : '') +
         '</div>'
       );
     }
@@ -10742,10 +11133,8 @@
       const d = wizardData;
       const visibleSteps = computeVisibleSteps(d);
       setRoot(
-        '<div class="v">' +
+        '<div class="v273-page">' +
           renderWizStepper(d.step, visibleSteps) +
-          '<div class="wiz-step-label">Step ' + d.step + ' of 6 \u00b7 ' + esc(STEP_TITLES[d.step]) + '</div>' +
-          '<div class="h1">' + esc(STEP_TITLES[d.step]) + '</div>' +
           '<div id="wiz-step-body">' + renderStepBody(d) + '</div>' +
           renderWizActions(d) +
         '</div>'
@@ -10763,15 +11152,47 @@
       return v;
     }
 
+    /* v27.3.0 — Polished wizard progress header. Shows:
+       - Eyebrow "STEP N OF M"
+       - Current step title (large)
+       - Progress bar (amber fill from 0% to step / total)
+       - Tappable step pills for navigation (visible steps only) */
     function renderWizStepper(current, visible) {
-      const dots = [1,2,3,4,5,6].map(n => {
-        let cls = 'wiz-dot';
-        if (n === current) cls += ' active';
-        else if (n < current) cls += ' done';
-        const opacity = visible.indexOf(n) >= 0 ? '1' : '0.3';
-        return '<div class="' + cls + '" style="opacity:' + opacity + '"></div>';
+      const total = visible.length;
+      const curIdx = visible.indexOf(current);
+      const pct = total > 0 ? Math.round(((curIdx + 1) / total) * 100) : 0;
+      // Step title (uses STEP_TITLES)
+      const title = STEP_TITLES[current] || '';
+
+      // Pill row — one pill per visible step, current highlighted in amber.
+      // Tappable when step has been reached (i.e. <= current).
+      const pills = visible.map(function (n) {
+        const isCurrent = n === current;
+        const isPast    = visible.indexOf(n) < curIdx;
+        const isFuture  = visible.indexOf(n) > curIdx;
+        const cls = 'wiz-pill' +
+          (isCurrent ? ' wiz-pill-current' : '') +
+          (isPast ? ' wiz-pill-past' : '') +
+          (isFuture ? ' wiz-pill-future' : '');
+        const dis = isFuture ? ' aria-disabled="true"' : '';
+        const navAction = isFuture ? '' : ' data-action="wiz-jump" data-step="' + n + '"';
+        return '<button type="button" class="' + cls + '"' + navAction + dis + '>' +
+          (isPast ? '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '<span class="wiz-pill-n">' + n + '</span>') +
+          '<span class="wiz-pill-label">' + esc(STEP_PILL_LABELS[n] || STEP_TITLES[n] || '\u2014') + '</span>' +
+        '</button>';
       }).join('');
-      return '<div class="wiz-stepper">' + dots + '</div>';
+
+      return '<div class="wiz-progress">' +
+          '<div class="wiz-progress-head">' +
+            '<div class="wiz-progress-eyebrow">STEP ' + (curIdx + 1) + ' OF ' + total + '</div>' +
+            '<div class="wiz-progress-pct">' + pct + '%</div>' +
+          '</div>' +
+          '<h1 class="wiz-progress-title">' + esc(title) + '</h1>' +
+          '<div class="wiz-progress-track">' +
+            '<div class="wiz-progress-fill" style="width:' + pct + '%"></div>' +
+          '</div>' +
+          '<div class="wiz-pills">' + pills + '</div>' +
+        '</div>';
     }
 
     function renderStepBody(d) {
@@ -12014,6 +12435,21 @@
         // Wizard navigation
         if (action === 'wiz-next')   { APP.wizNext(); return; }
         if (action === 'wiz-back')   { APP.wizBack(); return; }
+        // v27.3.0 — Tap a past step pill to jump back to it.
+        // Captures the current step's form before navigation so edits don't
+        // get lost. Forward jumps (to unreached steps) are blocked by the
+        // aria-disabled flag rendered on those pills.
+        if (action === 'wiz-jump') {
+          const target = parseInt(actEl.getAttribute('data-step'), 10);
+          if (!target || target < 1 || target > 6) return;
+          if (target === wizardData.step) return;  // same step — no-op
+          // Capture form before nav (mirrors wizBack/wizNext)
+          if (wizardData.step === 1) captureStep1Form();
+          wizardData.step = target;
+          saveDraft();
+          renderWizard();
+          return;
+        }
         if (action === 'wiz-build')  { APP.wizBuild(); return; }
         if (action === 'wiz-rebuild'){ APP.wizBuild(); return; }
         if (action === 'wiz-save')   { APP.wizSave(); return; }
@@ -12084,6 +12520,64 @@
           STORE.logout();
           toast('Signed out.', 'default');
           location.hash = '#/login';
+          return;
+        }
+
+        // v27.3.0 — Load-error retry handlers
+        if (action === 'home-retry')  { loadHomeRecent(); loadHomeSimpleStats(); return; }
+        if (action === 'hist-retry')  { loadHistoryList(); return; }
+        if (action === 'cust-retry')  { loadCustomerList(); return; }
+
+        // v27.3.0 — Profile page: save edited contact fields via profile_update.
+        if (action === 'profile-save') {
+          // Prevent native form submit reload — this handler is on the submit button.
+          if (ev && ev.preventDefault) ev.preventDefault();
+          const u = STORE.currentUser();
+          if (!u || !u.id) {
+            toast('Session error \u2014 please sign in again.', 'err');
+            return;
+          }
+          const fn   = ($('pi-fullname') && $('pi-fullname').value || '').trim();
+          const t    = ($('pi-title')    && $('pi-title').value    || '').trim();
+          const phRaw= ($('pi-phone')    && $('pi-phone').value    || '').trim();
+          const em   = ($('pi-email')    && $('pi-email').value    || '').trim();
+          // Normalize phone — strip non-digits, take last 10
+          const phDigits = phRaw.replace(/\D/g, '');
+          const ph = phDigits.length >= 10 ? phDigits.slice(-10) : phDigits;
+
+          // Validation
+          const errs = [];
+          if (!fn) errs.push('Full name is required.');
+          if (ph && ph.length !== 10) errs.push('Phone must be 10 digits.');
+          if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) errs.push('Enter a valid email.');
+          if (errs.length) { toast(errs[0], 'err'); return; }
+
+          // Build payload — only send changed fields
+          const payload = {};
+          if (fn !== (u.full_name || ''))             payload.full_name = fn;
+          if (t  !== (u.professional_title || ''))    payload.professional_title = t;
+          if (ph !== (u.phone || ''))                 payload.phone = ph;
+          if (em !== (u.email || ''))                 payload.email = em;
+          if (Object.keys(payload).length === 0) {
+            toast('No changes to save.', 'default');
+            return;
+          }
+
+          actEl.disabled = true;
+          STORE._rpc('profile_update', { p_actor: u.id, p_payload: payload })
+            .then(function (r) {
+              if (!r || r.ok !== true) throw new Error((r && r.error) || 'Profile save failed.');
+              STORE._patchCurrentUser(payload);
+              STORE.fetchRoster();  // not awaited
+              toast('Profile saved.', 'ok');
+              try { renderTopBarDynamic(STORE.currentUser()); } catch (e) {}
+            })
+            .catch(function (e) {
+              toast('Save failed: ' + (e.message || String(e)), 'err');
+            })
+            .then(function () {
+              if (actEl) actEl.disabled = false;
+            });
           return;
         }
 
@@ -13059,6 +13553,12 @@
         if (f.id === 'pw-form')          { e.preventDefault(); APP.handleForcePwSubmit(); return; }
         if (f.id === 'profile-pw-form')  { e.preventDefault(); APP.handleProfilePwSubmit(); return; }
         if (f.id === 'profile-setup-form') { e.preventDefault(); APP.handleProfileSetupSubmit(); return; }  // v27.2.0 — D16
+        if (f.id === 'profile-info-form') {  // v27.3.0 — Profile page contact fields
+          e.preventDefault();
+          const btn = f.querySelector('[data-action="profile-save"]');
+          if (btn) btn.click();
+          return;
+        }
         if (f.id === 'step1-form')       { e.preventDefault(); APP.wizNext(); return; }
       });
     }
