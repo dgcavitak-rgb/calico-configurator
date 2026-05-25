@@ -6,7 +6,12 @@
   <title>tvONE Product Selector — v27</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23FBFAF8'/><path d='M5 9 L13 16 L5 23' fill='none' stroke='%23FAC172' stroke-width='4' stroke-linejoin='round' stroke-linecap='round'/><path d='M15 9 L23 16 L15 23' fill='none' stroke='%23F7941D' stroke-width='4' stroke-linejoin='round' stroke-linecap='round'/></svg>">
   <link rel="preconnect" href="https://api.fontshare.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,700&display=swap">
+  <!-- v27.3.1 — ECharts CDN for rich dashboard charts (trend, funnel, gauge, donut, leaderboard, velocity).
+       Loaded eagerly because dashboard is heavy-render and we want chart paint in the first frame
+       once the user lands on /dashboard. ~330KB gzipped. Pinned to a stable minor (5.5.x). -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
   <!--
     v27.3.0 — UI REDESIGN (2026-05-25)
     Goal: modern-age app feel, uniform style, smooth flow, easy navigation.
@@ -1859,6 +1864,27 @@
       transition: background var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
     }
     .sx-add-line:hover { background: var(--accent-soft); border-color: var(--accent); }
+    /* v27.3.1 — Informational distance hint inside HDBaseT card */
+    .sx-hint-strip {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px;
+      margin: var(--s-2) 0 var(--s-3);
+      background: rgba(247, 148, 29, 0.08);
+      border: 0.5px solid rgba(247, 148, 29, 0.20);
+      border-radius: var(--r-sm);
+      color: var(--ink-strong);
+      font-size: 11.5px;
+      line-height: 1.35;
+    }
+    .sx-hint-strip svg {
+      flex: none;
+      color: var(--accent-deep, #B8690E);
+    }
+    html[data-theme="dark"] .sx-hint-strip {
+      background: rgba(247, 148, 29, 0.10);
+      border-color: rgba(247, 148, 29, 0.24);
+    }
+    html[data-theme="dark"] .sx-hint-strip svg { color: #FAC172; }
     .sx-da-row {
       display: flex; align-items: center; gap: var(--s-3);
       padding: var(--s-3) 0;
@@ -2377,6 +2403,233 @@
       cursor: pointer;
     }
     .stuck-table-more a:hover { text-decoration: underline; }
+
+    /* ===========================================================
+       v27.3.1 — DASHBOARD ENRICHMENT (rich charts + glassmorphism)
+       Real ECharts widgets: trend area, funnel, gauge, donut,
+       leaderboard, velocity. Glass effect on chart cards (backdrop
+       blur on supporting browsers; falls back to solid card).
+       =========================================================== */
+
+    /* Chart grid — 1-up on mobile, 2-up on tablet+, intercalated
+       with full-width hero widgets where appropriate. */
+    .dash-chart-grid {
+      display: grid; gap: 14px;
+      grid-template-columns: 1fr;
+      margin-bottom: var(--s-5);
+    }
+    @media (min-width: 720px) {
+      .dash-chart-grid { grid-template-columns: 1fr 1fr; }
+      .dash-chart-grid .dash-chart-card.full { grid-column: 1 / -1; }
+    }
+
+    /* Chart card shell — glass effect with amber ambient glow.
+       backdrop-filter is feature-detected via @supports. */
+    .dash-chart-card {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      padding: 16px 16px 12px;
+      overflow: hidden;
+      transition: transform var(--dur-base) var(--ease-out),
+                  box-shadow var(--dur-base) var(--ease-out);
+    }
+    @supports (backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px)) {
+      .dash-chart-card {
+        background: rgba(255, 255, 255, 0.65);
+        -webkit-backdrop-filter: blur(10px) saturate(140%);
+        backdrop-filter: blur(10px) saturate(140%);
+      }
+      html[data-theme="dark"] .dash-chart-card {
+        background: rgba(28, 25, 21, 0.55);
+        -webkit-backdrop-filter: blur(10px) saturate(140%);
+        backdrop-filter: blur(10px) saturate(140%);
+      }
+    }
+    .dash-chart-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(247, 148, 29, 0.08),
+                  0 2px 6px rgba(15, 14, 12, 0.04);
+    }
+    html[data-theme="dark"] .dash-chart-card:hover {
+      box-shadow: 0 8px 24px rgba(247, 148, 29, 0.18),
+                  0 2px 6px rgba(0, 0, 0, 0.35);
+    }
+    /* Ambient amber glow corner — purely decorative */
+    .dash-chart-card::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 140px; height: 140px;
+      background: radial-gradient(circle, rgba(247, 148, 29, 0.16) 0%, transparent 70%);
+      pointer-events: none;
+      opacity: 0.7;
+      transition: opacity var(--dur-base) var(--ease-out);
+    }
+    .dash-chart-card:hover::before { opacity: 1; }
+    html[data-theme="dark"] .dash-chart-card::before {
+      background: radial-gradient(circle, rgba(247, 148, 29, 0.22) 0%, transparent 70%);
+    }
+
+    .dash-chart-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 6px;
+      position: relative; z-index: 1;
+    }
+    .dash-chart-head h3 {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 13.5px; color: var(--ink-strong);
+      margin: 0; letter-spacing: -0.01em;
+    }
+    .dash-chart-head .meta {
+      font-size: 10.5px; color: var(--ink-faint);
+      font-family: var(--font-display); font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .dash-chart-head .badge-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px;
+      background: rgba(247, 148, 29, 0.12);
+      color: var(--accent-deep, #B8690E);
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 10.5px;
+      border-radius: var(--r-pill);
+      letter-spacing: 0.02em;
+    }
+    html[data-theme="dark"] .dash-chart-head .badge-pill {
+      background: rgba(247, 148, 29, 0.20);
+      color: #FAC172;
+    }
+
+    /* Chart canvas — fixed heights work better with ECharts'
+       auto-resize than percentage. */
+    .dash-chart-canvas {
+      width: 100%;
+      height: 220px;
+      position: relative;
+      z-index: 1;
+    }
+    .dash-chart-canvas.tall { height: 280px; }
+    .dash-chart-canvas.short { height: 160px; }
+
+    /* Loading shimmer while ECharts library + data resolve. */
+    .dash-chart-loading {
+      height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink-faint);
+      font-size: 12px;
+      font-family: var(--font-display); font-weight: 500;
+      position: relative;
+    }
+    .dash-chart-loading::after {
+      content: '';
+      position: absolute; inset: 8px;
+      border-radius: var(--r-sm);
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(247, 148, 29, 0.06) 50%,
+        transparent 100%);
+      background-size: 200% 100%;
+      animation: dash-shimmer 1.4s linear infinite;
+    }
+    html[data-theme="dark"] .dash-chart-loading::after {
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(247, 148, 29, 0.10) 50%,
+        transparent 100%);
+      background-size: 200% 100%;
+    }
+    @keyframes dash-shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Empty-state for charts (no data yet) */
+    .dash-chart-empty {
+      height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 6px;
+      color: var(--ink-faint);
+      font-size: 12px;
+      text-align: center; padding: 16px;
+    }
+    .dash-chart-empty .icon {
+      width: 36px; height: 36px;
+      opacity: 0.45;
+    }
+    .dash-chart-empty .title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 12.5px; color: var(--ink-soft);
+    }
+    .dash-chart-empty .sub {
+      font-size: 11px; color: var(--ink-faint); max-width: 240px;
+      line-height: 1.45;
+    }
+
+    /* Number counter on KPI tiles — set transform-origin so it
+       scales from the baseline, not the center. */
+    .kpi-value {
+      display: inline-block;
+      font-variant-numeric: tabular-nums;
+      transition: transform 220ms var(--ease-out);
+    }
+    .kpi-value.is-counting {
+      transform-origin: left baseline;
+    }
+    .kpi-value.just-updated {
+      animation: kpi-pop 360ms var(--ease-spring, var(--ease-out));
+    }
+    @keyframes kpi-pop {
+      0%   { transform: scale(1); }
+      35%  { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    /* Sales leaderboard — horizontal bar with name + value */
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: 28px 1fr 70px;
+      gap: 10px; align-items: center;
+      padding: 8px 0;
+      font-size: 12.5px;
+    }
+    .leaderboard-rank {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 11px;
+      background: var(--bg-subtle);
+      color: var(--ink-soft);
+    }
+    .leaderboard-rank.gold   { background: linear-gradient(135deg, #FBBF24, #F59E0B); color: white; }
+    .leaderboard-rank.silver { background: linear-gradient(135deg, #E5E7EB, #9CA3AF); color: white; }
+    .leaderboard-rank.bronze { background: linear-gradient(135deg, #D97706, #92400E); color: white; }
+    .leaderboard-name {
+      font-family: var(--font-display); font-weight: 600;
+      color: var(--ink-strong);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .leaderboard-value {
+      text-align: right;
+      font-family: var(--font-display); font-weight: 700;
+      color: var(--ink-strong);
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+    }
+    .leaderboard-bar {
+      grid-column: 1 / -1;
+      height: 4px; background: var(--bg-subtle); border-radius: var(--r-pill);
+      overflow: hidden; margin-top: -2px;
+    }
+    .leaderboard-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-deep, #B8690E));
+      border-radius: var(--r-pill);
+      transition: width 800ms var(--ease-out);
+    }
 
     /* --- v27.3.0 saved-deal SX read-only summary --- */
     .sd-sx-list {
@@ -3707,7 +3960,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.3.0',
+      version: 'v27.3.1',
       constants,
       calico,
       mv,
@@ -3844,7 +4097,7 @@
           (rawInput && rawInput.inputs) || {}
         ),
         outputs: Object.assign(
-          { display: 0, projector: 0, projectorRes: 'FHD', sdi: 0, led: false },
+          { display: 0, displayRes: 'FHD', projector: 0, projectorRes: 'FHD', sdi: 0, led: false },
           (rawInput && rawInput.outputs) || {}
         ),
         screens: (rawInput && rawInput.screens) || [],
@@ -4013,10 +4266,11 @@
           io: {
             inputs:  Object.assign({}, input.inputs),
             outputs: (function() {
-              // Strip projectorRes (non-count) before copying so the summary
-              // doesn't try to format it as a qty.
+              // Strip projectorRes + displayRes (non-count) before copying so the
+              // summary doesn't try to format them as qty.
               const o = Object.assign({}, input.outputs);
               delete o.projectorRes;
+              delete o.displayRes;  // v27.3.1 — Display 4K/FHD selector
               delete o.led;     // boolean, not a port count for v27.1.1 shape
               return o;
             })()
@@ -4251,9 +4505,20 @@
 
     /* ---------- CORIO ---------- */
 
-    // Pure-function port of v26 _corioAutoSelectChassis (L4341).
-    // Returns chassis SKU based on signal mix.
-    function _corioAutoSelectChassis(inputCounts, outputCounts) {
+    /* v27.3.1 — CORIO chassis auto-select.
+       Canvas-first per Dipenkumar's design rule (2026-05-25 notebook):
+         ≤ 5 canvases → C3-503 Micro (3 modular slots, FHD, CM ecosystem)
+         ≤ 6 canvases → C3-510 Mini  (5 modular slots + 1 fixed DVI-U, FHD, CM ecosystem)
+         > 6 canvases → CM2-547-MK2  (13 slots, 4K, CM2 ecosystem)
+       Then a card-slot override: if the input/output signal mix requires more
+       cards than the canvas-picked chassis has slots, upgrade to the smallest
+       chassis that fits.
+       4K signal mix (HDMI 4K, SDI 12G, etc.) still forces CM2 unconditionally
+       because Micro/Mini are FHD-only.
+       Backward-compat: if canvasCount is 0 / undefined, falls back to the
+       v26 slot-driven heuristic (estSlots ≤ 3 → Micro, else Mini). */
+    function _corioAutoSelectChassis(inputCounts, outputCounts, canvasCount) {
+      // (1) 4K presence — forces CM2 regardless of canvas count (Micro/Mini are FHD-only)
       const has4K = (Number(inputCounts['HDMI 4K'] || 0) > 0)
                  || (Number(inputCounts['HDMI 4K 2-in'] || 0) > 0)
                  || (Number(inputCounts['HDMI 4K 4-in'] || 0) > 0)
@@ -4263,20 +4528,45 @@
                  || (Number(outputCounts['HDMI 4K 2-out'] || 0) > 0)
                  || (Number(outputCounts['SDI 12G'] || 0) > 0);
       if (has4K) return 'CM2-547-MK2';
+
+      // (2) Slot estimate from signal mix (rough: ceil(qty/2) per non-zero signal)
       let estSlots = 0;
-      Object.keys(inputCounts).forEach(k => {
+      Object.keys(inputCounts).forEach(function (k) {
         const q = Number(inputCounts[k] || 0);
         if (q > 0) estSlots += Math.ceil(q / 2);
       });
-      Object.keys(outputCounts).forEach(k => {
+      Object.keys(outputCounts).forEach(function (k) {
         const q = Number(outputCounts[k] || 0);
         if (q > 0) estSlots += Math.ceil(q / 2);
       });
-      return (estSlots <= 3) ? 'C3-503' : 'C3-510';
+
+      // (3) Canvas-first chassis pick
+      const canv = Number(canvasCount) || 0;
+      let chassis;
+      if (canv > 6)      chassis = 'CM2-547-MK2';
+      else if (canv > 5) chassis = 'C3-510';   // canvases == 6 → Mini
+      else if (canv >= 1) chassis = 'C3-503';  // canvases 1..5 → Micro
+      else {
+        // No canvas count → v26 slot-driven fallback for backward compat.
+        chassis = (estSlots <= 3) ? 'C3-503' : 'C3-510';
+      }
+
+      // (4) Card-slot override — upgrade if cards exceed candidate's slot count.
+      //   Micro (C3-503): 3 modular slots
+      //   Mini  (C3-510): 5 modular slots (+ 1 fixed DVI-U input not counted)
+      //   CM2:            13 slots
+      if (chassis === 'C3-503' && estSlots > 3) {
+        chassis = (estSlots <= 5) ? 'C3-510' : 'CM2-547-MK2';
+      } else if (chassis === 'C3-510' && estSlots > 5) {
+        chassis = 'CM2-547-MK2';
+      }
+
+      return chassis;
     }
 
     // Pure-function port of v26 recommendCORIO (L11463) + auto-select combined.
     // Caller can override chassis via rawInput.chassisSku; otherwise auto-selected.
+    // v27.3.1 — accepts rawInput.canvases (number) per CORIO design rule.
     function recommendCorio(rawInput) {
       const input = {
         inputs: (rawInput && rawInput.inputs) || {},
@@ -4285,15 +4575,16 @@
         psuChoice: (rawInput && rawInput.psuChoice) || '400',     // '400' | '700' | '400+redundant' | ...
         fanFilter: !!(rawInput && rawInput.fanFilter),
         autoBlank: (rawInput && rawInput.autoBlank !== false),    // default true
-        chassisSku: (rawInput && rawInput.chassisSku) || null
+        chassisSku: (rawInput && rawInput.chassisSku) || null,
+        canvases: Number((rawInput && rawInput.canvases) || 0)     // v27.3.1
       };
 
       const CHASSIS = CATALOG.corio.chassis;
       const ACC = CATALOG.corio.accessories;
       const PSUS = CATALOG.corio.psu;
 
-      // Resolve chassis: explicit override or auto-select.
-      const chassisSku = input.chassisSku || _corioAutoSelectChassis(input.inputs, input.outputs);
+      // Resolve chassis: explicit override or auto-select (canvas-first per v27.3.1).
+      const chassisSku = input.chassisSku || _corioAutoSelectChassis(input.inputs, input.outputs, input.canvases);
       const chassis = CHASSIS[chassisSku];
       if (!chassis) {
         return {
@@ -4311,6 +4602,17 @@
       let slotsInputUsed = 0, slotsOutputUsed = 0;
 
       reasons.push('Auto-selected ' + chassis.label + ' (' + chassis.sku + ') based on signal mix');
+      // v27.3.1 — Emit an explicit canvas-rule line when the user supplied a
+      // canvas count, so they can see why we picked this chassis tier.
+      if (input.canvases > 0 && !input.chassisSku) {
+        if (input.canvases > 6) {
+          reasons.push('Canvas count: ' + input.canvases + ' (> 6) — CORIOmaster2 (CM2) required');
+        } else if (input.canvases > 5) {
+          reasons.push('Canvas count: ' + input.canvases + ' — CORIOmaster Mini fits 6 canvases');
+        } else {
+          reasons.push('Canvas count: ' + input.canvases + ' — CORIOmaster Micro fits up to 5 canvases');
+        }
+      }
 
       // Input cards
       for (let i = 0; i < moduleSet.inputs.length; i++) {
@@ -4945,6 +5247,24 @@
       });
     }
 
+    /* v27.3.1 — Pipeline snapshots for the dashboard weekly trend chart.
+       The RPC `pipeline_snapshot_list` returns weekly aggregates captured
+       by pg_cron via `pipeline_snapshot_capture()`. Each row has:
+         { week_iso, snapshot_at, open_count, open_value_inr,
+           won_count_this_week, won_value_this_week,
+           lost_count_this_week, lost_value_this_week,
+           weighted_pipeline_inr }
+       Weeks default to last 26. Sparse-data tolerant — caller renders an
+       empty state when length < 2 (chart needs ≥ 2 points). */
+    async function pipelineSnapshotList(weeks) {
+      const r = await rpc('pipeline_snapshot_list', { p_weeks: weeks || 26 });
+      const rows = (r && r.rows) || (Array.isArray(r) ? r : []);
+      // Sort oldest → newest for left-to-right line charting
+      return rows.sort(function (a, b) {
+        return String(a.week_iso || '').localeCompare(String(b.week_iso || ''));
+      });
+    }
+
     /* v27.3.0 — Customer Directory + 360 + Merge (D1-D3 silent-drop restores).
        All 4 RPCs (customer_list, customer_upsert, customer_delete, customer_merge)
        already exist in Supabase. This is UI-only build on top of an existing
@@ -5007,6 +5327,8 @@
       stageTransitionsList, stageTransitionWrite,
       // v27.3.0 — Customer directory + 360 + merge (D1-D3 silent-drop restores)
       customerList, customerUpsert, customerDelete, customerMerge, customer360,
+      // v27.3.1 — Pipeline snapshots for dashboard weekly trend chart
+      pipelineSnapshotList,
       // internals exposed for debug only
       _rpc: rpc, _sha256Hex: sha256Hex
     });
@@ -6135,8 +6457,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.2.6"',
-      () => CATALOG.version === 'v27.2.6' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.3.1"',
+      () => CATALOG.version === 'v27.3.1' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.1.2 invariants ---------- */
     // §1.2 — HUMAN_LABELS structural shape
@@ -6591,15 +6913,68 @@
         return true;
       });
 
-    check('CORIO medium: HDMI 1080p high-count → C3-510 (Mini, >3 estimated slots)',
+    /* v27.3.1 — this test previously asserted Mini, which was a v26 bug:
+       8 HDMI 1080p + 4 SDI 3G + 4 1080p-4-out → estSlots = 4+2+2 = 8,
+       which overflows Mini's 5 modular slots. The canvas-first rule with
+       slot-override correctly upgrades to CM2 here. Keeping the test as a
+       regression guard against the old wrong behavior. */
+    check('CORIO medium: HDMI 1080p high-count → CM2 (slot overflow over Mini)',
       () => {
         const r = RECOMMEND.corio({
           inputs: { 'HDMI 1080p': 8, 'SDI 3G': 4 },
           outputs: { 'HDMI 1080p 4-out': 4 }
         });
-        if (r.chassis !== 'C3-510') return 'chassis: ' + r.chassis;
-        if (r.meta.ecosystem !== 'CM') return 'ecosystem: ' + r.meta.ecosystem;
+        if (r.chassis !== 'CM2-547-MK2') return 'chassis: ' + r.chassis;
+        if (r.meta.ecosystem !== 'CM2') return 'ecosystem: ' + r.meta.ecosystem;
         return true;
+      });
+
+    /* v27.3.1 — canvas-first chassis selection per Dipenkumar's CORIO design rule.
+       Validates the new 3-tier canvas thresholds with no card-slot pressure. */
+    check('CORIO canvas-rule: 3 canvases, tiny signal mix → Micro',
+      () => {
+        const r = RECOMMEND.corio({
+          inputs: { 'HDMI 1080p': 2 }, outputs: { 'HDMI 1080p 4-out': 1 },
+          canvases: 3
+        });
+        return r.chassis === 'C3-503' || ('got: ' + r.chassis);
+      });
+
+    check('CORIO canvas-rule: 6 canvases, light signals → Mini',
+      () => {
+        const r = RECOMMEND.corio({
+          inputs: { 'HDMI 1080p': 2 }, outputs: { 'HDMI 1080p 4-out': 1 },
+          canvases: 6
+        });
+        return r.chassis === 'C3-510' || ('got: ' + r.chassis);
+      });
+
+    check('CORIO canvas-rule: 7 canvases → CM2 (canvas-driven)',
+      () => {
+        const r = RECOMMEND.corio({
+          inputs: { 'HDMI 1080p': 2 }, outputs: { 'HDMI 1080p 4-out': 1 },
+          canvases: 7
+        });
+        return r.chassis === 'CM2-547-MK2' || ('got: ' + r.chassis);
+      });
+
+    check('CORIO canvas-rule: 3 canvases + 4K input → CM2 (4K forces)',
+      () => {
+        const r = RECOMMEND.corio({
+          inputs: { 'HDMI 4K 4-in': 4 }, outputs: {},
+          canvases: 3
+        });
+        return r.chassis === 'CM2-547-MK2' || ('got: ' + r.chassis);
+      });
+
+    check('CORIO canvas-rule: 3 canvases but 8 FHD inputs → Mini (slot override)',
+      () => {
+        const r = RECOMMEND.corio({
+          inputs: { 'HDMI 1080p': 8 }, outputs: {},
+          canvases: 3
+        });
+        // 8 inputs → estSlots = 4 > Micro's 3 → upgrades to Mini (≤5)
+        return r.chassis === 'C3-510' || ('got: ' + r.chassis);
       });
 
     check('CORIO large: 4K signal triggers CM2-547-MK2',
@@ -7929,7 +8304,7 @@
         internal_notes: '', external_notes: '',
         solutionType: '',
         calico_inputs:  { hdmi4k: 0, hdmiFhd: 0, sdi12g: 0, sdi3g: 0, hdbt: 0, ip: 0 },
-        calico_outputs: { display: 0, projector: 0, projectorRes: 'FHD', sdi: 0 },
+        calico_outputs: { display: 0, displayRes: 'FHD', projector: 0, projectorRes: 'FHD', sdi: 0 },
         calico_audio: false,
         mv_inputs: [],
         mv_outputSignal: '',
@@ -9230,6 +9605,57 @@
             '</a>' +
           '</section>' +
 
+          /* v27.3.1 — Pipeline trend hero chart (weekly area, full-width).
+             Shows open-pipeline value over last 26 weeks. */
+          '<section class="dash-chart-grid">' +
+            '<div class="dash-chart-card full">' +
+              '<div class="dash-chart-head">' +
+                '<h3>Pipeline momentum</h3>' +
+                '<span class="badge-pill">' +
+                  '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="3 17 9 11 13 15 21 7"/></svg>' +
+                  ' WEEKLY' +
+                '</span>' +
+              '</div>' +
+              '<div id="chart-trend" class="dash-chart-canvas tall"></div>' +
+            '</div>' +
+          '</section>' +
+
+          /* v27.3.1 — Two-up: win-rate gauge + lead source donut */
+          '<section class="dash-chart-grid">' +
+            '<div class="dash-chart-card">' +
+              '<div class="dash-chart-head">' +
+                '<h3>Win rate</h3>' +
+                '<span class="meta">Last 90 days</span>' +
+              '</div>' +
+              '<div id="chart-winrate" class="dash-chart-canvas"></div>' +
+            '</div>' +
+            '<div class="dash-chart-card">' +
+              '<div class="dash-chart-head">' +
+                '<h3>Lead source mix</h3>' +
+                '<span class="meta">Active pipeline</span>' +
+              '</div>' +
+              '<div id="chart-source" class="dash-chart-canvas"></div>' +
+            '</div>' +
+          '</section>' +
+
+          /* v27.3.1 — Two-up: stage velocity + sales leaderboard */
+          '<section class="dash-chart-grid">' +
+            '<div class="dash-chart-card">' +
+              '<div class="dash-chart-head">' +
+                '<h3>Stage velocity</h3>' +
+                '<span class="meta">Avg days waiting</span>' +
+              '</div>' +
+              '<div id="chart-velocity" class="dash-chart-canvas"></div>' +
+            '</div>' +
+            '<div class="dash-chart-card">' +
+              '<div class="dash-chart-head">' +
+                '<h3>' + (isSuper || isBuHead ? 'Sales leaderboard' : 'My win value') + '</h3>' +
+                '<span class="meta">Won this quarter</span>' +
+              '</div>' +
+              '<div id="chart-leaderboard" class="dash-chart-canvas"></div>' +
+            '</div>' +
+          '</section>' +
+
           '<section class="dash-section">' +
             '<header class="dash-section-head">' +
               '<h2>Pipeline funnel</h2>' +
@@ -9364,6 +9790,207 @@
       return s !== 'Closed Won' && s !== 'Closed Lost' && s !== '';
     }
 
+    /* ===========================================================
+       v27.3.1 — Dashboard chart infrastructure
+       =========================================================== */
+
+    // Registry of live ECharts instances keyed by DOM id, so we
+    // can resize on viewport change and dispose on route change.
+    const _dashCharts = {};
+
+    // Animated count-up for KPI tiles. Parses the trailing
+    // numeric portion of the target string, preserves prefix
+    // (no prefix currently) and suffix (e.g. '%', 'd', 'L', 'Cr'),
+    // and animates from the previously-displayed number.
+    // Falls back to instant set if reduced-motion or parsing fails.
+    function _animateCount(id, target, opts) {
+      const el = (typeof id === 'string') ? document.getElementById(id) : id;
+      if (!el) return;
+      const cur = String(el.textContent || '').trim();
+      const tgt = String(target == null ? '' : target).trim();
+      // Identical → no-op
+      if (cur === tgt) return;
+      // Reduced motion → instant
+      const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduced) { el.textContent = tgt; return; }
+      // Parse numeric portion (handles e.g. "₹4.2L", "67%", "12d", "1.5")
+      // Match: optional leading non-digits, then number, then trailing.
+      const m = tgt.match(/^(\D*)(-?[\d,]+(?:\.\d+)?)(\D*)$/);
+      const mCur = cur.match(/^(\D*)(-?[\d,]+(?:\.\d+)?)(\D*)$/);
+      if (!m) { el.textContent = tgt; return; }
+      const tgtNum = parseFloat(m[2].replace(/,/g, ''));
+      const curNum = mCur ? parseFloat(mCur[2].replace(/,/g, '')) : 0;
+      const prefix = m[1], suffix = m[3];
+      const hasFraction = /\./.test(m[2]);
+      const dur = (opts && opts.duration) || 720;
+      const start = performance.now();
+      // Quintic ease-out for snappy land
+      const ease = function (t) { return 1 - Math.pow(1 - t, 5); };
+      function tick(now) {
+        const t = Math.min(1, (now - start) / dur);
+        const v = curNum + (tgtNum - curNum) * ease(t);
+        const display = hasFraction ? v.toFixed(1) : Math.round(v);
+        el.textContent = prefix + display + suffix;
+        if (t < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          el.textContent = tgt;  // Land exactly on target
+          // Subtle pop on landing
+          el.classList.remove('just-updated');
+          // Force reflow so animation can re-trigger
+          void el.offsetWidth;
+          el.classList.add('just-updated');
+          setTimeout(function () { el.classList.remove('just-updated'); }, 400);
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    // Wait for ECharts CDN to be available. Resolves immediately
+    // if already loaded, polls with 50ms ticks for up to 6s.
+    // Defensive — handles slow networks, blocked CDN, offline use.
+    function _waitForECharts(timeoutMs) {
+      const limit = (timeoutMs == null) ? 6000 : timeoutMs;
+      return new Promise(function (resolve, reject) {
+        if (window.echarts) return resolve(window.echarts);
+        const start = Date.now();
+        const iv = setInterval(function () {
+          if (window.echarts) {
+            clearInterval(iv);
+            resolve(window.echarts);
+          } else if (Date.now() - start > limit) {
+            clearInterval(iv);
+            reject(new Error('ECharts CDN did not load within ' + limit + 'ms'));
+          }
+        }, 50);
+      });
+    }
+
+    // Theme-aware ECharts palette. Reads CSS custom properties at
+    // call time so dark-mode swap works without re-init. Returns
+    // a base config that every chart should merge into setOption.
+    function _chartTheme() {
+      const root = getComputedStyle(document.documentElement);
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      return {
+        textStyle: {
+          fontFamily: 'General Sans, system-ui, -apple-system, sans-serif',
+          color: isDark ? '#D5D0C8' : '#3F3A33'
+        },
+        // Stage / region colors — amber lead + cool secondary
+        color: ['#F7941D', '#06B6D4', '#A855F7', '#EC4899', '#84CC16', '#3B82F6', '#F59E0B', '#EF4444'],
+        backgroundColor: 'transparent',
+        // Pleasant defaults that align with the card padding
+        grid: { left: 36, right: 16, top: 16, bottom: 28, containLabel: false },
+        tooltip: {
+          backgroundColor: isDark ? 'rgba(28,25,21,0.94)' : 'rgba(255,255,255,0.96)',
+          borderColor: isDark ? 'rgba(247,148,29,0.30)' : 'rgba(247,148,29,0.18)',
+          borderWidth: 1,
+          textStyle: {
+            color: isDark ? '#F2EDE3' : '#1C1915',
+            fontSize: 12,
+            fontFamily: 'General Sans, system-ui, sans-serif'
+          },
+          extraCssText: 'box-shadow: 0 8px 24px rgba(0,0,0,0.12); border-radius: 8px; padding: 8px 12px;'
+        },
+        axisLabelColor: isDark ? '#8A8278' : '#6B655B',
+        axisLineColor: isDark ? 'rgba(213,208,200,0.14)' : 'rgba(31,28,24,0.12)',
+        splitLineColor: isDark ? 'rgba(213,208,200,0.08)' : 'rgba(31,28,24,0.06)'
+      };
+    }
+
+    // Initialize an ECharts instance into a host id with graceful
+    // states for loading, no-library, and no-data scenarios.
+    //   id          — DOM id of the .dash-chart-canvas div
+    //   optionFn    — function returning the ECharts option, or
+    //                 the literal { __empty: true, ... } sentinel
+    //                 to render an empty state instead.
+    // Returns the ECharts instance (or null on graceful fallback).
+    function _initChart(id, optionFn) {
+      const host = document.getElementById(id);
+      if (!host) return null;
+      // Dispose any prior instance bound to this host
+      if (_dashCharts[id]) {
+        try { _dashCharts[id].dispose(); } catch (_) {}
+        delete _dashCharts[id];
+      }
+      // Show loading shimmer
+      host.innerHTML = '<div class="dash-chart-loading">Loading\u2026</div>';
+
+      _waitForECharts(6000).then(function (echarts) {
+        const opt = optionFn();
+        // Empty-state sentinel
+        if (opt && opt.__empty) {
+          host.innerHTML =
+            '<div class="dash-chart-empty">' +
+              '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">' +
+                (opt.icon || '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/>') +
+              '</svg>' +
+              '<div class="title">' + esc(opt.title || 'No data yet') + '</div>' +
+              (opt.sub ? '<div class="sub">' + esc(opt.sub) + '</div>' : '') +
+            '</div>';
+          return;
+        }
+        // Real chart — clear shimmer, init
+        host.innerHTML = '';
+        const inst = echarts.init(host, null, { renderer: 'canvas' });
+        const base = _chartTheme();
+        // Merge base into provided option (caller overrides win)
+        inst.setOption(Object.assign({}, base, opt));
+        _dashCharts[id] = inst;
+      }).catch(function (e) {
+        console.warn('Chart ' + id + ' could not init:', e && e.message);
+        host.innerHTML =
+          '<div class="dash-chart-empty">' +
+            '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">' +
+              '<path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>' +
+            '</svg>' +
+            '<div class="title">Chart library unavailable</div>' +
+            '<div class="sub">ECharts didn\u2019t load. Check your connection and pull-to-refresh.</div>' +
+          '</div>';
+      });
+      return null;
+    }
+
+    // Resize all live charts. Called on viewport resize and on
+    // route changes back into the dashboard.
+    function _resizeDashCharts() {
+      Object.keys(_dashCharts).forEach(function (id) {
+        try { _dashCharts[id].resize(); } catch (_) {}
+      });
+    }
+
+    // Dispose all live charts. Called on route change out of dashboard.
+    function _disposeDashCharts() {
+      Object.keys(_dashCharts).forEach(function (id) {
+        try { _dashCharts[id].dispose(); } catch (_) {}
+        delete _dashCharts[id];
+      });
+    }
+
+    // Hook viewport resize once (debounced 150ms).
+    if (typeof window !== 'undefined' && !window.__dashResizeHooked) {
+      window.__dashResizeHooked = true;
+      let _rzTimer = null;
+      window.addEventListener('resize', function () {
+        clearTimeout(_rzTimer);
+        _rzTimer = setTimeout(_resizeDashCharts, 150);
+      });
+      // Re-paint on theme swap so palette / tooltip bg update
+      const _themeObs = new MutationObserver(function () {
+        Object.keys(_dashCharts).forEach(function (id) {
+          const inst = _dashCharts[id];
+          if (!inst) return;
+          try {
+            const opt = inst.getOption();
+            const base = _chartTheme();
+            inst.setOption(Object.assign({}, base, opt), false);
+          } catch (_) {}
+        });
+      });
+      _themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    }
+
     async function loadHomeKpis() {
       try {
         const r = await STORE.listDeals({ limit: 500, offset: 0 });
@@ -9432,27 +10059,28 @@
         // -- KPI fills --
         const openVal = open.reduce((s, d) => s + (Number(d.deal_value_inr) || 0), 0);
         const wonVal = wonQ.reduce((s, d) => s + (Number(d.deal_value_inr) || 0), 0);
-        setText('kpi-open-val',  openVal > 0 ? _fmtLakh(openVal) : String(open.length));
+        // v27.3.1 — animate count-up for KPI values (subs stay instant).
+        _animateCount('kpi-open-val',  openVal > 0 ? _fmtLakh(openVal) : String(open.length));
         setText('kpi-open-sub',  open.length + (open.length === 1 ? ' deal' : ' deals'));
-        setText('kpi-won-val',   wonVal > 0 ? _fmtLakh(wonVal) : String(wonQ.length));
+        _animateCount('kpi-won-val',   wonVal > 0 ? _fmtLakh(wonVal) : String(wonQ.length));
         setText('kpi-won-sub',   wonQ.length + (wonQ.length === 1 ? ' win' : ' wins') + ' this quarter');
-        setText('kpi-wr-val',    winRate90 != null ? (winRate90 + '%') : '\u2014');
+        _animateCount('kpi-wr-val',    winRate90 != null ? (winRate90 + '%') : '\u2014');
         setText('kpi-wr-sub',    resolved90 + ' resolved');
-        setText('kpi-cm-val',    String(closingNow.length));
+        _animateCount('kpi-cm-val',    String(closingNow.length));
         setText('kpi-cm-sub',    closingNow.length ? 'due this month' : 'nothing due');
-        setText('kpi-stuck-val', String(stuck14.length));
+        _animateCount('kpi-stuck-val', String(stuck14.length));
         setText('kpi-stuck-sub', stuck14.length ? 'need a nudge' : 'all current');
-        setText('kpi-lost-val',  String(lostQ.length));
+        _animateCount('kpi-lost-val',  String(lostQ.length));
         setText('kpi-lost-sub',  lostQ.length === 1 ? '1 loss' : (lostQ.length + ' losses'));
-        setText('kpi-cycle-val', avgCycleDays != null ? (avgCycleDays + 'd') : '\u2014');
+        _animateCount('kpi-cycle-val', avgCycleDays != null ? (avgCycleDays + 'd') : '\u2014');
         setText('kpi-cycle-sub', wonWithDates.length + ' wins sampled');
-        setText('kpi-velocity-val', velocity);
+        _animateCount('kpi-velocity-val', velocity);
         setText('kpi-velocity-sub', 'deals / mo (90d)');
 
-        // -- Attention counts --
-        setText('att-closing', String(closingNow.length));
-        setText('att-stuck',   String(stuck14.length));
-        setText('att-stale',   String(stale30.length));
+        // -- Attention counts (animated too) --
+        _animateCount('att-closing', String(closingNow.length));
+        _animateCount('att-stuck',   String(stuck14.length));
+        _animateCount('att-stale',   String(stale30.length));
         setText('home-deal-count', scoped.length + (scoped.length === 1 ? ' deal' : ' deals'));
 
         // -- Stage funnel --
@@ -9465,6 +10093,15 @@
 
         // -- Stuck/slipped table --
         renderStuckTable(stuck14.concat(stale30).filter((v, i, a) => a.indexOf(v) === i));
+
+        // -- v27.3.1 rich chart widgets --
+        // Trend is async (RPC); others sync. Fire-and-forget — each
+        // chart has its own loading state and graceful empty fallback.
+        renderTrendChart();
+        renderWinRateGauge(winRate90, resolved90);
+        renderSourceDonut(active);
+        renderStageVelocity(active);
+        renderLeaderboard(wonQ, u);
 
       } catch (e) {
         console.error('loadHomeKpis failed:', e);
@@ -9627,6 +10264,395 @@
     }
 
     function setText(id, v) { const el = $(id); if (el) el.textContent = v; }
+
+    /* ===========================================================
+       v27.3.1 — Dashboard chart render functions
+       =========================================================== */
+
+    /* Pipeline momentum: weekly area chart of open-pipeline value.
+       Uses STORE.pipelineSnapshotList() which reads aggregated weekly
+       snapshots from the pipeline_snapshots table (captured by pg_cron).
+       Graceful empty state when there are < 2 data points. */
+    async function renderTrendChart() {
+      try {
+        const snaps = await STORE.pipelineSnapshotList(26);
+        if (!snaps || snaps.length < 2) {
+          _initChart('chart-trend', function () {
+            return {
+              __empty: true,
+              title: 'Pipeline trend will appear here',
+              sub: 'Data accumulates weekly via background snapshots. ' +
+                   'Check back next Monday for the first plotted point.',
+              icon: '<polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/>'
+            };
+          });
+          return;
+        }
+        // Sparkify labels: "W23 May 25"  (week_iso is ISO-week "2026-W21")
+        const labels = snaps.map(function (s) {
+          const m = String(s.week_iso || '').match(/^(\d{4})-W(\d{2})$/);
+          if (!m) return s.week_iso;
+          // Derive month from snapshot_at if present, else just show "W21"
+          if (s.snapshot_at) {
+            const d = new Date(s.snapshot_at);
+            const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+            return 'W' + m[2] + ' ' + mon;
+          }
+          return 'W' + m[2];
+        });
+        // Convert ₹ (paise stored as bigint INR) to ₹ Lakh for axis readability
+        const openInLakh = snaps.map(function (s) { return Math.round((Number(s.open_value_inr) || 0) / 100000); });
+        const wonInLakh  = snaps.map(function (s) { return Math.round((Number(s.won_value_this_week) || 0) / 100000); });
+        _initChart('chart-trend', function () {
+          return {
+            grid: { left: 48, right: 16, top: 32, bottom: 36, containLabel: false },
+            legend: {
+              show: true, top: 4, right: 8,
+              icon: 'roundRect', itemWidth: 10, itemHeight: 10,
+              textStyle: { fontSize: 11, color: _chartTheme().textStyle.color }
+            },
+            xAxis: {
+              type: 'category', data: labels,
+              boundaryGap: false,
+              axisLine: { lineStyle: { color: _chartTheme().axisLineColor } },
+              axisLabel: { fontSize: 10.5, color: _chartTheme().axisLabelColor, hideOverlap: true }
+            },
+            yAxis: {
+              type: 'value',
+              axisLine: { show: false }, axisTick: { show: false },
+              splitLine: { lineStyle: { color: _chartTheme().splitLineColor, type: 'dashed' } },
+              axisLabel: { fontSize: 10.5, color: _chartTheme().axisLabelColor,
+                formatter: function (v) { return '\u20B9' + v + 'L'; } }
+            },
+            tooltip: Object.assign({}, _chartTheme().tooltip, {
+              trigger: 'axis',
+              valueFormatter: function (v) { return '\u20B9' + v + ' L'; }
+            }),
+            series: [
+              {
+                name: 'Open pipeline', type: 'line', smooth: true, symbol: 'circle', symbolSize: 6,
+                data: openInLakh,
+                lineStyle: { width: 2.5, color: '#F7941D' },
+                itemStyle: { color: '#F7941D' },
+                areaStyle: {
+                  color: {
+                    type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                    colorStops: [
+                      { offset: 0, color: 'rgba(247,148,29,0.35)' },
+                      { offset: 1, color: 'rgba(247,148,29,0.02)' }
+                    ]
+                  }
+                },
+                emphasis: { focus: 'series' }
+              },
+              {
+                name: 'Won (week)', type: 'line', smooth: true, symbol: 'circle', symbolSize: 5,
+                data: wonInLakh,
+                lineStyle: { width: 2, color: '#10B981' },
+                itemStyle: { color: '#10B981' },
+                emphasis: { focus: 'series' }
+              }
+            ]
+          };
+        });
+      } catch (e) {
+        console.warn('renderTrendChart failed:', e && e.message);
+        _initChart('chart-trend', function () {
+          return {
+            __empty: true,
+            title: 'Trend unavailable',
+            sub: 'Could not load weekly snapshots. Pull-to-refresh to retry.',
+            icon: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'
+          };
+        });
+      }
+    }
+
+    /* Win rate gauge — radial progress arc. The rate is computed by
+       loadHomeKpis and passed in. Gauge uses an amber→green color
+       band based on the value (red < 33, amber 33-66, green > 66). */
+    function renderWinRateGauge(rate, resolved) {
+      if (rate == null || resolved === 0) {
+        _initChart('chart-winrate', function () {
+          return {
+            __empty: true,
+            title: 'Win rate forming',
+            sub: 'Close a few deals (won or lost) and the rate will appear here.',
+            icon: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>'
+          };
+        });
+        return;
+      }
+      const color = rate >= 66 ? '#10B981' : (rate >= 33 ? '#F7941D' : '#EF4444');
+      _initChart('chart-winrate', function () {
+        return {
+          series: [{
+            type: 'gauge',
+            startAngle: 210, endAngle: -30,
+            min: 0, max: 100,
+            radius: '90%', center: ['50%', '60%'],
+            progress: { show: true, width: 14, itemStyle: { color: color } },
+            axisLine: { lineStyle: { width: 14, color: [[1, _chartTheme().splitLineColor]] } },
+            axisTick: { show: false },
+            splitLine: { show: false },
+            axisLabel: { show: false },
+            pointer: { show: false },
+            anchor: { show: false },
+            title: {
+              offsetCenter: [0, '32%'],
+              fontSize: 11,
+              fontFamily: 'General Sans, system-ui, sans-serif',
+              color: _chartTheme().textStyle.color
+            },
+            detail: {
+              offsetCenter: [0, '-5%'],
+              formatter: '{value}%',
+              fontSize: 30,
+              fontWeight: 700,
+              fontFamily: 'General Sans, system-ui, sans-serif',
+              color: color
+            },
+            data: [{ value: rate, name: resolved + ' deals resolved' }]
+          }]
+        };
+      });
+    }
+
+    /* Lead source donut — counts active deals by lead_source. */
+    function renderSourceDonut(activeDeals) {
+      const counts = {};
+      activeDeals.forEach(function (d) {
+        const src = String(d.lead_source || 'Unspecified').trim() || 'Unspecified';
+        counts[src] = (counts[src] || 0) + 1;
+      });
+      const entries = Object.keys(counts).map(function (k) {
+        return { name: k, value: counts[k] };
+      }).sort(function (a, b) { return b.value - a.value; });
+
+      if (entries.length === 0) {
+        _initChart('chart-source', function () {
+          return {
+            __empty: true,
+            title: 'No active deals yet',
+            sub: 'Create a deal and pick a lead source — that mix will appear here.',
+            icon: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>'
+          };
+        });
+        return;
+      }
+
+      _initChart('chart-source', function () {
+        return {
+          tooltip: Object.assign({}, _chartTheme().tooltip, {
+            trigger: 'item',
+            formatter: '{b}: <strong>{c}</strong> ({d}%)'
+          }),
+          legend: {
+            type: 'scroll',
+            bottom: 0, left: 'center',
+            icon: 'circle', itemWidth: 8, itemHeight: 8,
+            itemGap: 12,
+            textStyle: { fontSize: 11, color: _chartTheme().textStyle.color }
+          },
+          series: [{
+            name: 'Lead source', type: 'pie',
+            radius: ['44%', '70%'], center: ['50%', '44%'],
+            avoidLabelOverlap: true,
+            padAngle: 1,
+            itemStyle: { borderRadius: 4, borderColor: 'transparent', borderWidth: 0 },
+            label: { show: false },
+            labelLine: { show: false },
+            emphasis: {
+              scale: true, scaleSize: 6,
+              label: { show: true, fontSize: 13, fontWeight: 700, formatter: '{c}' }
+            },
+            data: entries
+          }]
+        };
+      });
+    }
+
+    /* Stage velocity — avg days-since-last-update per stage, for OPEN
+       deals. Useful proxy for "where do deals get stuck?" without
+       needing the full stage_transitions audit log (which would be a
+       per-deal query). Color-codes per stage to match chips. */
+    function renderStageVelocity(activeDeals) {
+      const STAGES = ['Qualified','Proposal','Budget Approval','Technical Approval','Negotiation','Awarded'];
+      const buckets = {};
+      STAGES.forEach(function (s) { buckets[s] = []; });
+      activeDeals.forEach(function (d) {
+        if (!_isOpenStage(d.stage)) return;
+        if (!buckets[d.stage]) return;
+        buckets[d.stage].push(_daysSince(d.updated_at || d.created_at));
+      });
+      const data = STAGES.map(function (s) {
+        const arr = buckets[s];
+        if (!arr.length) return { name: s, value: 0, raw: 0 };
+        const avg = Math.round(arr.reduce(function (a, b) { return a + b; }, 0) / arr.length);
+        return { name: s, value: avg, raw: avg };
+      });
+      const hasAny = data.some(function (d) { return d.value > 0; });
+      if (!hasAny) {
+        _initChart('chart-velocity', function () {
+          return {
+            __empty: true,
+            title: 'No open deals to time',
+            sub: 'Once you have active deals in the pipeline, average days-in-stage will appear here.',
+            icon: '<polyline points="3 17 9 11 13 15 21 7"/>'
+          };
+        });
+        return;
+      }
+      // Per-stage colors aligned with chip semantics
+      const stageColor = {
+        'Qualified':           '#3B82F6',  // blue
+        'Proposal':            '#EC4899',  // pink
+        'Budget Approval':     '#A855F7',  // purple
+        'Technical Approval':  '#06B6D4',  // cyan
+        'Negotiation':         '#F7941D',  // amber
+        'Awarded':             '#10B981'   // green
+      };
+      _initChart('chart-velocity', function () {
+        return {
+          grid: { left: 100, right: 24, top: 8, bottom: 24, containLabel: false },
+          tooltip: Object.assign({}, _chartTheme().tooltip, {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+            formatter: function (params) {
+              const p = params[0];
+              return p.name + ': <strong>' + p.value + '</strong> days avg';
+            }
+          }),
+          xAxis: {
+            type: 'value',
+            axisLine: { show: false }, axisTick: { show: false },
+            splitLine: { lineStyle: { color: _chartTheme().splitLineColor, type: 'dashed' } },
+            axisLabel: { fontSize: 10.5, color: _chartTheme().axisLabelColor,
+              formatter: '{value}d' }
+          },
+          yAxis: {
+            type: 'category',
+            data: data.map(function (d) { return d.name; }),
+            inverse: true,
+            axisLine: { show: false }, axisTick: { show: false },
+            axisLabel: { fontSize: 11, color: _chartTheme().textStyle.color, fontWeight: 500 }
+          },
+          series: [{
+            type: 'bar', barWidth: 14,
+            itemStyle: {
+              borderRadius: [0, 6, 6, 0],
+              color: function (p) { return stageColor[p.name] || '#F7941D'; }
+            },
+            label: {
+              show: true, position: 'right',
+              fontSize: 11, fontWeight: 700,
+              color: _chartTheme().textStyle.color,
+              formatter: function (p) { return p.value > 0 ? p.value + 'd' : ''; }
+            },
+            data: data.map(function (d) { return d.value; })
+          }]
+        };
+      });
+    }
+
+    /* Sales leaderboard — horizontal bar of top reps by won value this
+       quarter. Super + BU Head see top 6; everyone else sees their own
+       single bar (the "My win value" framing). */
+    function renderLeaderboard(wonDealsQ, currentUser) {
+      const isSuper = currentUser.permission_tier === 'super';
+      const isBuHead = currentUser.org_function === 'BU Head';
+      const groupAll = isSuper || isBuHead;
+
+      const byRep = {};
+      wonDealsQ.forEach(function (d) {
+        const uid = d.sales_person_id;
+        if (!uid) return;
+        if (!groupAll && uid !== currentUser.id) return;
+        if (!byRep[uid]) byRep[uid] = { value: 0, count: 0 };
+        byRep[uid].value += Number(d.deal_value_inr) || 0;
+        byRep[uid].count += 1;
+      });
+      const entries = Object.keys(byRep).map(function (uid) {
+        const u = STORE.rosterById(uid);
+        const name = (u && u.full_name) ? u.full_name : 'Unknown rep';
+        return { name: name, value: Math.round(byRep[uid].value / 100000), count: byRep[uid].count };
+      }).sort(function (a, b) { return b.value - a.value; }).slice(0, 6);
+
+      if (entries.length === 0) {
+        _initChart('chart-leaderboard', function () {
+          return {
+            __empty: true,
+            title: groupAll ? 'No wins this quarter yet' : 'No wins in your name yet',
+            sub: groupAll
+              ? 'Top performers (by won value) will appear here as deals close.'
+              : 'Your own wins this quarter will appear here.',
+            icon: '<path d="M6 9H4.5A2.5 2.5 0 0 1 2 6.5V5h4"/><path d="M18 9h1.5A2.5 2.5 0 0 0 22 6.5V5h-4"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>'
+          };
+        });
+        return;
+      }
+
+      _initChart('chart-leaderboard', function () {
+        return {
+          grid: { left: 96, right: 40, top: 8, bottom: 24, containLabel: false },
+          tooltip: Object.assign({}, _chartTheme().tooltip, {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+            formatter: function (params) {
+              const p = params[0];
+              const idx = p.dataIndex;
+              const e = entries[idx];
+              return e.name + '<br/><strong>\u20B9' + e.value + ' L</strong> · ' +
+                     e.count + (e.count === 1 ? ' deal' : ' deals');
+            }
+          }),
+          xAxis: {
+            type: 'value',
+            axisLine: { show: false }, axisTick: { show: false },
+            splitLine: { lineStyle: { color: _chartTheme().splitLineColor, type: 'dashed' } },
+            axisLabel: { fontSize: 10.5, color: _chartTheme().axisLabelColor,
+              formatter: function (v) { return '\u20B9' + v + 'L'; } }
+          },
+          yAxis: {
+            type: 'category',
+            data: entries.map(function (e) { return e.name; }),
+            inverse: true,
+            axisLine: { show: false }, axisTick: { show: false },
+            axisLabel: {
+              fontSize: 11, color: _chartTheme().textStyle.color, fontWeight: 500,
+              formatter: function (val) {
+                // Truncate to keep grid clean
+                return val.length > 14 ? val.slice(0, 13) + '\u2026' : val;
+              }
+            }
+          },
+          series: [{
+            type: 'bar', barWidth: 14,
+            itemStyle: {
+              borderRadius: [0, 6, 6, 0],
+              // Gradient: amber lead, deeper for the top performer
+              color: function (p) {
+                const intensity = 1 - (p.dataIndex * 0.10);
+                return {
+                  type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
+                  colorStops: [
+                    { offset: 0, color: 'rgba(247,148,29,' + (0.85 * intensity).toFixed(2) + ')' },
+                    { offset: 1, color: 'rgba(184,105,14,' + (intensity).toFixed(2) + ')' }
+                  ]
+                };
+              }
+            },
+            label: {
+              show: true, position: 'right',
+              fontSize: 11, fontWeight: 700,
+              color: _chartTheme().textStyle.color,
+              formatter: function (p) { return '\u20B9' + p.value + 'L'; }
+            },
+            data: entries.map(function (e) { return e.value; })
+          }]
+        };
+      });
+    }
 
     /* v27.3.0 — Polished load-error state with a retry button.
        Used by Home/Dashboard/History/Customers when their data fetch fails. */
@@ -11681,6 +12707,18 @@
           (d.hasLed && Array.isArray(d.screens) && d.screens.length > 0
             ? '<div class="calico-led-inline">' + renderLedScreens(d) + '</div>'
             : '') +
+          /* v27.3.1 — Display resolution selector. Mirrors the projector
+             resolution control; appears only when display count > 0.
+             Per spec photo: Display [- + ] 4K/FHD (defaults FHD). */
+          (d.calico_outputs.display > 0
+            ? '<div class="field" style="margin-top:10px">' +
+                '<label>Display resolution</label>' +
+                '<select data-bind="calico_outputs.displayRes">' +
+                  '<option value="FHD"' + (d.calico_outputs.displayRes === 'FHD' ? ' selected' : '') + '>FHD</option>' +
+                  '<option value="4K"'  + (d.calico_outputs.displayRes === '4K'  ? ' selected' : '') + '>4K</option>' +
+                '</select>' +
+              '</div>'
+            : '') +
           (d.calico_outputs.projector > 0
             ? '<div class="field" style="margin-top:10px">' +
                 '<label>Projector resolution</label>' +
@@ -11788,7 +12826,7 @@
         // v27.1.3 per OQ 7B).
         '<h3 class="h3">Canvas configuration</h3>' +
         '<div class="card">' +
-          stepperRow('corio_canvases', 'Canvas count', 'Number of independent canvases (UI-only — does not affect chassis pick in v27.1.2)', d.corio_canvases || 0, { namespace:'__corio_canvas' }) +
+          stepperRow('corio_canvases', 'Canvas count', 'Independent canvases at 4K30Hz \u00b7 \u22645 \u2192 Micro, \u22646 \u2192 Mini, >6 \u2192 CM2', d.corio_canvases || 0, { namespace:'__corio_canvas' }) +
         '</div>' +
         '<h3 class="h3">Inputs</h3>' +
         '<div class="card">' +
@@ -12006,6 +13044,13 @@
             '<div class="sx-card-sub">TX/RX over Cat6 \u00b7 HD-One DX (Video / Video+Audio) or LX (with IR/RS232)</div>' +
           '</div>' +
         '</div>' +
+        /* v27.3.1 — Max-distance hint (notebook spec image 2).
+           Resolution drives reach: 4K→60m, FHD→152m over Cat6. Informational only;
+           does not gate input. Lives above the lines so it's read before configuring. */
+        '<div class="sx-hint-strip" role="note">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+          '<span>Max reach over Cat6: <strong>4K \u2192 60 m</strong> \u00b7 <strong>FHD \u2192 152 m</strong></span>' +
+        '</div>' +
         (hdbtLinesHtml || '<div class="sx-line-empty">No HDBaseT lines yet. Tap <strong>+ Add</strong> below to add one.</div>') +
         '<button type="button" class="sx-add-line" data-action="sx-hdbt-add">+ Add HDBaseT line</button>' +
       '</div>';
@@ -12163,9 +13208,10 @@
 
       if (d.solutionType === 'calico') {
         // v27.1.2 #4a — humanize via HUMAN_LABELS map
-        // Filter projectorRes (not a count field) before humanizing.
+        // Filter projectorRes + displayRes (non-count fields) before humanizing.
         const outForHuman = Object.assign({}, d.calico_outputs);
         delete outForHuman.projectorRes;
+        delete outForHuman.displayRes;  // v27.3.1 — added with Display 4K/FHD selector
         // v27.1.3 F1 — synthesize LED count into outForHuman so the Outputs
         // row renders it. Canonical state lives in d.screens (length) +
         // d.hasLed — calico_outputs.led is not written by v27.1.2 #3 LED
@@ -13957,6 +15003,13 @@
       const hash = location.hash || '#/home';
       const u = STORE.currentUser();
 
+      // v27.3.1 — Dispose dashboard ECharts instances when leaving the
+      // dashboard route. Prevents memory leak from accumulating chart
+      // instances over the session. Cheap no-op if registry is empty.
+      if (hash !== '#/dashboard' && typeof _disposeDashCharts === 'function') {
+        _disposeDashCharts();
+      }
+
       // Auth guard
       if (!u && hash !== '#/login') {
         location.hash = '#/login';
@@ -14572,6 +15625,9 @@
         const args = { inputs, outputs };
         if (d.corio_audio)     args.audio = d.corio_audio;
         if (d.corio_fanFilter) args.fanFilter = true;
+        // v27.3.1 — canvas-first chassis selection per Dipenkumar's CORIO design rule.
+        // ≤5 → Micro, ≤6 → Mini, >6 → CM2; with card-slot override if signals overflow.
+        if (Number(d.corio_canvases) > 0) args.canvases = Number(d.corio_canvases);
         reco = RECOMMEND.corio(args);
       } else {
         reco = { chassis: null, cards: [], concerns: [], valueAdds: [], meta: { type: 'empty' } };
@@ -15111,7 +16167,7 @@
           stage: 'Qualified',
           solutionType: 'calico',
           calico_inputs:  { hdmi4k: 2, hdmiFhd: 0, sdi12g: 0, sdi3g: 0, hdbt: 0, ip: 0 },
-          calico_outputs: { display: 2, projector: 0, sdi: 0, projectorRes: 'FHD' },
+          calico_outputs: { display: 2, displayRes: 'FHD', projector: 0, sdi: 0, projectorRes: 'FHD' },
           calico_audio: false,
           hasLed: false, hasSx: false
         };
@@ -15132,7 +16188,7 @@
           stage: 'Qualified',
           solutionType: 'calico',
           calico_inputs:  { hdmi4k: 1, hdmiFhd: 0, sdi12g: 0, sdi3g: 0, hdbt: 0, ip: 0 },
-          calico_outputs: { display: 1, projector: 0, sdi: 0, projectorRes: 'FHD' },
+          calico_outputs: { display: 1, displayRes: 'FHD', projector: 0, sdi: 0, projectorRes: 'FHD' },
           calico_audio: false,
           hasLed: false, hasSx: false
         };
@@ -15180,7 +16236,7 @@
       return Object.assign({
         solutionType:    'calico',
         calico_inputs:   { hdmi4k: 2, hdmiFhd: 0, sdi12g: 0, sdi3g: 0, hdbt: 0, ip: 0 },
-        calico_outputs:  { display: 2, projector: 0, sdi: 0, projectorRes: 'FHD' },
+        calico_outputs:  { display: 2, displayRes: 'FHD', projector: 0, sdi: 0, projectorRes: 'FHD' },
         calico_audio:    false,
         hasLed:          false,
         hasSx:           false
