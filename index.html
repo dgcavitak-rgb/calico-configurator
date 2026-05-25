@@ -1830,6 +1830,286 @@
     .sx-da-title { font-family: var(--font-display); font-weight: 600; font-size: 13.5px; color: var(--ink-strong); }
     .sx-da-sub { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
 
+    /* --- v27.3.0 CUSTOMER DIRECTORY (D1-D3 silent-drop restore) --- */
+    .cust-toolbar {
+      display: flex; flex-direction: column; gap: var(--s-3);
+      margin-bottom: var(--s-3);
+    }
+    .cust-search {
+      position: relative;
+      display: flex; align-items: center;
+    }
+    .cust-search svg {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--ink-soft);
+      pointer-events: none;
+    }
+    .cust-search input {
+      width: 100%;
+      padding: 10px 12px 10px 36px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--r-sm);
+      font-family: var(--font-system); font-size: 14px;
+      color: var(--ink-strong);
+      transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+    }
+    .cust-search input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    .cust-filter-chips {
+      display: flex; gap: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 4px;
+    }
+    .cust-filter-chips::-webkit-scrollbar { display: none; }
+    .cust-chip {
+      appearance: none; border: 1px solid var(--border-mid);
+      background: var(--bg-card);
+      color: var(--ink-mid);
+      padding: 6px 12px;
+      border-radius: var(--r-pill);
+      font-family: var(--font-display); font-weight: 600; font-size: 12.5px;
+      cursor: pointer;
+      transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+      white-space: nowrap;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cust-chip:hover { border-color: var(--accent); color: var(--ink-strong); }
+    .cust-chip.active {
+      background: var(--accent); color: var(--ink-on-brand);
+      border-color: var(--accent);
+    }
+    .cust-row {
+      appearance: none; border: none;
+      display: flex; align-items: center; gap: var(--s-3);
+      width: 100%; padding: 12px 14px;
+      background: var(--bg-card);
+      border-bottom: 0.5px solid var(--border-soft);
+      text-align: left; cursor: pointer;
+      font-family: inherit;
+      transition: background var(--dur-base) var(--ease-out);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cust-row:hover { background: var(--bg-card-hover); }
+    .cust-row:first-of-type { border-top-left-radius: var(--r-md); border-top-right-radius: var(--r-md); }
+    .cust-row:last-of-type { border-bottom: none; border-bottom-left-radius: var(--r-md); border-bottom-right-radius: var(--r-md); }
+    .cust-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      color: white;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-weight: 700; font-size: 14px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(232,115,28,0.20);
+    }
+    .cust-avatar-lg { width: 52px; height: 52px; font-size: 18px; }
+    .cust-body { flex: 1; min-width: 0; }
+    .cust-name {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 14.5px; color: var(--ink-strong);
+      line-height: 1.3;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .cust-sub {
+      font-size: 12px; color: var(--ink-soft);
+      margin-top: 2px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      text-transform: capitalize;
+    }
+    .cust-type-icon {
+      width: 22px; height: 22px;
+      color: var(--ink-faint);
+      flex-shrink: 0;
+    }
+    .cust-type-icon svg { width: 100%; height: 100%; }
+
+    /* Customer 360 sheet header */
+    .cust-360-head {
+      display: flex; align-items: center; gap: var(--s-3);
+      padding: 16px;
+      border-bottom: 0.5px solid var(--border-soft);
+    }
+    .cust-360-name {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 18px; color: var(--ink-strong);
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+    .cust-360-sub {
+      font-size: 12.5px; color: var(--ink-soft);
+      margin-top: 2px;
+      text-transform: capitalize;
+    }
+    .cust-360-actions {
+      display: flex; gap: 6px;
+      padding: 12px 16px;
+      border-bottom: 0.5px solid var(--border-soft);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .cust-360-actions::-webkit-scrollbar { display: none; }
+    .cust-360-kpis {
+      display: grid; gap: 1px;
+      grid-template-columns: repeat(4, 1fr);
+      background: var(--border-soft);
+      border-bottom: 0.5px solid var(--border-soft);
+    }
+    .cust-360-kpi {
+      background: var(--bg-card);
+      padding: 12px 8px;
+      text-align: center;
+    }
+    .cust-360-kpi-k {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 9.5px; color: var(--ink-soft);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+    .cust-360-kpi-v {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 18px; color: var(--ink-strong);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .page-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: var(--s-3);
+      margin-bottom: var(--s-3);
+    }
+    .page-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--t-h1, 24px);
+      color: var(--ink-strong);
+      margin: 0;
+      letter-spacing: -0.015em;
+    }
+
+    /* --- v27.3.0 LOGIN REFRESH --- */
+    .login-bg-v3 {
+      position: fixed; inset: 0;
+      background: var(--bg-page);
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+      overflow: hidden;
+    }
+    .login-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(72px);
+      opacity: 0.55;
+      pointer-events: none;
+      will-change: transform;
+    }
+    .login-orb-1 {
+      width: 460px; height: 460px;
+      background: radial-gradient(circle, #F7941D 0%, transparent 65%);
+      top: -120px; left: -120px;
+      animation: orb-drift-a 18s ease-in-out infinite alternate;
+    }
+    .login-orb-2 {
+      width: 380px; height: 380px;
+      background: radial-gradient(circle, #FAC172 0%, transparent 65%);
+      bottom: -100px; right: -100px;
+      animation: orb-drift-b 22s ease-in-out infinite alternate;
+    }
+    html[data-theme="dark"] .login-orb { opacity: 0.32; }
+    @keyframes orb-drift-a {
+      0%   { transform: translate3d(0,0,0) scale(1); }
+      100% { transform: translate3d(60px, 40px, 0) scale(1.08); }
+    }
+    @keyframes orb-drift-b {
+      0%   { transform: translate3d(0,0,0) scale(1); }
+      100% { transform: translate3d(-40px, -50px, 0) scale(1.12); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .login-orb { animation: none !important; }
+    }
+    .login-card-v3 {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 380px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: 20px;
+      padding: 32px 24px 20px;
+      box-shadow: 0 24px 60px rgba(15,14,12,0.10), 0 4px 12px rgba(15,14,12,0.06);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    html[data-theme="dark"] .login-card-v3 {
+      box-shadow: 0 24px 60px rgba(0,0,0,0.50), 0 4px 12px rgba(0,0,0,0.30);
+    }
+    .login-brand {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .login-logos {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      margin-bottom: 14px;
+    }
+    .login-tvone-logo { color: #F7941D; display: inline-flex; }
+    .login-logo-divider {
+      width: 1px; height: 22px;
+      background: var(--border-mid);
+    }
+    .login-cavitak-logo { display: inline-flex; }
+    .login-title {
+      font-family: var(--font-display);
+      font-weight: 700; font-size: 20px;
+      color: var(--ink-strong);
+      margin: 0 0 4px;
+      letter-spacing: -0.02em;
+    }
+    .login-subtitle {
+      font-size: 12.5px;
+      color: var(--ink-soft);
+    }
+    .login-input-wrap {
+      position: relative; display: flex; align-items: center;
+    }
+    .login-input-icon {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--ink-soft);
+      pointer-events: none;
+    }
+    .input-v3-iconed { padding-left: 36px !important; }
+    .login-submit {
+      width: 100%;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 4px;
+    }
+    .login-forgot {
+      appearance: none; border: none; background: transparent;
+      color: var(--accent-deep);
+      font-family: var(--font-display); font-weight: 600; font-size: 12.5px;
+      cursor: pointer;
+      display: block;
+      margin: 14px auto 0;
+      padding: 6px 10px;
+      border-radius: var(--r-sm);
+      transition: background var(--dur-base) var(--ease-out);
+    }
+    .login-forgot:hover { background: var(--accent-soft); }
+    .login-foot {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 0.5px solid var(--border-soft);
+      text-align: center;
+    }
+    .login-ver {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--ink-faint);
+      letter-spacing: 0.05em;
+    }
+
     /* --- v27.3.0 NOTIFICATION SHEET (D6-D9 restore) --- */
     .notif-sheet { padding: 4px 0 16px; }
     .notif-sheet-head {
@@ -1968,6 +2248,10 @@
       <button data-nav="#/history" type="button" aria-label="History">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
         Quotes
+      </button>
+      <button data-nav="#/customers" type="button" aria-label="Customers">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Customers
       </button>
       <button data-nav="#/profile" type="button" aria-label="Profile">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
@@ -3487,6 +3771,49 @@
       return (r && r.rows) || (Array.isArray(r) ? r : []);
     }
 
+    /* v27.3.0 — Customer Directory + 360 + Merge (D1-D3 silent-drop restores).
+       All 4 RPCs (customer_list, customer_upsert, customer_delete, customer_merge)
+       already exist in Supabase. This is UI-only build on top of an existing
+       backend. */
+    async function customerList(opts) {
+      opts = opts || {};
+      const r = await rpc('customer_list', {
+        p_app: APP_TAG,
+        p_search: String(opts.search || '').trim() || null,
+        p_limit: opts.limit || 200
+      });
+      return (r && r.rows) || (Array.isArray(r) ? r : []);
+    }
+    async function customerUpsert(payload) {
+      return rpc('customer_upsert', { p_payload: payload, p_app: APP_TAG });
+    }
+    async function customerDelete(customerId) {
+      return rpc('customer_delete', { p_customer_id: String(customerId) });
+    }
+    async function customerMerge(sourceId, targetId) {
+      return rpc('customer_merge', {
+        p_source_id: String(sourceId),
+        p_target_id: String(targetId)
+      });
+    }
+    /* Customer 360 — list of deals for a given customer party. Falls back to
+       client-side filter of listDeals when no dedicated RPC exists. */
+    async function customer360(customerId) {
+      // Try a dedicated RPC if present
+      try {
+        const r = await rpc('customer_360', {
+          p_customer_id: String(customerId),
+          p_app: APP_TAG
+        });
+        return (r && r.rows) || (Array.isArray(r) ? r : []);
+      } catch (e) {
+        // Fallback: list all deals and filter by customer_party_id
+        const all = await listDeals({ limit: 500 });
+        const rows = (all && all.rows) || (Array.isArray(all) ? all : []);
+        return rows.filter(d => d.customer_party_id === customerId);
+      }
+    }
+
     return Object.freeze({
       // auth
       login, logout, currentUser, onAuthChange, changePassword,
@@ -3502,6 +3829,8 @@
       resetPasswordRequest, resetPasswordListPending, resetPasswordApprove,
       // v27.3.0 — duplicate + custom stages (v27.7 partial restore)
       duplicateDeal, stageList,
+      // v27.3.0 — Customer directory + 360 + merge (D1-D3 silent-drop restores)
+      customerList, customerUpsert, customerDelete, customerMerge, customer360,
       // internals exposed for debug only
       _rpc: rpc, _sha256Hex: sha256Hex
     });
@@ -6853,15 +7182,37 @@
         loginMode === 'force-pw'      ? renderForcePwForm() :
         loginMode === 'force-profile' ? renderProfileSetupForm() :
                                         renderLoginForm();
+      // v27.3.0 — login surface refreshed with the v27.3.0 design language:
+      // real tvONE chevron + Cavitak red-lightning logos in the brand block,
+      // ambient orbs in the background, amber accents, General Sans typography.
       const html =
-        '<div class="login-bg">' +
-          '<div class="login-card">' +
-            '<div class="brand">' +
-              '<div class="logo">tv</div>' +
-              '<div style="font-size:18px;font-weight:700;text-align:center;">tvONE Product Selector</div>' +
-              '<div class="ver-tag">' + esc(CATALOG.version) + '</div>' +
+        '<div class="login-bg login-bg-v3">' +
+          '<div class="login-orb login-orb-1" aria-hidden="true"></div>' +
+          '<div class="login-orb login-orb-2" aria-hidden="true"></div>' +
+          '<div class="login-card login-card-v3">' +
+            '<div class="login-brand">' +
+              '<div class="login-logos">' +
+                '<span class="login-tvone-logo">' +
+                  '<svg viewBox="0 0 64 32" width="56" height="28" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">' +
+                    '<polyline points="8,8 22,16 8,24"/>' +
+                    '<polyline points="28,8 42,16 28,24"/>' +
+                  '</svg>' +
+                '</span>' +
+                '<span class="login-logo-divider"></span>' +
+                '<span class="login-cavitak-logo">' +
+                  '<svg viewBox="0 0 32 32" width="28" height="28">' +
+                    '<circle cx="16" cy="16" r="14" fill="#DC2626"/>' +
+                    '<path d="M19 7 L11 18 L16 18 L13 25 L21 14 L16 14 Z" fill="white"/>' +
+                  '</svg>' +
+                '</span>' +
+              '</div>' +
+              '<h1 class="login-title">tvONE Product Selector</h1>' +
+              '<div class="login-subtitle">Cavitak Marketing \u00b7 sign in to continue</div>' +
             '</div>' +
             inner +
+            '<div class="login-foot">' +
+              '<span class="login-ver">' + esc(CATALOG.version) + '</span>' +
+            '</div>' +
           '</div>' +
         '</div>';
       setRoot(html);
@@ -6870,23 +7221,31 @@
     function renderLoginForm() {
       return '' +
         '<form id="login-form" autocomplete="off" novalidate>' +
-          '<div class="field" id="f-username">' +
+          '<div class="field-v3" id="f-username">' +
             '<label for="i-username">Username</label>' +
-            '<input id="i-username" name="username" type="text" ' +
+            '<div class="login-input-wrap">' +
+              '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-input-icon"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>' +
+              '<input class="input-v3 input-v3-iconed" id="i-username" name="username" type="text" ' +
                    'autocomplete="username" autocapitalize="off" autocorrect="off" ' +
-                   'spellcheck="false" required>' +
+                   'spellcheck="false" placeholder="your.username" required>' +
+            '</div>' +
             '<div class="err" hidden></div>' +
           '</div>' +
-          '<div class="field" id="f-password">' +
+          '<div class="field-v3" id="f-password">' +
             '<label for="i-password">Password</label>' +
-            '<input id="i-password" name="password" type="password" ' +
-                   'autocomplete="current-password" required>' +
+            '<div class="login-input-wrap">' +
+              '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-input-icon"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
+              '<input class="input-v3 input-v3-iconed" id="i-password" name="password" type="password" ' +
+                   'autocomplete="current-password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" required>' +
+            '</div>' +
             '<div class="err" hidden></div>' +
           '</div>' +
-          '<button class="btn btn-block" type="submit" id="btn-login">Sign in</button>' +
+          '<button class="btn-v3 btn-primary btn-md login-submit" type="submit" id="btn-login">' +
+            '<span>Sign in</span>' +
+            '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>' +
+          '</button>' +
         '</form>' +
-        '<div class="sp-12"></div>' +
-        '<div class="tiny muted t-center">Trouble signing in? Contact Dipenkumar.</div>';
+        '<button type="button" class="login-forgot" data-action="rp-show">Trouble signing in?</button>';
     }
 
     function renderForcePwForm() {
@@ -7348,8 +7707,268 @@
     }
 
     /* ============================================================
-       VIEW: Profile (account + change PW + dev panel)
+       VIEW: Customers (D1-D3 silent-drop restore)
+       Lists parties (customer / partner / consultant / end_user). Click a
+       row → Customer 360 sheet showing deals, totals, value. Super users
+       can merge duplicates.
        ============================================================ */
+
+    let _customersCache = [];
+    let _customersFilter = 'all';
+    let _customersSearch = '';
+
+    function showCustomers() {
+      showChrome(true);
+      updateNavActive('#/customers');
+      const u = STORE.currentUser() || {};
+      const isSuper = u.permission_tier === 'super';
+      setRoot(
+        '<div class="v">' +
+          '<div class="page-head">' +
+            '<h1 class="page-title">Customers</h1>' +
+            '<button class="btn-v3 btn-primary btn-sm" type="button" data-action="cust-new">' +
+              '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+              ' Add' +
+            '</button>' +
+          '</div>' +
+          '<div class="cust-toolbar">' +
+            '<div class="cust-search">' +
+              '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+              '<input type="search" id="cust-search-input" placeholder="Search by name, city, industry\u2026" autocomplete="off">' +
+            '</div>' +
+            '<div class="cust-filter-chips">' +
+              ['all', 'customer', 'partner', 'consultant', 'end_user'].map(function (t) {
+                const lbl = t === 'all' ? 'All' :
+                            t === 'customer' ? 'Customers' :
+                            t === 'partner' ? 'Partners' :
+                            t === 'consultant' ? 'Consultants' :
+                            'End users';
+                return '<button class="cust-chip' + (t === _customersFilter ? ' active' : '') + '"' +
+                  ' type="button" data-action="cust-filter" data-value="' + t + '">' + lbl + '</button>';
+              }).join('') +
+            '</div>' +
+          '</div>' +
+          (isSuper
+            ? '<div class="banner info" style="margin-bottom:8px">' +
+                '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
+                ' <strong>SUPER tools:</strong> long-press a customer to merge duplicates.' +
+              '</div>'
+            : '') +
+          '<div id="cust-list">' +
+            '<div class="muted small" style="padding:24px;text-align:center">Loading\u2026</div>' +
+          '</div>' +
+        '</div>'
+      );
+      // Wire search input (debounced)
+      const searchInput = $('cust-search-input');
+      if (searchInput) {
+        searchInput.value = _customersSearch;
+        let t = null;
+        searchInput.addEventListener('input', function (e) {
+          clearTimeout(t);
+          _customersSearch = String(e.target.value || '').trim();
+          t = setTimeout(loadCustomerList, 250);
+        });
+      }
+      loadCustomerList();
+    }
+
+    function loadCustomerList() {
+      const listEl = $('cust-list');
+      if (!listEl) return;
+      STORE.customerList({ search: _customersSearch, limit: 300 }).then(function (rows) {
+        _customersCache = Array.isArray(rows) ? rows : [];
+        renderCustomerList();
+      }).catch(function (err) {
+        listEl.innerHTML = '<div class="banner err">Could not load customers: ' +
+          esc(err && err.message || String(err)) + '</div>';
+      });
+    }
+
+    function renderCustomerList() {
+      const listEl = $('cust-list');
+      if (!listEl) return;
+      let rows = _customersCache;
+      if (_customersFilter !== 'all') {
+        rows = rows.filter(r => r.party_type === _customersFilter);
+      }
+      if (rows.length === 0) {
+        listEl.innerHTML =
+          '<div class="empty-state" style="padding:48px 16px">' +
+            '<div class="empty-state-illustration"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>' +
+            '<h2 class="empty-state-title">No customers yet</h2>' +
+            '<p class="empty-state-body">' +
+              (_customersSearch ? 'No matches for "' + esc(_customersSearch) + '". Try a different search.'
+                                : 'Tap <strong>+ Add</strong> to create your first customer entry.') +
+            '</p>' +
+          '</div>';
+        return;
+      }
+      const typeIcon = {
+        'customer':   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><line x1="9" y1="9" x2="9" y2="9.01"/><line x1="9" y1="12" x2="9" y2="12.01"/><line x1="9" y1="15" x2="9" y2="15.01"/></svg>',
+        'partner':    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+        'consultant': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-7L11 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>',
+        'end_user':   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>'
+      };
+      listEl.innerHTML = rows.map(function (c) {
+        const name = String(c.name || '\u2014');
+        const init = name.split(/\s+/).map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
+        const subParts = [];
+        if (c.party_type) subParts.push(c.party_type.replace('_', ' '));
+        if (c.industry)   subParts.push(c.industry);
+        if (c.city)       subParts.push(c.city + (c.state ? ', ' + c.state : ''));
+        const icon = typeIcon[c.party_type] || typeIcon.customer;
+        return '<button class="cust-row" type="button" data-action="cust-open" data-id="' + esc(c.id || '') + '">' +
+          '<span class="cust-avatar">' + init + '</span>' +
+          '<div class="cust-body">' +
+            '<div class="cust-name">' + esc(name) + '</div>' +
+            '<div class="cust-sub">' + esc(subParts.join(' \u00b7 ')) + '</div>' +
+          '</div>' +
+          '<span class="cust-type-icon">' + icon + '</span>' +
+        '</button>';
+      }).join('');
+    }
+
+    function setCustomerFilter(filter) {
+      _customersFilter = filter;
+      // Re-render the chip row to reflect active state
+      document.querySelectorAll('.cust-chip').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-value') === filter);
+      });
+      renderCustomerList();
+    }
+
+    /* Customer 360 sheet — show deals + value totals for a single customer */
+    async function showCustomer360(customerId) {
+      const cust = _customersCache.find(c => c.id === customerId);
+      if (!cust) { UI.toast('Customer not found', 'err'); return; }
+      const name = String(cust.name || '\u2014');
+      const init = name.split(/\s+/).map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
+      const u = STORE.currentUser() || {};
+      const isSuper = u.permission_tier === 'super';
+      openSheet(
+        '<div class="notif-sheet">' +
+          '<div class="cust-360-head">' +
+            '<span class="cust-avatar cust-avatar-lg">' + init + '</span>' +
+            '<div style="flex:1;min-width:0">' +
+              '<div class="cust-360-name">' + esc(name) + '</div>' +
+              '<div class="cust-360-sub">' +
+                esc(cust.party_type || 'customer') +
+                (cust.city ? ' \u00b7 ' + esc(cust.city) : '') +
+                (cust.industry ? ' \u00b7 ' + esc(cust.industry) : '') +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="cust-360-actions">' +
+            '<button class="btn-v3 btn-ghost btn-sm" type="button" data-action="cust-edit" data-id="' + esc(customerId) + '">' +
+              '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit' +
+            '</button>' +
+            (isSuper
+              ? '<button class="btn-v3 btn-ghost btn-sm" type="button" data-action="cust-merge" data-id="' + esc(customerId) + '">' +
+                  '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v6a4 4 0 0 0 4 4 4 4 0 0 0 4 4v4"/><path d="M16 3v6a4 4 0 0 1-4 4"/></svg> Merge' +
+                '</button>' +
+              '<button class="btn-v3 btn-ghost btn-sm" type="button" data-action="cust-delete" data-id="' + esc(customerId) + '" style="color:var(--danger)">' +
+                '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>' +
+                '</button>'
+              : '') +
+          '</div>' +
+          '<div class="cust-360-kpis" id="cust-360-kpis">' +
+            '<div class="cust-360-kpi"><div class="cust-360-kpi-k">Deals</div><div class="cust-360-kpi-v">\u2014</div></div>' +
+            '<div class="cust-360-kpi"><div class="cust-360-kpi-k">Open</div><div class="cust-360-kpi-v">\u2014</div></div>' +
+            '<div class="cust-360-kpi"><div class="cust-360-kpi-k">Won</div><div class="cust-360-kpi-v">\u2014</div></div>' +
+            '<div class="cust-360-kpi"><div class="cust-360-kpi-k">Value (L)</div><div class="cust-360-kpi-v">\u2014</div></div>' +
+          '</div>' +
+          '<h4 style="padding:12px 16px 6px;margin:0;font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.06em">Recent deals</h4>' +
+          '<div id="cust-360-deals"><div class="muted small" style="padding:16px;text-align:center">Loading\u2026</div></div>' +
+        '</div>'
+      );
+      // Load deals async
+      try {
+        const deals = await STORE.customer360(customerId);
+        const wonValue = deals.filter(d => d.stage === 'Closed Won').reduce((s, d) => s + (Number(d.deal_value_inr) || 0), 0);
+        const openCount = deals.filter(d => d.stage && d.stage !== 'Closed Won' && d.stage !== 'Closed Lost' && !d.deleted_at).length;
+        const wonCount  = deals.filter(d => d.stage === 'Closed Won').length;
+        const kpiEl = $('cust-360-kpis');
+        if (kpiEl) {
+          const vEls = kpiEl.querySelectorAll('.cust-360-kpi-v');
+          if (vEls[0]) vEls[0].textContent = deals.length;
+          if (vEls[1]) vEls[1].textContent = openCount;
+          if (vEls[2]) vEls[2].textContent = wonCount;
+          if (vEls[3]) vEls[3].textContent = wonValue > 0 ? (wonValue / 100000).toFixed(1) : '\u2014';
+        }
+        const dealsEl = $('cust-360-deals');
+        if (dealsEl) {
+          if (deals.length === 0) {
+            dealsEl.innerHTML = '<div class="empty-state" style="padding:24px 16px"><p class="empty-state-body">No deals yet for this customer.</p></div>';
+          } else {
+            dealsEl.innerHTML = deals.slice(0, 20).map(function (d) {
+              const ref = d.display_ref || d.ref || '\u2014';
+              const stageCls = _stageChipClassName(d.stage);
+              return '<button class="notif-row" type="button" data-nav="#/quote/' + esc(ref) + '">' +
+                '<span class="notif-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>' +
+                '<div class="notif-body">' +
+                  '<div class="notif-msg">' + esc(d.project || '\u2014') + '</div>' +
+                  '<div class="notif-meta">' + esc(ref) + ' \u00b7 ' +
+                    '<span class="' + stageCls + '" style="font-size:10px;padding:1px 6px">' + esc(d.stage || '\u2014') + '</span>' +
+                    (d.deal_value_inr ? ' \u00b7 \u20B9' + Number(d.deal_value_inr).toLocaleString('en-IN') : '') +
+                  '</div>' +
+                '</div>' +
+              '</button>';
+            }).join('');
+          }
+        }
+      } catch (e) {
+        const dealsEl = $('cust-360-deals');
+        if (dealsEl) dealsEl.innerHTML = '<div class="banner err" style="margin:12px">' + esc(e.message || String(e)) + '</div>';
+      }
+    }
+
+    /* Add / edit customer modal */
+    function showCustomerEditor(customerId) {
+      const cust = customerId ? _customersCache.find(c => c.id === customerId) : null;
+      const isEdit = !!cust;
+      openSheet(
+        '<div class="notif-sheet" style="padding:0 16px 16px">' +
+          '<div class="notif-sheet-head" style="padding-left:0;padding-right:0">' +
+            '<h3>' + (isEdit ? 'Edit customer' : 'Add customer') + '</h3>' +
+          '</div>' +
+          '<div class="field-v3"><label>Name *</label>' +
+            '<input class="input-v3" id="ce-name" type="text" value="' + esc(cust && cust.name || '') + '" placeholder="Customer or company name">' +
+          '</div>' +
+          '<div class="field-v3"><label>Type</label>' +
+            '<select class="input-v3" id="ce-type">' +
+              ['customer','partner','consultant','end_user'].map(t =>
+                '<option value="' + t + '"' + ((cust && cust.party_type) === t ? ' selected' : (!cust && t === 'customer' ? ' selected' : '')) + '>' +
+                  (t === 'end_user' ? 'End user' : t.charAt(0).toUpperCase() + t.slice(1)) +
+                '</option>'
+              ).join('') +
+            '</select>' +
+          '</div>' +
+          '<div class="row gap-2">' +
+            '<div class="field-v3" style="flex:1"><label>City</label>' +
+              '<input class="input-v3" id="ce-city" type="text" value="' + esc(cust && cust.city || '') + '">' +
+            '</div>' +
+            '<div class="field-v3" style="flex:1"><label>State</label>' +
+              '<input class="input-v3" id="ce-state" type="text" value="' + esc(cust && cust.state || '') + '">' +
+            '</div>' +
+          '</div>' +
+          '<div class="field-v3"><label>Industry</label>' +
+            '<input class="input-v3" id="ce-industry" type="text" value="' + esc(cust && cust.industry || '') + '" placeholder="e.g. Hospitality, Education, Broadcast">' +
+          '</div>' +
+          '<div class="field-v3"><label>Website</label>' +
+            '<input class="input-v3" id="ce-website" type="url" value="' + esc(cust && cust.website || '') + '" placeholder="https://\u2026">' +
+          '</div>' +
+          '<div class="field-v3"><label>Notes</label>' +
+            '<textarea class="textarea-v3" id="ce-notes" rows="3" placeholder="Any internal notes\u2026">' + esc(cust && cust.notes || '') + '</textarea>' +
+          '</div>' +
+          '<button class="btn-v3 btn-primary btn-md" type="button" data-action="cust-save"' +
+            (customerId ? ' data-id="' + esc(customerId) + '"' : '') + ' style="width:100%">' +
+            (isEdit ? 'Update' : 'Create') +
+          '</button>' +
+        '</div>'
+      );
+    }
+
 
     function showProfile() {
       showChrome(true);
@@ -9500,6 +10119,118 @@
           return;
         }
 
+        // v27.3.0 — Customer Directory actions
+        if (action === 'cust-new') {
+          UI.showCustomerEditor(null);
+          return;
+        }
+
+        // v27.3.0 — Login "Trouble signing in?" link opens the reset password
+        // request sheet (D10).
+        if (action === 'rp-show') {
+          showResetPasswordRequest();
+          return;
+        }
+        if (action === 'cust-filter') {
+          const v = actEl.getAttribute('data-value') || 'all';
+          setCustomerFilter(v);
+          return;
+        }
+        if (action === 'cust-open') {
+          const id = actEl.getAttribute('data-id');
+          if (id) UI.showCustomer360(id);
+          return;
+        }
+        if (action === 'cust-edit') {
+          const id = actEl.getAttribute('data-id');
+          if (id) UI.showCustomerEditor(id);
+          return;
+        }
+        if (action === 'cust-save') {
+          const id = actEl.getAttribute('data-id');  // null for new
+          const payload = {
+            name:       ($('ce-name')     && $('ce-name').value || '').trim(),
+            party_type: ($('ce-type')     && $('ce-type').value) || 'customer',
+            city:       ($('ce-city')     && $('ce-city').value || '').trim(),
+            state:      ($('ce-state')    && $('ce-state').value || '').trim(),
+            industry:   ($('ce-industry') && $('ce-industry').value || '').trim(),
+            website:    ($('ce-website')  && $('ce-website').value || '').trim(),
+            notes:      ($('ce-notes')    && $('ce-notes').value || '').trim()
+          };
+          if (!payload.name) { toast('Name is required', 'err'); return; }
+          if (id) payload.id = id;
+          STORE.customerUpsert(payload).then(function (r) {
+            if (r && r.ok === false) { toast('Save failed: ' + (r.error || 'unknown'), 'err'); return; }
+            closeSheet();
+            toast(id ? 'Updated' : 'Created', 'ok');
+            loadCustomerList();
+          }).catch(function (err) {
+            toast('Save failed: ' + (err && err.message || String(err)), 'err');
+          });
+          return;
+        }
+        if (action === 'cust-delete') {
+          const id = actEl.getAttribute('data-id');
+          if (!id) return;
+          if (!confirm('Delete this customer? Linked deals will be unlinked but not deleted.')) return;
+          STORE.customerDelete(id).then(function () {
+            closeSheet();
+            toast('Deleted', 'ok');
+            loadCustomerList();
+          }).catch(function (err) {
+            toast('Delete failed: ' + (err && err.message || String(err)), 'err');
+          });
+          return;
+        }
+        if (action === 'cust-merge') {
+          const sourceId = actEl.getAttribute('data-id');
+          if (!sourceId) return;
+          // Show merge picker — list other customers to merge INTO
+          const others = _customersCache.filter(c => c.id !== sourceId);
+          if (others.length === 0) {
+            toast('Need at least 2 customers to merge', 'warn');
+            return;
+          }
+          const sourceName = (_customersCache.find(c => c.id === sourceId) || {}).name || '';
+          openSheet(
+            '<div class="notif-sheet" style="padding:0 16px 16px">' +
+              '<div class="notif-sheet-head" style="padding-left:0;padding-right:0">' +
+                '<h3>Merge into\u2026</h3>' +
+              '</div>' +
+              '<p style="font-size:13px;color:var(--ink-soft);margin:0 0 12px">' +
+                'All deals on <strong>' + esc(sourceName) + '</strong> will be reassigned to the chosen target. ' +
+                'The source customer will be deleted. This cannot be undone.' +
+              '</p>' +
+              '<div class="field-v3"><label>Target customer</label>' +
+                '<select class="input-v3" id="cm-target">' +
+                  '<option value="">\u2014 pick one \u2014</option>' +
+                  others.map(c =>
+                    '<option value="' + esc(c.id) + '">' + esc(c.name || '') +
+                    (c.city ? ' (' + esc(c.city) + ')' : '') + '</option>'
+                  ).join('') +
+                '</select>' +
+              '</div>' +
+              '<button class="btn-v3 btn-primary btn-md" type="button" data-action="cust-merge-confirm" data-source="' + esc(sourceId) + '" style="width:100%">' +
+                'Merge \u2192' +
+              '</button>' +
+            '</div>'
+          );
+          return;
+        }
+        if (action === 'cust-merge-confirm') {
+          const sourceId = actEl.getAttribute('data-source');
+          const targetId = $('cm-target') && $('cm-target').value;
+          if (!sourceId || !targetId) { toast('Pick a target customer', 'err'); return; }
+          STORE.customerMerge(sourceId, targetId).then(function () {
+            closeSheet();
+            toast('Merged successfully', 'ok');
+            loadCustomerList();
+          }).catch(function (err) {
+            toast('Merge failed: ' + (err && err.message || String(err)), 'err');
+          });
+          return;
+        }
+
         // v27.3.0 — Notification row tap: mark read + navigate to deal if ref present
         if (action === 'notif-tap') {
           const id = actEl.getAttribute('data-id');
@@ -10361,6 +11092,7 @@
       mount, toast, openSheet, closeSheet,
       showLogin, showForcePw, showProfileSetup,
       showHome, showHistory, showProfile, showSavedDeal, showWizard,
+      showCustomers, showCustomer360, showCustomerEditor,
       updateNavActive, showChrome,
       // expose for APP
       getWizardData: () => wizardData,
@@ -10512,6 +11244,7 @@
       if (hash === '#/login') { UI.showLogin(); return; }
       if (hash === '#/home')  { UI.showHome();  return; }
       if (hash === '#/history') { UI.showHistory(); return; }
+      if (hash === '#/customers') { UI.showCustomers(); return; }
       if (hash === '#/profile') { UI.showProfile(); return; }
       if (hash === '#/quote/new' ||
           hash.indexOf('#/quote/new/') === 0) {
