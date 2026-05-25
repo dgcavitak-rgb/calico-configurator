@@ -1,9 +1,133 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-app="tvone" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>tvONE Product Selector — v27</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23FBFAF8'/><path d='M5 9 L13 16 L5 23' fill='none' stroke='%23FAC172' stroke-width='4' stroke-linejoin='round' stroke-linecap='round'/><path d='M15 9 L23 16 L15 23' fill='none' stroke='%23F7941D' stroke-width='4' stroke-linejoin='round' stroke-linecap='round'/></svg>">
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,700&display=swap">
+  <!--
+    v27.3.0 — UI REDESIGN (2026-05-25)
+    Goal: modern-age app feel, uniform style, smooth flow, easy navigation.
+    Calculations frozen. UI / chrome / exports redesign only.
+
+    Theme & chrome (§3, §5, §6):
+      - LOCKED tokens v4 (REF-phase3-components): amber #F7941D + General Sans
+        + ambient orbs. Light + dark + auto via html[data-app][data-theme].
+        Theme bootstrap script at script-start prevents flash. Theme toggle
+        in topbar (sun/auto/moon SVG icons). Persisted at 'tvone.theme.v27'.
+      - Topbar rebuilt: real tvONE chevron logo (two amber arrows, recreates
+        brand favicon) + Cavitak red-lightning logo + responsive widths
+        (drops Cavitak <720, SUPER badge + brand text <540). Notif bell with
+        badge (placeholder), avatar w/ initials computed from user.full_name.
+      - Bottom-nav refined Lucide icons (home, file-text, users, bar-chart).
+      - Tricolor stripe permanently hidden via CSS (legacy DOM kept for compat).
+      - Favicon: inline SVG data URI of the chevron mark.
+      - 103 legacy --c-* / --f-* / --sh-* / --r-* var refs aliased to new
+        tokens so existing CSS keeps working during transition. Cleanup pass
+        deletes aliases when each legacy block is migrated.
+
+    Home page rewrite (§7):
+      - Hero-tech layout per dashboard-refs locked PNGs.
+      - 4 gradient KPI tiles w/ category icons (blue OPEN PIPELINE, green
+        WON THIS QUARTER, purple WIN RATE, amber CLOSING THIS MONTH).
+        loadHomeKpis() aggregates from STORE.listDeals({limit:200}) filtered
+        to deals where sales_person_id===user.id OR presales_person_id===user.id.
+      - 3 attention cards (closing-this-month/stuck-14d/stale-30d) w/ icons.
+      - "My Deals" table with colored stage chips.
+      - Closing-this-month tracking uses close_month YYYY-MM (NOT week-based;
+        schema is month-granular).
+
+    Stage chips (§8):
+      - _stageChipClassName(stage) maps every stage to a colored chip-v3 variant
+        with leading status dot. Applied in renderHistoryRow + Home table.
+
+    Step 2 collapse (§9):
+      - Renamed renderStep2 to show 2 tiles only: MULTI VIEWER, VIDEO PROCESSOR.
+      - VIDEO PROCESSOR tap reveals sub-step picker (CALICO / CORIO) inline.
+      - solution-vp-toggle action toggles _step2_videoProcessorOpen wizardData flag.
+      - solution-pick sets the flag when CALICO/CORIO chosen so picker stays open.
+      - Internal solutionType values unchanged ('mv' | 'calico' | 'corio') so
+        all downstream engine / validation / Step 3 logic is undisturbed.
+
+    Glass action bar + share helpers (§12, §13):
+      - Replaced legacy .sd-actionbar with .bom-action-bar (sticky-fixed,
+        glass card, blur+saturate backdrop, icon-only on <720). 6 buttons:
+        Edit / Confirm / Excel / PDF / WhatsApp / Email + Delete trash.
+      - All buttons share same glass background; icons carry semantic color
+        (green check Confirmed, Excel-green file, PDF-red file, WhatsApp-green
+        chat bubble, purple envelope Email).
+      - _buildWhatsAppUrl(deal): wa.me/<phone>?text=<msg>. Strips non-digits,
+        prepends 91 if 10-digit. Body includes project + ref + customer + sender.
+      - _buildMailtoUrl(deal): mailto:<to>?cc=<sender>&subject=...&body=...
+        CCs sender's email so they have a copy in their Sent folder.
+
+    Hover polish app-wide (§14):
+      - 220ms ease-out consistent timing.
+      - KPI tiles: lift 3px + brightness 1.05 on hover.
+      - Attention cards: lift 2px + border darkens + shadow grows.
+      - Solution tiles: lift 2px + amber border glow + tile-icon scales 1.06x.
+      - Action buttons: lift 1px + background brightens + soft shadow.
+      - Filter chips: lift 1px + brighten; active chip gets stronger amber shadow.
+      - Deal list cards: subtle shadow grows.
+
+    Skipped vs FEATURE-INVENTORY plan (already in v27.2.6):
+      - C1 T&C in Excel + PDF (shipped v27.2.0)
+      - C2 Sales+Presales footer in exports (shipped v27.2.0)
+      - D16 Profile Setup Gate (shipped v27.2.6)
+
+    Step 4 LED card (Session 6 — live badges):
+      - Per-screen card now shows live readouts: total pixels, RJ45 ports
+        (ceil(pixels/650000)), HDMI feeds (ceil(pixels/(3840*2160))),
+        aspect ratio (exact-match for 16:9, 16:10, 4:3, 21:9, 32:9, 1:1,
+        9:16, 5:4 within 0.5% tol, else "Custom W.WW:1"), physical
+        dimensions (via FROZEN screenDimensions()).
+      - Bottom green aggregate band: LED Pixels, LED Output Ports,
+        Projector Ports, Total Ports Needed.
+
+    Step 5 SX cards (Session 6 — visual refresh):
+      - 4 designed cards (HDBaseT, HDMI Splitter, AP-536, AOC) with
+        category icons + custom +/- stepper UI.
+      - Engine model unchanged (sx_data sums). Per-variant pickers
+        (HDBaseT TX/RX kits, splitter fanout, AOC line items) deferred
+        to v27.4 per spec §10 Option (A)+(C).
+
+    Silent-drop restores (Sessions 7-9):
+      - D4 AuditLog viewer modal — STORE.auditLogList(filters); Super-only.
+      - D5 Revisions modal — STORE.revisionsList(refId).
+      - D6-D9 Notification bell — STORE.notifList/notifMarkRead/notifCreate.
+        Badge refreshes on every showChrome(true). Sheet has type icons
+        (won/lost/stage/handoff/reset/info), time-ago, click row marks
+        read + navigates to deal. "Mark all read" at top.
+      - D10 Reset password user-side request via login screen.
+      - D11 Reset password Super-side approval panel via avatar menu.
+      - v27.7 partial: Duplicate deal (sd-duplicate action prompts new
+        project name, creates copy, navigates).
+      - v27.7 partial: stage_list RPC bound (custom stages UI ships v27.4).
+      - v27.7 partial: Won-deal confetti — fireConfetti() spawns 60 CSS-
+        animated particles when stage transitions to "Closed Won" during
+        autosave. Respects prefers-reduced-motion.
+      - Avatar dropdown rebuilt as user-menu sheet: Profile / Change PW /
+        [Super: Audit log, Password resets] / Sign out.
+
+    Deferred to v27.3.1+ (larger scope, app fully functional without):
+      - Step 5 SX per-variant pickers (HDBaseT/Splitter/AOC line items)
+      - Login card refresh to new design tokens
+      - D1-D3 Customer Directory + Merge + Customer 360
+      - D12 Email templates
+      - Full pipeline dashboard (v27.5)
+      - tvONE pricing migration (v27.4)
+
+    Architecture locked (do not change):
+      - 17 SOFT_FIELDS / 15 STRUCTURAL_FIELDS contracts preserved.
+      - 1s autosave debounce on SOFT fields, STRUCTURAL fields dirty-flag + Rebuild.
+      - sha256Hex .trim() defense intact (mobile autofill).
+      - setRoot() scrollTo synchronous (Chrome Android rAF drop avoided).
+
+    v27.2.6 changelog below.
+  -->
+
   <!--
     v27.2.3 — BUG FIXES + SCREEN DIMENSIONS (2026-05-25)
     User-reported bugs against v27.2.2:
@@ -124,57 +248,140 @@
   -->
   <style>
     /* ============================================================
-       Design tokens — tvONE forest-green / gold / tricolor
-       Mobile-first. Tap targets ≥44px. Safe-area aware.
+       Design tokens — v27.3.0 LOCKED (REF-phase3-components v4)
+       tvONE amber #F7941D + General Sans + ambient orbs
+       Legacy --c-* / --f-* / --sh-* / --r-* names aliased below
+       for the existing 100+ CSS references; phased out in cleanup.
        ============================================================ */
     :root {
-      --c-fg: #1a2e1f;
-      --c-fg-soft: #4a5d52;
-      --c-fg-mute: #7a8a82;
-      --c-fg-rev: #ffffff;
-      --c-bg: #f5f7f3;
-      --c-elev: #ffffff;
-      --c-sunk: #ebeee8;
-      --c-border: #d4ddd0;
-      --c-border-st: #9eb3a5;
-      --c-accent: #2d5a3d;
-      --c-accent-dk: #1a3d28;
-      --c-accent-lt: #e0ecdf;
-      --c-gold: #c8a04a;
-      --c-gold-lt: #f5ecd5;
-      --c-ok: #2d7a3d;
-      --c-ok-lt: #d6ecd9;
-      --c-warn: #c46a18;
-      --c-warn-lt: #fbe9d4;
-      --c-err: #b53528;
-      --c-err-lt: #fadcd6;
-      --c-overlay: rgba(20, 30, 22, 0.45);
-      --f-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-      --f-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px;
-      --s-5: 24px; --s-6: 32px; --s-7: 48px;
-      --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-pill: 999px;
-      --nav-h: 64px; --tap: 44px; --content-max: 540px;
-      --sh-card: 0 1px 2px rgba(26,46,31,0.04), 0 1px 4px rgba(26,46,31,0.04);
-      --sh-pop: 0 8px 24px rgba(26,46,31,0.18);
-      --sh-nav: 0 -1px 0 var(--c-border), 0 -4px 12px rgba(26,46,31,0.04);
+      --s-5: 20px; --s-6: 24px; --s-7: 32px; --s-8: 40px;
+      --s-9: 48px; --s-10: 64px; --s-11: 80px; --s-12: 96px;
+      --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-pill: 999px;
+      --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+      --dur-fast: 150ms; --dur-base: 220ms; --dur-slow: 380ms;
+      --dur-ambient: 24000ms;
+      --font-display: 'General Sans', -apple-system, system-ui, sans-serif;
+      --font-system: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-num: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-mono: 'SF Mono', Menlo, monospace;
+      --t-display: 28px; --t-h1: 22px; --t-h2: 17px; --t-h3: 15px;
+      --t-body: 15px; --t-body-sm: 13px; --t-caption: 12px; --t-eyebrow: 10.5px;
+      --ls-display: -0.025em; --ls-h1: -0.015em; --ls-body: -0.003em; --ls-eyebrow: 0.10em;
+      --lh-display: 1.15; --lh-body: 1.5;
+      /* legacy structural — preserved */
+      --nav-h: 60px; --tap: 44px; --content-max: 540px;
     }
-    * { box-sizing: border-box; }
-    /* Belt-and-suspenders: [hidden] beats author CSS like display:flex.
-       Without this, .topbar / .tricolor-bar / .bottom-nav stay visible on
-       login because their display:flex outranks the UA [hidden] rule. */
+    html[data-app="tvone"] {
+      --amber-300: #FAC172; --amber-400: #F7A93D; --amber-500: #F7941D; --amber-600: #E8731C;
+    }
+    html[data-app="tvone"][data-theme="light"] {
+      --bg-page: #FBFAF8; --bg-topbar: rgba(255,255,255,0.85); --bg-card: #FFFFFF; --bg-card-hover: #FAFAF8;
+      --bg-input: #F6F5F1; --bg-input-focus: #FFFFFF; --bg-elevated: #FFFFFF; --bg-subtle: #F2F1ED;
+      --border-soft: rgba(15,14,12,0.06); --border-mid: rgba(15,14,12,0.12); --border-strong: rgba(15,14,12,0.22);
+      --border-brand: rgba(247,148,29,0.50);
+      --ink-strong: #0A0908; --ink-mid: #3F3D38; --ink-soft: #76746A; --ink-faint: #ADAB9F;
+      --ink-on-brand: #FFFFFF; --ink-brand: #C45A14;
+      --accent: var(--amber-500); --accent-deep: var(--amber-600); --accent-soft: rgba(247,148,29,0.10);
+      --brand-grad: linear-gradient(135deg, #F7941D 0%, #E8731C 100%);
+      --cta-grad: linear-gradient(135deg, #F7941D 0%, #E8731C 100%);
+      --shadow-card: 0 1px 2px rgba(15,14,12,0.04), 0 4px 12px rgba(15,14,12,0.04);
+      --shadow-fab: 0 8px 24px rgba(232,115,28,0.28), 0 2px 6px rgba(15,14,12,0.10);
+      --shadow-topbar: 0 1px 0 rgba(15,14,12,0.04);
+      --shadow-sheet: 0 -12px 48px rgba(15,14,12,0.18);
+      --orb-1: radial-gradient(circle, rgba(247,148,29,0.07) 0%, transparent 70%);
+      --orb-2: radial-gradient(circle, rgba(232,115,28,0.05) 0%, transparent 70%);
+      --success: #15803D; --warning: #B45309; --danger: #B91C1C; --info: #1E40AF;
+      --success-soft: rgba(21,128,61,0.10); --warning-soft: rgba(180,83,9,0.10);
+      --danger-soft: rgba(185,28,28,0.10); --info-soft: rgba(30,64,175,0.08);
+      /* legacy aliases (103 refs in existing CSS) */
+      --c-fg: var(--ink-strong); --c-fg-soft: var(--ink-mid); --c-fg-mute: var(--ink-soft); --c-fg-rev: var(--ink-on-brand);
+      --c-bg: var(--bg-page); --c-elev: var(--bg-card); --c-sunk: var(--bg-subtle);
+      --c-border: var(--border-mid); --c-border-st: var(--border-strong);
+      --c-accent: var(--accent); --c-accent-dk: var(--accent-deep); --c-accent-lt: var(--accent-soft);
+      --c-gold: #C8A04A; --c-gold-lt: #F5ECD5;
+      --c-ok: var(--success); --c-ok-lt: var(--success-soft);
+      --c-warn: var(--warning); --c-warn-lt: var(--warning-soft);
+      --c-err: var(--danger); --c-err-lt: var(--danger-soft);
+      --c-overlay: rgba(20,30,22,0.45);
+      --f-mono: var(--font-mono); --f-sans: var(--font-system);
+      --sh-card: var(--shadow-card); --sh-pop: var(--shadow-card); --sh-nav: var(--shadow-topbar);
+    }
+    html[data-app="tvone"][data-theme="dark"] {
+      --bg-page: #0E0D0B; --bg-topbar: rgba(20,18,15,0.85); --bg-card: #1A1815; --bg-card-hover: #211F1B;
+      --bg-input: #161413; --bg-input-focus: #1F1D1A; --bg-elevated: #1A1815; --bg-subtle: #181613;
+      --border-soft: rgba(255,255,255,0.05); --border-mid: rgba(255,255,255,0.10); --border-strong: rgba(255,255,255,0.18);
+      --border-brand: rgba(247,169,61,0.45);
+      --ink-strong: #F5F4F1; --ink-mid: #C2C0B7; --ink-soft: #8A887E; --ink-faint: #5A584F;
+      --ink-on-brand: #0E0D0B; --ink-brand: #F7A93D;
+      --accent: var(--amber-400); --accent-deep: var(--amber-500); --accent-soft: rgba(247,148,29,0.16);
+      --brand-grad: linear-gradient(135deg, #F7941D 0%, #E8731C 100%);
+      --cta-grad: linear-gradient(135deg, #F7A93D 0%, #F7941D 100%);
+      --shadow-card: 0 1px 0 rgba(255,255,255,0.04) inset, 0 2px 8px rgba(0,0,0,0.30);
+      --shadow-fab: 0 8px 24px rgba(247,148,29,0.32), 0 2px 6px rgba(0,0,0,0.40);
+      --shadow-topbar: 0 1px 0 rgba(255,255,255,0.04);
+      --shadow-sheet: 0 -12px 48px rgba(0,0,0,0.50);
+      --orb-1: radial-gradient(circle, rgba(247,148,29,0.06) 0%, transparent 70%);
+      --orb-2: radial-gradient(circle, rgba(232,115,28,0.04) 0%, transparent 70%);
+      --success: #4ADE80; --warning: #FBBF24; --danger: #FB7185; --info: #7DD3FC;
+      --success-soft: rgba(74,222,128,0.15); --warning-soft: rgba(251,191,36,0.15);
+      --danger-soft: rgba(251,113,133,0.15); --info-soft: rgba(125,211,252,0.15);
+      --c-fg: var(--ink-strong); --c-fg-soft: var(--ink-mid); --c-fg-mute: var(--ink-soft); --c-fg-rev: var(--ink-on-brand);
+      --c-bg: var(--bg-page); --c-elev: var(--bg-card); --c-sunk: var(--bg-subtle);
+      --c-border: var(--border-mid); --c-border-st: var(--border-strong);
+      --c-accent: var(--accent); --c-accent-dk: var(--accent-deep); --c-accent-lt: var(--accent-soft);
+      --c-gold: #C8A04A; --c-gold-lt: rgba(200,160,74,0.15);
+      --c-ok: var(--success); --c-ok-lt: var(--success-soft);
+      --c-warn: var(--warning); --c-warn-lt: var(--warning-soft);
+      --c-err: var(--danger); --c-err-lt: var(--danger-soft);
+      --c-overlay: rgba(0,0,0,0.65);
+      --f-mono: var(--font-mono); --f-sans: var(--font-system);
+      --sh-card: var(--shadow-card); --sh-pop: var(--shadow-card); --sh-nav: var(--shadow-topbar);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
     [hidden] { display: none !important; }
-    html { -webkit-text-size-adjust: 100%; }
-    body { margin: 0; background: var(--c-bg); color: var(--c-fg);
-      font: 15px/1.45 var(--f-sans); min-height: 100vh;
+    html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent;
+      font-family: var(--font-system); font-size: var(--t-body); line-height: var(--lh-body);
+      color: var(--ink-strong); background: var(--bg-page);
+      transition: background var(--dur-slow) var(--ease-out), color var(--dur-slow) var(--ease-out); }
+    body { margin: 0; min-height: 100vh; min-height: 100dvh;
+      background: var(--bg-page); color: var(--ink-strong);
+      letter-spacing: var(--ls-body);
+      position: relative; overflow-x: hidden;
       overscroll-behavior-y: contain; }
+
+    /* Ambient orbs — calm, subtle */
+    body::before, body::after {
+      content: ''; position: fixed; pointer-events: none; z-index: 0;
+      border-radius: 50%; filter: blur(60px);
+    }
+    body::before {
+      top: -15vh; left: -15vw; width: 50vw; height: 50vw; max-width: 500px; max-height: 500px;
+      background: var(--orb-1); animation: orb1 var(--dur-ambient) ease-in-out infinite;
+    }
+    body::after {
+      bottom: -25vh; right: -20vw; width: 60vw; height: 60vw; max-width: 600px; max-height: 600px;
+      background: var(--orb-2); animation: orb2 calc(var(--dur-ambient) * 1.4) ease-in-out infinite;
+      animation-delay: -5s;
+    }
+    @keyframes orb1 { 0%,100% { transform: translate(0,0); opacity: 0.7; } 50% { transform: translate(4vw,3vh); opacity: 1; } }
+    @keyframes orb2 { 0%,100% { transform: translate(0,0); opacity: 0.7; } 50% { transform: translate(-3vw,-2vh); opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+    :focus { outline: none; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
     button, input, select, textarea { font: inherit; }
-    a { color: var(--c-accent); text-decoration: none; }
+    a { color: var(--accent); text-decoration: none; }
     a:active { text-decoration: underline; }
 
     /* App shell */
     #app { min-height: 100vh; display: flex; flex-direction: column;
-      padding-top: env(safe-area-inset-top); }
+      padding-top: env(safe-area-inset-top); position: relative; z-index: 1; }
     #view-root { flex: 1;
       padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px); }
     #view-root .v { max-width: var(--content-max); margin: 0 auto; padding: 16px; }
@@ -689,39 +896,926 @@
 
     /* Print */
     @media print {
-      .topbar, .bottom-nav, .wiz-actionbar { display: none !important; }
+      .topbar, .app-topbar, .bottom-nav, .wiz-actionbar, .bom-action-bar { display: none !important; }
       body { background: white; }
+      body::before, body::after { display: none !important; }
+    }
+
+    /* ============================================================
+       v27.3.0 CHROME + COMPONENTS (LOCKED — REF-phase3 v4)
+       ============================================================ */
+
+    /* --- TOP BAR --- */
+    .app-topbar {
+      position: sticky; top: 0; z-index: 20;
+      background: var(--bg-topbar);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 0.5px solid var(--border-soft);
+      box-shadow: var(--shadow-topbar);
+    }
+    .app-topbar-inner {
+      max-width: 1100px; margin: 0 auto;
+      padding: var(--s-3) var(--s-5);
+      display: flex; align-items: center; gap: var(--s-3);
+    }
+    .brand-mark {
+      display: inline-flex; align-items: center; gap: var(--s-2);
+      font-family: var(--font-display);
+      font-weight: 700; font-size: 15px;
+      letter-spacing: -0.01em;
+      color: var(--ink-strong);
+      white-space: nowrap;
+    }
+    .brand-mark .brand-text { display: inline; }
+    .brand-mark .brand-text-short { display: none; }
+    @media (max-width: 540px) {
+      .brand-mark .brand-text { display: none; }
+      .brand-mark .brand-text-short { display: inline; }
+    }
+    .mark-tvone {
+      display: inline-block;
+      width: 26px; height: 20px;
+      flex-shrink: 0;
+    }
+    .mark-tvone svg { width: 100%; height: 100%; display: block; }
+    .mark-cavitak {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding-left: var(--s-3);
+      margin-left: var(--s-2);
+      border-left: 0.5px solid var(--border-soft);
+      white-space: nowrap;
+    }
+    .mark-cavitak-circle {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: #D52B1E;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(213,43,30,0.30);
+    }
+    .mark-cavitak-circle svg { width: 10px; height: 10px; }
+    .mark-cavitak-text {
+      font-family: var(--font-display);
+      font-weight: 700; font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--ink-mid);
+      text-transform: uppercase;
+    }
+    @media (max-width: 720px) { .mark-cavitak { display: none; } }
+    .topbar-subtitle { display: none; }  /* superseded by .mark-cavitak */
+    .topbar-spacer { flex: 1; }
+    .topbar-perm-badge {
+      font-family: var(--font-display); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.10em;
+      color: var(--ink-soft);
+      padding: 3px 8px; border-radius: var(--r-pill);
+      background: var(--bg-subtle); border: 0.5px solid var(--border-soft);
+      white-space: nowrap;
+    }
+    @media (max-width: 540px) { .topbar-perm-badge { display: none; } }
+    .theme-toggle {
+      display: inline-flex;
+      background: var(--bg-subtle);
+      border-radius: var(--r-pill);
+      padding: 3px; gap: 2px;
+      flex-shrink: 0;
+    }
+    .theme-btn {
+      appearance: none; border: none; background: transparent;
+      padding: 6px 9px; border-radius: var(--r-pill);
+      color: var(--ink-soft); cursor: pointer;
+      font-family: var(--font-display);
+      transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 28px; min-height: 24px;
+    }
+    .theme-btn svg {
+      width: 14px; height: 14px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .theme-btn.active {
+      background: var(--bg-card); color: var(--ink-strong);
+      box-shadow: 0 1px 2px rgba(15,14,12,0.08);
+    }
+    .topbar-action {
+      position: relative;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px;
+      border-radius: var(--r-sm);
+      background: transparent;
+      border: none; cursor: pointer;
+      color: var(--ink-mid);
+      transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
+      flex-shrink: 0;
+    }
+    .topbar-action:hover { background: var(--bg-card-hover); color: var(--ink-strong); }
+    .topbar-action:active { transform: scale(0.93); }
+    .topbar-action svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .notif-badge {
+      position: absolute; top: 4px; right: 4px;
+      min-width: 16px; height: 16px; padding: 0 4px;
+      border-radius: 999px;
+      background: var(--danger); color: white;
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 9.5px; line-height: 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .topbar-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--brand-grad);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 700; font-size: 11px;
+      color: white;
+      cursor: pointer;
+      flex-shrink: 0;
+      border: none;
+    }
+    .ver { display: none; }  /* legacy, kept for compat */
+
+    /* --- BOTTOM NAV (restyle) --- */
+    /* New bottom-nav rules override the legacy .bottom-nav block earlier in the
+       file via source order. The legacy block is left intact during transition. */
+    .bottom-nav {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 25;
+      background: var(--bg-card);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-top: 0.5px solid var(--border-soft);
+      box-shadow: none;
+      display: flex; justify-content: space-around;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .bottom-nav button {
+      flex: 1; min-height: var(--nav-h); border: 0; background: transparent;
+      color: var(--ink-soft); cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px; padding: 8px 4px;
+      font: 600 11px var(--font-display);
+      position: relative;
+      -webkit-tap-highlight-color: transparent;
+      transition: color var(--dur-base) var(--ease-out);
+    }
+    .bottom-nav button[aria-current="page"] { color: var(--accent); }
+    .bottom-nav button[aria-current="page"]::before {
+      content: ''; position: absolute; top: 0; left: 30%; right: 30%; height: 3px;
+      background: var(--accent); border-radius: 0 0 3px 3px;
+      animation: nav-indicator var(--dur-base) var(--ease-spring);
+    }
+    @keyframes nav-indicator { from { transform: scaleX(0.5); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
+    .bottom-nav button:active { transform: scale(0.95); background: transparent; }
+    .bottom-nav button .icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Tricolor bar permanently hidden in v27.3.0 */
+    .tricolor-bar { display: none !important; }
+
+    /* --- PAGE HEADER (used across all screens for uniformity) --- */
+    .page-header { margin-bottom: var(--s-7); }
+    .page-header .eyebrow {
+      font-family: var(--font-display);
+      font-weight: 600; font-size: var(--t-eyebrow);
+      letter-spacing: var(--ls-eyebrow); text-transform: uppercase;
+      color: var(--accent);
+      display: block; margin-bottom: var(--s-2);
+    }
+    .page-header h1 {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: var(--t-display);
+      letter-spacing: var(--ls-display);
+      line-height: var(--lh-display);
+      color: var(--ink-strong);
+      margin: 0 0 var(--s-2);
+    }
+    .page-header p {
+      font-size: var(--t-body-sm);
+      color: var(--ink-soft);
+      margin: 0;
+      line-height: 1.45;
+      max-width: 560px;
+    }
+
+    /* --- CHIPS (with stage-color variants + leading status dot) --- */
+    .chip-v3 {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px;
+      border-radius: var(--r-pill);
+      font-family: var(--font-display);
+      font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
+      background: var(--bg-subtle); color: var(--ink-mid);
+      border: 0.5px solid var(--border-soft);
+      white-space: nowrap;
+    }
+    .chip-v3.chip-accent  { background: var(--accent-soft); color: var(--accent-deep); border-color: transparent; }
+    .chip-v3.chip-success { background: var(--success-soft); color: var(--success); border-color: transparent; }
+    .chip-v3.chip-warning { background: var(--warning-soft); color: var(--warning); border-color: transparent; }
+    .chip-v3.chip-danger  { background: var(--danger-soft); color: var(--danger); border-color: transparent; }
+    .chip-v3.chip-info    { background: var(--info-soft); color: var(--info); border-color: transparent; }
+    .chip-v3.chip-pink    { background: #FCE7F3; color: #9D174D; border-color: transparent; }
+    html[data-theme="dark"] .chip-v3.chip-pink { background: rgba(244,114,182,0.18); color: #F9A8D4; }
+    .chip-v3.chip-accent::before, .chip-v3.chip-success::before, .chip-v3.chip-warning::before,
+    .chip-v3.chip-danger::before, .chip-v3.chip-info::before, .chip-v3.chip-pink::before {
+      content: ''; display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+
+    /* --- BUTTONS (v3) --- */
+    .btn-v3 {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      font-family: var(--font-display); font-weight: 600;
+      letter-spacing: 0.01em;
+      border: none; cursor: pointer;
+      border-radius: var(--r-sm);
+      transition:
+        transform var(--dur-fast) var(--ease-spring),
+        background var(--dur-base) var(--ease-out),
+        box-shadow var(--dur-base) var(--ease-out),
+        color var(--dur-base) var(--ease-out);
+      -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
+    }
+    .btn-v3:active:not(:disabled) { transform: scale(0.97); }
+    .btn-v3:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-v3.btn-sm { padding: 7px 12px; font-size: 12.5px; min-height: 30px; border-radius: var(--r-xs); }
+    .btn-v3.btn-md { padding: 10px 16px; font-size: var(--t-body-sm); min-height: 38px; }
+    .btn-v3.btn-lg { padding: 13px 22px; font-size: var(--t-body); min-height: 46px; border-radius: var(--r-md); }
+    .btn-v3.btn-primary { background: var(--accent); color: var(--ink-on-brand); box-shadow: var(--shadow-fab); }
+    .btn-v3.btn-primary:hover:not(:disabled) { background: var(--accent-deep); }
+    .btn-v3.btn-secondary { background: var(--bg-card); border: 1px solid var(--border-mid); color: var(--ink-strong); }
+    .btn-v3.btn-secondary:hover:not(:disabled) { background: var(--bg-card-hover); border-color: var(--border-strong); }
+    .btn-v3.btn-ghost { background: transparent; color: var(--ink-mid); }
+    .btn-v3.btn-ghost:hover:not(:disabled) { background: var(--bg-subtle); color: var(--ink-strong); }
+    .btn-v3.btn-purple { background: #7C3AED; color: white; box-shadow: 0 4px 12px rgba(124,58,237,0.25); }
+    .btn-v3.btn-purple:hover:not(:disabled) { background: #6D28D9; }
+    .btn-v3 .btn-icon { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* --- CARDS (v3) --- */
+    .card-v3 {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      padding: var(--s-4);
+      box-shadow: var(--shadow-card);
+      transition: box-shadow var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+    }
+    .card-v3.card-glass {
+      background: var(--bg-topbar);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-color: var(--border-soft);
+    }
+    .card-v3.card-hover { cursor: pointer; }
+    .card-v3.card-hover:hover { transform: translateY(-2px); border-color: var(--border-mid); }
+
+    /* --- INPUTS / FIELDS (v3) --- */
+    .input-v3, .select-v3, .textarea-v3 {
+      appearance: none; -webkit-appearance: none;
+      width: 100%; padding: 10px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--r-sm);
+      color: var(--ink-strong);
+      font-family: var(--font-system); font-size: var(--t-body);
+      transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+    }
+    .input-v3::placeholder, .textarea-v3::placeholder { color: var(--ink-faint); }
+    .input-v3:focus, .select-v3:focus, .textarea-v3:focus {
+      outline: none;
+      background: var(--bg-input-focus);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    .textarea-v3 { resize: vertical; min-height: 80px; }
+    .field-v3 { display: flex; flex-direction: column; margin-bottom: var(--s-4); }
+    .field-v3 label, .field-v3 .field-label {
+      font-family: var(--font-display);
+      font-weight: 500; font-size: 12.5px;
+      color: var(--ink-mid);
+      margin-bottom: 6px;
+    }
+    .field-v3 .field-help { font-size: var(--t-caption); color: var(--ink-soft); margin-top: 4px; }
+    .field-v3 .field-error { font-size: var(--t-caption); color: var(--danger); margin-top: 4px; }
+
+    /* --- SHEET v3 (overrides existing #sheet-host styles) --- */
+    /* Existing #sheet-host markup retained; v3 styles applied via attribute. */
+    #sheet-host { z-index: 50; }
+    #sheet-host[data-open="true"] .sheet-backdrop {
+      opacity: 1; pointer-events: auto;
+    }
+    .sheet-v3 {
+      max-width: 720px; margin: 0 auto;
+      background: var(--bg-card);
+      border-top-left-radius: var(--r-lg);
+      border-top-right-radius: var(--r-lg);
+      box-shadow: var(--shadow-sheet);
+      max-height: 85vh;
+      display: flex; flex-direction: column;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .sheet-handle {
+      width: 36px; height: 4px;
+      background: var(--border-strong);
+      border-radius: 999px;
+      margin: 10px auto 4px;
+      flex-shrink: 0;
+    }
+
+    /* --- TOAST v3 (overrides existing #toast-host children) --- */
+    /* Existing #toast-host markup retained; we restyle .toast children to v3. */
+    #toast-host {
+      position: fixed; top: 70px; left: 0; right: 0;
+      z-index: 300; pointer-events: none;
+      display: flex; flex-direction: column; align-items: center; gap: var(--s-2);
+      padding: 0 var(--s-4);
+    }
+    #toast-host .toast {
+      pointer-events: auto;
+      display: flex; align-items: center; gap: var(--s-3);
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-pill);
+      padding: 10px var(--s-4) 10px var(--s-3);
+      box-shadow: 0 4px 12px rgba(15,14,12,0.06), 0 12px 32px rgba(15,14,12,0.10);
+      font-size: var(--t-body-sm);
+      color: var(--ink-strong);
+      max-width: 100%;
+      transform: translateY(-20px); opacity: 0;
+      animation: toast-in var(--dur-slow) var(--ease-spring) forwards;
+    }
+    @keyframes toast-in { 0% { transform: translateY(-20px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+
+    /* --- EMPTY STATE v3 --- */
+    .empty-state {
+      text-align: center;
+      padding: var(--s-9) var(--s-5);
+    }
+    .empty-state-illustration {
+      width: 96px; height: 96px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-bottom: var(--s-5);
+      color: var(--accent);
+    }
+    .empty-state-illustration svg { width: 40px; height: 40px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    .empty-state-title {
+      font-family: var(--font-display);
+      font-weight: 600; font-size: var(--t-h2);
+      color: var(--ink-strong);
+      margin: 0 0 var(--s-2);
+      letter-spacing: var(--ls-h1);
+    }
+    .empty-state-body {
+      font-size: var(--t-body-sm);
+      color: var(--ink-soft);
+      margin: 0 auto var(--s-5);
+      max-width: 360px;
+      line-height: 1.5;
+    }
+
+    /* --- SKELETON v3 --- */
+    .sk {
+      background: linear-gradient(90deg, var(--bg-subtle) 0%, var(--bg-card-hover) 50%, var(--bg-subtle) 100%);
+      background-size: 200% 100%;
+      animation: shimmer 1.6s ease-in-out infinite;
+      border-radius: var(--r-xs);
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .sk-card { height: 120px; border-radius: var(--r-md); }
+
+    /* --- v27.3.0 HOME PAGE LAYOUT --- */
+    .v273-page {
+      max-width: 1100px; margin: 0 auto;
+      padding: var(--s-6) var(--s-5) calc(var(--s-12) + 60px);
+      position: relative; z-index: 1;
+    }
+    .kpi-grid {
+      display: grid; gap: var(--s-3);
+      grid-template-columns: repeat(4, 1fr);
+      margin-bottom: var(--s-7);
+    }
+    @media (max-width: 720px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    .kpi-tile {
+      position: relative;
+      border-radius: var(--r-md);
+      padding: var(--s-5) var(--s-5) var(--s-4);
+      color: white;
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform var(--dur-base) var(--ease-out), filter var(--dur-base) var(--ease-out);
+      min-height: 120px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      border: none; text-align: left;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .kpi-tile:hover { transform: translateY(-3px); filter: brightness(1.05); }
+    .kpi-tile:active { transform: scale(0.985) translateY(-1px); }
+    .kpi-tile::after {
+      content: ''; position: absolute;
+      top: -40%; right: -20%;
+      width: 60%; height: 200%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, transparent 70%);
+      transform: rotate(20deg);
+      pointer-events: none;
+    }
+    .kpi-tile-blue   { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); box-shadow: 0 4px 14px rgba(37,99,235,0.30); }
+    .kpi-tile-green  { background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%); box-shadow: 0 4px 14px rgba(22,163,74,0.30); }
+    .kpi-tile-purple { background: linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%); box-shadow: 0 4px 14px rgba(124,58,237,0.30); }
+    .kpi-tile-amber  { background: var(--brand-grad); box-shadow: 0 4px 14px rgba(232,115,28,0.30); }
+    .kpi-tile-icon {
+      position: absolute; top: var(--s-4); right: var(--s-4);
+      width: 22px; height: 22px;
+      color: rgba(255,255,255,0.65);
+      pointer-events: none;
+    }
+    .kpi-tile-icon svg { width: 100%; height: 100%; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+    .kpi-eyebrow {
+      font-family: var(--font-display);
+      font-weight: 600; font-size: var(--t-eyebrow);
+      letter-spacing: var(--ls-eyebrow); text-transform: uppercase;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: var(--s-2);
+      white-space: nowrap;
+      text-overflow: ellipsis; overflow: hidden;
+    }
+    .kpi-value {
+      font-family: var(--font-display);
+      font-weight: 700; font-size: 28px;
+      letter-spacing: -0.02em; line-height: 1.1;
+      margin: 0;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .kpi-sub { margin-top: var(--s-3); font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.85); }
+    @media (max-width: 540px) {
+      .kpi-eyebrow { font-size: 9px; letter-spacing: 0.06em; }
+      .kpi-value { font-size: 24px; }
+      .kpi-tile { padding: var(--s-4) var(--s-3) var(--s-3); min-height: 100px; }
+    }
+
+    .attention-row {
+      display: grid; gap: var(--s-3);
+      grid-template-columns: repeat(3, 1fr);
+      margin-bottom: var(--s-7);
+    }
+    @media (max-width: 720px) { .attention-row { grid-template-columns: 1fr; } }
+    .attention-card {
+      display: block; text-decoration: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      padding: var(--s-4);
+      box-shadow: var(--shadow-card);
+      cursor: pointer;
+      transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+      -webkit-tap-highlight-color: transparent;
+      color: inherit;
+    }
+    .attention-card:hover { transform: translateY(-2px); border-color: var(--border-mid); box-shadow: 0 6px 20px rgba(15,14,12,0.06), 0 1px 3px rgba(15,14,12,0.04); }
+    html[data-theme="dark"] .attention-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.40), 0 1px 3px rgba(0,0,0,0.30); }
+    .attention-card:active { transform: scale(0.99); }
+    .attention-card-danger  { border-top: 3px solid #DC2626; background: linear-gradient(180deg, rgba(220,38,38,0.04) 0%, var(--bg-card) 50%); }
+    .attention-card-warning { border-top: 3px solid #F59E0B; background: linear-gradient(180deg, rgba(245,158,11,0.04) 0%, var(--bg-card) 50%); }
+    .attention-card-stale   { border-top: 3px solid #A78BFA; background: linear-gradient(180deg, rgba(167,139,250,0.04) 0%, var(--bg-card) 50%); }
+    .attention-head { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-3); }
+    .attention-icon { width: 18px; height: 18px; flex-shrink: 0; }
+    .attention-icon svg { width: 100%; height: 100%; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .attention-card-danger  .attention-icon { color: #DC2626; }
+    .attention-card-warning .attention-icon { color: #F59E0B; }
+    .attention-card-stale   .attention-icon { color: #A78BFA; }
+    .attention-title { font-family: var(--font-display); font-weight: 600; font-size: var(--t-body-sm); color: var(--ink-strong); flex: 1; }
+    .attention-count { font-family: var(--font-display); font-weight: 700; font-size: var(--t-body); color: var(--ink-soft); background: var(--bg-subtle); padding: 2px 10px; border-radius: var(--r-pill); font-variant-numeric: tabular-nums; }
+    .attention-empty { font-size: var(--t-body-sm); color: var(--ink-soft); text-align: center; padding: var(--s-4) 0; }
+
+    .deal-list-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      box-shadow: var(--shadow-card);
+      padding: 0; overflow: hidden;
+      transition: box-shadow var(--dur-base) var(--ease-out);
+    }
+    .deal-list-card:hover { box-shadow: 0 6px 20px rgba(15,14,12,0.06), 0 1px 3px rgba(15,14,12,0.04); }
+    html[data-theme="dark"] .deal-list-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.40), 0 1px 3px rgba(0,0,0,0.30); }
+    .deal-list-head { display: flex; align-items: baseline; gap: var(--s-3); padding: var(--s-4) var(--s-5); border-bottom: 0.5px solid var(--border-soft); }
+    .deal-list-head h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--t-h2); color: var(--ink-strong); margin: 0; letter-spacing: var(--ls-h1); }
+    .deal-list-head .meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
+
+    /* --- v27.3.0 GLASS ACTION BAR --- */
+    .bom-action-bar {
+      position: fixed; bottom: 60px;
+      left: 0; right: 0; z-index: 28;
+      display: flex; justify-content: center;
+      padding: var(--s-3) var(--s-4);
+      pointer-events: none;
+    }
+    .bom-action-bar-inner {
+      pointer-events: auto;
+      display: flex; gap: var(--s-2); align-items: center;
+      background: var(--bg-topbar);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--border-soft);
+      padding: 8px; border-radius: var(--r-lg);
+      box-shadow: 0 8px 32px rgba(15,14,12,0.12);
+      max-width: 100%;
+      overflow-x: auto;
+    }
+    .bom-action-bar-inner::-webkit-scrollbar { display: none; }
+    .action-btn-v3 {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 14px; min-height: 38px;
+      font-family: var(--font-display); font-weight: 600; font-size: var(--t-body-sm);
+      color: var(--ink-strong);
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+      transition:
+        transform var(--dur-fast) var(--ease-spring),
+        background var(--dur-base) var(--ease-out),
+        border-color var(--dur-base) var(--ease-out),
+        box-shadow var(--dur-base) var(--ease-out);
+    }
+    .action-btn-v3::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 50%);
+      pointer-events: none;
+      opacity: 0.6;
+      transition: opacity var(--dur-base) var(--ease-out);
+    }
+    html[data-theme="dark"] .action-btn-v3::before {
+      background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 50%);
+      opacity: 1;
+    }
+    .action-btn-v3:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: var(--border-mid);
+      background: var(--bg-card-hover);
+      box-shadow: 0 4px 14px rgba(15,14,12,0.08), 0 1px 2px rgba(15,14,12,0.04);
+    }
+    html[data-theme="dark"] .action-btn-v3:hover:not(:disabled) {
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.20);
+    }
+    .action-btn-v3:active:not(:disabled) { transform: scale(0.97); }
+    .action-btn-v3:disabled { opacity: 0.5; cursor: not-allowed; }
+    .action-btn-v3 .icon {
+      width: 16px; height: 16px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+      flex-shrink: 0;
+      position: relative; z-index: 1;
+      color: var(--ink-mid);
+    }
+    .action-btn-v3 .label { position: relative; z-index: 1; }
+    .action-btn-v3.act-confirm .icon { color: var(--success); }
+    .action-btn-v3.act-excel   .icon { color: #16A34A; }
+    .action-btn-v3.act-pdf     .icon { color: #DC2626; }
+    .action-btn-v3.act-wa      .icon { color: #25D366; }
+    .action-btn-v3.act-email   .icon { color: #7C3AED; }
+    @media (max-width: 720px) {
+      .action-btn-v3 .label { display: none; }
+      .action-btn-v3 { padding: 10px; min-width: 38px; }
+      .action-btn-v3 .icon { width: 18px; height: 18px; }
+    }
+
+    /* --- v27.3.0 SOLUTION TILES (Step 2) — override legacy .tile --- */
+    .tile {
+      appearance: none; border: 1.5px solid var(--border-mid); background: var(--bg-card);
+      padding: var(--s-4); border-radius: var(--r-md);
+      text-align: left; cursor: pointer;
+      transition:
+        transform var(--dur-base) var(--ease-out),
+        border-color var(--dur-base) var(--ease-out),
+        background var(--dur-base) var(--ease-out),
+        box-shadow var(--dur-base) var(--ease-out);
+      font-family: inherit;
+      display: flex; align-items: flex-start; gap: var(--s-3);
+      width: 100%;
+    }
+    .tile-icon {
+      width: 40px; height: 40px;
+      border-radius: var(--r-sm);
+      background: var(--accent-soft); color: var(--accent-deep);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-spring);
+    }
+    .tile-icon svg { width: 22px; height: 22px; }
+    .tile-text { flex: 1; min-width: 0; }
+    .tile-title {
+      font-family: var(--font-display);
+      font-weight: 700; font-size: var(--t-body);
+      color: var(--ink-strong);
+      margin-bottom: var(--s-1);
+      letter-spacing: -0.005em;
+    }
+    .tile-sub { font-size: var(--t-body-sm); color: var(--ink-soft); margin: 0; line-height: 1.4; }
+    .tile[data-checked="true"] { border-color: var(--accent); background: var(--accent-soft); }
+    .tile[data-checked="true"] .tile-icon { background: var(--accent); color: white; }
+    .tile:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(232,115,28,0.10), 0 1px 3px rgba(15,14,12,0.04); }
+    .tile:hover .tile-icon { transform: scale(1.06); }
+    .tile:active { transform: scale(0.99); }
+    .tile-group { display: grid; gap: var(--s-3); }
+    .sub-tile-group {
+      margin-top: var(--s-3);
+      padding: var(--s-3); background: var(--bg-subtle);
+      border-radius: var(--r-md);
+      grid-template-columns: 1fr 1fr;
+    }
+    .sub-tile-group .tile { padding: var(--s-3); }
+    .sub-tile-group .tile-title { font-size: var(--t-body-sm); }
+    .sub-tile-group .tile-sub { font-size: 11px; }
+    @media (max-width: 540px) { .sub-tile-group { grid-template-columns: 1fr; } }
+
+    /* --- v27.3.0 LED CARD (Step 4) — live badges --- */
+    .led-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      padding: var(--s-4);
+      margin-bottom: var(--s-3);
+      box-shadow: var(--shadow-card);
+      transition: box-shadow var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+    }
+    .led-card:hover { border-color: var(--border-mid); box-shadow: 0 6px 20px rgba(15,14,12,0.06), 0 1px 3px rgba(15,14,12,0.04); }
+    html[data-theme="dark"] .led-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.40), 0 1px 3px rgba(0,0,0,0.30); }
+    .led-card-head {
+      font-family: var(--font-display); font-weight: 600; font-size: var(--t-h3);
+      color: var(--ink-strong); margin-bottom: var(--s-3);
+      letter-spacing: var(--ls-h1);
+    }
+    .led-badge-row {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-top: var(--s-3);
+    }
+    .led-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px;
+      border-radius: var(--r-pill);
+      background: var(--accent-soft);
+      border: 0.5px solid var(--border-soft);
+      font-size: 11.5px; font-family: var(--font-display); font-weight: 500;
+      transition: background var(--dur-base) var(--ease-out);
+    }
+    .led-badge-k { color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em; font-size: 9.5px; font-weight: 600; }
+    .led-badge-v { color: var(--accent-deep); font-weight: 700; font-variant-numeric: tabular-nums; }
+    html[data-theme="dark"] .led-badge-v { color: var(--accent); }
+    .led-physical {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: var(--s-3); padding-top: var(--s-3);
+      border-top: 0.5px solid var(--border-soft);
+      font-size: 11.5px; color: var(--ink-soft);
+      font-family: var(--font-mono);
+    }
+    .led-physical svg { color: var(--ink-faint); }
+    .led-aggregate {
+      display: grid; gap: var(--s-3);
+      grid-template-columns: repeat(4, 1fr);
+      padding: var(--s-4);
+      margin-top: var(--s-4);
+      background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+      border-radius: var(--r-md);
+      color: white;
+      box-shadow: 0 4px 14px rgba(22,163,74,0.22);
+    }
+    @media (max-width: 540px) { .led-aggregate { grid-template-columns: repeat(2, 1fr); } }
+    .led-agg-k {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 4px;
+    }
+    .led-agg-v {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 20px; line-height: 1.1;
+      color: white;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* --- v27.3.0 SX GRID (Step 5) — 4 designed cards --- */
+    .sx-grid {
+      display: grid; gap: var(--s-3);
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (max-width: 540px) { .sx-grid { grid-template-columns: 1fr; } }
+    .sx-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      padding: var(--s-4);
+      box-shadow: var(--shadow-card);
+      display: flex; flex-direction: column; gap: var(--s-3);
+      transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+    }
+    .sx-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-mid);
+      box-shadow: 0 6px 20px rgba(15,14,12,0.06), 0 1px 3px rgba(15,14,12,0.04);
+    }
+    html[data-theme="dark"] .sx-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.40), 0 1px 3px rgba(0,0,0,0.30); }
+    .sx-card-head { display: flex; align-items: flex-start; gap: var(--s-3); }
+    .sx-card-icon {
+      width: 36px; height: 36px;
+      border-radius: var(--r-sm);
+      background: var(--accent-soft); color: var(--accent-deep);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .sx-card-icon svg { width: 18px; height: 18px; }
+    .sx-card-text { flex: 1; min-width: 0; }
+    .sx-card-title {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: var(--t-body); color: var(--ink-strong);
+      letter-spacing: -0.005em;
+      margin-bottom: 2px;
+    }
+    .sx-card-sub { font-size: 12px; color: var(--ink-soft); line-height: 1.4; }
+    .sx-card-stepper {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg-subtle);
+      border-radius: var(--r-sm);
+      padding: 6px;
+    }
+    .sx-step-btn {
+      appearance: none; border: none;
+      width: 32px; height: 32px;
+      border-radius: var(--r-xs);
+      background: var(--bg-card);
+      color: var(--ink-strong);
+      font-family: var(--font-display); font-weight: 700; font-size: 16px;
+      cursor: pointer;
+      transition: background var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-spring);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sx-step-btn:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent-deep); }
+    .sx-step-btn:active:not(:disabled) { transform: scale(0.92); }
+    .sx-step-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .sx-step-val {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 18px;
+      color: var(--ink-strong);
+      font-variant-numeric: tabular-nums;
+      min-width: 32px; text-align: center;
+    }
+
+    /* --- v27.3.0 NOTIFICATION SHEET (D6-D9 restore) --- */
+    .notif-sheet { padding: 4px 0 16px; }
+    .notif-sheet-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px 12px;
+      border-bottom: 0.5px solid var(--border-soft);
+    }
+    .notif-sheet-head h3 {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: var(--t-h2); color: var(--ink-strong);
+      margin: 0; letter-spacing: var(--ls-h1);
+    }
+    .notif-row {
+      display: flex; align-items: flex-start; gap: var(--s-3);
+      width: 100%; padding: 12px 16px;
+      background: var(--bg-card);
+      border: none; border-bottom: 0.5px solid var(--border-soft);
+      text-align: left; cursor: pointer;
+      font-family: inherit;
+      position: relative;
+      -webkit-tap-highlight-color: transparent;
+      transition: background var(--dur-base) var(--ease-out);
+    }
+    .notif-row:hover { background: var(--bg-card-hover); }
+    .notif-row:active { background: var(--bg-subtle); }
+    .notif-row:last-child { border-bottom: none; }
+    .notif-row-read { opacity: 0.62; }
+    .notif-icon {
+      width: 36px; height: 36px;
+      border-radius: var(--r-sm);
+      background: var(--accent-soft); color: var(--accent-deep);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .notif-icon svg { width: 18px; height: 18px; }
+    .notif-row-read .notif-icon { background: var(--bg-subtle); color: var(--ink-soft); }
+    .notif-body { flex: 1; min-width: 0; }
+    .notif-msg {
+      font-size: var(--t-body-sm);
+      color: var(--ink-strong);
+      line-height: 1.4;
+      margin-bottom: 2px;
+      word-wrap: break-word;
+    }
+    .notif-meta {
+      font-size: 11px;
+      color: var(--ink-soft);
+      font-family: var(--font-mono);
+    }
+    .notif-unread {
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 6px;
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    /* --- v27.3.0 CONFETTI BURST (Won-deal celebration) --- */
+    .confetti-burst {
+      position: fixed; inset: 0;
+      pointer-events: none;
+      z-index: 999;
+      overflow: hidden;
+    }
+    .confetti-particle {
+      position: absolute;
+      top: -20px;
+      width: 10px; height: 14px;
+      border-radius: 2px;
+      animation: confetti-fall linear forwards;
+      transform-origin: center;
+    }
+    @keyframes confetti-fall {
+      0%   { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 1; }
+      100% { transform: translate3d(var(--drift, 0), 105vh, 0) rotate(var(--rotate, 360deg)); opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .confetti-particle { animation: none !important; opacity: 0 !important; }
     }
   </style>
 </head>
 <body>
   <div id="app" hidden>
-    <div class="tricolor-bar" id="tricolor" hidden>
-      <span class="a"></span><span class="b"></span><span class="c"></span>
-    </div>
-    <header class="topbar" id="topbar" hidden>
-      <div class="brand"><span class="dot"></span>tvONE Product Selector</div>
-      <span class="ver" id="ver-pill">…</span>
+    <header class="app-topbar" id="topbar" hidden>
+      <div class="app-topbar-inner">
+        <span class="brand-mark">
+          <span class="mark-tvone" aria-hidden="true">
+            <svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 4 L12 12 L3 20" fill="none" stroke="#FAC172" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+              <path d="M14 4 L23 12 L14 20" fill="none" stroke="#F7941D" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="brand-text">tvONE Product Selector</span>
+          <span class="brand-text-short">tvONE</span>
+        </span>
+        <span class="mark-cavitak" aria-label="Cavitak Marketing">
+          <span class="mark-cavitak-circle" aria-hidden="true">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 3 L7 13 L11 13 L9 21 L17 11 L13 11 Z" fill="white"/>
+            </svg>
+          </span>
+          <span class="mark-cavitak-text">Cavitak</span>
+        </span>
+        <span class="topbar-spacer"></span>
+        <span class="topbar-perm-badge" id="perm-badge" hidden>SUPER</span>
+        <div class="theme-toggle" id="theme-toggle">
+          <button class="theme-btn" data-theme-val="light" aria-label="Light theme" type="button">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/></svg>
+          </button>
+          <button class="theme-btn active" data-theme-val="auto" aria-label="System theme" type="button">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M9 18l-1 3M15 18l1 3M8 21h8"/></svg>
+          </button>
+          <button class="theme-btn" data-theme-val="dark" aria-label="Dark theme" type="button">
+            <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+        </div>
+        <button class="topbar-action" id="notif-btn" type="button" aria-label="Notifications">
+          <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span class="notif-badge" id="notif-badge" hidden>0</span>
+        </button>
+        <button class="topbar-avatar" id="avatar-btn" type="button" title="Profile">DG</button>
+        <span class="ver" id="ver-pill" hidden></span>
+      </div>
     </header>
     <main id="view-root" role="main"></main>
     <nav class="bottom-nav" id="bottom-nav" hidden role="navigation" aria-label="Primary">
       <button data-nav="#/home" type="button" aria-label="Home">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9.5L12 2l9 7.5"/><path d="M5 9v12h4v-7h6v7h4V9"/></svg>
         Home
       </button>
       <button data-nav="#/quote/new" type="button" aria-label="New Quote">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         New
       </button>
       <button data-nav="#/history" type="button" aria-label="History">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-        History
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
+        Quotes
       </button>
       <button data-nav="#/profile" type="button" aria-label="Profile">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
         Profile
       </button>
     </nav>
+    <div class="tricolor-bar" id="tricolor" hidden></div>
   </div>
   <div id="toast-host" aria-live="polite" aria-atomic="true"></div>
   <div id="sheet-host" data-open="false" aria-hidden="true">
@@ -730,6 +1824,26 @@
   </div>
   <noscript><div style="padding:24px;font-family:sans-serif">This app requires JavaScript. Please enable it in your browser settings, or open in a modern browser.</div></noscript>
 
+  <script>
+  /* ============================================================
+     THEME BOOTSTRAP (v27.3.0) — runs before any IIFE so the
+     html[data-theme] attribute is correct before first paint.
+     Storage key: 'tvone.theme.v27'. Values: 'light' | 'dark' | 'auto'.
+     ============================================================ */
+  (function () {
+    var KEY = 'tvone.theme.v27';
+    function getPref() { try { return localStorage.getItem(KEY) || 'auto'; } catch(e) { return 'auto'; } }
+    function actual(pref) {
+      if (pref !== 'auto') return pref;
+      var m = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+      return (m && m.matches) ? 'dark' : 'light';
+    }
+    var pref = getPref();
+    document.documentElement.setAttribute('data-theme', actual(pref));
+    // expose for APP.handleThemeToggle to consume
+    window.__themeBoot = { KEY: KEY, pref: pref, actual: actual };
+  })();
+  </script>
   <script>
   /* ============================================================
      CATALOG (Session 1 of v27 rebuild)
@@ -1007,7 +2121,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.2.6',
+      version: 'v27.3.0',
       constants,
       calico,
       mv,
@@ -2131,6 +3245,89 @@
       });
     }
 
+    /* ============================================================
+       v27.3.0 — Notifications (D6-D9 silent-drop restore)
+       Backend RPCs: notification_list, notification_create, notification_mark_read
+       Recipient is current user's username.
+       ============================================================ */
+    async function notifList() {
+      const u = currentUser();
+      if (!u) return [];
+      const r = await rpc('notification_list', { p_recipient: u.username });
+      return (r && r.rows) || (Array.isArray(r) ? r : []);
+    }
+    async function notifMarkRead(ids, all) {
+      const u = currentUser();
+      if (!u) return { ok: false };
+      return rpc('notification_mark_read', {
+        p_recipient: u.username,
+        p_notif_ids: ids || null,
+        p_mark_all: !!all
+      });
+    }
+    async function notifCreate(recipient, type, refId, project, message) {
+      const u = currentUser();
+      return rpc('notification_create', {
+        p_recipient: recipient,
+        p_notif_type: type || 'info',
+        p_ref_id: refId || '',
+        p_project: project || '',
+        p_creator: (u && u.username) || '',
+        p_message: message || ''
+      });
+    }
+
+    /* v27.3.0 — Audit log viewer (D4 silent-drop restore) */
+    async function auditLogList(filters) {
+      filters = filters || {};
+      const r = await rpc('audit_log_list', {
+        p_action_type: filters.actionType || null,
+        p_target_username: filters.targetUsername || null,
+        p_ref_id: filters.refId || null,
+        p_limit: filters.limit || 100
+      });
+      return (r && r.rows) || (Array.isArray(r) ? r : []);
+    }
+
+    /* v27.3.0 — Revisions viewer (D5 silent-drop restore) */
+    async function revisionsList(refId) {
+      if (!refId) return [];
+      const r = await rpc('deal_revisions_list', { p_display_ref: String(refId) });
+      return (r && r.rows) || (Array.isArray(r) ? r : []);
+    }
+
+    /* v27.3.0 — Reset password user-side request (D10) + super-side approve (D11) */
+    async function resetPasswordRequest(username, reason) {
+      return rpc('reset_password_request', {
+        p_username: String(username || '').trim(),
+        p_reason: String(reason || '').slice(0, 500)
+      });
+    }
+    async function resetPasswordListPending() {
+      const r = await rpc('reset_password_list_pending', {});
+      return (r && r.rows) || (Array.isArray(r) ? r : []);
+    }
+    async function resetPasswordApprove(requestId, newTempPassword) {
+      return rpc('reset_password_approve', {
+        p_request_id: requestId,
+        p_new_temp_password: String(newTempPassword)
+      });
+    }
+
+    /* v27.3.0 — Duplicate a deal (v27.7 partial restore) */
+    async function duplicateDeal(srcRefId, newProjectName) {
+      return rpc('deal_duplicate', {
+        p_src_display_ref: String(srcRefId),
+        p_new_project: String(newProjectName || '').trim() || null
+      });
+    }
+
+    /* v27.3.0 — Pipeline stages list (custom stages support, v27.7 partial) */
+    async function stageList() {
+      const r = await rpc('stage_list', {});
+      return (r && r.rows) || (Array.isArray(r) ? r : []);
+    }
+
     return Object.freeze({
       // auth
       login, logout, currentUser, onAuthChange, changePassword,
@@ -2138,6 +3335,14 @@
       saveDeal, loadDeal, listDeals, deleteDeal, restoreDeal,
       // v27.2.0 — roster cache (for C2 footer + D16 gate)
       fetchRoster, getRoster, rosterById, clearRoster, _patchCurrentUser,
+      // v27.3.0 — notifications
+      notifList, notifMarkRead, notifCreate,
+      // v27.3.0 — audit log + revisions (D4, D5 silent-drop restores)
+      auditLogList, revisionsList,
+      // v27.3.0 — reset password (D10, D11 silent-drop restores)
+      resetPasswordRequest, resetPasswordListPending, resetPasswordApprove,
+      // v27.3.0 — duplicate + custom stages (v27.7 partial restore)
+      duplicateDeal, stageList,
       // internals exposed for debug only
       _rpc: rpc, _sha256Hex: sha256Hex
     });
@@ -4422,6 +5627,7 @@
     let _savedDealRefId   = null;
     let _autosaveTimer    = null;
     let _autosaveInFlight = false;
+    let _savedDealLastSavedStage = null;  // v27.3.0 — for won-deal confetti
     const AUTOSAVE_DEBOUNCE_MS = 1000;
 
     // Field-render helpers for saved-deal accordion. Mirror wizard step 1's
@@ -4630,10 +5836,18 @@
       // fields aren't columns). Lines round-trip from reco or existing lines
       // (Session 4 gotcha: destructive on these arrays).
       const payload = buildSavePayload(_savedDealData);
+      // v27.3.0 — detect won-deal transition for confetti
+      const prevStage = _savedDealLastSavedStage;
+      const newStage = _savedDealData && _savedDealData.stage;
+      const transitionedToWon = (newStage === 'Closed Won' && prevStage !== 'Closed Won');
       STORE.saveDeal(payload).then(function(_r) {
         _autosaveInFlight = false;
         if (_savedDealRefId !== inflightRefId) return; // navigated away
         setSavedDealStatus('saved');
+        _savedDealLastSavedStage = newStage;
+        if (transitionedToWon) {
+          try { fireConfetti(); toast('Deal won! \uD83C\uDF89', 'ok'); } catch (e) {}
+        }
       }).catch(function(err) {
         _autosaveInFlight = false;
         if (_savedDealRefId !== inflightRefId) return;
@@ -5009,10 +6223,370 @@
     }
 
     function showChrome(show) {
-      $('tricolor').hidden = !show;
-      $('topbar').hidden   = !show;
-      $('bottom-nav').hidden = !show;
+      // v27.3.0: tricolor is CSS-hidden permanently; guard anyway in case markup changes
+      const tc = $('tricolor'); if (tc) tc.hidden = !show;
+      const tb = $('topbar');   if (tb) tb.hidden = !show;
+      const bn = $('bottom-nav'); if (bn) bn.hidden = !show;
+      if (show) {
+        try { renderTopBarDynamic(STORE.currentUser()); } catch (e) {}
+      }
     }
+
+    /* ---------- v27.3.0 Theme toggle + topbar dynamic ---------- */
+    const THEME_STORAGE_KEY = 'tvone.theme.v27';
+    function applyTheme(pref) {
+      try { localStorage.setItem(THEME_STORAGE_KEY, pref); } catch (e) {}
+      const actual = (pref === 'auto')
+        ? ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light')
+        : pref;
+      document.documentElement.setAttribute('data-theme', actual);
+      const btns = document.querySelectorAll('#theme-toggle .theme-btn');
+      btns.forEach(b => b.classList.toggle('active', b.getAttribute('data-theme-val') === pref));
+    }
+    function renderTopBarDynamic(user) {
+      if (!user) return;
+      // avatar initials
+      const av = $('avatar-btn');
+      if (av) {
+        const name = String(user.full_name || user.username || '').trim();
+        const initials = name.split(/\s+/).map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
+        av.textContent = initials;
+        av.title = name || 'Profile';
+      }
+      // perm badge — only show for super
+      const pb = $('perm-badge');
+      if (pb) {
+        if (user.permission_tier === 'super') { pb.hidden = false; pb.textContent = 'SUPER'; }
+        else { pb.hidden = true; }
+      }
+      // Kick off notification badge refresh
+      try { refreshNotifBadge(); } catch (e) {}
+    }
+
+    /* v27.3.0 — Notification bell badge + sheet (D6-D9 restore) */
+    async function refreshNotifBadge() {
+      try {
+        const rows = await STORE.notifList();
+        const unread = rows.filter(r => !r.read_at).length;
+        const badge = $('notif-badge');
+        if (!badge) return;
+        if (unread > 0) {
+          badge.hidden = false;
+          badge.textContent = unread > 99 ? '99+' : String(unread);
+        } else {
+          badge.hidden = true;
+        }
+      } catch (e) { /* silent — bell shows no badge */ }
+    }
+
+    function _notifTypeIcon(type) {
+      switch (String(type || '').toLowerCase()) {
+        case 'won':       return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5A2.5 2.5 0 0 1 2 6.5V5h4"/><path d="M18 9h1.5A2.5 2.5 0 0 0 22 6.5V5h-4"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>';
+        case 'lost':      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+        case 'stage':     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+        case 'handoff':   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 11l2 2 4-4"/></svg>';
+        case 'reset':     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="16" r="1"/><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+        default:          return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+      }
+    }
+    function _notifTimeAgo(iso) {
+      if (!iso) return '';
+      const t = new Date(iso).getTime();
+      if (isNaN(t)) return '';
+      const s = Math.floor((Date.now() - t) / 1000);
+      if (s < 60) return 'just now';
+      if (s < 3600) return Math.floor(s / 60) + 'm ago';
+      if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+      if (s < 86400 * 7) return Math.floor(s / 86400) + 'd ago';
+      return String(iso).slice(0, 10);
+    }
+
+    /* v27.3.0 — Won-deal confetti (v27.7 partial restore).
+       Pure-DOM CSS-animated; no library dependency.
+       Spawns 60 particles in brand + win colors, falls + fades over ~2.6s. */
+    function fireConfetti() {
+      const host = document.body;
+      const colors = ['#F7941D', '#E8731C', '#22C55E', '#16A34A', '#A78BFA', '#3B82F6', '#FAC172'];
+      const container = document.createElement('div');
+      container.className = 'confetti-burst';
+      container.setAttribute('aria-hidden', 'true');
+      for (let i = 0; i < 60; i++) {
+        const p = document.createElement('span');
+        p.className = 'confetti-particle';
+        const c = colors[i % colors.length];
+        const left = Math.random() * 100;
+        const rotate = Math.floor(Math.random() * 720) - 360;
+        const delay = Math.random() * 0.3;
+        const duration = 1.6 + Math.random() * 1.2;
+        const drift = (Math.random() - 0.5) * 200;
+        p.style.left = left + 'vw';
+        p.style.background = c;
+        p.style.setProperty('--rotate', rotate + 'deg');
+        p.style.setProperty('--drift', drift + 'px');
+        p.style.animationDelay = delay + 's';
+        p.style.animationDuration = duration + 's';
+        container.appendChild(p);
+      }
+      host.appendChild(container);
+      setTimeout(function () { if (container.parentNode) container.parentNode.removeChild(container); }, 3000);
+    }
+
+    async function showNotificationsSheet() {
+      openSheet(
+        '<div class="notif-sheet">' +
+          '<div class="notif-sheet-head">' +
+            '<h3>Notifications</h3>' +
+            '<button class="btn-v3 btn-ghost btn-sm" type="button" data-action="notif-mark-all">Mark all read</button>' +
+          '</div>' +
+          '<div id="notif-list"><div class="muted small" style="padding:16px;text-align:center">Loading\u2026</div></div>' +
+        '</div>'
+      );
+      try {
+        const rows = await STORE.notifList();
+        const list = $('notif-list');
+        if (!list) return;
+        if (!rows || rows.length === 0) {
+          list.innerHTML =
+            '<div class="empty-state" style="padding:32px 16px">' +
+              '<div class="empty-state-illustration"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>' +
+              '<h2 class="empty-state-title">All caught up</h2>' +
+              '<p class="empty-state-body">No notifications. Stage changes, deal wins, and handoffs will appear here.</p>' +
+            '</div>';
+          return;
+        }
+        list.innerHTML = rows.map(function (n) {
+          const cls = n.read_at ? 'notif-row notif-row-read' : 'notif-row';
+          const ref = String(n.ref_id || '').trim();
+          const navAttr = ref ? ' data-nav="#/quote/' + esc(ref) + '"' : '';
+          return '<button class="' + cls + '" type="button"' + navAttr + ' data-action="notif-tap" data-id="' + esc(n.id || '') + '">' +
+            '<span class="notif-icon">' + _notifTypeIcon(n.notif_type) + '</span>' +
+            '<div class="notif-body">' +
+              '<div class="notif-msg">' + esc(n.message || '') + '</div>' +
+              '<div class="notif-meta">' +
+                (n.project ? esc(n.project) + ' \u00b7 ' : '') +
+                (ref ? esc(ref) + ' \u00b7 ' : '') +
+                esc(_notifTimeAgo(n.created_at)) +
+              '</div>' +
+            '</div>' +
+            (!n.read_at ? '<span class="notif-unread"></span>' : '') +
+          '</button>';
+        }).join('');
+      } catch (e) {
+        const list = $('notif-list');
+        if (list) list.innerHTML = '<div class="banner err" style="margin:12px">Could not load: ' + esc(e.message || String(e)) + '</div>';
+      }
+    }
+
+    /* v27.3.0 — Audit log sheet (D4 silent-drop restore, Super-only access) */
+    async function showAuditLogSheet(opts) {
+      opts = opts || {};
+      openSheet(
+        '<div class="notif-sheet">' +
+          '<div class="notif-sheet-head">' +
+            '<h3>Audit Log</h3>' +
+            (opts.refId ? '<span class="chip-v3 chip-info">' + esc(opts.refId) + '</span>' : '') +
+          '</div>' +
+          '<div id="audit-list"><div class="muted small" style="padding:16px;text-align:center">Loading\u2026</div></div>' +
+        '</div>'
+      );
+      try {
+        const rows = await STORE.auditLogList(opts);
+        const list = $('audit-list');
+        if (!list) return;
+        if (!rows || rows.length === 0) {
+          list.innerHTML = '<div class="empty-state" style="padding:32px 16px"><p class="empty-state-body">No audit entries.</p></div>';
+          return;
+        }
+        list.innerHTML = rows.map(function (a) {
+          const when = String(a.created_at || '').replace('T', ' ').slice(0, 16);
+          return '<div class="notif-row" style="cursor:default">' +
+            '<span class="notif-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>' +
+            '<div class="notif-body">' +
+              '<div class="notif-msg"><strong>' + esc(a.action_type || '\u2014') + '</strong>' +
+                (a.target_username ? ' \u2192 ' + esc(a.target_username) : '') +
+                (a.ref_id ? ' \u00b7 ' + esc(a.ref_id) : '') + '</div>' +
+              '<div class="notif-meta">' +
+                esc(a.actor_username || 'system') + ' \u00b7 ' + esc(when) +
+                (a.details ? ' \u00b7 ' + esc(String(a.details).slice(0, 80)) : '') +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      } catch (e) {
+        const list = $('audit-list');
+        if (list) list.innerHTML = '<div class="banner err" style="margin:12px">Could not load: ' + esc(e.message || String(e)) + '</div>';
+      }
+    }
+
+    /* v27.3.0 — Revisions sheet (D5 silent-drop restore) */
+    async function showRevisionsSheet(refId) {
+      openSheet(
+        '<div class="notif-sheet">' +
+          '<div class="notif-sheet-head">' +
+            '<h3>Revisions</h3>' +
+            (refId ? '<span class="chip-v3 chip-info">' + esc(refId) + '</span>' : '') +
+          '</div>' +
+          '<div id="rev-list"><div class="muted small" style="padding:16px;text-align:center">Loading\u2026</div></div>' +
+        '</div>'
+      );
+      try {
+        const rows = await STORE.revisionsList(refId);
+        const list = $('rev-list');
+        if (!list) return;
+        if (!rows || rows.length === 0) {
+          list.innerHTML = '<div class="empty-state" style="padding:32px 16px"><p class="empty-state-body">No previous revisions for this deal.</p></div>';
+          return;
+        }
+        list.innerHTML = rows.map(function (r, idx) {
+          const when = String(r.created_at || '').replace('T', ' ').slice(0, 16);
+          const isCur = idx === 0;
+          return '<div class="notif-row" style="cursor:default">' +
+            '<span class="notif-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>' +
+            '<div class="notif-body">' +
+              '<div class="notif-msg"><strong>Rev ' + (rows.length - idx) + '</strong>' +
+                (isCur ? ' <span class="chip-v3 chip-success" style="margin-left:6px">current</span>' : '') +
+                (r.stage ? ' \u00b7 ' + esc(r.stage) : '') +
+                (r.deal_value_inr ? ' \u00b7 \u20B9' + Number(r.deal_value_inr).toLocaleString('en-IN') : '') + '</div>' +
+              '<div class="notif-meta">' +
+                esc(r.updated_by || 'unknown') + ' \u00b7 ' + esc(when) +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      } catch (e) {
+        const list = $('rev-list');
+        if (list) list.innerHTML = '<div class="banner err" style="margin:12px">Could not load: ' + esc(e.message || String(e)) + '</div>';
+      }
+    }
+
+    /* v27.3.0 — User menu sheet (avatar dropdown replacement, Super sees admin tools) */
+    function showUserMenuSheet() {
+      const u = STORE.currentUser();
+      const isSuper = u && u.permission_tier === 'super';
+      const items = [
+        { label: 'Profile',     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>',
+          act: 'um-profile' },
+        { label: 'Change password', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+          act: 'um-changepw' }
+      ];
+      if (isSuper) {
+        items.push({ label: 'Audit log', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/></svg>',
+          act: 'um-audit' });
+        items.push({ label: 'Password resets', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="16" r="1"/><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+          act: 'um-resets' });
+      }
+      items.push({ label: 'Sign out', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+        act: 'um-logout' });
+      openSheet(
+        '<div class="notif-sheet">' +
+          '<div class="notif-sheet-head">' +
+            '<h3>' + esc((u && (u.full_name || u.username)) || 'Account') + '</h3>' +
+            (isSuper ? '<span class="chip-v3 chip-accent">SUPER</span>' : '') +
+          '</div>' +
+          items.map(function (it) {
+            return '<button class="notif-row" type="button" data-action="' + it.act + '">' +
+              '<span class="notif-icon">' + it.icon + '</span>' +
+              '<div class="notif-body">' +
+                '<div class="notif-msg">' + esc(it.label) + '</div>' +
+              '</div>' +
+            '</button>';
+          }).join('') +
+        '</div>'
+      );
+    }
+
+    /* v27.3.0 — Reset password request (D10, user-side, from login screen) */
+    function showResetPasswordRequest() {
+      openSheet(
+        '<div class="notif-sheet" style="padding:0 16px 16px">' +
+          '<div class="notif-sheet-head" style="padding-left:0;padding-right:0">' +
+            '<h3>Request password reset</h3>' +
+          '</div>' +
+          '<p style="font-size:13px;color:var(--ink-soft);margin:0 0 12px">Your request goes to a Super user for review. You\'ll receive a temporary password by email once approved.</p>' +
+          '<div class="field-v3">' +
+            '<label>Username</label>' +
+            '<input type="text" class="input-v3" id="rp-username" autocomplete="username" placeholder="your.username">' +
+          '</div>' +
+          '<div class="field-v3">' +
+            '<label>Reason <span style="color:var(--ink-faint);font-weight:400">(optional)</span></label>' +
+            '<textarea class="textarea-v3" id="rp-reason" rows="3" placeholder="Forgot password / locked out / etc."></textarea>' +
+          '</div>' +
+          '<button class="btn-v3 btn-primary btn-md" type="button" data-action="rp-submit" style="width:100%">Submit request</button>' +
+        '</div>'
+      );
+    }
+
+    /* v27.3.0 — Reset password approval panel (D11, Super-only) */
+    async function showResetPasswordPanel() {
+      openSheet(
+        '<div class="notif-sheet">' +
+          '<div class="notif-sheet-head"><h3>Pending password resets</h3></div>' +
+          '<div id="rp-pending"><div class="muted small" style="padding:16px;text-align:center">Loading\u2026</div></div>' +
+        '</div>'
+      );
+      try {
+        const rows = await STORE.resetPasswordListPending();
+        const list = $('rp-pending');
+        if (!list) return;
+        if (!rows || rows.length === 0) {
+          list.innerHTML = '<div class="empty-state" style="padding:32px 16px"><p class="empty-state-body">No pending requests.</p></div>';
+          return;
+        }
+        list.innerHTML = rows.map(function (r) {
+          const when = String(r.requested_at || '').replace('T', ' ').slice(0, 16);
+          return '<div class="notif-row" style="cursor:default;flex-direction:column;align-items:stretch">' +
+            '<div style="display:flex;gap:12px;align-items:flex-start">' +
+              '<span class="notif-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="16" r="1"/><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>' +
+              '<div class="notif-body">' +
+                '<div class="notif-msg"><strong>' + esc(r.username || '\u2014') + '</strong></div>' +
+                '<div class="notif-meta">' + esc(when) +
+                  (r.reason ? ' \u00b7 ' + esc(String(r.reason).slice(0, 80)) : '') + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:8px;margin-top:10px">' +
+              '<button class="btn-v3 btn-primary btn-sm" type="button" data-action="rp-approve" data-id="' + esc(r.id || '') + '">Approve &amp; issue temp PW</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      } catch (e) {
+        const list = $('rp-pending');
+        if (list) list.innerHTML = '<div class="banner err" style="margin:12px">Could not load: ' + esc(e.message || String(e)) + '</div>';
+      }
+    }
+    // Wire theme toggle clicks
+    document.addEventListener('click', function (e) {
+      const tb = e.target.closest && e.target.closest('#theme-toggle .theme-btn');
+      if (tb) {
+        const v = tb.getAttribute('data-theme-val');
+        if (v) applyTheme(v);
+        return;
+      }
+      const nb = e.target.closest && e.target.closest('#notif-btn');
+      if (nb) {
+        showNotificationsSheet();
+        return;
+      }
+      const ab = e.target.closest && e.target.closest('#avatar-btn');
+      if (ab) {
+        showUserMenuSheet();
+        return;
+      }
+    });
+    // System color-scheme change → re-apply if user pref is 'auto'
+    if (window.matchMedia) {
+      try {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+          const cur = (function () { try { return localStorage.getItem(THEME_STORAGE_KEY) || 'auto'; } catch (e) { return 'auto'; } })();
+          if (cur === 'auto') applyTheme('auto');
+        });
+      } catch (e) {}
+    }
+    // Apply theme initially (also sets .active on the right button)
+    (function () {
+      let pref = 'auto';
+      try { pref = localStorage.getItem(THEME_STORAGE_KEY) || 'auto'; } catch (e) {}
+      applyTheme(pref);
+    })();
 
     function updateNavActive(hash) {
       const btns = document.querySelectorAll('#bottom-nav button[data-nav]');
@@ -5205,37 +6779,215 @@
     function showHome() {
       showChrome(true);
       updateNavActive('#/home');
-      const u = STORE.currentUser();
-      const greeting = u ? (u.full_name || u.username || 'there') : 'there';
-
       setRoot(
-        '<div class="v">' +
-          '<div class="h1">Hi ' + esc(greeting) + ' \uD83D\uDC4B</div>' +
-          '<div class="soft small" style="margin:-4px 0 16px">' +
-            'What would you like to do today?' +
-          '</div>' +
-          '<div class="dash-grid">' +
-            '<button class="dash-tile" data-nav="#/quote/new" type="button">' +
-              '<h3>New quote</h3>' +
-              '<p>Configure CALICO / Multi Viewer / CORIO</p>' +
+        '<div class="v273-page">' +
+          '<header class="page-header">' +
+            '<span class="eyebrow">MY PIPELINE</span>' +
+            '<h1>My deals at a glance</h1>' +
+            '<p>Your open deals, deals due to close this month, and stuck items needing attention.</p>' +
+          '</header>' +
+          '<section class="kpi-grid">' +
+            '<button class="kpi-tile kpi-tile-blue" data-nav="#/history?filter=open" type="button">' +
+              '<span class="kpi-tile-icon"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h12"/><circle cx="20" cy="17" r="2"/></svg></span>' +
+              '<div><div class="kpi-eyebrow">MY OPEN PIPELINE</div><div class="kpi-value" id="kpi-open-val">\u2014</div></div>' +
+              '<div class="kpi-sub" id="kpi-open-sub">\u2014</div>' +
             '</button>' +
-            '<button class="dash-tile" data-nav="#/history" type="button">' +
-              '<h3>History</h3>' +
-              '<p>Saved deals</p>' +
-              '<div class="big-num" id="home-deal-count">\u2026</div>' +
+            '<button class="kpi-tile kpi-tile-green" data-nav="#/history?filter=won" type="button">' +
+              '<span class="kpi-tile-icon"><svg viewBox="0 0 24 24"><path d="M6 9H4.5A2.5 2.5 0 0 1 2 6.5V5h4"/><path d="M18 9h1.5A2.5 2.5 0 0 0 22 6.5V5h-4"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></span>' +
+              '<div><div class="kpi-eyebrow">MY WON THIS QUARTER</div><div class="kpi-value" id="kpi-won-val">\u2014</div></div>' +
+              '<div class="kpi-sub" id="kpi-won-sub">\u2014</div>' +
             '</button>' +
-            '<button class="dash-tile" data-nav="#/profile" type="button">' +
-              '<h3>Profile</h3>' +
-              '<p>Account, smoke gates</p>' +
+            '<button class="kpi-tile kpi-tile-purple" type="button">' +
+              '<span class="kpi-tile-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>' +
+              '<div><div class="kpi-eyebrow">MY WIN RATE</div><div class="kpi-value" id="kpi-wr-val">\u2014</div></div>' +
+              '<div class="kpi-sub" id="kpi-wr-sub">\u2014</div>' +
             '</button>' +
-          '</div>' +
-          '<h2 class="h2">Recent deals</h2>' +
-          '<div id="home-recent">' +
-            '<div class="muted small">Loading\u2026</div>' +
-          '</div>' +
+            '<button class="kpi-tile kpi-tile-amber" data-nav="#/history?filter=closing-this-month" type="button">' +
+              '<span class="kpi-tile-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>' +
+              '<div><div class="kpi-eyebrow">CLOSING THIS MONTH</div><div class="kpi-value" id="kpi-cm-val">\u2014</div></div>' +
+              '<div class="kpi-sub" id="kpi-cm-sub">due in current month</div>' +
+            '</button>' +
+          '</section>' +
+          '<section class="attention-row">' +
+            '<a class="attention-card attention-card-danger" data-nav="#/history?filter=closing-this-month">' +
+              '<div class="attention-head">' +
+                '<span class="attention-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6"/><path d="M22 6l-3-3"/></svg></span>' +
+                '<span class="attention-title">Closing this month</span>' +
+                '<span class="attention-count" id="att-closing">0</span>' +
+              '</div>' +
+              '<div class="attention-empty" id="att-closing-empty">No deals here \u2713</div>' +
+            '</a>' +
+            '<a class="attention-card attention-card-warning" data-nav="#/history?filter=stuck">' +
+              '<div class="attention-head">' +
+                '<span class="attention-icon"><svg viewBox="0 0 24 24"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg></span>' +
+                '<span class="attention-title">Stuck &gt;14 days</span>' +
+                '<span class="attention-count" id="att-stuck">0</span>' +
+              '</div>' +
+              '<div class="attention-empty" id="att-stuck-empty">No deals here \u2713</div>' +
+            '</a>' +
+            '<a class="attention-card attention-card-stale" data-nav="#/history?filter=stale">' +
+              '<div class="attention-head">' +
+                '<span class="attention-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="14" x2="14" y2="18"/><line x1="14" y1="14" x2="10" y2="18"/></svg></span>' +
+                '<span class="attention-title">Stale &gt;30 days</span>' +
+                '<span class="attention-count" id="att-stale">0</span>' +
+              '</div>' +
+              '<div class="attention-empty" id="att-stale-empty">No deals here \u2713</div>' +
+            '</a>' +
+          '</section>' +
+          '<section class="deal-list-card">' +
+            '<header class="deal-list-head">' +
+              '<h2>My Deals</h2>' +
+              '<span class="meta" id="home-deal-count">\u2014</span>' +
+            '</header>' +
+            '<div id="home-recent"><div class="muted small" style="padding:16px">Loading\u2026</div></div>' +
+          '</section>' +
         '</div>'
       );
+      loadHomeKpis();
       loadHomeRecent();
+    }
+
+    /* Stage chip class mapping (v27.3.0 §8) */
+    function _stageChipClassName(stage) {
+      switch (String(stage || '').trim()) {
+        case 'Qualified':           return 'chip-v3 chip-info';
+        case 'Proposal':            return 'chip-v3 chip-pink';
+        case 'Budget Approval':     return 'chip-v3 chip-info';
+        case 'Technical Approval':  return 'chip-v3 chip-info';
+        case 'Negotiation':         return 'chip-v3 chip-warning';
+        case 'Awarded':             return 'chip-v3 chip-accent';
+        case 'Closed Won':          return 'chip-v3 chip-success';
+        case 'Closed Lost':         return 'chip-v3 chip-danger';
+        default:                    return 'chip-v3';
+      }
+    }
+
+    /* WhatsApp share — builds wa.me URL with phone (stripped, +91 prepended if 10-digit) */
+    function _buildWhatsAppUrl(deal) {
+      let phone = String((deal && deal.contact_phone) || '').replace(/\D/g, '');
+      if (phone.length === 10) phone = '91' + phone;
+      const ref  = deal.display_ref || deal.ref_id || '';
+      const proj = deal.project || '(no project name)';
+      const cust = deal.customer_name || '';
+      const sender = (function () {
+        try { const u = STORE.currentUser(); return u ? (u.full_name || u.username || '') : ''; } catch (e) { return ''; }
+      })();
+      const lines = [
+        'Hi' + (cust ? ' ' + cust : '') + ',',
+        '',
+        'Sharing the BoM for *' + proj + '* (' + ref + ').',
+        '',
+        'Excel + PDF attached. Please review and let me know if any adjustments are needed.',
+        '',
+        sender ? 'Best,\n' + sender : 'Best regards',
+        sender ? 'Cavitak Marketing' : ''
+      ].filter(Boolean).join('\n');
+      const text = encodeURIComponent(lines);
+      return phone
+        ? 'https://wa.me/' + phone + '?text=' + text
+        : 'https://wa.me/?text=' + text;
+    }
+
+    /* Email share — builds mailto: URL with subject + body + CC to sender */
+    function _buildMailtoUrl(deal) {
+      const ref  = deal.display_ref || deal.ref_id || '';
+      const proj = deal.project || '(no project name)';
+      const cust = deal.customer_name || '';
+      const to   = String((deal && deal.contact_email) || '').trim();
+      const sender = (function () {
+        try {
+          const u = STORE.currentUser();
+          return { name: u ? (u.full_name || u.username || '') : '', email: u ? (u.email || '') : '' };
+        } catch (e) { return { name: '', email: '' }; }
+      })();
+      const subject = 'Quotation — ' + proj + ' (' + ref + ')';
+      const body = [
+        'Dear ' + (cust || 'Sir/Madam') + ',',
+        '',
+        'Please find the attached quotation (Excel + PDF) for ' + proj + ' (ref: ' + ref + ').',
+        '',
+        'Kindly review and revert in case of any clarifications.',
+        '',
+        'Best regards,',
+        sender.name || 'Cavitak Marketing',
+        'Cavitak Marketing Pvt Ltd'
+      ].join('\r\n');
+      const params = [];
+      if (sender.email) params.push('cc=' + encodeURIComponent(sender.email));
+      params.push('subject=' + encodeURIComponent(subject));
+      params.push('body=' + encodeURIComponent(body));
+      return 'mailto:' + encodeURIComponent(to) + '?' + params.join('&');
+    }
+
+    function _currentYYYYMM() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+    function _daysSince(iso) {
+      if (!iso) return 0;
+      const ms = Date.now() - new Date(iso).getTime();
+      return Math.floor(ms / 86400000);
+    }
+    function _isOpenStage(stage) {
+      const s = String(stage || '').trim();
+      return s !== 'Closed Won' && s !== 'Closed Lost' && s !== '';
+    }
+
+    async function loadHomeKpis() {
+      try {
+        const r = await STORE.listDeals({ limit: 200, offset: 0 });
+        const all = (r && r.rows) || [];
+        const u = STORE.currentUser();
+        // Filter to "mine" — sales or presales is current user
+        const uid = u && u.id;
+        const mine = uid
+          ? all.filter(d => d.sales_person_id === uid || d.presales_person_id === uid)
+          : all;
+        const open  = mine.filter(d => _isOpenStage(d.stage) && !d.deleted_at);
+        const won   = mine.filter(d => d.stage === 'Closed Won' && !d.deleted_at);
+        const lost  = mine.filter(d => d.stage === 'Closed Lost' && !d.deleted_at);
+        const curM  = _currentYYYYMM();
+        const closingNow = open.filter(d => String(d.close_month || '').slice(0, 7) === curM);
+        const stuck14 = open.filter(d => _daysSince(d.updated_at || d.created_at) > 14);
+        const stale30 = open.filter(d => _daysSince(d.updated_at || d.created_at) > 30);
+        // KPI Open
+        const openVal = open.reduce((s, d) => s + (Number(d.deal_value_inr) || 0), 0);
+        setText('kpi-open-val', _fmtLakh(openVal));
+        setText('kpi-open-sub', open.length + (open.length === 1 ? ' deal' : ' deals'));
+        // KPI Won this quarter
+        const qStart = (function () {
+          const d = new Date(); const m = d.getMonth();
+          const qm = Math.floor(m / 3) * 3;
+          return new Date(d.getFullYear(), qm, 1);
+        })();
+        const wonQ = won.filter(d => new Date(d.updated_at || d.created_at || 0) >= qStart);
+        const wonVal = wonQ.reduce((s, d) => s + (Number(d.deal_value_inr) || 0), 0);
+        setText('kpi-won-val', wonQ.length ? _fmtLakh(wonVal) : '\u20B90');
+        setText('kpi-won-sub', wonQ.length + (wonQ.length === 1 ? ' win' : ' wins'));
+        // KPI Win rate (lifetime)
+        const resolved = won.length + lost.length;
+        setText('kpi-wr-val', resolved ? (Math.round(won.length * 100 / resolved) + '%') : '\u2014');
+        setText('kpi-wr-sub', resolved + ' resolved');
+        // KPI Closing this month
+        setText('kpi-cm-val', String(closingNow.length));
+        setText('kpi-cm-sub', closingNow.length === 0 ? 'nothing due this month' : 'due in current month');
+        // Attention counts
+        setText('att-closing', String(closingNow.length));
+        setText('att-stuck', String(stuck14.length));
+        setText('att-stale', String(stale30.length));
+        // Total deal count for "My Deals" section
+        setText('home-deal-count', mine.length + (mine.length === 1 ? ' deal' : ' deals'));
+      } catch (e) {
+        // graceful — leave em dashes
+      }
+    }
+
+    function setText(id, v) { const el = $(id); if (el) el.textContent = v; }
+    function _fmtLakh(n) {
+      n = Number(n) || 0;
+      if (n >= 10000000) return '\u20B9' + (n / 10000000).toFixed(2).replace(/\.?0+$/, '') + ' Cr';
+      if (n >= 100000)   return '\u20B9' + (n / 100000).toFixed(2).replace(/\.?0+$/, '') + ' L';
+      return fmtINR(n);
     }
 
     async function loadHomeRecent() {
@@ -5275,9 +7027,7 @@
       // v27.1.0 B4 — guard `> 0` (was `!= null`): hides for tvONE (no prices,
       // trigger always computes 0) but naturally reveals for BS once it lands.
       const val   = (d.deal_value_inr > 0) ? fmtINR(d.deal_value_inr) : '';
-      const stageTag =
-        (stage === 'Closed Won')  ? 'ok' :
-        (stage === 'Closed Lost') ? 'warn' : 'accent';
+      const stageCls = _stageChipClassName(stage);
 
       // alpha.8.3 — deleted rows: non-clickable, with Restore button
       if (d.deleted_at) {
@@ -5285,11 +7035,11 @@
         return '' +
           '<div class="history-row history-row-deleted">' +
             '<div class="ref">' + esc(ref) +
-              '<span class="tag warn" style="margin-left:8px">deleted ' + esc(delDate) + '</span>' +
+              '<span class="chip-v3 chip-danger" style="margin-left:8px">deleted ' + esc(delDate) + '</span>' +
             '</div>' +
             '<div class="proj">' + esc(proj) + '</div>' +
             '<div class="meta">' +
-              '<span class="tag muted">' + esc(stage) + '</span>' +
+              '<span class="chip-v3">' + esc(stage) + '</span>' +
               (cust ? '<span>' + esc(cust) + '</span>' : '') +
               (val  ? '<span class="mono">' + esc(val) + '</span>' : '') +
             '</div>' +
@@ -5305,7 +7055,7 @@
           '<div class="ref">' + esc(ref) + '</div>' +
           '<div class="proj">' + esc(proj) + '</div>' +
           '<div class="meta">' +
-            '<span class="tag ' + stageTag + '">' + esc(stage) + '</span>' +
+            '<span class="' + stageCls + '">' + esc(stage) + '</span>' +
             (cust ? '<span>' + esc(cust) + '</span>' : '') +
             (val  ? '<span class="mono">' + esc(val) + '</span>' : '') +
           '</div>' +
@@ -5612,6 +7362,7 @@
       _savedDealData    = deal;
       _savedDealRefId   = (deal && (deal.display_ref || deal.ref || deal.id)) || null;
       _autosaveInFlight = false;
+      _savedDealLastSavedStage = (deal && deal.stage) || null;  // v27.3.0 confetti baseline
       if (_autosaveTimer) { clearTimeout(_autosaveTimer); _autosaveTimer = null; }
 
       const refId    = _savedDealRefId || '\u2014';
@@ -5897,14 +7648,37 @@
             '<button class="btn btn-text" type="button" data-action="sd-rebuild">Tap Rebuild \u2192</button>' +
           '</div>' +
 
-          // Sticky action bar
-          // v27.1.2 #6 — Edit button leads; opens full wizard with deal pre-hydrated.
-          // Route '#/quote/edit/{refId}' distinguishes update vs new-create.
-          '<div class="sd-actionbar">' +
-            '<button class="btn"        type="button" data-action="sd-edit"  id="sd-btn-edit">Edit</button>' +
-            '<button class="btn"        type="button" data-action="sd-excel" id="sd-btn-excel">Excel</button>' +
-            '<button class="btn"        type="button" data-action="sd-pdf"   id="sd-btn-pdf">PDF</button>' +
-            '<button class="btn btn-danger btn-ghost" type="button" data-action="sd-delete" id="sd-btn-delete">Delete</button>' +
+          // v27.3.0 glass action bar (6 buttons): Back/Edit, Confirmed, Excel, PDF, WhatsApp, Email
+          '<div class="bom-action-bar">' +
+            '<div class="bom-action-bar-inner">' +
+              '<button class="action-btn-v3" type="button" data-action="sd-edit" id="sd-btn-edit">' +
+                '<svg class="icon" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+                '<span class="label">Edit</span>' +
+              '</button>' +
+              '<button class="action-btn-v3 act-confirm" type="button" data-action="sd-confirm" id="sd-btn-confirm">' +
+                '<svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>' +
+                '<span class="label">Confirm</span>' +
+              '</button>' +
+              '<button class="action-btn-v3 act-excel" type="button" data-action="sd-excel" id="sd-btn-excel">' +
+                '<svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13l3 3 5-5"/></svg>' +
+                '<span class="label">Excel</span>' +
+              '</button>' +
+              '<button class="action-btn-v3 act-pdf" type="button" data-action="sd-pdf" id="sd-btn-pdf">' +
+                '<svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="7.5" y="19" font-size="6" font-weight="700" fill="currentColor" stroke="none" font-family="Arial">PDF</text></svg>' +
+                '<span class="label">PDF</span>' +
+              '</button>' +
+              '<button class="action-btn-v3 act-wa" type="button" data-action="sd-whatsapp" id="sd-btn-wa">' +
+                '<svg class="icon" viewBox="0 0 24 24"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9z"/><path d="M9 10a5 5 0 0 0 5 5"/></svg>' +
+                '<span class="label">WhatsApp</span>' +
+              '</button>' +
+              '<button class="action-btn-v3 act-email" type="button" data-action="sd-email" id="sd-btn-email">' +
+                '<svg class="icon" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 7 12 13 2 7"/></svg>' +
+                '<span class="label">Email</span>' +
+              '</button>' +
+              '<button class="action-btn-v3" type="button" data-action="sd-delete" id="sd-btn-delete" style="margin-left:auto">' +
+                '<svg class="icon" viewBox="0 0 24 24" style="color:#DC2626"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>' +
+              '</button>' +
+            '</div>' +
           '</div>' +
 
           // Sticky chip nav
@@ -6305,28 +8079,55 @@
     /* ---------- Step 2: Solution type ---------- */
 
     function renderStep2(d) {
-      const tiles = [
-        { id:'mv',     title:'Multi Viewer (CORIOview)',
-          sub:'MWP-* \u2014 fixed presets or Made-To-Order, including mixed inputs' },
-        { id:'calico', title:'Video Processor \u2014 CALICO',
-          sub:'C7-PRO-1200 / C7-PRO-2200 + input/output cards' },
-        { id:'corio',  title:'Video Processor \u2014 CORIO',
-          sub:'C3-503 / C3-510 / CM2-547-MK2 + CM/CM2 cards' }
-      ];
+      // v27.3.0 §9: collapse to 2 tiles (MULTI VIEWER, VIDEO PROCESSOR).
+      // VP tap reveals a sub-step picker (CALICO / CORIO) on the same screen.
       const errHtml = d.errors.solutionType
         ? '<div class="banner err">' + esc(d.errors.solutionType) + '</div>'
         : '';
+      const isMV = d.solutionType === 'mv';
+      const isVP = d.solutionType === 'calico' || d.solutionType === 'corio';
+      const vpExpanded = isVP || d._step2_videoProcessorOpen === true;
+      const isCalico = d.solutionType === 'calico';
+      const isCorio  = d.solutionType === 'corio';
+
       return errHtml +
         '<div class="tile-group">' +
-          tiles.map(t =>
-            '<label class="tile" data-checked="' + (d.solutionType === t.id ? 'true' : 'false') + '"' +
-              ' data-action="solution-pick" data-value="' + t.id + '">' +
-              '<input type="radio" name="solutionType" value="' + t.id + '"' +
-                (d.solutionType === t.id ? ' checked' : '') + '>' +
-              '<div class="tile-title">' + esc(t.title) + '</div>' +
-              '<div class="tile-sub">' + esc(t.sub) + '</div>' +
-            '</label>'
-          ).join('') +
+          '<button type="button" class="tile" data-checked="' + (isMV ? 'true' : 'false') + '"' +
+            ' data-action="solution-pick" data-value="mv">' +
+            '<span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg></span>' +
+            '<div class="tile-text">' +
+              '<div class="tile-title">MULTI VIEWER</div>' +
+              '<div class="tile-sub">CORIOview \u00b7 Multi-source preview in one display</div>' +
+            '</div>' +
+          '</button>' +
+          '<button type="button" class="tile" data-checked="' + (isVP ? 'true' : 'false') + '"' +
+            ' data-action="solution-vp-toggle">' +
+            '<span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="10"/><line x1="10" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="14" y2="10"/><line x1="18" y1="10" x2="18" y2="10"/><path d="M2 14h20"/></svg></span>' +
+            '<div class="tile-text">' +
+              '<div class="tile-title">VIDEO PROCESSOR</div>' +
+              '<div class="tile-sub">CALICO / CORIO \u00b7 Video-wall scaling &amp; processing</div>' +
+            '</div>' +
+          '</button>' +
+          (vpExpanded
+            ? '<div class="tile-group sub-tile-group">' +
+                '<button type="button" class="tile" data-checked="' + (isCalico ? 'true' : 'false') + '"' +
+                  ' data-action="solution-pick" data-value="calico">' +
+                  '<span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><text x="6" y="16" font-size="8" font-weight="700" fill="currentColor" stroke="none" font-family="Arial">4K</text></svg></span>' +
+                  '<div class="tile-text">' +
+                    '<div class="tile-title">CALICO</div>' +
+                    '<div class="tile-sub">C7-PRO \u00b7 4K up to 32 ports</div>' +
+                  '</div>' +
+                '</button>' +
+                '<button type="button" class="tile" data-checked="' + (isCorio ? 'true' : 'false') + '"' +
+                  ' data-action="solution-pick" data-value="corio">' +
+                  '<span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="16" x2="21" y2="16"/></svg></span>' +
+                  '<div class="tile-text">' +
+                    '<div class="tile-title">CORIO</div>' +
+                    '<div class="tile-sub">C3 / CM2 \u00b7 FHD-to-4K modular</div>' +
+                  '</div>' +
+                '</button>' +
+              '</div>'
+            : '') +
         '</div>';
     }
 
@@ -6574,12 +8375,26 @@
             'No screens configured. Set <strong>Active LED screens</strong> in Step 3 to add screens.' +
           '</div>';
       }
+      // v27.3.0 §11 — live-badge LED screen card.
+      // Per-screen: W×H px, pitch (mm), live readouts for total pixels, RJ45 ports
+      // (ceil(pixels / 650000)), physical dimensions (via screenDimensions FROZEN),
+      // aspect ratio (exact-match for common: 16:9, 16:10, 4:3, 21:9, 32:9, 1:1,
+      // 9:16, 5:4; otherwise "Custom W.WW:1").
+      const totals = { pixels: 0, ledPorts: 0, hdmiFeeds: 0 };
       const screensHtml = d.screens.map(function(s, idx) {
-        const px = (Number(s.w) || 0) * (Number(s.h) || 0);
-        return '<div class="card" style="margin-bottom:8px">' +
-          '<div class="row between" style="margin:0 0 6px">' +
-            '<strong>Screen ' + (idx + 1) + '</strong>' +
-          '</div>' +
+        const w = Number(s.w) || 0;
+        const h = Number(s.h) || 0;
+        const px = w * h;
+        const ports = px > 0 ? Math.ceil(px / 650000) : 0;
+        const feeds = px > 0 ? Math.ceil(px / (3840 * 2160)) : 0;
+        const aspect = _ledAspectRatio(w, h);
+        const dims = screenDimensions(s.w, s.h, s.pitch);
+        totals.pixels += px;
+        totals.ledPorts += ports;
+        totals.hdmiFeeds += feeds;
+        const hasComplete = (w > 0 && h > 0);
+        return '<div class="led-card">' +
+          '<div class="led-card-head"><strong>Screen ' + (idx + 1) + '</strong></div>' +
           '<div class="row gap-2">' +
             '<div class="field" style="flex:1;margin:0">' +
               '<label>Width (px)</label>' +
@@ -6592,9 +8407,6 @@
                 ' data-action="screen-h" data-idx="' + idx + '">' +
             '</div>' +
           '</div>' +
-          // v27.1.2 #5 — Pixel pitch (mm), decimal 2dp. inputmode="decimal"
-          // so mobile keyboards show the decimal point. Field hint reminds
-          // the range so smaller LED pitches are clearly accepted.
           '<div class="field" style="margin:8px 0 0">' +
             '<label>Pixel pitch (mm)</label>' +
             '<input type="text" inputmode="decimal" value="' + esc(s.pitch || '') + '"' +
@@ -6602,21 +8414,51 @@
               ' data-action="screen-pitch" data-idx="' + idx + '">' +
             '<div class="help">Typical 0.50\u201350.00 mm \u00b7 2 decimal places</div>' +
           '</div>' +
-          (px > 0 ? '<div class="help mono" style="margin-top:6px">= ' +
-            px.toLocaleString('en-US') + ' pixels</div>' : '') +
-          // v27.2.3 — Physical dimensions line. Renders only when w/h/pitch
-          // are all valid; otherwise the user hasn't finished typing and a
-          // half-computed value would be noise.
-          (function() {
-            const dims = screenDimensions(s.w, s.h, s.pitch);
-            return dims.ok
-              ? '<div class="help" style="margin-top:4px"><strong>Physical:</strong> ' +
-                  esc(dims.pretty) + '</div>'
-              : '';
-          })() +
+          (hasComplete
+            ? '<div class="led-badge-row">' +
+                '<span class="led-badge"><span class="led-badge-k">Pixels</span><span class="led-badge-v">' + px.toLocaleString('en-IN') + '</span></span>' +
+                '<span class="led-badge"><span class="led-badge-k">RJ45 ports</span><span class="led-badge-v">' + ports + '</span></span>' +
+                '<span class="led-badge"><span class="led-badge-k">HDMI feeds</span><span class="led-badge-v">' + feeds + '</span></span>' +
+                '<span class="led-badge"><span class="led-badge-k">Aspect</span><span class="led-badge-v">' + esc(aspect) + '</span></span>' +
+              '</div>'
+            : '') +
+          (dims.ok
+            ? '<div class="led-physical"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="1"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' +
+              '<span>Physical: ' + esc(dims.pretty) + '</span></div>'
+            : '') +
         '</div>';
       }).join('');
-      return errHtml + screensHtml;
+      // Aggregate band at bottom
+      const projectorCt = Number((d.calico_outputs && d.calico_outputs.projector) || 0);
+      const aggregateHtml = '<div class="led-aggregate">' +
+        '<div class="led-agg-item"><div class="led-agg-k">LED Pixels</div><div class="led-agg-v">' + totals.pixels.toLocaleString('en-IN') + '</div></div>' +
+        '<div class="led-agg-item"><div class="led-agg-k">LED Output Ports</div><div class="led-agg-v">' + totals.ledPorts + '</div></div>' +
+        '<div class="led-agg-item"><div class="led-agg-k">Projector Ports</div><div class="led-agg-v">' + projectorCt + '</div></div>' +
+        '<div class="led-agg-item"><div class="led-agg-k">Total Ports Needed</div><div class="led-agg-v">' + (totals.hdmiFeeds + projectorCt) + '</div></div>' +
+      '</div>';
+      return errHtml + screensHtml + aggregateHtml;
+    }
+
+    /* v27.3.0 §11 — LED aspect ratio. Returns exact-match label for common
+       ratios within 0.5% tolerance, otherwise "Custom W.WW:1 — tvONE territory". */
+    function _ledAspectRatio(w, h) {
+      if (!w || !h) return '\u2014';
+      const r = w / h;
+      const tol = 0.005;
+      const common = [
+        ['16:9',   16 / 9],
+        ['16:10',  16 / 10],
+        ['4:3',    4 / 3],
+        ['21:9',   21 / 9],
+        ['32:9',   32 / 9],
+        ['1:1',    1],
+        ['9:16',   9 / 16],
+        ['5:4',    5 / 4]
+      ];
+      for (let i = 0; i < common.length; i++) {
+        if (Math.abs(r - common[i][1]) / common[i][1] < tol) return common[i][0];
+      }
+      return 'Custom ' + r.toFixed(2) + ':1';
     }
 
     /* ---------- Step 5: Signal Extension ---------- */
@@ -6624,20 +8466,48 @@
     function renderStep5(d) {
       const errHtml = d.errors.sx
         ? '<div class="banner err">' + esc(d.errors.sx) + '</div>' : '';
-      return errHtml +
-        '<div class="banner info">' +
-          '<strong>Note:</strong> SX SKUs ARE included in your BoM and exports. ' +
-          'Defaults: HDBaseT &rarr; HD-One DX kit (2211079-03), HDMI Splitter &rarr; ' +
-          'MG-DA-614 (1&times;4), Audio Extractor &rarr; AP-536, AOC &rarr; placeholder ' +
-          '(jacket and length to be specified before PO). Per-variant pickers ' +
-          '(kit vs TX/RX, fiber distance, fanout, cable length) land in a future release.' +
-        '</div>' +
-        '<h3 class="h3">Quantities</h3>' +
-        '<div class="card">' +
-          SX_EDITORIAL.map(s =>
-            stepperRow(s.id, s.label, s.hint, d.sx_data[s.id] || 0, { namespace:'sx_data' })
-          ).join('') +
+      if (!d.sx_data) d.sx_data = { hdmi: 0, sdi: 0, ap536: 0, avip: 0 };
+      // v27.3.0 §10 — 4 designed cards, one per SX family. Each card has a
+      // category icon, title, description, and stepper. Engine emission
+      // unchanged (sx_data keys remain sums; per-variant pickers ship in
+      // v27.4 per Option (A)+(C) in the spec).
+      const sxCards = [
+        { id: 'hdmi',  title: 'HDBaseT Extender', sub: 'TX/RX kits over Cat6 \u00b7 HD-One DX / LX',
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="2" y="9" width="8" height="6" rx="1"/><rect x="14" y="9" width="8" height="6" rx="1"/><line x1="10" y1="12" x2="14" y2="12" stroke-dasharray="2 2"/></svg>' },
+        { id: 'sdi',   title: 'HDMI Splitter (DA)', sub: 'Distribution amplifier \u00b7 1\u00d72 / 1\u00d74 / 1\u00d78',
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="2" y="10" width="6" height="4" rx="1"/><path d="M8 12h4M12 12v-4h4M12 12v4h4M16 6h6M16 12h6M16 18h6"/></svg>' },
+        { id: 'ap536', title: 'Audio Extractor (AP-536)', sub: 'HDMI audio de-embedder \u00b7 analog L/R + S/PDIF',
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>' },
+        { id: 'avip',  title: 'AOC Cables', sub: 'Active Optical Cable \u00b7 HDMI / DisplayPort, jackets + lengths',
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 6c0-2 3-3 8-3s8 1 8 3v12c0 2-3 3-8 3s-8-1-8-3z"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/></svg>' }
+      ];
+      const cardsHtml = sxCards.map(function (c) {
+        const val = Number(d.sx_data[c.id]) || 0;
+        return '<div class="sx-card">' +
+          '<div class="sx-card-head">' +
+            '<span class="sx-card-icon">' + c.icon + '</span>' +
+            '<div class="sx-card-text">' +
+              '<div class="sx-card-title">' + esc(c.title) + '</div>' +
+              '<div class="sx-card-sub">' + esc(c.sub) + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="sx-card-stepper">' +
+            '<button type="button" class="sx-step-btn" data-action="step-dec" data-ns="sx_data" data-key="' + c.id + '"' +
+              (val <= 0 ? ' disabled' : '') + ' aria-label="Decrease ' + esc(c.title) + '">\u2212</button>' +
+            '<span class="sx-step-val">' + val + '</span>' +
+            '<button type="button" class="sx-step-btn" data-action="step-inc" data-ns="sx_data" data-key="' + c.id + '"' +
+              ' aria-label="Increase ' + esc(c.title) + '">+</button>' +
+          '</div>' +
         '</div>';
+      }).join('');
+      return errHtml +
+        '<div class="banner info" style="margin-bottom:12px">' +
+          '<strong>SX SKUs are included in BoM + exports.</strong> ' +
+          'Default selections: HDBaseT \u2192 HD-One DX kit, Splitter \u2192 MG-DA-614 (1\u00d74), ' +
+          'Audio Extractor \u2192 AP-536, AOC \u2192 placeholder (jacket and length to be specified ' +
+          'before PO). Per-variant pickers ship in v27.4.' +
+        '</div>' +
+        '<div class="sx-grid">' + cardsHtml + '</div>';
     }
 
     /* ---------- Step 6: Review & build ---------- */
@@ -7016,6 +8886,24 @@
         if (action === 'solution-pick') {
           const v = actEl.getAttribute('data-value');
           wizardData.solutionType = v;
+          // Keep VP sub-step revealed when CALICO/CORIO is picked
+          wizardData._step2_videoProcessorOpen = (v === 'calico' || v === 'corio');
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+
+        // v27.3.0 §9 — Video Processor tile toggles the CALICO/CORIO sub-step picker
+        if (action === 'solution-vp-toggle') {
+          // If already on VP, leave selection. Otherwise reveal sub-step picker.
+          const cur = wizardData.solutionType;
+          const isVP = (cur === 'calico' || cur === 'corio');
+          if (isVP) {
+            // collapse if already expanded with nothing more to choose
+            wizardData._step2_videoProcessorOpen = !wizardData._step2_videoProcessorOpen;
+          } else {
+            wizardData._step2_videoProcessorOpen = true;
+          }
           saveDraft();
           rerenderPreservingScroll();
           return;
@@ -7178,6 +9066,168 @@
               el.scrollIntoView({ behavior:'smooth', block:'start' });
             });
           }
+          return;
+        }
+
+        // v27.3.0 — Notification row tap: mark read + navigate to deal if ref present
+        if (action === 'notif-tap') {
+          const id = actEl.getAttribute('data-id');
+          const navTarget = actEl.getAttribute('data-nav');
+          // Optimistic UI: dim the row immediately
+          actEl.classList.add('notif-row-read');
+          const unreadDot = actEl.querySelector('.notif-unread');
+          if (unreadDot) unreadDot.remove();
+          if (id) {
+            STORE.notifMarkRead([id], false).catch(function () {});
+            refreshNotifBadge();
+          }
+          if (navTarget) {
+            closeSheet();
+            location.hash = navTarget;
+          }
+          return;
+        }
+
+        // v27.3.0 — Mark all notifications as read
+        if (action === 'notif-mark-all') {
+          STORE.notifMarkRead(null, true).then(function () {
+            // Re-render sheet contents and badge
+            showNotificationsSheet();
+            refreshNotifBadge();
+          }).catch(function (err) {
+            toast('Could not mark all read: ' + (err && err.message || String(err)), 'err');
+          });
+          return;
+        }
+
+        // v27.3.0 — Saved-deal: open audit log filtered to this ref
+        if (action === 'sd-audit') {
+          if (!_savedDealData) return;
+          const ref = _savedDealData.display_ref || _savedDealData.ref_id;
+          showAuditLogSheet({ refId: ref });
+          return;
+        }
+
+        // v27.3.0 — User menu actions (avatar dropdown sheet)
+        if (action === 'um-profile') {
+          closeSheet();
+          if (location.hash !== '#/profile') location.hash = '#/profile';
+          return;
+        }
+
+        // v27.3.0 — Duplicate deal (v27.7 partial restore)
+        if (action === 'sd-duplicate') {
+          if (!_savedDealData) return;
+          const srcRef = _savedDealData.display_ref || _savedDealData.ref_id;
+          if (!srcRef) return;
+          const newName = prompt('New project name (leave blank to copy current):', _savedDealData.project || '');
+          if (newName === null) return;
+          STORE.duplicateDeal(srcRef, newName.trim()).then(function (r) {
+            if (r && r.ok === false) {
+              toast('Duplicate failed: ' + (r.error || 'unknown'), 'err');
+              return;
+            }
+            const newRef = (r && (r.display_ref || r.ref_id)) || '';
+            toast('Duplicated as ' + newRef, 'ok');
+            if (newRef) location.hash = '#/quote/' + newRef;
+          }).catch(function (err) {
+            toast('Duplicate failed: ' + (err && err.message || String(err)), 'err');
+          });
+          return;
+        }
+        if (action === 'um-changepw') {
+          closeSheet();
+          if (location.hash !== '#/profile') location.hash = '#/profile';
+          toast('Use Profile page to change your password', 'default');
+          return;
+        }
+        if (action === 'um-audit') {
+          showAuditLogSheet({});
+          return;
+        }
+        if (action === 'um-resets') {
+          showResetPasswordPanel();
+          return;
+        }
+        if (action === 'um-logout') {
+          closeSheet();
+          STORE.logout();
+          location.hash = '#/login';
+          return;
+        }
+
+        // v27.3.0 — Saved-deal: open revisions for this ref
+        if (action === 'sd-revisions') {
+          if (!_savedDealData) return;
+          const ref = _savedDealData.display_ref || _savedDealData.ref_id;
+          showRevisionsSheet(ref);
+          return;
+        }
+
+        // v27.3.0 — Reset password submit (from login screen sheet)
+        if (action === 'rp-submit') {
+          const un = ($('rp-username') && $('rp-username').value || '').trim();
+          const reason = ($('rp-reason') && $('rp-reason').value || '').trim();
+          if (!un) { toast('Username is required', 'err'); return; }
+          STORE.resetPasswordRequest(un, reason).then(function (r) {
+            if (r && r.ok === false) {
+              toast('Request failed: ' + (r.error || 'unknown'), 'err');
+            } else {
+              closeSheet();
+              toast('Request submitted. A Super user will review.', 'ok');
+            }
+          }).catch(function (err) {
+            toast('Request failed: ' + (err && err.message || String(err)), 'err');
+          });
+          return;
+        }
+
+        // v27.3.0 — Super: approve a pending reset request (issues a temp PW)
+        if (action === 'rp-approve') {
+          const id = actEl.getAttribute('data-id');
+          if (!id) return;
+          // Generate a memorable temp password
+          const temp = 'temp' + Math.floor(1000 + Math.random() * 9000);
+          if (!confirm('Approve request? Temp password: ' + temp + '\n\nIt will be set as the user\'s password and marked must-change.')) return;
+          STORE.resetPasswordApprove(id, temp).then(function () {
+            toast('Approved. Temp password: ' + temp + ' (share with user)', 'ok');
+            showResetPasswordPanel();
+          }).catch(function (err) {
+            toast('Approve failed: ' + (err && err.message || String(err)), 'err');
+          });
+          return;
+        }
+
+        // v27.3.0 — WhatsApp share (opens wa.me URL with prefilled message)
+        if (action === 'sd-whatsapp') {
+          if (!_savedDealData) return;
+          try {
+            const url = _buildWhatsAppUrl(_savedDealData);
+            window.open(url, '_blank');
+            toast('Opening WhatsApp\u2026 attach Excel/PDF before sending', 'ok');
+          } catch (err) {
+            toast('WhatsApp share failed: ' + (err && err.message || String(err)), 'err');
+          }
+          return;
+        }
+
+        // v27.3.0 — Email share (opens mailto: URL with prefilled subject/body)
+        if (action === 'sd-email') {
+          if (!_savedDealData) return;
+          try {
+            const url = _buildMailtoUrl(_savedDealData);
+            window.location.href = url;
+            toast('Opening email draft\u2026 attach Excel + PDF before sending', 'ok');
+          } catch (err) {
+            toast('Email share failed: ' + (err && err.message || String(err)), 'err');
+          }
+          return;
+        }
+
+        // v27.3.0 — Confirm deal (visual placeholder; full flow lands in v27.4)
+        if (action === 'sd-confirm') {
+          if (!_savedDealData) return;
+          toast('Deal confirmation flow lands in v27.4', 'default');
           return;
         }
 
