@@ -1007,7 +1007,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.2.3',
+      version: 'v27.2.4',
       constants,
       calico,
       mv,
@@ -3124,8 +3124,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.2.3"',
-      () => CATALOG.version === 'v27.2.3' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.2.4"',
+      () => CATALOG.version === 'v27.2.4' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.1.2 invariants ---------- */
     // §1.2 — HUMAN_LABELS structural shape
@@ -8270,9 +8270,95 @@
       });
     }
 
+    // v27.2.3 — Append SX SKUs to a recommendation's `cards` array based
+    // on wizardData's sx_data quantities. Called by computeReco after the
+    // family-specific RECOMMEND.* call so SX lines appear in Step 6,
+    // saved-deal view, Excel export, and PDF export all from one site.
+    //
+    // Mapping (the v26 sx_data field-name footgun, documented in
+    // 04-FIELDS-BY-BRANCH.md §5 — locked until the v27.2c SX inline-wizard
+    // rebuild gives the user per-variant choice):
+    //   sx_data.hdmi  → CATALOG.sx.hdbt   → HDBaseT extender (HD-One DX kit default)
+    //   sx_data.sdi   → CATALOG.sx.da     → HDMI splitter / distribution amplifier
+    //   sx_data.ap536 → CATALOG.sx.ap     → AP-536 audio extractor
+    //   sx_data.avip  → CATALOG.sx.aocCodes → AOC cable (default placeholder)
+    function appendSxCards(reco, d) {
+      if (!reco || !d || !d.hasSx || !d.sx_data) return reco;
+      const sx = d.sx_data || {};
+      const cards = reco.cards || [];
+      const concerns = reco.concerns ? reco.concerns.slice() : [];
+
+      // 1. HDBaseT extender — default to HD-One DX Video kit (covers Video
+      //    + Video+Audio modes which share SKUs). Quantity = sx_data.hdmi.
+      const hdbtQty = Number(sx.hdmi) || 0;
+      if (hdbtQty > 0) {
+        const hd = CATALOG.sx.hdbt['Video'];
+        cards.push({
+          sku:  hd.kit,
+          desc: 'HDBaseT Extender Kit (' + hd.familyLabel + ', TX+RX, Video / Video+Audio)',
+          qty:  hdbtQty
+        });
+      }
+
+      // 2. HDMI splitter / DA — default to 1×4 (MG-DA-614) since it's the
+      //    most common AV install size. v27.2c SX sub-wizard will let the
+      //    user pick 1×2 / 1×4 / 1×8 per the actual fanout requirement.
+      const daQty = Number(sx.sdi) || 0;
+      if (daQty > 0) {
+        const da = CATALOG.sx.da['614'];
+        cards.push({
+          sku:  da.sku,
+          desc: da.desc + ' (default 1×4; review fanout in next SX sub-wizard release)',
+          qty:  daQty
+        });
+        concerns.push(
+          'HDMI Splitter qty ' + daQty + ' provisionally specced as MG-DA-614 (1×4). ' +
+          'Confirm 1×2 / 1×4 / 1×8 fanout per port before PO.'
+        );
+      }
+
+      // 3. AP-536 audio extractor — single SKU, qty as entered.
+      const apQty = Number(sx.ap536) || 0;
+      if (apQty > 0) {
+        const ap = CATALOG.sx.ap['AP-536'];
+        cards.push({
+          sku:  ap.sku,
+          desc: ap.desc,
+          qty:  apQty
+        });
+      }
+
+      // 4. AOC cable — no single default SKU exists (signal × jacket ×
+      //    length = lots of permutations). Emit a placeholder line + a
+      //    loud concern so the salesperson knows to spec the exact cable
+      //    before quoting. The v27.2c SX inline wizard will surface the
+      //    length picker. Listing as 'AOC-CABLE-TBD' keeps the line count
+      //    accurate without inventing a fake SKU.
+      const aocQty = Number(sx.avip) || 0;
+      if (aocQty > 0) {
+        cards.push({
+          sku:  'AOC-CABLE-TBD',
+          desc: 'Active Optical Cable (HDMI / DP, length + jacket TBD)',
+          qty:  aocQty
+        });
+        concerns.push(
+          'AOC cable qty ' + aocQty + ': signal type (HDMI / DP), jacket ' +
+          '(Std / Plenum / LSZH / Armored), and length must be specified ' +
+          'before PO. Builder shown placeholder SKU only.'
+        );
+      }
+
+      // Re-attach to reco. cards mutation is fine (cards came from reco
+      // and we own the reference for this call).
+      reco.cards = cards;
+      reco.concerns = concerns;
+      return reco;
+    }
+
     function computeReco(d) {
+      let reco;
       if (d.solutionType === 'calico') {
-        return RECOMMEND.calico({
+        reco = RECOMMEND.calico({
           inputs:  d.calico_inputs,
           outputs: Object.assign({}, d.calico_outputs, { led: !!d.hasLed }),
           screens: d.hasLed ? d.screens
@@ -8281,17 +8367,15 @@
             : [],
           audio:   !!d.calico_audio
         });
-      }
-      if (d.solutionType === 'mv') {
+      } else if (d.solutionType === 'mv') {
         const validInputs = d.mv_inputs
           .filter(r => r && r.signal && Number(r.qty) > 0)
           .map(r => ({ signal: r.signal, qty: Number(r.qty) }));
-        return RECOMMEND.mv({
+        reco = RECOMMEND.mv({
           inputs: validInputs,
           outputSignal: d.mv_outputSignal
         });
-      }
-      if (d.solutionType === 'corio') {
+      } else if (d.solutionType === 'corio') {
         // Strip zero-qty entries to keep the input clean for RECOMMEND.
         const inputs = {};
         Object.entries(d.corio_inputs).forEach(([k,v]) => { if (Number(v) > 0) inputs[k] = Number(v); });
@@ -8300,9 +8384,14 @@
         const args = { inputs, outputs };
         if (d.corio_audio)     args.audio = d.corio_audio;
         if (d.corio_fanFilter) args.fanFilter = true;
-        return RECOMMEND.corio(args);
+        reco = RECOMMEND.corio(args);
+      } else {
+        reco = { chassis: null, cards: [], concerns: [], valueAdds: [], meta: { type: 'empty' } };
       }
-      return { chassis: null, cards: [], concerns: [], valueAdds: [], meta: { type: 'empty' } };
+      // v27.2.3 — Append SX cards from sx_data. Works for all three families
+      // (and the empty case, where SX still gets listed even when no chassis
+      // is recommended — useful when user is only doing signal extension).
+      return appendSxCards(reco, d);
     }
 
     function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
