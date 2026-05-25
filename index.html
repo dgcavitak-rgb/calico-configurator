@@ -5,6 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>tvONE Product Selector — v27</title>
   <!--
+    v27.2.3 — BUG FIXES + SCREEN DIMENSIONS (2026-05-25)
+    User-reported bugs against v27.2.2:
+      Bug 1: D16 gate re-fires on every login despite successful save
+             Root cause: localStorage `_user` from a pre-v27.2.2 session
+             cached phone as "+91 8160756906" — fails PHONE_RE on rehydrate.
+             Fix: bootRestore() now self-heals stale phones to last-10-digits
+             format on every page load. One-time write-back; no re-login.
+      Bug 2: Saved-deal view shows "Empty input set / No chassis recommended"
+             even when Step 6 just showed a real BoM for the same data.
+             Root cause: `deal_get` RPC didn't return `raw_submission` jsonb.
+             Frontend merge loop at showSavedDeal hit `undefined` and skipped,
+             leaving deal.solutionType/calico_inputs/screens/etc undefined.
+             computeReco fell through every if-branch, returned empty.
+             Fix: BACKEND migration `deal_get_returns_raw_submission`
+             (2026-05-25). Pure additive — existing callers ignore extra
+             keys. No frontend change needed; the existing merge loop now
+             finds the data it always expected.
+      Bug 3: Step 5 SX banner had stale "v27.0 / v27.1" version references.
+             Fix: rewritten to "this version / an upcoming version."
+
+    New feature — Screen physical dimensions:
+      Compute width_mm / height_mm / diagonal_mm / diagonal_inches from
+      each screen's {w, h, pitch} via UI._screenDimensions. Displayed
+      inline in Step 4 (under each pitch input) and in a new "Screen
+      Configuration" block in both Excel and PDF exports. Pure display
+      this release; persistence to deal_screens table deferred to v27.2.4.
+
     v27.2.2 — FLOW REORDER (2026-05-25, post-v27.2.1 verified-clean deploy)
     User feedback after v27.2.1 ship: the gate order was wrong. Profile
     fields should be collected on the very first login (default-PW
@@ -980,7 +1007,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.2.2',
+      version: 'v27.2.3',
       constants,
       calico,
       mv,
@@ -1860,10 +1887,32 @@
 
     // Boot: restore user from localStorage if present. Pure local check;
     // does not call the server (no session token to validate).
+    //
+    // v27.2.3 — Bug 1 fix: stale-phone self-heal. If a user's localStorage
+    // entry was written BEFORE v27.2.2's normalizePhone landed, the phone
+    // field carries "+91 8160756906"-style format which fails the D16
+    // gate's `^[0-9]{10}$` regex and causes the gate to fire spuriously
+    // on every page load. Normalize-on-rehydrate fixes any cached user
+    // record without requiring a re-login. One-time write-back to
+    // localStorage so subsequent loads don't repeat the work.
     (function bootRestore() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) _user = JSON.parse(raw);
+        if (raw) {
+          _user = JSON.parse(raw);
+          // Stale-phone self-heal: if the cached phone has any non-digit
+          // characters, strip them and keep the last 10. Only re-write
+          // localStorage when we actually changed something.
+          if (_user && _user.phone != null) {
+            const oldPhone = String(_user.phone);
+            const digits   = oldPhone.replace(/\D+/g, '');
+            const newPhone = digits.length >= 10 ? digits.slice(-10) : digits;
+            if (newPhone !== oldPhone) {
+              _user.phone = newPhone;
+              try { localStorage.setItem(STORAGE_KEY, JSON.stringify(_user)); } catch (_) {}
+            }
+          }
+        }
       } catch (_) { _user = null; }
     })();
 
@@ -2451,6 +2500,53 @@
         });
       }
 
+      // ---- v27.2.3 — Screen Configuration block (LED deals only) ----
+      // Lists each screen's pixels, pitch, and physical dimensions so
+      // the partner reading the quote has a full spec of the LED wall.
+      // Skipped silently when the deal has no LED screens.
+      {
+        const screens = (deal && Array.isArray(deal.screens))
+          ? deal.screens.filter(function(s) { return s && Number(s.w) > 0 && Number(s.h) > 0; })
+          : [];
+        if (screens.length > 0) {
+          curRow += 2;  // spacer
+          ws.mergeCells(curRow, 1, curRow, 4);
+          const scHdr = ws.getCell(curRow, 1);
+          scHdr.value = 'SCREEN CONFIGURATION';
+          scHdr.font  = { bold: true, size: 11, color: { argb: 'FF1F4E1F' }};
+          scHdr.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F1E8' }};
+          scHdr.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+          ws.getRow(curRow).height = 20;
+
+          // Column header row
+          curRow++;
+          const colHdr = ws.getRow(curRow);
+          colHdr.getCell(1).value = 'Screen';
+          colHdr.getCell(2).value = 'Pixels (W \u00d7 H)';
+          colHdr.getCell(3).value = 'Pitch';
+          colHdr.getCell(4).value = 'Physical size';
+          for (let c = 1; c <= 4; c++) {
+            colHdr.getCell(c).font = { bold: true, size: 9, color: { argb: 'FF555555' } };
+            colHdr.getCell(c).alignment = { vertical: 'middle' };
+          }
+
+          screens.forEach(function(s, i) {
+            curRow++;
+            const r = ws.getRow(curRow);
+            const dims = UI._screenDimensions(s.w, s.h, s.pitch);
+            r.getCell(1).value = 'Screen ' + (i + 1);
+            r.getCell(2).value = String(s.w) + ' \u00d7 ' + String(s.h);
+            r.getCell(3).value = (s.pitch ? String(s.pitch) + ' mm' : '\u2014');
+            r.getCell(4).value = dims.ok ? dims.pretty : '\u2014';
+            for (let c = 1; c <= 4; c++) {
+              r.getCell(c).font = { size: 9 };
+              r.getCell(c).alignment = { vertical: 'top' };
+            }
+            r.height = 16;
+          });
+        }
+      }
+
       // ---- v27.2.0 — C1 Cavitak T&C / Warranty block ----
       // Mandatory on every export per OP §3.8 (contract C1). Section
       // header in BoM-header style, then 11 rows of "Label / Text"
@@ -2810,6 +2906,59 @@
         });
       }
 
+      // ---- v27.2.3 — Screen Configuration block (LED deals only) ----
+      // Lists each screen's pixels, pitch, and physical dimensions. Same
+      // source-of-truth as Excel via UI._screenDimensions. Skipped silently
+      // when the deal has no LED screens.
+      {
+        const screens = (deal && Array.isArray(deal.screens))
+          ? deal.screens.filter(function(s) { return s && Number(s.w) > 0 && Number(s.h) > 0; })
+          : [];
+        if (screens.length > 0) {
+          const rowH    = 13;
+          const headerH = 22;
+          const blockH  = headerH + (screens.length + 1) * (rowH + 2) + 8;
+          checkPageBreak(Math.min(blockH, 80));
+          y += 10;
+
+          // Section header
+          doc.setFillColor(232, 241, 232);
+          doc.rect(M, y, W - 2 * M, 18, 'F');
+          doc.setTextColor(31, 78, 31);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(11);
+          doc.text('SCREEN CONFIGURATION', M + 6, y + 12);
+          y += headerH;
+
+          // Column header
+          const col1 = M;
+          const col2 = M + 60;
+          const col3 = M + 160;
+          const col4 = M + 215;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9);
+          doc.setTextColor(85, 85, 85);
+          doc.text('Screen',        col1, y);
+          doc.text('Pixels (W \u00d7 H)', col2, y);
+          doc.text('Pitch',         col3, y);
+          doc.text('Physical size', col4, y);
+          y += rowH;
+          doc.setTextColor(0, 0, 0);
+
+          screens.forEach(function(s, i) {
+            checkPageBreak(rowH + 4);
+            const dims = UI._screenDimensions(s.w, s.h, s.pitch);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Screen ' + (i + 1), col1, y);
+            doc.text(String(s.w) + ' \u00d7 ' + String(s.h), col2, y);
+            doc.text(s.pitch ? String(s.pitch) + ' mm' : '\u2014', col3, y);
+            doc.text(dims.ok ? dims.pretty : '\u2014', col4, y);
+            y += rowH;
+          });
+          y += 4;
+        }
+      }
+
       // ---- v27.2.0 — C1 Cavitak T&C / Warranty block ----
       // Mandatory on every export per OP §3.8 (contract C1). Same canonical
       // text source as Excel via UI._tncItems. Pre-wraps to compute block
@@ -2975,8 +3124,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.2.2"',
-      () => CATALOG.version === 'v27.2.2' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.2.3"',
+      () => CATALOG.version === 'v27.2.3' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.1.2 invariants ---------- */
     // §1.2 — HUMAN_LABELS structural shape
@@ -4165,6 +4314,44 @@
       const dd = String(dt.getDate()).padStart(2, '0');
       const mm = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dt.getMonth()];
       return dd + ' ' + mm + ' ' + dt.getFullYear();
+    }
+
+    // v27.2.3 — Compute physical dimensions for one LED screen from
+    // pixel-w/h and pitch (mm). Returns {ok, width_mm, height_mm,
+    // diagonal_mm, diagonal_inches, width_m, height_m, diagonal_m,
+    // pretty} or {ok:false} if inputs are invalid. Used by Step 4
+    // inline display, saved-deal I/O section, and Excel/PDF Screen
+    // Configuration block.
+    function screenDimensions(w, h, pitch) {
+      const wPx = Number(w);
+      const hPx = Number(h);
+      const p   = Number(pitch);
+      if (!isFinite(wPx) || !isFinite(hPx) || !isFinite(p) ||
+          wPx <= 0 || hPx <= 0 || p <= 0) {
+        return { ok: false };
+      }
+      const widthMm    = wPx * p;
+      const heightMm   = hPx * p;
+      const diagonalMm = Math.sqrt(widthMm * widthMm + heightMm * heightMm);
+      const widthM     = widthMm    / 1000;
+      const heightM    = heightMm   / 1000;
+      const diagonalM  = diagonalMm / 1000;
+      const diagInches = diagonalMm / 25.4;
+      // Compact human-readable summary, e.g. "9.70 m × 3.00 m · diagonal 10.15 m / ~400\""
+      const pretty = widthM.toFixed(2) + ' m \u00d7 ' + heightM.toFixed(2) + ' m' +
+                     ' \u00b7 diagonal ' + diagonalM.toFixed(2) + ' m' +
+                     ' / \u007e' + Math.round(diagInches) + '\u201d';
+      return {
+        ok: true,
+        width_mm:        Math.round(widthMm),
+        height_mm:       Math.round(heightMm),
+        diagonal_mm:     Math.round(diagonalMm),
+        diagonal_inches: Math.round(diagInches * 10) / 10,
+        width_m:         Math.round(widthM    * 100) / 100,
+        height_m:        Math.round(heightM   * 100) / 100,
+        diagonal_m:      Math.round(diagonalM * 100) / 100,
+        pretty:          pretty
+      };
     }
 
     // SX editorial labels — locked alpha.7.0 to match real CATALOG.sx products.
@@ -6405,6 +6592,16 @@
           '</div>' +
           (px > 0 ? '<div class="help mono" style="margin-top:6px">= ' +
             px.toLocaleString('en-US') + ' pixels</div>' : '') +
+          // v27.2.3 — Physical dimensions line. Renders only when w/h/pitch
+          // are all valid; otherwise the user hasn't finished typing and a
+          // half-computed value would be noise.
+          (function() {
+            const dims = screenDimensions(s.w, s.h, s.pitch);
+            return dims.ok
+              ? '<div class="help" style="margin-top:4px"><strong>Physical:</strong> ' +
+                  esc(dims.pretty) + '</div>'
+              : '';
+          })() +
         '</div>';
       }).join('');
       return errHtml + screensHtml;
@@ -6418,8 +6615,8 @@
       return errHtml +
         '<div class="banner warn">' +
           '<strong>Heads-up:</strong> Signal Extension SKUs are captured here but ' +
-          'not yet rolled into the BoM card in v27.0. Detailed per-family sub-wizards ' +
-          '(kit-vs-tx/rx, fiber distance, distribution fanout) land in v27.1.' +
+          'not yet rolled into the BoM card in this version. Detailed per-family sub-wizards ' +
+          '(kit-vs-tx/rx, fiber distance, distribution fanout) land in an upcoming version.' +
         '</div>' +
         '<h3 class="h3">Quantities</h3>' +
         '<div class="card">' +
@@ -7538,6 +7735,7 @@
       _profileIncomplete:  profileIncomplete,
       _tncItems:           tncItems,
       _formatQuoteDate:    formatQuoteDate,
+      _screenDimensions:   screenDimensions,
       // v27.1.1 — N1, N2, N7, N8, N12 smoke checks need these constants
       // and helper. Same expose-via-UI pattern.
       _VENUE_TYPES:        VENUE_TYPES,
