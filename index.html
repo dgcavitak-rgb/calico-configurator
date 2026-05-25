@@ -2110,6 +2110,361 @@
       letter-spacing: 0.05em;
     }
 
+    /* --- v27.3.0 DASHBOARD UPGRADE — 8 KPI tiles --- */
+    .kpi-grid-8 {
+      display: grid; gap: 8px;
+      grid-template-columns: repeat(2, 1fr);
+      margin-bottom: var(--s-4);
+    }
+    @media (min-width: 540px) { .kpi-grid-8 { grid-template-columns: repeat(4, 1fr); } }
+    @media (min-width: 880px) { .kpi-grid-8 { grid-template-columns: repeat(8, 1fr); } }
+    /* Color variants for the 4 new tiles (red/gray/cyan/pink) */
+    .kpi-tile-red    { background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); }
+    .kpi-tile-red    .kpi-tile-icon { background: #EF4444; color: white; }
+    .kpi-tile-red    .kpi-value     { color: #991B1B; }
+    .kpi-tile-gray   { background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%); }
+    .kpi-tile-gray   .kpi-tile-icon { background: #6B7280; color: white; }
+    .kpi-tile-gray   .kpi-value     { color: #1F2937; }
+    .kpi-tile-cyan   { background: linear-gradient(135deg, #CFFAFE 0%, #A5F3FC 100%); }
+    .kpi-tile-cyan   .kpi-tile-icon { background: #06B6D4; color: white; }
+    .kpi-tile-cyan   .kpi-value     { color: #155E75; }
+    .kpi-tile-pink   { background: linear-gradient(135deg, #FCE7F3 0%, #FBCFE8 100%); }
+    .kpi-tile-pink   .kpi-tile-icon { background: #EC4899; color: white; }
+    .kpi-tile-pink   .kpi-value     { color: #9D174D; }
+    html[data-theme="dark"] .kpi-tile-red    { background: linear-gradient(135deg, rgba(239,68,68,0.18) 0%, rgba(239,68,68,0.08) 100%); }
+    html[data-theme="dark"] .kpi-tile-red    .kpi-value { color: #FCA5A5; }
+    html[data-theme="dark"] .kpi-tile-gray   { background: linear-gradient(135deg, rgba(107,114,128,0.20) 0%, rgba(107,114,128,0.10) 100%); }
+    html[data-theme="dark"] .kpi-tile-gray   .kpi-value { color: #D1D5DB; }
+    html[data-theme="dark"] .kpi-tile-cyan   { background: linear-gradient(135deg, rgba(6,182,212,0.18) 0%, rgba(6,182,212,0.08) 100%); }
+    html[data-theme="dark"] .kpi-tile-cyan   .kpi-value { color: #67E8F9; }
+    html[data-theme="dark"] .kpi-tile-pink   { background: linear-gradient(135deg, rgba(236,72,153,0.18) 0%, rgba(236,72,153,0.08) 100%); }
+    html[data-theme="dark"] .kpi-tile-pink   .kpi-value { color: #F9A8D4; }
+
+    /* Dashboard sections */
+    .dash-section {
+      margin-bottom: var(--s-5);
+    }
+    .dash-section-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: var(--s-3);
+    }
+    .dash-section-head h2 {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 16px; color: var(--ink-strong);
+      margin: 0; letter-spacing: -0.01em;
+    }
+    .dash-section-head .meta {
+      font-size: 11.5px; color: var(--ink-soft);
+      font-family: var(--font-display); font-weight: 500;
+    }
+
+    /* Stage funnel */
+    .stage-funnel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .funnel-row {
+      display: grid; gap: 10px;
+      grid-template-columns: 100px 1fr 32px;
+      align-items: center;
+    }
+    @media (min-width: 540px) { .funnel-row { grid-template-columns: 160px 1fr 40px; } }
+    .funnel-stage {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 12px; color: var(--ink-mid);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .funnel-bar-wrap {
+      height: 18px;
+      background: var(--bg-subtle);
+      border-radius: var(--r-pill);
+      overflow: hidden;
+    }
+    .funnel-bar {
+      height: 100%;
+      border-radius: var(--r-pill);
+      transition: width 600ms var(--ease-out);
+    }
+    .funnel-count {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 13px; color: var(--ink-strong);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Region tiles */
+    .region-grid {
+      display: grid; gap: 8px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (min-width: 540px) { .region-grid { grid-template-columns: repeat(4, 1fr); } }
+    .region-tile {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-left: 3px solid var(--zone-color, var(--accent));
+      border-radius: var(--r-md);
+      padding: 12px;
+      transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+    }
+    .region-tile:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,14,12,0.05); }
+    .region-tile-head {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 10px;
+    }
+    .region-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+    .region-name {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 13px; color: var(--ink-strong);
+    }
+    .region-stats {
+      display: grid; gap: 6px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .region-stat-k {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 9.5px; color: var(--ink-soft);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 2px;
+    }
+    .region-stat-v {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 16px; color: var(--ink-strong);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Stuck/slipped table */
+    .stuck-table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      overflow: hidden;
+    }
+    .stuck-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 13px;
+    }
+    .stuck-table thead th {
+      background: var(--bg-subtle);
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 10.5px;
+      color: var(--ink-soft);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 9px 12px;
+      text-align: left;
+      border-bottom: 0.5px solid var(--border-soft);
+    }
+    .stuck-table thead th.num { text-align: right; }
+    .stuck-table tbody tr {
+      cursor: pointer;
+      border-bottom: 0.5px solid var(--border-soft);
+      transition: background var(--dur-base) var(--ease-out);
+    }
+    .stuck-table tbody tr:hover { background: var(--bg-card-hover); }
+    .stuck-table tbody tr:last-child { border-bottom: none; }
+    .stuck-table td {
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+    .stuck-table td.num { text-align: right; white-space: nowrap; }
+    .stuck-project {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 13px; color: var(--ink-strong);
+    }
+    .stuck-meta {
+      font-size: 11px; color: var(--ink-soft);
+      margin-top: 2px;
+    }
+    .stuck-days {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 13px;
+      color: var(--warning, #F59E0B);
+      font-variant-numeric: tabular-nums;
+    }
+    .stuck-days-bad { color: var(--danger, #EF4444); }
+    .stuck-table-more {
+      padding: 10px 12px;
+      text-align: center;
+      font-size: 12px; color: var(--ink-soft);
+      background: var(--bg-subtle);
+    }
+    .stuck-table-more a {
+      color: var(--accent-deep);
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .stuck-table-more a:hover { text-decoration: underline; }
+
+    /* --- v27.3.0 saved-deal SX read-only summary --- */
+    .sd-sx-list {
+      display: flex; flex-direction: column; gap: 8px;
+      margin-bottom: 12px;
+    }
+    .sd-sx-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-subtle);
+      border-radius: var(--r-sm);
+      border: 0.5px solid var(--border-soft);
+    }
+    .sd-sx-icon {
+      width: 32px; height: 32px;
+      border-radius: var(--r-xs);
+      background: var(--accent-soft);
+      color: var(--accent-deep);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .sd-sx-icon svg { width: 16px; height: 16px; }
+    .sd-sx-text { flex: 1; min-width: 0; }
+    .sd-sx-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 13.5px; color: var(--ink-strong);
+      line-height: 1.3;
+    }
+    .sd-sx-sub {
+      font-size: 11.5px; color: var(--ink-soft);
+      margin-top: 2px;
+    }
+    .sd-sx-qty {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 16px; color: var(--accent-deep);
+      font-variant-numeric: tabular-nums;
+      padding: 4px 10px;
+      background: var(--bg-card);
+      border-radius: var(--r-pill);
+      border: 1px solid var(--border-soft);
+    }
+
+    /* --- v27.3.0 SIMPLE HOME --- */
+    .home-hero {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: var(--s-3);
+      margin-bottom: var(--s-4);
+      padding-top: var(--s-2);
+    }
+    .home-hero-text { flex: 1; min-width: 0; }
+    .home-greet {
+      font-family: var(--font-display); font-weight: 500;
+      font-size: 13px; color: var(--ink-soft);
+      letter-spacing: 0.005em;
+      margin-bottom: 2px;
+    }
+    .home-hero-title {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 24px; color: var(--ink-strong);
+      margin: 0; letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    .home-cta {
+      appearance: none; border: none;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px;
+      background: var(--accent); color: var(--ink-on-brand);
+      border-radius: var(--r-pill);
+      font-family: var(--font-display); font-weight: 600; font-size: 12.5px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(232,115,28,0.25);
+      transition: transform var(--dur-fast) var(--ease-spring), background var(--dur-base) var(--ease-out);
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .home-cta:hover { background: var(--accent-deep); }
+    .home-cta:active { transform: scale(0.97); }
+    .home-stats {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(2, 1fr);
+      margin-bottom: var(--s-5);
+    }
+    @media (min-width: 720px) { .home-stats { grid-template-columns: repeat(4, 1fr); } }
+    .home-stat {
+      appearance: none; border: 1px solid var(--border-soft);
+      background: var(--bg-card);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    .home-stat::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--stat-color, var(--accent));
+    }
+    .home-stat:hover {
+      transform: translateY(-2px);
+      border-color: var(--stat-color, var(--accent));
+      box-shadow: 0 6px 18px rgba(15,14,12,0.06);
+    }
+    html[data-theme="dark"] .home-stat:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.40); }
+    .home-stat-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--stat-color) 12%, transparent);
+      color: var(--stat-color);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    @supports not (background: color-mix(in srgb, red 50%, blue)) {
+      .home-stat-icon { background: rgba(247,148,29,0.12); }
+    }
+    .home-stat-icon svg { width: 18px; height: 18px; }
+    .home-stat-text { width: 100%; }
+    .home-stat-value {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 26px; line-height: 1;
+      color: var(--ink-strong);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .home-stat-title {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 12.5px; color: var(--ink-strong);
+      margin-bottom: 2px;
+    }
+    .home-stat-sub {
+      font-size: 11.5px; color: var(--ink-soft);
+    }
+    .home-link {
+      color: var(--accent-deep);
+      font-weight: 600;
+      font-size: 12.5px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .home-link:hover { text-decoration: underline; }
+    .home-dash-cta {
+      margin-top: var(--s-4);
+      padding: 14px;
+      background: var(--bg-card);
+      border: 1px dashed var(--border-mid);
+      border-radius: var(--r-md);
+      text-align: center;
+    }
+    .home-dash-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: var(--accent-deep);
+      font-family: var(--font-display); font-weight: 600; font-size: 13.5px;
+      text-decoration: none;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: var(--r-sm);
+      transition: background var(--dur-base) var(--ease-out);
+    }
+    .home-dash-link:hover { background: var(--accent-soft); }
+
     /* --- v27.3.0 NOTIFICATION SHEET (D6-D9 restore) --- */
     .notif-sheet { padding: 4px 0 16px; }
     .notif-sheet-head {
@@ -2241,6 +2596,10 @@
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9.5L12 2l9 7.5"/><path d="M5 9v12h4v-7h6v7h4V9"/></svg>
         Home
       </button>
+      <button data-nav="#/dashboard" type="button" aria-label="Dashboard">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Dashboard
+      </button>
       <button data-nav="#/quote/new" type="button" aria-label="New Quote">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         New
@@ -2252,10 +2611,6 @@
       <button data-nav="#/customers" type="button" aria-label="Customers">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Customers
-      </button>
-      <button data-nav="#/profile" type="button" aria-label="Profile">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
-        Profile
       </button>
     </nav>
     <div class="tricolor-bar" id="tricolor" hidden></div>
@@ -7339,42 +7694,166 @@
        VIEW: Home
        ============================================================ */
 
+    /* ============================================================
+       VIEW: Home — simple personal snapshot
+       4 quick KPIs + My Deals list. Heavy analytics live in #/dashboard.
+       ============================================================ */
     function showHome() {
       showChrome(true);
       updateNavActive('#/home');
+      const u = STORE.currentUser() || {};
+      const greeting = (function () {
+        const h = new Date().getHours();
+        if (h < 12) return 'Good morning';
+        if (h < 17) return 'Good afternoon';
+        return 'Good evening';
+      })();
+      const firstName = String(u.full_name || u.username || '').trim().split(/\s+/)[0] || '';
+      setRoot(
+        '<div class="v273-page">' +
+          '<header class="home-hero">' +
+            '<div class="home-hero-text">' +
+              '<div class="home-greet">' + esc(greeting) + (firstName ? ', ' + esc(firstName) : '') + '</div>' +
+              '<h1 class="home-hero-title">Here\'s your snapshot</h1>' +
+            '</div>' +
+            '<button class="home-cta" type="button" data-nav="#/quote/new">' +
+              '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+              ' New quote' +
+            '</button>' +
+          '</header>' +
+
+          /* ---- 4 simple personal stat cards ---- */
+          '<section class="home-stats">' +
+            simpleStatCard('open',    'Open pipeline',     'Active deals',   '#3B82F6', '#/history?filter=open',
+              '<path d="M3 7h18M3 12h18M3 17h12"/><circle cx="20" cy="17" r="2"/>') +
+            simpleStatCard('closing', 'Closing this month', 'Due in current month', '#F59E0B', '#/history?filter=closing-this-month',
+              '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>') +
+            simpleStatCard('won',     'Won this quarter',  'Closed wins',    '#22C55E', '#/history?filter=won',
+              '<path d="M6 9H4.5A2.5 2.5 0 0 1 2 6.5V5h4"/><path d="M18 9h1.5A2.5 2.5 0 0 0 22 6.5V5h-4"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>') +
+            simpleStatCard('stuck',   'Stuck > 14d',       'Needs a nudge',  '#EF4444', '#/history?filter=stuck',
+              '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>') +
+          '</section>' +
+
+          /* ---- My Deals (recent) ---- */
+          '<section class="deal-list-card">' +
+            '<header class="deal-list-head">' +
+              '<h2>My Deals</h2>' +
+              '<span class="meta">' +
+                '<a data-nav="#/history" class="home-link">See all \u2192</a>' +
+              '</span>' +
+            '</header>' +
+            '<div id="home-recent"><div class="muted small" style="padding:16px">Loading\u2026</div></div>' +
+          '</section>' +
+
+          /* ---- Footer cue to dashboard ---- */
+          '<div class="home-dash-cta">' +
+            '<a data-nav="#/dashboard" class="home-dash-link">' +
+              '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>' +
+              '<span>Open full dashboard \u2192</span>' +
+            '</a>' +
+          '</div>' +
+        '</div>'
+      );
+      loadHomeSimpleStats();
+      loadHomeRecent();
+    }
+
+    /* Simple stat card — colored icon + big number + title + sub */
+    function simpleStatCard(id, title, sub, color, navHref, iconPath) {
+      return '<button class="home-stat" type="button" data-nav="' + esc(navHref) + '" style="--stat-color:' + color + '">' +
+        '<span class="home-stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + iconPath + '</svg></span>' +
+        '<div class="home-stat-text">' +
+          '<div class="home-stat-value" id="home-stat-' + id + '-val">\u2014</div>' +
+          '<div class="home-stat-title">' + esc(title) + '</div>' +
+          '<div class="home-stat-sub" id="home-stat-' + id + '-sub">' + esc(sub) + '</div>' +
+        '</div>' +
+      '</button>';
+    }
+
+    /* Simple stats loader — only computes the 4 numbers Home shows. */
+    async function loadHomeSimpleStats() {
+      try {
+        const r = await STORE.listDeals({ limit: 300, offset: 0 });
+        const all = (r && r.rows) || [];
+        const u = STORE.currentUser() || {};
+        const uid = u.id;
+        const mine = uid ? all.filter(d => d.sales_person_id === uid || d.presales_person_id === uid) : all;
+        const active = mine.filter(d => !d.deleted_at);
+        const open  = active.filter(d => _isOpenStage(d.stage));
+        const won   = active.filter(d => d.stage === 'Closed Won');
+        const curM  = _currentYYYYMM();
+        const closingNow = open.filter(d => String(d.close_month || '').slice(0, 7) === curM);
+        const stuck14 = open.filter(d => _daysSince(d.updated_at || d.created_at) > 14);
+        const qStart = (function () {
+          const d = new Date(); const m = d.getMonth();
+          const qm = Math.floor(m / 3) * 3;
+          return new Date(d.getFullYear(), qm, 1);
+        })();
+        const wonQ = won.filter(d => new Date(d.updated_at || d.created_at || 0) >= qStart);
+        setText('home-stat-open-val',    String(open.length));
+        setText('home-stat-open-sub',    open.length === 0 ? 'Nothing open' : (open.length === 1 ? '1 active deal' : open.length + ' active deals'));
+        setText('home-stat-closing-val', String(closingNow.length));
+        setText('home-stat-closing-sub', closingNow.length === 0 ? 'Nothing due' : 'Due in current month');
+        setText('home-stat-won-val',     String(wonQ.length));
+        setText('home-stat-won-sub',     wonQ.length === 0 ? 'No wins yet' : (wonQ.length === 1 ? '1 win this quarter' : wonQ.length + ' wins this quarter'));
+        setText('home-stat-stuck-val',   String(stuck14.length));
+        setText('home-stat-stuck-sub',   stuck14.length === 0 ? 'All current' : 'Need a nudge');
+      } catch (e) {
+        console.error('loadHomeSimpleStats failed:', e);
+      }
+    }
+
+    /* ============================================================
+       VIEW: Dashboard — full analytics
+       8 KPI tiles + attention strip + stage funnel + region zones
+       + stuck/slipped table.
+       ============================================================ */
+    function showDashboard() {
+      showChrome(true);
+      updateNavActive('#/dashboard');
+      const u = STORE.currentUser() || {};
+      const isSuper = u.permission_tier === 'super';
+      const isBuHead = u.org_function === 'BU Head';
+      const showRegions = isSuper || isBuHead;
       setRoot(
         '<div class="v273-page">' +
           '<header class="page-header">' +
-            '<span class="eyebrow">MY PIPELINE</span>' +
-            '<h1>My deals at a glance</h1>' +
-            '<p>Your open deals, deals due to close this month, and stuck items needing attention.</p>' +
+            '<span class="eyebrow">' + (isSuper ? 'PAN-INDIA' : isBuHead ? 'REGION DASHBOARD' : 'MY PIPELINE') + '</span>' +
+            '<h1>' + (isSuper ? 'All deals at a glance' : 'Deals at a glance') + '</h1>' +
+            '<p>Open deals, deals due to close this month, and items needing attention.</p>' +
           '</header>' +
-          '<section class="kpi-grid">' +
-            '<button class="kpi-tile kpi-tile-blue" data-nav="#/history?filter=open" type="button">' +
-              '<span class="kpi-tile-icon"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h12"/><circle cx="20" cy="17" r="2"/></svg></span>' +
-              '<div><div class="kpi-eyebrow">MY OPEN PIPELINE</div><div class="kpi-value" id="kpi-open-val">\u2014</div></div>' +
-              '<div class="kpi-sub" id="kpi-open-sub">\u2014</div>' +
-            '</button>' +
-            '<button class="kpi-tile kpi-tile-green" data-nav="#/history?filter=won" type="button">' +
-              '<span class="kpi-tile-icon"><svg viewBox="0 0 24 24"><path d="M6 9H4.5A2.5 2.5 0 0 1 2 6.5V5h4"/><path d="M18 9h1.5A2.5 2.5 0 0 0 22 6.5V5h-4"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></span>' +
-              '<div><div class="kpi-eyebrow">MY WON THIS QUARTER</div><div class="kpi-value" id="kpi-won-val">\u2014</div></div>' +
-              '<div class="kpi-sub" id="kpi-won-sub">\u2014</div>' +
-            '</button>' +
-            '<button class="kpi-tile kpi-tile-purple" type="button">' +
-              '<span class="kpi-tile-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>' +
-              '<div><div class="kpi-eyebrow">MY WIN RATE</div><div class="kpi-value" id="kpi-wr-val">\u2014</div></div>' +
-              '<div class="kpi-sub" id="kpi-wr-sub">\u2014</div>' +
-            '</button>' +
-            '<button class="kpi-tile kpi-tile-amber" data-nav="#/history?filter=closing-this-month" type="button">' +
-              '<span class="kpi-tile-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>' +
-              '<div><div class="kpi-eyebrow">CLOSING THIS MONTH</div><div class="kpi-value" id="kpi-cm-val">\u2014</div></div>' +
-              '<div class="kpi-sub" id="kpi-cm-sub">due in current month</div>' +
-            '</button>' +
+
+          '<section class="kpi-grid kpi-grid-8">' +
+            kpiTile('open',    'kpi-tile-blue',   'OPEN PIPELINE',     'Active deals',
+              '<path d="M3 7h18M3 12h18M3 17h12"/><circle cx="20" cy="17" r="2"/>',
+              '#/history?filter=open') +
+            kpiTile('won',     'kpi-tile-green',  'WON THIS QUARTER',  'Closed wins',
+              '<path d="M6 9H4.5A2.5 2.5 0 0 1 2 6.5V5h4"/><path d="M18 9h1.5A2.5 2.5 0 0 0 22 6.5V5h-4"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+              '#/history?filter=won') +
+            kpiTile('wr',      'kpi-tile-purple', 'WIN RATE',          'last 90 days',
+              '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+              null) +
+            kpiTile('cm',      'kpi-tile-amber',  'CLOSING THIS MONTH', 'Due in current month',
+              '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+              '#/history?filter=closing-this-month') +
+            kpiTile('stuck',   'kpi-tile-red',    'STUCK > 14d',       'No update in 14+ days',
+              '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+              '#/history?filter=stuck') +
+            kpiTile('lost',    'kpi-tile-gray',   'LOST THIS QUARTER', 'Closed losses',
+              '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+              '#/history?filter=lost') +
+            kpiTile('cycle',   'kpi-tile-cyan',   'AVG SALES CYCLE',   'Created \u2192 closed',
+              '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+              null) +
+            kpiTile('velocity','kpi-tile-pink',   'VELOCITY',          'Closed / month',
+              '<polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/>',
+              null) +
           '</section>' +
+
           '<section class="attention-row">' +
             '<a class="attention-card attention-card-danger" data-nav="#/history?filter=closing-this-month">' +
               '<div class="attention-head">' +
-                '<span class="attention-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6"/><path d="M22 6l-3-3"/></svg></span>' +
+                '<span class="attention-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/></svg></span>' +
                 '<span class="attention-title">Closing this month</span>' +
                 '<span class="attention-count" id="att-closing">0</span>' +
               '</div>' +
@@ -7382,7 +7861,7 @@
             '</a>' +
             '<a class="attention-card attention-card-warning" data-nav="#/history?filter=stuck">' +
               '<div class="attention-head">' +
-                '<span class="attention-icon"><svg viewBox="0 0 24 24"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg></span>' +
+                '<span class="attention-icon"><svg viewBox="0 0 24 24"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/></svg></span>' +
                 '<span class="attention-title">Stuck &gt;14 days</span>' +
                 '<span class="attention-count" id="att-stuck">0</span>' +
               '</div>' +
@@ -7390,24 +7869,60 @@
             '</a>' +
             '<a class="attention-card attention-card-stale" data-nav="#/history?filter=stale">' +
               '<div class="attention-head">' +
-                '<span class="attention-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="14" x2="14" y2="18"/><line x1="14" y1="14" x2="10" y2="18"/></svg></span>' +
+                '<span class="attention-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="14" x2="14" y2="18"/></svg></span>' +
                 '<span class="attention-title">Stale &gt;30 days</span>' +
                 '<span class="attention-count" id="att-stale">0</span>' +
               '</div>' +
               '<div class="attention-empty" id="att-stale-empty">No deals here \u2713</div>' +
             '</a>' +
           '</section>' +
-          '<section class="deal-list-card">' +
-            '<header class="deal-list-head">' +
-              '<h2>My Deals</h2>' +
-              '<span class="meta" id="home-deal-count">\u2014</span>' +
+
+          '<section class="dash-section">' +
+            '<header class="dash-section-head">' +
+              '<h2>Pipeline funnel</h2>' +
+              '<span class="meta">By stage</span>' +
             '</header>' +
-            '<div id="home-recent"><div class="muted small" style="padding:16px">Loading\u2026</div></div>' +
+            '<div id="stage-funnel" class="stage-funnel">' +
+              '<div class="muted small" style="padding:24px;text-align:center">Loading\u2026</div>' +
+            '</div>' +
+          '</section>' +
+
+          (showRegions
+            ? '<section class="dash-section">' +
+                '<header class="dash-section-head">' +
+                  '<h2>Regions</h2>' +
+                  '<span class="meta">' + (isSuper ? 'Pan-India' : 'Your zones') + '</span>' +
+                '</header>' +
+                '<div id="region-tiles" class="region-grid">' +
+                  '<div class="muted small" style="padding:24px;text-align:center;grid-column:1/-1">Loading\u2026</div>' +
+                '</div>' +
+              '</section>'
+            : '') +
+
+          '<section class="dash-section">' +
+            '<header class="dash-section-head">' +
+              '<h2>Needs attention</h2>' +
+              '<span class="meta">Stuck + slipped open deals</span>' +
+            '</header>' +
+            '<div id="stuck-table" class="stuck-table-wrap">' +
+              '<div class="muted small" style="padding:24px;text-align:center">Loading\u2026</div>' +
+            '</div>' +
           '</section>' +
         '</div>'
       );
       loadHomeKpis();
-      loadHomeRecent();
+    }
+
+
+    /* v27.3.0 — KPI tile helper. Generates one tile w/ icon + value + sub. */
+    function kpiTile(id, colorClass, eyebrow, sub, iconPath, navHref) {
+      const navAttr = navHref ? ' data-nav="' + esc(navHref) + '"' : '';
+      return '<button class="kpi-tile ' + colorClass + '" type="button"' + navAttr + '>' +
+        '<span class="kpi-tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + iconPath + '</svg></span>' +
+        '<div><div class="kpi-eyebrow">' + esc(eyebrow) + '</div>' +
+          '<div class="kpi-value" id="kpi-' + id + '-val">\u2014</div></div>' +
+        '<div class="kpi-sub" id="kpi-' + id + '-sub">' + esc(sub) + '</div>' +
+      '</button>';
     }
 
     /* Stage chip class mapping (v27.3.0 §8) */
@@ -7498,51 +8013,248 @@
 
     async function loadHomeKpis() {
       try {
-        const r = await STORE.listDeals({ limit: 200, offset: 0 });
+        const r = await STORE.listDeals({ limit: 500, offset: 0 });
         const all = (r && r.rows) || [];
-        const u = STORE.currentUser();
-        // Filter to "mine" — sales or presales is current user
-        const uid = u && u.id;
-        const mine = uid
-          ? all.filter(d => d.sales_person_id === uid || d.presales_person_id === uid)
-          : all;
-        const open  = mine.filter(d => _isOpenStage(d.stage) && !d.deleted_at);
-        const won   = mine.filter(d => d.stage === 'Closed Won' && !d.deleted_at);
-        const lost  = mine.filter(d => d.stage === 'Closed Lost' && !d.deleted_at);
+        const u = STORE.currentUser() || {};
+        const uid = u.id;
+        const isSuper = u.permission_tier === 'super';
+        const isBuHead = u.org_function === 'BU Head';
+        // Scope: Super sees all, BU Head sees regional, everyone else sees own
+        let scoped;
+        if (isSuper) {
+          scoped = all;
+        } else if (isBuHead && u.region) {
+          // BU Head — match by region (handle multi-region like 'South,East')
+          const myRegions = String(u.region || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+          scoped = all.filter(d => {
+            const ownerRegion = String(d.region_owner || d.region || '').toLowerCase();
+            // No region column on deals — fall back to mine + reports
+            return d.sales_person_id === uid || d.presales_person_id === uid ||
+                   (ownerRegion && myRegions.indexOf(ownerRegion) >= 0);
+          });
+        } else {
+          scoped = uid ? all.filter(d => d.sales_person_id === uid || d.presales_person_id === uid) : all;
+        }
+        const active = scoped.filter(d => !d.deleted_at);
+        const open  = active.filter(d => _isOpenStage(d.stage));
+        const won   = active.filter(d => d.stage === 'Closed Won');
+        const lost  = active.filter(d => d.stage === 'Closed Lost');
         const curM  = _currentYYYYMM();
         const closingNow = open.filter(d => String(d.close_month || '').slice(0, 7) === curM);
         const stuck14 = open.filter(d => _daysSince(d.updated_at || d.created_at) > 14);
         const stale30 = open.filter(d => _daysSince(d.updated_at || d.created_at) > 30);
-        // KPI Open
-        const openVal = open.reduce((s, d) => s + (Number(d.deal_value_inr) || 0), 0);
-        setText('kpi-open-val', _fmtLakh(openVal));
-        setText('kpi-open-sub', open.length + (open.length === 1 ? ' deal' : ' deals'));
-        // KPI Won this quarter
+
+        // -- Quarter window --
         const qStart = (function () {
           const d = new Date(); const m = d.getMonth();
           const qm = Math.floor(m / 3) * 3;
           return new Date(d.getFullYear(), qm, 1);
         })();
-        const wonQ = won.filter(d => new Date(d.updated_at || d.created_at || 0) >= qStart);
+        const wonQ  = won.filter(d => new Date(d.updated_at || d.created_at || 0) >= qStart);
+        const lostQ = lost.filter(d => new Date(d.updated_at || d.created_at || 0) >= qStart);
+
+        // -- Win rate (last 90 days) --
+        const since90 = new Date(Date.now() - 90 * 86400000);
+        const won90 = won.filter(d => new Date(d.updated_at || 0) >= since90).length;
+        const lost90 = lost.filter(d => new Date(d.updated_at || 0) >= since90).length;
+        const resolved90 = won90 + lost90;
+        const winRate90 = resolved90 ? Math.round(won90 * 100 / resolved90) : null;
+
+        // -- Avg sales cycle (won deals — days from created to updated) --
+        const wonWithDates = won.filter(d => d.created_at && d.updated_at);
+        const avgCycleDays = wonWithDates.length
+          ? Math.round(wonWithDates.reduce((s, d) => {
+              const ms = new Date(d.updated_at).getTime() - new Date(d.created_at).getTime();
+              return s + (ms / 86400000);
+            }, 0) / wonWithDates.length)
+          : null;
+
+        // -- Velocity (deals closed/month over last 3 months) --
+        const since90d = Date.now() - 90 * 86400000;
+        const closed90 = won.concat(lost).filter(d =>
+          new Date(d.updated_at || 0).getTime() >= since90d
+        ).length;
+        const velocity = (closed90 / 3).toFixed(1);
+
+        // -- KPI fills --
+        const openVal = open.reduce((s, d) => s + (Number(d.deal_value_inr) || 0), 0);
         const wonVal = wonQ.reduce((s, d) => s + (Number(d.deal_value_inr) || 0), 0);
-        setText('kpi-won-val', wonQ.length ? _fmtLakh(wonVal) : '\u20B90');
-        setText('kpi-won-sub', wonQ.length + (wonQ.length === 1 ? ' win' : ' wins'));
-        // KPI Win rate (lifetime)
-        const resolved = won.length + lost.length;
-        setText('kpi-wr-val', resolved ? (Math.round(won.length * 100 / resolved) + '%') : '\u2014');
-        setText('kpi-wr-sub', resolved + ' resolved');
-        // KPI Closing this month
-        setText('kpi-cm-val', String(closingNow.length));
-        setText('kpi-cm-sub', closingNow.length === 0 ? 'nothing due this month' : 'due in current month');
-        // Attention counts
+        setText('kpi-open-val',  openVal > 0 ? _fmtLakh(openVal) : String(open.length));
+        setText('kpi-open-sub',  open.length + (open.length === 1 ? ' deal' : ' deals'));
+        setText('kpi-won-val',   wonVal > 0 ? _fmtLakh(wonVal) : String(wonQ.length));
+        setText('kpi-won-sub',   wonQ.length + (wonQ.length === 1 ? ' win' : ' wins') + ' this quarter');
+        setText('kpi-wr-val',    winRate90 != null ? (winRate90 + '%') : '\u2014');
+        setText('kpi-wr-sub',    resolved90 + ' resolved');
+        setText('kpi-cm-val',    String(closingNow.length));
+        setText('kpi-cm-sub',    closingNow.length ? 'due this month' : 'nothing due');
+        setText('kpi-stuck-val', String(stuck14.length));
+        setText('kpi-stuck-sub', stuck14.length ? 'need a nudge' : 'all current');
+        setText('kpi-lost-val',  String(lostQ.length));
+        setText('kpi-lost-sub',  lostQ.length === 1 ? '1 loss' : (lostQ.length + ' losses'));
+        setText('kpi-cycle-val', avgCycleDays != null ? (avgCycleDays + 'd') : '\u2014');
+        setText('kpi-cycle-sub', wonWithDates.length + ' wins sampled');
+        setText('kpi-velocity-val', velocity);
+        setText('kpi-velocity-sub', 'deals / mo (90d)');
+
+        // -- Attention counts --
         setText('att-closing', String(closingNow.length));
-        setText('att-stuck', String(stuck14.length));
-        setText('att-stale', String(stale30.length));
-        // Total deal count for "My Deals" section
-        setText('home-deal-count', mine.length + (mine.length === 1 ? ' deal' : ' deals'));
+        setText('att-stuck',   String(stuck14.length));
+        setText('att-stale',   String(stale30.length));
+        setText('home-deal-count', scoped.length + (scoped.length === 1 ? ' deal' : ' deals'));
+
+        // -- Stage funnel --
+        renderStageFunnel(active);
+
+        // -- Region tiles (BU Head + Super only) --
+        if ($('region-tiles')) {
+          renderRegionTiles(active, u);
+        }
+
+        // -- Stuck/slipped table --
+        renderStuckTable(stuck14.concat(stale30).filter((v, i, a) => a.indexOf(v) === i));
+
       } catch (e) {
-        // graceful — leave em dashes
+        console.error('loadHomeKpis failed:', e);
       }
+    }
+
+    /* v27.3.0 — Stage funnel as horizontal bar chart (inline SVG, no library) */
+    function renderStageFunnel(deals) {
+      const host = $('stage-funnel');
+      if (!host) return;
+      const stageOrder = ['Qualified','Proposal','Budget Approval','Technical Approval','Negotiation','Awarded','Closed Won','Closed Lost'];
+      const counts = {};
+      stageOrder.forEach(s => counts[s] = 0);
+      deals.forEach(d => {
+        if (counts[d.stage] != null) counts[d.stage] += 1;
+      });
+      const max = Math.max.apply(null, stageOrder.map(s => counts[s])) || 1;
+      const stageColor = {
+        'Qualified':          '#3B82F6',
+        'Proposal':           '#EC4899',
+        'Budget Approval':    '#06B6D4',
+        'Technical Approval': '#8B5CF6',
+        'Negotiation':        '#F59E0B',
+        'Awarded':            '#F7941D',
+        'Closed Won':         '#22C55E',
+        'Closed Lost':        '#94A3B8'
+      };
+      host.innerHTML = stageOrder.map(function (s) {
+        const ct = counts[s];
+        const pct = Math.max(2, Math.round(ct * 100 / max));
+        return '<div class="funnel-row">' +
+          '<span class="funnel-stage">' + esc(s) + '</span>' +
+          '<div class="funnel-bar-wrap">' +
+            '<div class="funnel-bar" style="width:' + pct + '%;background:' + stageColor[s] + '"></div>' +
+          '</div>' +
+          '<span class="funnel-count">' + ct + '</span>' +
+        '</div>';
+      }).join('');
+    }
+
+    /* v27.3.0 — Region zone tiles (BU Head + Super only).
+       For Super: shows all 4 zones (W/N/S/E) aggregating all deals.
+       For BU Head: shows their assigned region(s) only. */
+    function renderRegionTiles(deals, u) {
+      const host = $('region-tiles');
+      if (!host) return;
+      const isSuper = u && u.permission_tier === 'super';
+      const allZones = ['West', 'North', 'South', 'East'];
+      let zones;
+      if (isSuper) {
+        zones = allZones;
+      } else {
+        zones = String(u.region || '').split(',').map(s => s.trim()).filter(Boolean);
+        if (zones.length === 0) zones = allZones; // fallback
+      }
+      // Group deals by zone — uses state-to-region mapping fallback if no region field
+      const stateRegion = {
+        'Maharashtra':'West','Gujarat':'West','Rajasthan':'West','Goa':'West','Madhya Pradesh':'West',
+        'Delhi':'North','Punjab':'North','Haryana':'North','Uttar Pradesh':'North','Uttarakhand':'North','Himachal Pradesh':'North','Jammu and Kashmir':'North','Chandigarh':'North',
+        'Karnataka':'South','Tamil Nadu':'South','Kerala':'South','Andhra Pradesh':'South','Telangana':'South','Puducherry':'South',
+        'West Bengal':'East','Bihar':'East','Jharkhand':'East','Odisha':'East','Assam':'East','Sikkim':'East','Manipur':'East','Meghalaya':'East','Mizoram':'East','Nagaland':'East','Tripura':'East','Arunachal Pradesh':'East'
+      };
+      const zoneStats = {};
+      zones.forEach(z => { zoneStats[z] = { open: 0, won: 0, lost: 0, value: 0 }; });
+      deals.forEach(function (d) {
+        const z = d.region || stateRegion[d.state] || null;
+        if (!z || !zoneStats[z]) return;
+        if (d.stage === 'Closed Won') {
+          zoneStats[z].won += 1;
+          zoneStats[z].value += Number(d.deal_value_inr) || 0;
+        } else if (d.stage === 'Closed Lost') {
+          zoneStats[z].lost += 1;
+        } else if (_isOpenStage(d.stage)) {
+          zoneStats[z].open += 1;
+        }
+      });
+      const zoneColor = { 'West':'#F7941D', 'North':'#3B82F6', 'South':'#22C55E', 'East':'#A855F7' };
+      host.innerHTML = zones.map(function (z) {
+        const s = zoneStats[z] || { open: 0, won: 0, lost: 0, value: 0 };
+        const resolved = s.won + s.lost;
+        const wr = resolved ? Math.round(s.won * 100 / resolved) : null;
+        return '<div class="region-tile" style="--zone-color:' + zoneColor[z] + '">' +
+          '<div class="region-tile-head">' +
+            '<span class="region-dot" style="background:' + zoneColor[z] + '"></span>' +
+            '<span class="region-name">' + esc(z) + '</span>' +
+          '</div>' +
+          '<div class="region-stats">' +
+            '<div class="region-stat"><div class="region-stat-k">Open</div><div class="region-stat-v">' + s.open + '</div></div>' +
+            '<div class="region-stat"><div class="region-stat-k">Won</div><div class="region-stat-v">' + s.won + '</div></div>' +
+            '<div class="region-stat"><div class="region-stat-k">Win %</div><div class="region-stat-v">' + (wr != null ? wr + '%' : '\u2014') + '</div></div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    /* v27.3.0 — Stuck/slipped table. Open deals not updated in 14+ days. */
+    function renderStuckTable(rows) {
+      const host = $('stuck-table');
+      if (!host) return;
+      if (!rows || rows.length === 0) {
+        host.innerHTML =
+          '<div class="empty-state" style="padding:24px 16px">' +
+            '<div class="empty-state-illustration"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>' +
+            '<p class="empty-state-body">All open deals updated recently. Nice work.</p>' +
+          '</div>';
+        return;
+      }
+      // Sort: most stuck first
+      rows.sort(function (a, b) {
+        const da = _daysSince(a.updated_at || a.created_at);
+        const db = _daysSince(b.updated_at || b.created_at);
+        return db - da;
+      });
+      const top = rows.slice(0, 8);
+      host.innerHTML =
+        '<table class="stuck-table">' +
+          '<thead><tr>' +
+            '<th>Project</th>' +
+            '<th>Stage</th>' +
+            '<th class="num">Idle</th>' +
+          '</tr></thead>' +
+          '<tbody>' +
+            top.map(function (d) {
+              const ref = d.display_ref || d.ref || '\u2014';
+              const days = _daysSince(d.updated_at || d.created_at);
+              const stageCls = _stageChipClassName(d.stage);
+              return '<tr data-nav="#/quote/' + esc(ref) + '">' +
+                '<td>' +
+                  '<div class="stuck-project">' + esc(d.project || '\u2014') + '</div>' +
+                  '<div class="stuck-meta">' + esc(ref) + (d.customer_name ? ' \u00b7 ' + esc(d.customer_name) : '') + '</div>' +
+                '</td>' +
+                '<td><span class="' + stageCls + '" style="font-size:10.5px">' + esc(d.stage || '\u2014') + '</span></td>' +
+                '<td class="num"><span class="stuck-days' + (days > 30 ? ' stuck-days-bad' : '') + '">' + days + 'd</span></td>' +
+              '</tr>';
+            }).join('') +
+          '</tbody>' +
+        '</table>' +
+        (rows.length > top.length
+          ? '<div class="stuck-table-more">' +
+              'Showing ' + top.length + ' of ' + rows.length + '. ' +
+              '<a data-nav="#/history?filter=stuck">See all \u2192</a>' +
+            '</div>'
+          : '');
     }
 
     function setText(id, v) { const el = $(id); if (el) el.textContent = v; }
@@ -8461,12 +9173,79 @@
 
       const sxBody = hasSx
         ? (function() {
-            // Defensive: ensure sx_data exists so steppers don't NaN.
-            if (!deal.sx_data) deal.sx_data = { hdmi:0, sdi:0, ap536:0, avip:0 };
-            return SX_EDITORIAL.map(s =>
-              sdStepperRow(s.id, s.label, s.hint, deal.sx_data[s.id] || 0, { namespace: 'sx_data' })
-            ).join('') +
-            '<div class="sd-edit-note small soft">Edits set the Rebuild banner above. Tap <strong>Rebuild</strong> to recompute the BoM.</div>';
+            // v27.3.0 — Show the new per-variant detail. Read-only summary
+            // because editing per-variant pickers inline in the saved-deal
+            // accordion would explode the layout. To edit details, user taps
+            // "Edit" in the action bar which re-enters the wizard.
+            const lines = [];
+            // HDBaseT lines
+            const hdbtLines = Array.isArray(deal.sx_hdbt_lines) ? deal.sx_hdbt_lines : [];
+            hdbtLines.forEach(function (l) {
+              if (Number(l.qty) <= 0) return;
+              const dirLbl = l.direction === 'tx' ? 'TX only' : l.direction === 'rx' ? 'RX only' : 'Kit (TX+RX)';
+              lines.push({
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="2" y="9" width="8" height="6" rx="1"/><rect x="14" y="9" width="8" height="6" rx="1"/><line x1="10" y1="12" x2="14" y2="12" stroke-dasharray="2 2"/></svg>',
+                title: 'HDBaseT ' + dirLbl,
+                sub: l.signal + ' \u00b7 ' + (l.resolution || '1080p'),
+                qty: l.qty
+              });
+            });
+            // Splitter counts
+            const da = deal.sx_da_counts || {};
+            [['612','1×2'], ['614','1×4'], ['618','1×8']].forEach(function (p) {
+              const q = Number(da[p[0]]) || 0;
+              if (q <= 0) return;
+              lines.push({
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><rect x="2" y="10" width="6" height="4" rx="1"/><path d="M8 12h4M12 12v-4h4M12 12v4h4M16 6h6M16 12h6M16 18h6"/></svg>',
+                title: 'HDMI Splitter ' + p[1],
+                sub: 'MG-DA-' + p[0] + ' \u00b7 4K60 HDMI 2.0',
+                qty: q
+              });
+            });
+            // AP-536
+            if (Number(deal.sx_ap_qty) > 0) {
+              lines.push({
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
+                title: 'AP-536 Audio Extractor',
+                sub: 'HDMI audio de-embedder',
+                qty: deal.sx_ap_qty
+              });
+            }
+            // AOC lines
+            const aocLines = Array.isArray(deal.sx_aoc_lines) ? deal.sx_aoc_lines : [];
+            aocLines.forEach(function (l) {
+              if (Number(l.qty) <= 0) return;
+              lines.push({
+                icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 6c0-2 3-3 8-3s8 1 8 3v12c0 2-3 3-8 3s-8-1-8-3z"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/></svg>',
+                title: 'AOC ' + (l.signal || 'HDMI'),
+                sub: (l.jacket || 'Standard') + ' \u00b7 ' + (l.length || 10) + ' m',
+                qty: l.qty
+              });
+            });
+            // Legacy fallback — old deals with just sx_data sums
+            if (lines.length === 0) {
+              const sx = deal.sx_data || {};
+              if (Number(sx.hdmi)  > 0) lines.push({ icon:'', title:'HDBaseT Extender (legacy)', sub:'\u2014', qty: sx.hdmi });
+              if (Number(sx.sdi)   > 0) lines.push({ icon:'', title:'HDMI Splitter (legacy)',    sub:'\u2014', qty: sx.sdi });
+              if (Number(sx.ap536) > 0) lines.push({ icon:'', title:'AP-536 (legacy)',           sub:'\u2014', qty: sx.ap536 });
+              if (Number(sx.avip)  > 0) lines.push({ icon:'', title:'AOC Cables (legacy)',      sub:'\u2014', qty: sx.avip });
+            }
+            if (lines.length === 0) {
+              return '<div class="muted small" style="padding:12px 0">No SX lines configured. Tap <strong>Edit</strong> to add.</div>';
+            }
+            return '<div class="sd-sx-list">' +
+              lines.map(function (l) {
+                return '<div class="sd-sx-row">' +
+                  '<span class="sd-sx-icon">' + l.icon + '</span>' +
+                  '<div class="sd-sx-text">' +
+                    '<div class="sd-sx-title">' + esc(l.title) + '</div>' +
+                    '<div class="sd-sx-sub">' + esc(l.sub) + '</div>' +
+                  '</div>' +
+                  '<div class="sd-sx-qty">\u00d7' + l.qty + '</div>' +
+                '</div>';
+              }).join('') +
+            '</div>' +
+            '<div class="sd-edit-note small soft">Tap <strong>Edit</strong> in the action bar to change SX configuration.</div>';
           })()
         : '';
 
@@ -11092,7 +11871,7 @@
       mount, toast, openSheet, closeSheet,
       showLogin, showForcePw, showProfileSetup,
       showHome, showHistory, showProfile, showSavedDeal, showWizard,
-      showCustomers, showCustomer360, showCustomerEditor,
+      showCustomers, showCustomer360, showCustomerEditor, showDashboard,
       updateNavActive, showChrome,
       // expose for APP
       getWizardData: () => wizardData,
@@ -11243,6 +12022,7 @@
       // Route resolution
       if (hash === '#/login') { UI.showLogin(); return; }
       if (hash === '#/home')  { UI.showHome();  return; }
+      if (hash === '#/dashboard') { UI.showDashboard(); return; }
       if (hash === '#/history') { UI.showHistory(); return; }
       if (hash === '#/customers') { UI.showCustomers(); return; }
       if (hash === '#/profile') { UI.showProfile(); return; }
