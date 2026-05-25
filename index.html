@@ -387,6 +387,15 @@
     /* App shell */
     #app { min-height: 100vh; display: flex; flex-direction: column;
       padding-top: env(safe-area-inset-top); position: relative; z-index: 1; }
+    /* v27.3.4 — Defensive overflow-x clip. ECharts canvases or any wide
+       content inside the page must NOT push the body wider than viewport,
+       otherwise the fixed bottom nav clips off the right edge (reported
+       on Z Fold dashboard view). `clip` is preferred over `hidden` because
+       it doesn't create a scroll container that confuses pull-to-refresh. */
+    html, body { overflow-x: clip; }
+    @supports not (overflow-x: clip) {
+      html, body { overflow-x: hidden; }
+    }
     #view-root { flex: 1;
       padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px); }
     #view-root .v { max-width: var(--content-max); margin: 0 auto; padding: 16px; }
@@ -1343,6 +1352,23 @@
       max-width: 360px;
       line-height: 1.5;
     }
+    /* v27.3.3 — Compact in-card empty state. Used inside Home list cards
+       where the full-sized empty illustration overwhelms the section.
+       v27.3.4 — Extended to .stuck-table-wrap (dashboard "Needs attention"
+       card) for the same reason. */
+    .deal-list-card .empty-state,
+    .stuck-table-wrap .empty-state {
+      padding: var(--s-5) var(--s-4);
+    }
+    .deal-list-card .empty-state-illustration,
+    .stuck-table-wrap .empty-state-illustration {
+      width: 48px; height: 48px;
+      margin-bottom: var(--s-3);
+    }
+    .deal-list-card .empty-state-illustration svg,
+    .stuck-table-wrap .empty-state-illustration svg { width: 22px; height: 22px; }
+    .deal-list-card .empty-state-body,
+    .stuck-table-wrap .empty-state-body { margin-bottom: 0; font-size: 12.5px; }
 
     /* --- SKELETON v3 --- */
     .sk {
@@ -1469,9 +1495,13 @@
     }
     .deal-list-card:hover { box-shadow: 0 6px 20px rgba(15,14,12,0.06), 0 1px 3px rgba(15,14,12,0.04); }
     html[data-theme="dark"] .deal-list-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.40), 0 1px 3px rgba(0,0,0,0.30); }
-    .deal-list-head { display: flex; align-items: baseline; gap: var(--s-3); padding: var(--s-4) var(--s-5); border-bottom: 0.5px solid var(--border-soft); }
-    .deal-list-head h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--t-h2); color: var(--ink-strong); margin: 0; letter-spacing: var(--ls-h1); }
-    .deal-list-head .meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
+    .deal-list-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-3) var(--s-4); border-bottom: 0.5px solid var(--border-soft); }
+    .deal-list-head h2 { font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--ink-strong); margin: 0; letter-spacing: -0.01em; line-height: 1.2; }
+    .deal-list-head .meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); flex: none; white-space: nowrap; }
+    @media (min-width: 540px) {
+      .deal-list-head h2 { font-size: var(--t-h2); }
+      .deal-list-head { padding: var(--s-4) var(--s-5); }
+    }
 
     /* --- v27.3.0 GLASS ACTION BAR --- */
     .bom-action-bar {
@@ -2549,12 +2579,16 @@
     }
 
     /* Chart canvas — fixed heights work better with ECharts'
-       auto-resize than percentage. */
+       auto-resize than percentage.
+       v27.3.4 — explicit overflow:hidden + min-width:0 so ECharts
+       canvases can't push the page wider than viewport (Z Fold nav-clip fix). */
     .dash-chart-canvas {
       width: 100%;
+      min-width: 0;
       height: 220px;
       position: relative;
       z-index: 1;
+      overflow: hidden;
     }
     .dash-chart-canvas.tall { height: 280px; }
     .dash-chart-canvas.short { height: 160px; }
@@ -2763,13 +2797,14 @@
     .home-stats-5 { grid-template-columns: repeat(2, 1fr); }
     @media (min-width: 540px) { .home-stats-5 { grid-template-columns: repeat(3, 1fr); } }
     @media (min-width: 880px) { .home-stats-5 { grid-template-columns: repeat(5, 1fr); } }
-    /* v27.3.2 — Top-5 deal-list-row layout used by Home page list cards. */
+    /* v27.3.2 — Top-5 deal-list-row layout used by Home page list cards.
+       v27.3.3 — Added horizontal padding so rows breathe inside the card. */
     .deal-list-row {
       display: grid;
       grid-template-columns: 22px 1fr auto;
       gap: 12px;
       align-items: flex-start;
-      padding: 10px 0;
+      padding: 10px var(--s-4);
       border-top: 0.5px solid var(--border-soft);
       cursor: pointer;
       transition: background var(--dur-base) var(--ease-out);
@@ -4048,7 +4083,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.3.3',
+      version: 'v27.3.7',
       constants,
       calico,
       mv,
@@ -5578,7 +5613,11 @@
       // sheet because no pricing data exists yet. Mode is carried through to
       // the filename so the user knows what they got.
       const mode = (opts && opts.mode) || 'boq';
-      const showPricing = mode === 'boq';
+      const showPricing = false;  /* v27.3.4 POLICY (Dipenkumar 2026-05-25):
+        BoQ and BoM exports must NEVER include prices. Customer-facing PDFs
+        get prices added manually post-download. This flag is set to false
+        on both modes; if v27.4 pricing migration adds a price column, it
+        must check this flag and remain hidden in the exports. */
       const ExcelJS = await loadExcelJS();
 
       // Compute fresh reco — matches the BoM card on saved-deal view.
@@ -5616,11 +5655,14 @@
       const DANGER     = 'FFB91C1C';
       const SUCCESS    = 'FF15803D';
 
-      // Column widths — give more to Description, narrower Sr column.
+      // Column widths — v27.3.7: widened Description (50→60) and Model
+      // (22→28) so long SKUs like 'CV-HDBT-SC-2OUT-1ETH-FF' and product
+       // descriptions like 'CORIOview HDBaseT 2-IN + Ethernet module' don't
+       // truncate. Sr/Qty unchanged. wrapText already on Description.
       ws.columns = [
         { width:  5 },   // Sr
-        { width: 50 },   // Description
-        { width: 22 },   // Model
+        { width: 60 },   // Description (was 50)
+        { width: 28 },   // Model (was 22)
         { width:  8 }    // Qty
       ];
 
@@ -5795,7 +5837,13 @@
             if (fill) r.getCell(c).fill = fill;
             r.getCell(c).border = { bottom: { style: 'hair', color: { argb: AMBER_LIGHT } } };
           });
-          r.height = 20;
+          // v27.3.7 — Auto-estimate row height so wrapped descriptions
+          // don't clip vertically. Same formula as concerns/value-adds
+          // blocks (Math.ceil(len / chars-per-line) * 14px baseline).
+          // Description column is now 60 chars wide; estimate at ~52
+          // visible chars after indent + padding.
+          const descLen = String(line.desc || '').length;
+          r.height = Math.max(20, Math.ceil(descLen / 52) * 16);
           curRow++;
         });
       }
@@ -6028,7 +6076,11 @@
       if (!deal) throw new Error('pdf: deal required');
       // v27.3.0 — see excel() above for mode semantics.
       const mode = (opts && opts.mode) || 'boq';
-      const showPricing = mode === 'boq';
+      const showPricing = false;  /* v27.3.4 POLICY (Dipenkumar 2026-05-25):
+        BoQ and BoM exports must NEVER include prices. Customer-facing PDFs
+        get prices added manually post-download. This flag is set to false
+        on both modes; if v27.4 pricing migration adds a price column, it
+        must check this flag and remain hidden in the exports. */
       const jspdf = await loadJsPDF();
       const JsPDFCtor = jspdf.jsPDF;
 
@@ -6545,8 +6597,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.3.3"',
-      () => CATALOG.version === 'v27.3.3' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.3.7"',
+      () => CATALOG.version === 'v27.3.7' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.1.2 invariants ---------- */
     // §1.2 — HUMAN_LABELS structural shape
@@ -7756,26 +7808,36 @@
     }
 
     // v27.2.0 — Cavitak T&C / Warranty block (contract C1, OP §3.8).
-    // Single source of truth for the 11 standard quote terms; both
+    // Single source of truth for the 12 standard quote terms; both
     // EXPORT.excel and EXPORT.pdf consume this via UI._tncItems(dateStr).
     // Text is verbatim from BS production 2026-05-06 with the tvONE
     // warranty correction locked at v25.109.1 ("5-year OEM warranty
     // on tvONE products"). Date is computed per-call so each quote
     // carries its issue date in the Validity line.
+    //
+    // v27.3.5 (2026-05-25) UPDATES per Dipenkumar:
+    //   - Added SAP Code row (top) — placeholder vendor code text;
+    //     replace with actual Cavitak SAP code when ready
+    //   - Renamed "Delivery" → "Lead Time" — 8 weeks from PO placement
+    //     (was "Ex-warehouse, 30 days"; updated 2026-05-25 per Dipenkumar)
+    //   - Renamed "Validity" → "PO Validity" — clarified that the 15-day
+    //     window is for PO issuance, not just quote validity
+    //   - "Jurisdiction" — added "Gujarat" qualifier
     function tncItems(dateStr) {
       const _date = String(dateStr || '').trim() || 'today';
       return [
+        ['SAP Code',      'Cavitak Vendor Code available on PO issuance. Quote reference no. to be used for material mapping in customer ERP.'],
         ['Payment Terms', '100% advance along with purchase order'],
-        ['Delivery',      'Ex-warehouse, 30 days from receipt of confirmed PO & advance payment'],
+        ['Lead Time',     '8 weeks from the date of PO placement and advance payment receipt'],
         ['Warranty',      'Standard 5-year OEM warranty on tvONE products. Warranty card issued on delivery.'],
-        ['Validity',      '15 days from quote date (' + _date + '). Pricing subject to revision thereafter.'],
+        ['PO Validity',   'PO must be issued within 15 days from quote date (' + _date + '). Prices and lead times subject to revision thereafter.'],
         ['Taxes',         'GST @ 18% included above. Any additional levies, cess or local duties extra at actuals.'],
         ['Forex',         'Pricing based on prevailing INR\u2013USD rate on quote date. Material forex movement (>3%) before PO may revise pricing.'],
         ['Stock Validity','Stock subject to prior sale. Confirmation of availability at the time of PO placement.'],
         ['Installation',  'Commissioning, integration & on-site support quoted separately on request.'],
         ['Cancellation',  'Orders once placed are non-cancellable. Advance payment is non-refundable for despatched/in-transit goods.'],
         ['Returns',       'Returns accepted only for manufacturing defects within warranty terms. No returns on commercially correct supplies.'],
-        ['Jurisdiction',  'All disputes subject to Ahmedabad jurisdiction. Indian law applies.']
+        ['Jurisdiction',  'All disputes subject to Ahmedabad, Gujarat jurisdiction. Indian law applies.']
       ];
     }
 
@@ -9579,7 +9641,7 @@
 
           '<section class="deal-list-card">' +
             '<header class="deal-list-head">' +
-              '<h2>Slippage \u2014 with days of slippage</h2>' +
+              '<h2>Slippage</h2>' +
               '<span class="meta">' +
                 '<a data-nav="#/history?filter=slipped" class="home-link">See all \u2192</a>' +
               '</span>' +
@@ -9730,7 +9792,8 @@
           const days = _daysSlippedFor(d);
           aside = '<span class="stuck-days' + (days > 60 ? ' stuck-days-bad' : '') + '">' + days + 'd slipped</span>';
         } else {
-          aside = '<span class="meta">' + esc(d.close_month || '\u2014') + '</span>';
+          // v27.3.3 — format close_month as "May 2026" instead of raw "2026-05-01"
+          aside = '<span class="meta">' + esc(_formatCloseMonth(d.close_month)) + '</span>';
         }
         // Super: show value chip when present (tvONE pricing currently nil, so falls through)
         const valChip = (isSuper && Number(d.deal_value_inr) > 0)
@@ -9775,6 +9838,19 @@
       const str = String(s || '').trim();
       if (!str) return '';
       return str.slice(0, 7);
+    }
+
+    /* v27.3.3 — Render close_month as "May 2026" for human display.
+       Accepts 'YYYY-MM-DD' (from Postgres date col) or 'YYYY-MM' (from form input).
+       Returns the raw string if it doesn't match. */
+    function _formatCloseMonth(s) {
+      const str = String(s || '').trim();
+      const m = str.match(/^(\d{4})-(\d{2})/);
+      if (!m) return str || '\u2014';
+      const monthIdx = Number(m[2]) - 1;
+      if (monthIdx < 0 || monthIdx > 11) return str;
+      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return names[monthIdx] + ' ' + m[1];
     }
 
     /* Returns array of 3 'YYYY-MM' strings covering the current quarter. */
