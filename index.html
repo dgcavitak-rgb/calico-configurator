@@ -66,6 +66,52 @@
        once the user lands on /dashboard. ~330KB gzipped. Pinned to a stable minor (5.5.x). -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
   <!--
+    v27.6-alpha1 — PIPELINE STAGES PREVIEW + SNAPSHOT AUGMENT CONSUMER (2026-05-26)
+    Final bundle of the "till 4.6" mandate. Email templates UI deferred to
+    v27.7. OEM Amit deep flow verify deferred to v27.7.
+
+    What ships in the HTML:
+    1) Super-only Pipeline Stages preview sheet.
+       - New menu item "Pipeline stages" in user-menu sheet (Super only).
+       - Bottom-sheet renders the live pipeline_stages table via
+         STORE.stageList(), sorted by seq.
+       - Per-stage row: seq badge / name / OPEN/CLOSED chip / win-weight % /
+         disabled Edit button (tooltip: ships in v27.7).
+       - "+ Add stage" disabled button at bottom (tooltip: ships in v27.7).
+       - Replaces "no admin visibility" hole; Super can now SEE all 8 stages
+         + their order + win weights without DB access.
+    2) Snapshot-augment consumer.
+       - _populateKpiChips() baseline object extended from 2 columns to 7.
+       - Pre-migration: 4 chips render "—" sentinel (unchanged behaviour).
+       - Post-migration (after applying companion `.sql` delta + waiting for
+         next pg_cron weekly capture, OR manually invoking
+         pipeline_snapshot_capture()): all 6 chips light up with real
+         period-over-period deltas.
+       - No frontend regression risk — null-tolerant.
+
+    What ships as a separate delta file (apply via Supabase MCP next session):
+       MIGRATION-v27.6-pipeline-snapshot-augment.sql
+       - ALTER TABLE pipeline_snapshots ADD 5 columns
+       - CREATE OR REPLACE FUNCTION pipeline_snapshot_capture()
+       - Backfill statement (one-shot, fills the just-augmented columns
+         on the most recent snapshot row using current deal data)
+
+    CATALOG.version bumped: v27.5-alpha1 → v27.6-alpha1.
+
+    Smoke:
+       (a) Login footer v27.6-alpha1
+       (b) All 34 v27.4-6 smoke checks ✓
+       (c) Super avatar menu shows "Pipeline stages" entry (Sales sees none)
+       (d) Tap → sheet opens, shows 8 stages from RPC (Qualified..Closed Lost),
+           sorted by seq, open/closed chips correct, win weights shown
+       (e) "+ Add stage" + "Edit" buttons are visibly disabled with tooltip
+       (f) 4 KPI chips still show "—" until SQL migration applied
+       (g) After applying migration + manually calling capture RPC → 6 chips
+           with real deltas on next dashboard load
+       (h) PWA install / SW / wizard / exports / saved views / activity ticker
+           / sparklines / share view all unchanged
+  -->
+  <!--
     v27.5-alpha1 — PWA (manifest + service worker) + install prompt (2026-05-26)
     Scope-cut version of v27.5 per "till 4.6" mandate. OEM Amit deep flow
     verify deferred to v27.7 backlog. Email templates deferred to v27.7.
@@ -6304,7 +6350,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.5-alpha1',
+      version: 'v27.6-alpha1',
       constants,
       calico,
       mv,
@@ -8907,8 +8953,24 @@
       }
     }
 
-    check('CATALOG.version === "v27.5-alpha1"',
-      () => CATALOG.version === 'v27.5-alpha1' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.6-alpha1"',
+      () => CATALOG.version === 'v27.6-alpha1' || 'got: ' + CATALOG.version);
+
+    /* ---------- v27.6-alpha1: Pipeline stages preview + snapshot augment consumer ---------- */
+    check('v27.6: STORE.stageList exists (pipeline stages preview backend)',
+      () => typeof STORE.stageList === 'function'
+            || 'stageList RPC wrapper missing on STORE');
+    check('v27.6: _populateKpiChips augmented to read 5 new snapshot columns',
+      () => {
+        // Quick check: the source string contains references to the new columns
+        const fn = (UI && typeof UI._populateKpiChips === 'function')
+          ? UI._populateKpiChips.toString() : '';
+        const need = ['distinct_endusers_count','distinct_partners_count',
+                      'distinct_consultants_count','cavitak_count','oem_count'];
+        const miss = need.filter(function(k) { return fn.indexOf(k) < 0; });
+        return miss.length === 0
+               || 'missing baseline keys: ' + miss.join(',');
+      });
 
     /* ---------- v27.5-alpha1: PWA + notification bell E2E ---------- */
     check('v27.5: manifest link present in <head>',
@@ -12109,6 +12171,9 @@
           act: 'um-audit' });
         items.push({ label: 'Password resets', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="16" r="1"/><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
           act: 'um-resets' });
+        // v27.6 — Pipeline stages preview (read-only; custom-stage management ships in v27.7+)
+        items.push({ label: 'Pipeline stages', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>',
+          act: 'um-stages' });
       }
       items.push({ label: 'About this app', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
         act: 'um-about' });
@@ -12128,6 +12193,71 @@
               '</div>' +
             '</button>';
           }).join('') +
+        '</div>'
+      );
+    }
+
+    /* v27.6 — Pipeline stages preview (Super-only, read-only).
+       Renders the live pipeline_stages table from Supabase so the Super
+       can SEE what stages exist without DB access. Write operations
+       (add/edit/reorder/disable) require backend schema work on
+       pipeline_stages (currently has fixed seq+name); shipping that
+       backend is v27.7+ scope. For now, the "+ Add stage" + per-row
+       edit buttons render but toast "coming in v27.7" — surfaces the
+       feature as planned without lying about availability. */
+    async function showPipelineStagesSheet() {
+      openSheet(
+        '<div class="notif-sheet">' +
+          '<div class="notif-sheet-head"><h3>Pipeline stages</h3><span class="chip-v3 chip-accent">SUPER</span></div>' +
+          '<div style="padding:8px 16px;color:var(--ink-soft);font-size:13px">Loading\u2026</div>' +
+        '</div>'
+      );
+      let stages;
+      try {
+        stages = await STORE.stageList();
+      } catch (e) {
+        stages = [];
+      }
+      const rows = Array.isArray(stages) ? stages : (stages && stages.rows) || [];
+      // Sort by seq ascending; ensures display order matches workflow order.
+      rows.sort(function (a, b) { return (a.seq || 0) - (b.seq || 0); });
+      const stageRowHtml = rows.length
+        ? rows.map(function (s) {
+            const isOpen   = s.is_open !== false;
+            const weight   = (typeof s.win_weight === 'number')
+                               ? (Math.round(s.win_weight * 100) + '%')
+                               : '\u2014';
+            const seqLabel = (typeof s.seq === 'number' ? String(s.seq) : '?');
+            const stateBadge = isOpen
+              ? '<span class="chip-v3" style="background:rgba(34,197,94,0.15);color:#22c55e;font-size:11px;padding:2px 8px">OPEN</span>'
+              : '<span class="chip-v3" style="background:rgba(148,163,184,0.15);color:var(--ink-soft);font-size:11px;padding:2px 8px">CLOSED</span>';
+            return '<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)">' +
+              '<div style="width:24px;height:24px;flex:0 0 24px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ink-soft)">' + esc(seqLabel) + '</div>' +
+              '<div style="flex:1;min-width:0">' +
+                '<div style="font-weight:600;color:var(--ink-strong);font-size:14px">' + esc(s.stage_name || s.name || '(unnamed)') + '</div>' +
+                '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px">Win weight ' + weight + '</div>' +
+              '</div>' +
+              stateBadge +
+              '<button type="button" class="v4-sum-act" data-action="um-stages-edit" data-stage-id="' + esc(s.id || '') + '" disabled title="Stage editing ships in v27.7" style="opacity:0.5">Edit</button>' +
+            '</div>';
+          }).join('')
+        : '<div style="padding:16px;text-align:center;color:var(--ink-soft);font-size:13px">No stages found.</div>';
+      openSheet(
+        '<div class="notif-sheet" style="padding-bottom:0">' +
+          '<div class="notif-sheet-head">' +
+            '<h3>Pipeline stages</h3>' +
+            '<span class="chip-v3 chip-accent">SUPER</span>' +
+          '</div>' +
+          '<div style="padding:6px 16px 12px;color:var(--ink-soft);font-size:12px;line-height:1.5">' +
+            'Read-only view of current pipeline. Custom stage management (add / edit / reorder / disable) ' +
+            'ships in <strong>v27.7</strong> once backend schema lands.' +
+          '</div>' +
+          '<div style="border-top:1px solid var(--border);max-height:60vh;overflow-y:auto">' +
+            stageRowHtml +
+          '</div>' +
+          '<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">' +
+            '<button type="button" class="v4-sum-act" data-action="um-stages-add" disabled title="Add custom stages ships in v27.7" style="opacity:0.5">+ Add stage</button>' +
+          '</div>' +
         '</div>'
       );
     }
@@ -13369,9 +13499,19 @@
         return;
       }
       // KPIs the snapshot can support.
+      // v27.6 — augmented to read the 5 new columns added by migration
+      // `2026_05_26_pipeline_snapshot_augment`. Pre-migration these are
+      // null and the chip degrades to "—" via the existing `prev == null`
+      // branch below. Post-migration the chips light up automatically.
       const baseline = {
-        open:     (best.open_count != null) ? Number(best.open_count) : null,
-        pipeline: (best.open_value_inr != null) ? Number(best.open_value_inr) : null
+        open:        (best.open_count != null)               ? Number(best.open_count)               : null,
+        pipeline:    (best.open_value_inr != null)           ? Number(best.open_value_inr)           : null,
+        endusers:    (best.distinct_endusers_count != null)  ? Number(best.distinct_endusers_count)  : null,
+        partners:    (best.distinct_partners_count != null)  ? Number(best.distinct_partners_count)  : null,
+        consultants: (best.distinct_consultants_count != null) ? Number(best.distinct_consultants_count) : null,
+        split:       (best.cavitak_count != null && best.oem_count != null)
+                       ? (Number(best.cavitak_count) + Number(best.oem_count))
+                       : null
       };
       // Per-KPI directionality: +1 = up is good, -1 = down is good, 0 = neutral.
       const goodDir = { open: 1, pipeline: 1, endusers: 1, partners: 1, consultants: 1, split: 0 };
@@ -20051,6 +20191,11 @@
           showResetPasswordPanel();
           return;
         }
+        // v27.6 — Pipeline stages preview (Super-only)
+        if (action === 'um-stages') {
+          showPipelineStagesSheet();
+          return;
+        }
         if (action === 'um-about') {
           showAboutSheet();
           return;
@@ -21026,6 +21171,8 @@
       _renderSparkSvg:        _renderSparkSvg,
       _populateKpiSparklines: _populateKpiSparklines,
       _populateActivityTicker: _populateActivityTicker,
+      // v27.6 — expose for smoke check verifying snapshot-column consumer
+      _populateKpiChips:       _populateKpiChips,
       _buildShareUrl:         _buildShareUrl,
       _shareCurrentView:      _shareCurrentView,
       _applyFiltersFromUrl:   _applyFiltersFromUrl,
