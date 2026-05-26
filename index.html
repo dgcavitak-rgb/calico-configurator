@@ -6350,7 +6350,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.7-alpha1',
+      version: 'v27.7-alpha2',
       constants,
       calico,
       mv,
@@ -9003,8 +9003,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.7-alpha1"',
-      () => CATALOG.version === 'v27.7-alpha1' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.7-alpha2"',
+      () => CATALOG.version === 'v27.7-alpha2' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.7-alpha1: Pipeline stages CRUD (Session A backend wrappers) ---------- */
     check('v27.7-A.1: STORE.stageCreate exists',
@@ -15837,7 +15837,13 @@
         : 'https://wa.me/?text=' + text;
     }
 
-    /* Email share — builds mailto: URL with subject + body + CC to sender */
+    /* Email share — builds mailto: URL with subject + body + CC to sender.
+       v27.7-alpha2 — Polished body. Subject is brand-prefixed for inbox
+       scannability. Body cites Excel BoQ + PDF spec by name, declares a
+       15-day validity (Cavitak standard), and signs off with full block:
+       name, professional_title (omit if blank), +91 phone (omit if blank),
+       company. Empty signature lines are filtered so we never render a
+       stray blank line. */
     function _buildMailtoUrl(deal) {
       const ref  = deal.display_ref || deal.ref_id || '';
       const proj = deal.project || '(no project name)';
@@ -15846,21 +15852,32 @@
       const sender = (function () {
         try {
           const u = STORE.currentUser();
-          return { name: u ? (u.full_name || u.username || '') : '', email: u ? (u.email || '') : '' };
-        } catch (e) { return { name: '', email: '' }; }
+          return {
+            name:  u ? (u.full_name || u.username || '') : '',
+            email: u ? (u.email || '') : '',
+            title: u ? String(u.professional_title || '').trim() : '',
+            phone: u ? String(u.phone || '').trim() : ''
+          };
+        } catch (e) { return { name: '', email: '', title: '', phone: '' }; }
       })();
-      const subject = 'Quotation — ' + proj + ' (' + ref + ')';
+      const subject = 'Cavitak | Quotation \u2014 ' + proj + ' (Ref: ' + ref + ')';
+      // Signature lines — drop empties so we never render a blank line for an
+      // unset profile field. Always anchor with the company line.
+      const sigLines = [
+        sender.name || 'Cavitak Marketing',
+        sender.title,
+        sender.phone ? '+91 ' + sender.phone : '',
+        'Cavitak Marketing Pvt. Ltd.'
+      ].filter(function (s) { return s && String(s).trim().length > 0; });
       const body = [
         'Dear ' + (cust || 'Sir/Madam') + ',',
         '',
-        'Please find the attached quotation (Excel + PDF) for ' + proj + ' (ref: ' + ref + ').',
+        'Attached is our quotation (Excel BoQ + PDF technical specification) for ' + proj + ', reference ' + ref + '.',
         '',
-        'Kindly review and revert in case of any clarifications.',
+        'Validity: 15 days from the date of this email. Kindly review and revert with any clarifications.',
         '',
-        'Best regards,',
-        sender.name || 'Cavitak Marketing',
-        'Cavitak Marketing Pvt Ltd'
-      ].join('\r\n');
+        'Best regards,'
+      ].concat(sigLines).join('\r\n');
       const params = [];
       if (sender.email) params.push('cc=' + encodeURIComponent(sender.email));
       params.push('subject=' + encodeURIComponent(subject));
