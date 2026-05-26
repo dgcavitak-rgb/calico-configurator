@@ -6350,7 +6350,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.6-alpha1',
+      version: 'v27.7-alpha1',
       constants,
       calico,
       mv,
@@ -7625,6 +7625,54 @@
       return (r && r.rows) || (Array.isArray(r) ? r : []);
     }
 
+    /* v27.7-alpha1 — Pipeline stages CRUD (Session A).
+       4 RPCs paired below; all SECURITY DEFINER on backend with permission_tier='super'
+       gate. Frontend callers should assume failure can return {ok:false, error:'...'}
+       and surface a toast. UI gating prevents non-Super from seeing the controls,
+       but defense-in-depth means RPCs reject the call too. */
+    async function stageCreate(args) {
+      args = args || {};
+      const u = currentUser();
+      return rpc('stage_create', {
+        p_stage_name: String(args.name || '').trim(),
+        p_is_open:    (args.is_open !== false),
+        p_win_weight: (typeof args.win_weight === 'number') ? args.win_weight : 0.5,
+        p_seq:        (typeof args.seq === 'number') ? args.seq : null,
+        p_actor:      (u && u.id) || null
+      });
+    }
+    async function stageUpdate(args) {
+      args = args || {};
+      const u = currentUser();
+      if (!args.id) throw new Error('stageUpdate: id required');
+      return rpc('stage_update', {
+        p_id:         String(args.id),
+        p_stage_name: (typeof args.name === 'string') ? args.name : null,
+        p_is_open:    (typeof args.is_open === 'boolean') ? args.is_open : null,
+        p_win_weight: (typeof args.win_weight === 'number') ? args.win_weight : null,
+        p_actor:      (u && u.id) || null
+      });
+    }
+    async function stageSetActive(id, isActive) {
+      const u = currentUser();
+      if (!id) throw new Error('stageSetActive: id required');
+      return rpc('stage_set_active', {
+        p_id:        String(id),
+        p_is_active: !!isActive,
+        p_actor:     (u && u.id) || null
+      });
+    }
+    async function stageReorder(orderedIds) {
+      const u = currentUser();
+      if (!Array.isArray(orderedIds) || !orderedIds.length) {
+        throw new Error('stageReorder: orderedIds array required');
+      }
+      return rpc('stage_reorder', {
+        p_ordered_ids: orderedIds.map(String),
+        p_actor:       (u && u.id) || null
+      });
+    }
+
     /* v27.3.0 — Stage transitions history (silent-drop restore).
        Each deal records a row in stage_transitions on every stage change.
        The RPC takes an array of ref IDs (batch); we wrap single-ref usage. */
@@ -7750,6 +7798,8 @@
       resetPasswordRequest, resetPasswordListPending, resetPasswordApprove,
       // v27.3.0 — duplicate + custom stages (v27.7 partial restore)
       duplicateDeal, stageList,
+      // v27.7-alpha1 — Pipeline stages CRUD (Session A backend)
+      stageCreate, stageUpdate, stageSetActive, stageReorder,
       // v27.3.0 — Stage transitions history (silent-drop restore)
       stageTransitionsList, stageTransitionsListMany, stageTransitionWrite,
       // v27.3.0 — Customer directory + 360 + merge (D1-D3 silent-drop restores)
@@ -8953,8 +9003,44 @@
       }
     }
 
-    check('CATALOG.version === "v27.6-alpha1"',
-      () => CATALOG.version === 'v27.6-alpha1' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.7-alpha1"',
+      () => CATALOG.version === 'v27.7-alpha1' || 'got: ' + CATALOG.version);
+
+    /* ---------- v27.7-alpha1: Pipeline stages CRUD (Session A backend wrappers) ---------- */
+    check('v27.7-A.1: STORE.stageCreate exists',
+      () => typeof STORE.stageCreate === 'function'
+            || 'stageCreate wrapper missing on STORE');
+    check('v27.7-A.2: STORE.stageUpdate exists',
+      () => typeof STORE.stageUpdate === 'function'
+            || 'stageUpdate wrapper missing on STORE');
+    check('v27.7-A.3: STORE.stageSetActive exists',
+      () => typeof STORE.stageSetActive === 'function'
+            || 'stageSetActive wrapper missing on STORE');
+    check('v27.7-A.4: STORE.stageReorder exists',
+      () => typeof STORE.stageReorder === 'function'
+            || 'stageReorder wrapper missing on STORE');
+    check('v27.7-A.5: STORE.stageList returns rows with is_active field (v27.7 schema)',
+      async () => {
+        try {
+          const rows = await STORE.stageList();
+          if (!Array.isArray(rows) || !rows.length) return 'no stages returned (expected 8)';
+          const first = rows[0];
+          return (typeof first.is_active === 'boolean')
+                 || 'first row missing is_active (schema migration may not be applied)';
+        } catch (e) {
+          return 'stage_list RPC threw: ' + (e && e.message || String(e));
+        }
+      });
+    check('v27.7-A.6: stage_list returns all 8 baseline stages',
+      async () => {
+        try {
+          const rows = await STORE.stageList();
+          return (Array.isArray(rows) && rows.length >= 8)
+                 || 'expected ≥8 stages, got ' + (Array.isArray(rows) ? rows.length : 'non-array');
+        } catch (e) {
+          return 'stage_list threw: ' + (e && e.message || String(e));
+        }
+      });
 
     /* ---------- v27.6-alpha1: Pipeline stages preview + snapshot augment consumer ---------- */
     check('v27.6: STORE.stageList exists (pipeline stages preview backend)',
