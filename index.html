@@ -13,6 +13,75 @@
        once the user lands on /dashboard. ~330KB gzipped. Pinned to a stable minor (5.5.x). -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
   <!--
+    v27.4.1-alpha2 — DASHBOARD W5+W2+W4+W3 (2026-05-26)
+    Step 2 of v27.4.1 build per SPEC-v27.4.1.md §4 (major-chunks variant).
+    Ships 4 widgets in one bundle. W1 (KPI period chips, snapshot-driven)
+    and -rc1 (version flip) are the remaining bundles.
+
+    What ships in this patch:
+
+    1) W5 — Region "unknown" cleanup banner inside the Regional
+       distribution card. Hidden when zoneCounts.unknown === 0. Routes
+       to #/history?filter=unknown_region on tap. Theme-aware via
+       --bg-warn / --ink-warn tokens.
+
+    2) W2 — Product Mix tile (4-pip grid): CALICO / Multi Viewer /
+       CORIO / SX overlay. Counts open deals via raw_submission.solutionType
+       + hasSx (independent overlay). Each pip tap routes to
+       #/history?filter=family_X. Footnote captures "other" tag for
+       legacy deals + clarifies SX overlay semantics. Grid layout:
+       funnel + mix + donut as 3× v4-col-4 (new col-4 added to grid CSS).
+
+    3) W4 — Partner + Consultant performance tables. Mirror Sales perf
+       shape (reuses .v4-tbl); 4-col table: name / open count / open ₹ /
+       won FY. Top 10 by open value desc. Hidden for OEM users.
+
+    4) W3 — Newly Onboarded surface on Dashboard. KPI sub-labels for
+       endusers/partners/consultants now read "with open cases · Newly:
+       N this Q →". Tap opens a bottom sheet with Q/H/Y toggle, listing
+       names with first-deal display_ref + project + close_month + date.
+       Period persists in sessionStorage.
+
+    Touch surface:
+       - CSS: ~140 lines added (col-4, mix pips, region banner, newly
+         sheet styling, KPI-tile newly-link)
+       - HTML: funnel+donut col-6→col-4, Mix card inserted between;
+         W5 banner inside region card; W4 two cards before line chart
+       - loadDashboardV4: ~75 lines of populate logic (W5 banner toggle,
+         W2 mix counts, W3 KPI sub-label rewrite, W4 leaderboard rows)
+       - New function: showNewlyOnboardedSheet(field) in UI IIFE
+       - 4 new action handlers: v4-newly-show, v4-newly-period,
+         v4-mix-pick, v4-region-unknown
+
+    CATALOG.version bumped: v27.4.1-alpha1 → v27.4.1-alpha2.
+
+    What's NOT in this patch:
+       - W1 KPI period comparison chips (next bundle: -rc1 alongside ship)
+       - pipeline_snapshots queries for historical comparison
+       - Filter wiring on mix/region/family hash routes (filter UI lands v27.4.2;
+         hash routes are placeholders until then — History will land on
+         existing filter logic gracefully)
+       - Period comparison on Home KPIs (W1 ships there too)
+
+    Smoke before merging W1:
+       (a) Login footer reads v27.4.1-alpha2
+       (b) /smoke#run shows all 14 v27.4.1 checks ✓ (no regression)
+       (c) Dashboard renders 3-card row (funnel/mix/donut) at desktop;
+           stacks at Z Fold
+       (d) Mix tile shows non-zero counts when scope has deals
+       (e) Region banner appears only when at least one open deal has
+           an unresolved state (try with a deal where state=""))
+       (f) Banner tap routes to #/history?filter=unknown_region
+       (g) Partner + Consultant tables render below Sales perf
+       (h) OEM login: Partner + Consultant cards hidden
+       (i) endusers/partners/consultants KPI sub-labels show "Newly: N this Q →"
+       (j) Tap "Newly →" opens bottom sheet with Q/H/Y toggle
+       (k) Toggle Q→H→Y updates the list live
+       (l) Sheet closes on backdrop tap
+       (m) Theme toggle works on all new surfaces
+       (n) Wizard / Exports / SX / History / Auth all unchanged
+  -->
+  <!--
     v27.4.1-alpha1 — DASHBOARD DEPTH HELPERS (2026-05-26)
     Step 1 of v27.4.1 build per SPEC-v27.4.1.md §4. Helpers only — no UI
     visible change yet. W5 (region "unknown" banner), W2 (Product Mix
@@ -4310,8 +4379,134 @@
     }
     @media (min-width: 1024px) {
       .v4-dash-grid { grid-template-columns: repeat(12, 1fr); gap: var(--s-5); }
+      .v4-col-4  { grid-column: span 4; }
       .v4-col-6  { grid-column: span 6; }
       .v4-col-12 { grid-column: span 12; }
+    }
+
+    /* v27.4.1 — W2: Product Mix tile (4-pip grid, beside donut). */
+    .v4-mix-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--s-3);
+    }
+    @media (min-width: 720px) {
+      .v4-mix-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .v4-mix-pip {
+      border-radius: 12px;
+      padding: var(--s-3) var(--s-3);
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.15s ease;
+      border: 0;
+      text-align: left;
+      font-family: inherit;
+    }
+    .v4-mix-pip:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .v4-mix-pip:active { transform: scale(0.98); }
+    .v4-mix-pip-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; opacity: 0.92;
+    }
+    .v4-mix-pip-value {
+      font-size: 28px; font-weight: 800; letter-spacing: -0.02em;
+      margin-top: 2px; line-height: 1.0;
+    }
+    .v4-mix-pip-pct {
+      font-size: 11px; opacity: 0.85; margin-top: 4px;
+    }
+    .v4-mix-pip.v4-mix-calico { background: var(--kpi-grad-2); }
+    .v4-mix-pip.v4-mix-mv     { background: var(--kpi-grad-6); }
+    .v4-mix-pip.v4-mix-corio  { background: var(--kpi-grad-3); }
+    .v4-mix-pip.v4-mix-sx     { background: var(--kpi-grad-5); }
+    .v4-mix-note {
+      font-size: 11px; color: var(--ink-soft); margin-top: var(--s-3);
+    }
+
+    /* v27.4.1 — W5: Region "unknown" cleanup banner. */
+    .v4-region-banner {
+      display: none;  /* shown via JS when N > 0 */
+      align-items: center;
+      gap: var(--s-3);
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--bg-warn, rgba(245, 158, 11, 0.12));
+      color: var(--ink-warn, #92400e);
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0 0 var(--s-3) 0;
+      cursor: pointer;
+      border: 0;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+    }
+    .v4-region-banner[data-show="true"] { display: flex; }
+    .v4-region-banner:hover { filter: brightness(0.98); }
+    .v4-region-banner-ico { font-size: 16px; flex-shrink: 0; }
+    .v4-region-banner-text { flex: 1; }
+    .v4-region-banner-arrow { opacity: 0.6; font-weight: 700; }
+    [data-theme="dark"] .v4-region-banner {
+      background: rgba(245, 158, 11, 0.18);
+      color: #FCD34D;
+    }
+
+    /* v27.4.1 — W4: Channel performance leaderboards (Partner + Consultant).
+       Reuses .v4-tbl from Sales perf — no new table CSS needed. */
+
+    /* v27.4.1 — W3: Newly Onboarded link in KPI tile sub-label. */
+    .v4-newly-link {
+      color: rgba(255,255,255,0.88);
+      text-decoration: underline;
+      text-decoration-color: rgba(255,255,255,0.35);
+      text-underline-offset: 2px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      font-family: inherit;
+      font-size: inherit;
+    }
+    .v4-newly-link:hover { color: #fff; text-decoration-color: rgba(255,255,255,0.7); }
+    /* Newly-onboarded sheet */
+    .v4-newly-sheet-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: var(--s-3); padding: var(--s-3) var(--s-4) 0; flex-wrap: wrap;
+    }
+    .v4-newly-sheet-hd h3 {
+      margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+    }
+    .v4-newly-period-chips {
+      display: inline-flex; gap: 4px; padding: 3px;
+      background: var(--bg-subtle); border-radius: 8px;
+    }
+    .v4-newly-period-chip {
+      border: 0; background: transparent; padding: 4px 10px;
+      border-radius: 6px; font-size: 12px; font-weight: 700;
+      color: var(--ink-soft); cursor: pointer; font-family: inherit;
+    }
+    .v4-newly-period-chip[data-active="true"] {
+      background: var(--bg-card); color: var(--ink-strong);
+      box-shadow: 0 1px 2px rgba(15,14,12,0.08);
+    }
+    .v4-newly-list {
+      padding: var(--s-3) var(--s-4) var(--s-4);
+      max-height: 60vh; overflow-y: auto;
+    }
+    .v4-newly-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: var(--s-3); padding: 10px 0;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .v4-newly-row:last-child { border-bottom: 0; }
+    .v4-newly-row-name { font-weight: 700; color: var(--ink-strong); font-size: 14px; }
+    .v4-newly-row-meta { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+    .v4-newly-row-date { font-size: 11px; color: var(--ink-soft); white-space: nowrap; }
+    .v4-newly-empty {
+      text-align: center; color: var(--ink-soft);
+      padding: var(--s-5) var(--s-4); font-size: 13px;
     }
 
     /* Donut chart */
@@ -5697,7 +5892,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.4.1-alpha1',
+      version: 'v27.4.1-alpha2',
       constants,
       calico,
       mv,
@@ -8282,8 +8477,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.4.1-alpha1"',
-      () => CATALOG.version === 'v27.4.1-alpha1' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.4.1-alpha2"',
+      () => CATALOG.version === 'v27.4.1-alpha2' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.4.1-alpha1: dashboard-depth helpers exposed + correct ---------- */
     // Source: SPEC-v27.4.1.md §3.1. Pure functions, deterministic over
@@ -11051,6 +11246,76 @@
       setTimeout(function () { if (container.parentNode) container.parentNode.removeChild(container); }, 3000);
     }
 
+    /* v27.4.1 W3 — Newly Onboarded bottom sheet.
+       Triggered from KPI tile sub-link "Newly: N this Q →" on Dashboard.
+       Period toggle (Q/H/Y) persists across re-renders via sessionStorage.
+       Reads from the current scope-filtered deals via __lastDashScoped cache. */
+    let __lastDashScoped = null;  // Updated each loadDashboardV4 run
+    function _newlyPeriodGet() {
+      try { return sessionStorage.getItem('v4.newlyOnboarded.period') || 'Q'; } catch (e) { return 'Q'; }
+    }
+    function _newlyPeriodSet(p) {
+      try { sessionStorage.setItem('v4.newlyOnboarded.period', p); } catch (e) {}
+    }
+    function _newlyBoundsFor(periodKey) {
+      if (periodKey === 'H') return getHalfBounds();
+      if (periodKey === 'Y') return getFyBounds();
+      return getQuarterBounds();
+    }
+    function _newlyPeriodLabel(periodKey, bounds) {
+      if (periodKey === 'H') return 'H' + bounds.h + ' FY' + (bounds.fy % 100);
+      if (periodKey === 'Y') return 'FY' + (bounds.fy % 100) + '-' + ((bounds.fy + 1) % 100);
+      return 'Q' + bounds.q + ' FY' + (bounds.fy % 100);
+    }
+    function _newlyFieldLabel(field) {
+      if (field === 'customer_name')   return 'end-users';
+      if (field === 'partner_name')    return 'partners';
+      if (field === 'consultant_name') return 'consultants';
+      return field;
+    }
+    function showNewlyOnboardedSheet(field) {
+      const deals = Array.isArray(__lastDashScoped) ? __lastDashScoped : [];
+      const period = _newlyPeriodGet();
+      const bounds = _newlyBoundsFor(period);
+      const rows = newlyOnboarded(deals, field, bounds);
+      const fieldLbl = _newlyFieldLabel(field);
+      const periodLbl = _newlyPeriodLabel(period, bounds);
+      const chip = function(p) {
+        const active = (p === period) ? 'true' : 'false';
+        return '<button type="button" class="v4-newly-period-chip" ' +
+          'data-action="v4-newly-period" data-period="' + p + '" data-field="' + esc(field) + '" ' +
+          'data-active="' + active + '">' + p + '</button>';
+      };
+      const listHtml = rows.length === 0
+        ? '<div class="v4-newly-empty">No new ' + fieldLbl + ' in ' + periodLbl + '.</div>'
+        : rows.map(function(r) {
+            const dRef = (r.firstDeal && (r.firstDeal.display_ref || r.firstDeal.ref_id)) || '';
+            const proj = (r.firstDeal && r.firstDeal.project) || '';
+            const close = (r.firstDeal && r.firstDeal.close_month) || '';
+            const meta = [dRef, proj, close].filter(Boolean).join(' \u00b7 ');
+            const dt = r.firstAt;
+            const dtStr = dt ? (dt.toISOString().slice(0, 10)) : '';
+            return '<div class="v4-newly-row">' +
+              '<div>' +
+                '<div class="v4-newly-row-name">' + esc(r.name) + '</div>' +
+                (meta ? '<div class="v4-newly-row-meta">' + esc(meta) + '</div>' : '') +
+              '</div>' +
+              '<div class="v4-newly-row-date">' + esc(dtStr) + '</div>' +
+            '</div>';
+          }).join('');
+      openSheet(
+        '<div class="v4-newly-sheet">' +
+          '<div class="v4-newly-sheet-hd">' +
+            '<h3>Newly onboarded ' + fieldLbl + ' \u00b7 ' + periodLbl + '</h3>' +
+            '<div class="v4-newly-period-chips">' +
+              chip('Q') + chip('H') + chip('Y') +
+            '</div>' +
+          '</div>' +
+          '<div class="v4-newly-list">' + listHtml + '</div>' +
+        '</div>'
+      );
+    }
+
     async function showNotificationsSheet() {
       openSheet(
         '<div class="notif-sheet">' +
@@ -13039,7 +13304,7 @@
         '<div class="v4-dash-grid">' +
 
           // Funnel
-          '<div class="v4-card v4-col-6">' +
+          '<div class="v4-card v4-col-4">' +
             '<div class="v4-card-hd"><h3>Pipeline by stage</h3><span class="v4-hint" data-v4-d-funnel-total>\u2014 open</span></div>' +
             '<div class="v4-card-bd">' +
               '<div class="v4-funnel">' +
@@ -13053,8 +13318,38 @@
             '</div>' +
           '</div>' +
 
+          // v27.4.1 W2 — Product Mix tile (CALICO / MV / CORIO / SX overlay)
+          '<div class="v4-card v4-col-4">' +
+            '<div class="v4-card-hd"><h3>Product mix</h3><span class="v4-hint">open deals by family</span></div>' +
+            '<div class="v4-card-bd">' +
+              '<div class="v4-mix-grid" data-v4-d-mix-grid>' +
+                '<button type="button" class="v4-mix-pip v4-mix-calico" data-action="v4-mix-pick" data-family="calico">' +
+                  '<div class="v4-mix-pip-label">CALICO</div>' +
+                  '<div class="v4-mix-pip-value" data-v4-d-mix="calico">0</div>' +
+                  '<div class="v4-mix-pip-pct" data-v4-d-mix-pct="calico">0%</div>' +
+                '</button>' +
+                '<button type="button" class="v4-mix-pip v4-mix-mv" data-action="v4-mix-pick" data-family="mv">' +
+                  '<div class="v4-mix-pip-label">MULTI VIEWER</div>' +
+                  '<div class="v4-mix-pip-value" data-v4-d-mix="mv">0</div>' +
+                  '<div class="v4-mix-pip-pct" data-v4-d-mix-pct="mv">0%</div>' +
+                '</button>' +
+                '<button type="button" class="v4-mix-pip v4-mix-corio" data-action="v4-mix-pick" data-family="corio">' +
+                  '<div class="v4-mix-pip-label">CORIO</div>' +
+                  '<div class="v4-mix-pip-value" data-v4-d-mix="corio">0</div>' +
+                  '<div class="v4-mix-pip-pct" data-v4-d-mix-pct="corio">0%</div>' +
+                '</button>' +
+                '<button type="button" class="v4-mix-pip v4-mix-sx" data-action="v4-mix-pick" data-family="sx">' +
+                  '<div class="v4-mix-pip-label">SX OVERLAY</div>' +
+                  '<div class="v4-mix-pip-value" data-v4-d-mix="sx">0</div>' +
+                  '<div class="v4-mix-pip-pct" data-v4-d-mix-pct="sx">0%</div>' +
+                '</button>' +
+              '</div>' +
+              '<div class="v4-mix-note" data-v4-d-mix-note></div>' +
+            '</div>' +
+          '</div>' +
+
           // Donut
-          '<div class="v4-card v4-col-6">' +
+          '<div class="v4-card v4-col-4">' +
             '<div class="v4-card-hd"><h3>Origin split</h3><span class="v4-hint">Cavitak vs OEM \u00b7 by creator role</span></div>' +
             '<div class="v4-card-bd">' +
               '<div class="v4-donut-wrap">' +
@@ -13091,6 +13386,12 @@
           '<div class="v4-card v4-col-12">' +
             '<div class="v4-card-hd"><h3>Regional distribution</h3><span class="v4-hint">open cases by zone</span></div>' +
             '<div class="v4-card-bd">' +
+              // v27.4.1 W5 — Region "unknown" cleanup banner. Shown only when N > 0.
+              '<button type="button" class="v4-region-banner" data-action="v4-region-unknown" data-v4-d-region-banner>' +
+                '<span class="v4-region-banner-ico">\u26a0</span>' +
+                '<span class="v4-region-banner-text" data-v4-d-region-banner-text>0 deals have unknown region. Tap to fix.</span>' +
+                '<span class="v4-region-banner-arrow">\u2192</span>' +
+              '</button>' +
               '<div class="v4-region-wrap">' +
                 '<div class="v4-india-wrap">' +
                   indiaSvg() +
@@ -13148,6 +13449,31 @@
             '</div>' +
           '</div>' +
 
+          // v27.4.1 W4 — Partner + Consultant leaderboards (channel performance).
+          // Hidden for OEM users via [data-v4-d-channel-row][data-show="false"].
+          '<div class="v4-card v4-col-6" data-v4-d-channel-card="partner" style="display:none">' +
+            '<div class="v4-card-hd"><h3>Partner performance</h3><span class="v4-hint">FY26-27 \u00b7 open value desc</span></div>' +
+            '<div class="v4-card-bd" style="padding:0">' +
+              '<div class="v4-tbl-wrap">' +
+                '<table class="v4-tbl">' +
+                  '<thead><tr><th>Partner</th><th class="v4-num">Open</th><th class="v4-num">Open ₹</th><th class="v4-num">Won FY</th></tr></thead>' +
+                  '<tbody data-v4-d-partner-body><tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:24px">Loading\u2026</td></tr></tbody>' +
+                '</table>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="v4-card v4-col-6" data-v4-d-channel-card="consultant" style="display:none">' +
+            '<div class="v4-card-hd"><h3>Consultant performance</h3><span class="v4-hint">FY26-27 \u00b7 open value desc</span></div>' +
+            '<div class="v4-card-bd" style="padding:0">' +
+              '<div class="v4-tbl-wrap">' +
+                '<table class="v4-tbl">' +
+                  '<thead><tr><th>Consultant</th><th class="v4-num">Open</th><th class="v4-num">Open ₹</th><th class="v4-num">Won FY</th></tr></thead>' +
+                  '<tbody data-v4-d-consultant-body><tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:24px">Loading\u2026</td></tr></tbody>' +
+                '</table>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+
           // Newly added line chart (full width)
           '<div class="v4-card v4-col-12">' +
             '<div class="v4-card-hd"><h3>Newly added cases</h3><span class="v4-hint">last 6 months</span></div>' +
@@ -13182,6 +13508,10 @@
         const scoped = all
           .filter(d => !d.deleted_at)
           .filter(d => dealMatchesScope(d, regionScope, salesScope));
+
+        // v27.4.1 W3 — cache scope-filtered deals for the Newly Onboarded sheet
+        // which renders out-of-band from loadDashboardV4 (triggered by KPI tap).
+        __lastDashScoped = scoped;
 
         // Scope label for hero
         const scopeLbl = (function() {
@@ -13336,6 +13666,97 @@
           if (el) el.textContent = String(zoneCounts[z]);
           const lbl = document.querySelector('[data-v4-zone-lbl="' + z + '"]');
           if (lbl) lbl.textContent = z.charAt(0).toUpperCase() + ' \u00b7 ' + zoneCounts[z];
+        });
+
+        // ---- v27.4.1 W5: Region "unknown" cleanup banner ----
+        // Show only when in-scope open deals have unresolved region.
+        const banner = document.querySelector('[data-v4-d-region-banner]');
+        const bannerText = document.querySelector('[data-v4-d-region-banner-text]');
+        const nUnknown = zoneCounts.unknown || 0;
+        if (banner) {
+          if (nUnknown > 0) {
+            banner.setAttribute('data-show', 'true');
+            if (bannerText) {
+              bannerText.textContent = nUnknown + ' deal' + (nUnknown === 1 ? '' : 's') +
+                ' ' + (nUnknown === 1 ? 'has' : 'have') + ' unknown region. Tap to fix.';
+            }
+          } else {
+            banner.setAttribute('data-show', 'false');
+          }
+        }
+
+        // ---- v27.4.1 W2: Product mix tile ----
+        const mix = productMixCount(open);
+        const mixTotal = mix.calico + mix.mv + mix.corio;  // SX is overlay, not in total
+        ['calico','mv','corio','sx'].forEach(function(fam) {
+          const elV = document.querySelector('[data-v4-d-mix="' + fam + '"]');
+          if (elV) elV.textContent = String(mix[fam]);
+          const elP = document.querySelector('[data-v4-d-mix-pct="' + fam + '"]');
+          if (elP) {
+            // SX percentage is "of all open" (overlay), not "of mix"
+            const denom = (fam === 'sx') ? open.length : mixTotal;
+            const pct = denom > 0 ? Math.round(mix[fam] / denom * 100) : 0;
+            elP.textContent = pct + '%';
+          }
+        });
+        const mixNote = document.querySelector('[data-v4-d-mix-note]');
+        if (mixNote) {
+          const parts = [];
+          if (mix.other > 0) parts.push(mix.other + ' deal' + (mix.other === 1 ? '' : 's') + ' with no family tag');
+          parts.push('SX is an overlay count (deals can have CALICO + SX, both counted)');
+          mixNote.textContent = parts.join(' \u00b7 ');
+        }
+
+        // ---- v27.4.1 W3: Newly Onboarded link on KPI sub-labels ----
+        // Replace plain "with open cases" sub-text with a tappable
+        // "with open cases · Newly: N this Q →" link. State persists
+        // across re-renders via the bottom-sheet's own selection.
+        const qBounds = getQuarterBounds();
+        const newlyByField = {
+          endusers:    newlyOnboarded(scoped, 'customer_name',   qBounds).length,
+          partners:    newlyOnboarded(scoped, 'partner_name',    qBounds).length,
+          consultants: newlyOnboarded(scoped, 'consultant_name', qBounds).length
+        };
+        ['endusers','partners','consultants'].forEach(function(id) {
+          const s = document.querySelector('[data-v4-kpi-sub="' + id + '"]');
+          if (!s) return;
+          const field = id === 'endusers' ? 'customer_name' :
+                        id === 'partners' ? 'partner_name' : 'consultant_name';
+          s.innerHTML =
+            'with open cases \u00b7 ' +
+            '<button type="button" class="v4-newly-link" ' +
+              'data-action="v4-newly-show" data-field="' + field + '">' +
+              'Newly: ' + newlyByField[id] + ' this Q \u2192' +
+            '</button>';
+        });
+
+        // ---- v27.4.1 W4: Partner + Consultant leaderboards ----
+        // OEM users never see channel performance (no partner/consultant scope).
+        const showChannels = (u && u.org_function !== 'OEM');
+        const fyBounds = getFyBounds();
+        ['partner','consultant'].forEach(function(role) {
+          const card = document.querySelector('[data-v4-d-channel-card="' + role + '"]');
+          if (!card) return;
+          if (!showChannels) { card.style.display = 'none'; return; }
+          card.style.display = '';
+          const field = role + '_name';  // partner_name / consultant_name
+          const rows = aggregateChannelPerf(scoped, field, fyBounds).slice(0, 10);
+          const tbody = document.querySelector('[data-v4-d-' + role + '-body]');
+          if (!tbody) return;
+          if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:24px">' +
+              'No ' + role + ' activity in scope yet.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = rows.map(function(r) {
+            const valTxt = r.openValue > 0 ? '\u20b9 ' + fmtINR(r.openValue) : '\u2014';
+            return '<tr>' +
+              '<td>' + esc(r.name) + '</td>' +
+              '<td class="v4-num">' + r.openCount + '</td>' +
+              '<td class="v4-num">' + valTxt + '</td>' +
+              '<td class="v4-num">' + r.wonFy + '</td>' +
+              '</tr>';
+          }).join('');
         });
 
         // ---- Sales perf table ----
@@ -18200,6 +18621,30 @@
           showResetPasswordRequest();
           return;
         }
+
+        // v27.4.1-alpha2 — Dashboard depth interactions.
+        if (action === 'v4-newly-show') {
+          const field = actEl.getAttribute('data-field') || 'customer_name';
+          if (UI.showNewlyOnboardedSheet) UI.showNewlyOnboardedSheet(field);
+          return;
+        }
+        if (action === 'v4-newly-period') {
+          const p = actEl.getAttribute('data-period') || 'Q';
+          const f = actEl.getAttribute('data-field') || 'customer_name';
+          try { sessionStorage.setItem('v4.newlyOnboarded.period', p); } catch (e) {}
+          // Re-open sheet with new period (closeSheet + open from UI namespace)
+          if (UI.showNewlyOnboardedSheet) UI.showNewlyOnboardedSheet(f);
+          return;
+        }
+        if (action === 'v4-mix-pick') {
+          const fam = actEl.getAttribute('data-family') || '';
+          if (fam) location.hash = '#/history?filter=family_' + encodeURIComponent(fam);
+          return;
+        }
+        if (action === 'v4-region-unknown') {
+          location.hash = '#/history?filter=unknown_region';
+          return;
+        }
         if (action === 'cust-filter') {
           const v = actEl.getAttribute('data-value') || 'all';
           setCustomerFilter(v);
@@ -19340,6 +19785,8 @@
       _productMixCount:      productMixCount,
       _newlyOnboarded:       newlyOnboarded,
       _aggregateChannelPerf: aggregateChannelPerf,
+      // v27.4.1-alpha2 — W3 Newly Onboarded sheet exposed for APP action handler.
+      showNewlyOnboardedSheet: showNewlyOnboardedSheet,
       // smoke renderer
       _renderSmokeOutput: renderSmokeOutput
     };
