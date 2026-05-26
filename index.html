@@ -13,6 +13,45 @@
        once the user lands on /dashboard. ~330KB gzipped. Pinned to a stable minor (5.5.x). -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
   <!--
+    v27.3.14d — LOGIN POLISH + THEME SIMPLIFICATION (2026-05-26 late night)
+    Three asks from Dipenkumar: "just keep Light Dark Toggle, password hide
+    unhide & also check logos on login page".
+
+    1) Theme toggle simplified — auto/system button removed.
+       - Topbar now shows only Light + Dark buttons.
+       - getPref() boot helper migrates any stored 'auto' to the
+         system-resolved value (light/dark) once, then persists. After
+         migration the user manages light/dark explicitly.
+       - The initial applyTheme IIFE no longer accepts 'auto' as a stored
+         value; if the stored pref isn't 'light' or 'dark' it resolves
+         from system preference.
+
+    2) Password show/hide eye on login form.
+       - New tappable eye button on the right of the password input
+         (data-action="pw-toggle" data-target="i-password").
+       - Global click handler in main IIFE flips input type between
+         password/text, swaps SVG (eye-open ↔ eye-with-slash), and
+         updates aria-pressed + aria-label.
+       - CSS: .input-v3-pw adds right padding for the icon clearance;
+         .login-pw-eye positions the button (right:8px, vertically centered)
+         and handles hover/active states.
+
+    3) Login page logos — hand-coded chevrons + lightning SVG removed.
+       - .login-tvone-logo and .login-cavitak-logo now render <img> tags
+         pointing at the official PNG payload already embedded in EXPORT.
+       - To avoid duplicating ~53KB of base64, EXPORT now exposes
+         LOGO_TVONE_DURI and LOGO_CAVITAK_DURI on its public surface;
+         renderLogin reads them via EXPORT.LOGO_*_DURI.
+       - CSS dropped color:#F7941D (no longer needed since the image
+         carries brand color); height locked at 30px (tvONE) / 26px
+         (Cavitak) for visually balanced weight.
+
+    NO functional change to wizard, recommendation engine, save/load,
+    exports, or T&C. Pure visual + UX polish on the auth surface and
+    topbar theme switcher.
+  -->
+
+  <!--
     v27.3.14c — OFFICIAL BRAND LOGOS (2026-05-26 late night)
     Per Dipenkumar "Logos you are using is customer render use exact logos only"
     + "tvONE on left, Cavitak on right (co-branded)" / "Both at top, side-by-side".
@@ -2524,15 +2563,18 @@
       margin-bottom: 24px;
     }
     .login-logos {
-      display: flex; align-items: center; justify-content: center; gap: 12px;
+      display: flex; align-items: center; justify-content: center; gap: 14px;
       margin-bottom: 14px;
     }
-    .login-tvone-logo { color: #F7941D; display: inline-flex; }
+    /* v27.3.14d — login logos now use the official tvONE + Cavitak PNGs via
+       EXPORT.LOGO_TVONE_DURI / EXPORT.LOGO_CAVITAK_DURI. Height matched so
+       both brand marks read with similar visual weight. */
+    .login-tvone-logo   { height: 30px; width: auto; display: inline-block; }
+    .login-cavitak-logo { height: 26px; width: auto; display: inline-block; }
     .login-logo-divider {
       width: 1px; height: 22px;
       background: var(--border-mid);
     }
-    .login-cavitak-logo { display: inline-flex; }
     .login-title {
       font-family: var(--font-display);
       font-weight: 700; font-size: 20px;
@@ -2553,6 +2595,23 @@
       pointer-events: none;
     }
     .input-v3-iconed { padding-left: 36px !important; }
+    /* v27.3.14d — password show/hide eye toggle */
+    .input-v3-pw { padding-right: 40px !important; }
+    .login-pw-eye {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      width: 32px; height: 32px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: transparent; border: none; cursor: pointer;
+      color: var(--ink-soft);
+      border-radius: var(--r-sm);
+      padding: 0;
+      transition: background var(--dur-base) var(--ease-out),
+                  color var(--dur-base) var(--ease-out);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .login-pw-eye:hover { background: var(--bg-subtle); color: var(--ink-strong); }
+    .login-pw-eye:active { transform: translateY(-50%) scale(0.92); }
+    .login-pw-eye[aria-pressed="true"] { color: var(--accent-deep); }
     .login-submit {
       width: 100%;
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -4109,9 +4168,6 @@
           <button class="theme-btn" data-theme-val="light" aria-label="Light theme" type="button">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.05" y2="16.95"/><line x1="16.95" y1="7.05" x2="19.07" y2="4.93"/></svg>
           </button>
-          <button class="theme-btn active" data-theme-val="auto" aria-label="System theme" type="button">
-            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M9 18l-1 3M15 18l1 3M8 21h8"/></svg>
-          </button>
           <button class="theme-btn" data-theme-val="dark" aria-label="Dark theme" type="button">
             <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           </button>
@@ -4164,7 +4220,21 @@
      ============================================================ */
   (function () {
     var KEY = 'tvone.theme.v27';
-    function getPref() { try { return localStorage.getItem(KEY) || 'auto'; } catch(e) { return 'auto'; } }
+    function getPref() {
+      try {
+        var v = localStorage.getItem(KEY);
+        // v27.3.14d — auto removed from the toggle. Migrate any stored 'auto'
+        // to the system-resolved value once, then persist; from then on the
+        // user manages light/dark explicitly.
+        if (v === 'auto' || !v) {
+          var m = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+          var resolved = (m && m.matches) ? 'dark' : 'light';
+          try { localStorage.setItem(KEY, resolved); } catch(_e) {}
+          return resolved;
+        }
+        return v;
+      } catch(e) { return 'light'; }
+    }
     function actual(pref) {
       if (pref !== 'auto') return pref;
       var m = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
@@ -4453,7 +4523,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.3.14c',
+      version: 'v27.3.14d',
       constants,
       calico,
       mv,
@@ -7000,6 +7070,11 @@
       excel, pdf, download, filename,
       // Lazy-load helpers (exposed for direct CDN-reachability smoke testing)
       loadExcelJS, loadJsPDF, loadHtml2Canvas,
+      // v27.3.14d — Expose embedded brand logos so the login page (UI module,
+      // declared after EXPORT) can reuse the same official PNG payload
+      // without duplicating ~53KB of base64 in two places.
+      LOGO_TVONE_DURI:   _LOGO_TVONE_DURI,
+      LOGO_CAVITAK_DURI: _LOGO_CAVITAK_DURI,
       // Internals exposed for debug only
       _isIOS: isIOS,
       _cdn: { CDN_EXCELJS, CDN_JSPDF, CDN_HTML2CANVAS }
@@ -7033,8 +7108,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.3.14c"',
-      () => CATALOG.version === 'v27.3.14c' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.3.14d"',
+      () => CATALOG.version === 'v27.3.14d' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.3.12 invariants — SX redesign + step reduction ---------- */
     // Source: /mnt/user-data/outputs/SPEC-v27.3.12-sx-redesign-step-reduction.md
@@ -10017,6 +10092,24 @@
         if (v) applyTheme(v);
         return;
       }
+      // v27.3.14d — password show/hide eye toggle on login form (and any
+      // future form that opts in via data-action="pw-toggle" + data-target).
+      const pwEye = e.target.closest && e.target.closest('[data-action="pw-toggle"]');
+      if (pwEye) {
+        const targetId = pwEye.getAttribute('data-target');
+        const input = targetId && document.getElementById(targetId);
+        if (input) {
+          const showing = input.getAttribute('type') === 'text';
+          input.setAttribute('type', showing ? 'password' : 'text');
+          pwEye.setAttribute('aria-pressed', showing ? 'false' : 'true');
+          pwEye.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+          const showSvg = pwEye.querySelector('.pw-eye-show');
+          const hideSvg = pwEye.querySelector('.pw-eye-hide');
+          if (showSvg) showSvg.style.display = showing ? '' : 'none';
+          if (hideSvg) hideSvg.style.display = showing ? 'none' : '';
+        }
+        return;
+      }
       const nb = e.target.closest && e.target.closest('#notif-btn');
       if (nb) {
         showNotificationsSheet();
@@ -10039,8 +10132,17 @@
     }
     // Apply theme initially (also sets .active on the right button)
     (function () {
-      let pref = 'auto';
-      try { pref = localStorage.getItem(THEME_STORAGE_KEY) || 'auto'; } catch (e) {}
+      // v27.3.14d — default to system-resolved light/dark, no 'auto' value.
+      let pref = 'light';
+      try {
+        const stored = localStorage.getItem(THEME_STORAGE_KEY);
+        if (stored === 'light' || stored === 'dark') {
+          pref = stored;
+        } else {
+          const m = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+          pref = (m && m.matches) ? 'dark' : 'light';
+        }
+      } catch (e) {}
       applyTheme(pref);
     })();
 
@@ -10291,9 +10393,10 @@
         loginMode === 'force-pw'      ? renderForcePwForm() :
         loginMode === 'force-profile' ? renderProfileSetupForm() :
                                         renderLoginForm();
-      // v27.3.0 — login surface refreshed with the v27.3.0 design language:
-      // real tvONE chevron + Cavitak red-lightning logos in the brand block,
-      // ambient orbs in the background, amber accents, General Sans typography.
+      // v27.3.14c — login surface refreshed with the v27.3.0 design language:
+      // v27.3.14d — Hand-coded chevron + lightning SVGs replaced with the
+      // official tvONE + Cavitak PNGs (same assets used in topbar and exports,
+      // exposed via EXPORT.LOGO_TVONE_DURI / EXPORT.LOGO_CAVITAK_DURI).
       const html =
         '<div class="login-bg login-bg-v3">' +
           '<div class="login-orb login-orb-1" aria-hidden="true"></div>' +
@@ -10301,19 +10404,9 @@
           '<div class="login-card login-card-v3">' +
             '<div class="login-brand">' +
               '<div class="login-logos">' +
-                '<span class="login-tvone-logo">' +
-                  '<svg viewBox="0 0 64 32" width="56" height="28" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">' +
-                    '<polyline points="8,8 22,16 8,24"/>' +
-                    '<polyline points="28,8 42,16 28,24"/>' +
-                  '</svg>' +
-                '</span>' +
+                '<img class="login-tvone-logo" src="' + EXPORT.LOGO_TVONE_DURI + '" alt="tvONE" />' +
                 '<span class="login-logo-divider"></span>' +
-                '<span class="login-cavitak-logo">' +
-                  '<svg viewBox="0 0 32 32" width="28" height="28">' +
-                    '<circle cx="16" cy="16" r="14" fill="#DC2626"/>' +
-                    '<path d="M19 7 L11 18 L16 18 L13 25 L21 14 L16 14 Z" fill="white"/>' +
-                  '</svg>' +
-                '</span>' +
+                '<img class="login-cavitak-logo" src="' + EXPORT.LOGO_CAVITAK_DURI + '" alt="Cavitak Marketing" />' +
               '</div>' +
               '<h1 class="login-title">tvONE Product Selector</h1>' +
               '<div class="login-subtitle">Cavitak Marketing \u00b7 sign in to continue</div>' +
@@ -10344,8 +10437,23 @@
             '<label for="i-password">Password</label>' +
             '<div class="login-input-wrap">' +
               '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-input-icon"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
-              '<input class="input-v3 input-v3-iconed" id="i-password" name="password" type="password" ' +
+              '<input class="input-v3 input-v3-iconed input-v3-pw" id="i-password" name="password" type="password" ' +
                    'autocomplete="current-password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" required>' +
+              // v27.3.14d — show/hide password toggle. Tappable eye icon on
+              // the right of the input. Aria-pressed flips on toggle; the
+              // click handler is delegated at the document level (see
+              // global click handler for data-action="pw-toggle").
+              '<button type="button" class="login-pw-eye" data-action="pw-toggle" data-target="i-password" ' +
+                   'aria-label="Show password" aria-pressed="false">' +
+                '<svg class="pw-eye-show" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                  '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>' +
+                '</svg>' +
+                '<svg class="pw-eye-hide" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none">' +
+                  '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.79 19.79 0 0 1 5.06-5.94"/>' +
+                  '<path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a19.5 19.5 0 0 1-2.16 3.19"/>' +
+                  '<line x1="1" y1="1" x2="23" y2="23"/>' +
+                '</svg>' +
+              '</button>' +
             '</div>' +
             '<div class="err" hidden></div>' +
           '</div>' +
