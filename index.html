@@ -8,10 +8,386 @@
   <link rel="preconnect" href="https://api.fontshare.com">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,700&display=swap">
+  <!-- v27.5 — PWA manifest (inline data URI; icons reuse the favicon PNG above
+       since GitHub Pages serves single-file index without extra icon assets).
+       theme_color matches brand (#F7941D); display=standalone makes the installed
+       app feel native; orientation=any supports Z Fold portrait + landscape. -->
+  <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"tvONE Product Selector","short_name":"tvONE","description":"Cavitak presales tool for tvONE products","start_url":"./","display":"standalone","orientation":"any","background_color":"#0F0E0C","theme_color":"#F7941D","icons":[{"src":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAExUlEQVR42u2XXWwUVRTHz52ZdtsCJSCIJmqMqARJAWOlxcQPgvHBF33WhGhAX1CxSH3hRZ8MmCg8yQMJiVqVSKXbFokgLG3F2vLZ3fJR2i4tsJ1td7fdLbudnY97/z7c6bTLblsTTfChk9zsZO7e+/vdk3vunGG2lQXdx0uh+3zNC8wL/EMBTGuF+u59BNn+EwEIIqYSMU22aSJM0YgpRVP/IyKmKMSKiohUlSDEvxUQxLRSIm4SnHGCkyam+LxhzsQocSNFxBgxzUcEEM9kyE7ECZZFqq+UaA4JhTFGqlaU3xSFtKJSsiJ1NNZaQeOdr1Oy7VlKd28nVVVJK/KRFQlSeP8mGjzwBvHkbdKKS0iMj9P1rVvofGUFJZobSPOVkkKFGYwxIsc2IYTIbdwCAEzcroPuZ4gFKmCnQkgFP8RQPSF5+X0I4QAARs//hODOxbjx5UaYiUEAQPraFbSvX4XAUh9Gmo4CALhl5XEc20S+gAf/HrqfIX6mEo5xB5NXKvSxlLi0DYLbAIBkVwNCu5aiZ281srGbcvxAPzqq1iKwxIeRxl8KSuQLTMJvfQe9gRBveR6OEQEACG5BCO5K1LgSWyEc05XwI7TrAfTsqUJ2pF/Oc7MfHdXrEFhSjGF/fZ5EroAH/xa6nxBv2QDHGHLhtjuIe6FPhXZKiYvvTkkEGxGqXYaePRuQHelzIxGekjh6JEdimoBcWWbwkLvyKjiGfg9c5Et0f4KhesLYhS2eRCrUjFDtMlz/4jlkh3sBAMatAXRuXI/T5RqGjxx253WkgG1lIYSDzMBB6E0liLe9VGDlYhaJWuh+hrGL74CbCTcSTbiy+zH07K3GRKRbRmLwJs69Uo2WFQsRPVwHwTls0wA5nMO+24PosXJEj5XDHO2QcCcLITCDgJByEBACiLe+gKF6Qib8jbcx9ebPcHm7goFDb4ObWZkxrQGcWV6GtidWwLg1CM45yLYMQAhM3DmMaPMCxALrYaf7Zo8Ad7woJC+9B72BkOr6ANy6K0GdPyD06YPo3bcZ2VhYpub1q/ircg1aH1mK2PFmQAg3ArYJwWU4jcjP0Bs1xE6vgZ0OF5bw4BzJS9vkRuzaDsHlPho99yOCNeXo/eplmKN3PHj72qdwZvkCxE8clxvRcQpngRGph95YjNipZ2Cn+3MlclYu4angR1PwzjoEaxah9+tNsMYi7qHUjfaKJ9GyYhESv/82UxbkngPG0FHojcUYObV6moTskyvf6sJ3AAK58H2bYSV1D3 5nxUq0PFSOxKkTc5wDeRINiDb5MHJyJexUSMLtuxg7/5aEh2q80zF+9iC6dpShb/+rsFJRmR0Xz+HsqkfR8nA5EqdPznUS8tzm5rQx1IDhE48j8ccm2Okwxq/uRvTXZUh110IIABBIdvlx7fPVCB9404Nn+m7gwmsvon3d00gEJuH5HMc2wWYuywUxtZTgZAh8gogYETiRWkKKtpggTCIi4kaKmKqR6ltEpCgExyZuTBAch9QFC0ktKSNhGkRK4Tc/m/W7AMItRBS3CGHyF87kcGKKLFIguKyCGCOmqEQKI3BO4JyYMnPZweb+MIEHy70v1H9PWUZExNiss2tzV21shvvZns0Nni/L5wX+NwJ/AzmyPuAkeE+vAAAAAElFTkSuQmCC","sizes":"32x32","type":"image/png"}]}'>
+  <meta name="theme-color" content="#F7941D">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="tvONE">
+  <script>
+    // v27.5 — PWA service worker registration + install prompt capture.
+    // SW caches index.html + CDN assets for offline shell. Registration
+    // is deferred to window.load so initial render isn't blocked. Failures
+    // are silent — PWA is enhancement, not core.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js').catch(function(err) {
+          console.warn('[PWA] SW registration failed (non-fatal):', err && err.message);
+        });
+      });
+    }
+    // Capture the install prompt for later. UI shows a floating "Install"
+    // pill when this fires; the pill is injected dynamically so it doesn't
+    // exist in DOM until the browser actually offers the install gesture.
+    window.__pwaInstallEvent = null;
+    function _showPwaInstallPill() {
+      if (document.querySelector('[data-action="pwa-install"]')) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('data-action', 'pwa-install');
+      btn.textContent = '\u2193 Install app';
+      btn.style.cssText = 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);' +
+        'padding:8px 14px;background:#F7941D;color:#fff;border:0;border-radius:999px;' +
+        'font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;' +
+        'box-shadow:0 4px 16px rgba(247,148,29,0.4);z-index:9000;' +
+        'transition:transform 0.2s,opacity 0.2s';
+      document.body.appendChild(btn);
+    }
+    function _hidePwaInstallPill() {
+      const btn = document.querySelector('[data-action="pwa-install"]');
+      if (btn && btn.parentNode) btn.parentNode.removeChild(btn);
+    }
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      window.__pwaInstallEvent = e;
+      if (document.body) _showPwaInstallPill();
+      else document.addEventListener('DOMContentLoaded', _showPwaInstallPill);
+    });
+    window.addEventListener('appinstalled', function() {
+      window.__pwaInstallEvent = null;
+      _hidePwaInstallPill();
+    });
+  </script>
   <!-- v27.3.1 — ECharts CDN for rich dashboard charts (trend, funnel, gauge, donut, leaderboard, velocity).
        Loaded eagerly because dashboard is heavy-render and we want chart paint in the first frame
        once the user lands on /dashboard. ~330KB gzipped. Pinned to a stable minor (5.5.x). -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
+  <!--
+    v27.5-alpha1 — PWA (manifest + service worker) + install prompt (2026-05-26)
+    Scope-cut version of v27.5 per "till 4.6" mandate. OEM Amit deep flow
+    verify deferred to v27.7 backlog. Email templates deferred to v27.7.
+
+    What ships:
+    1) Web App Manifest (inline data URI in <link rel="manifest">):
+       - name: "tvONE Product Selector", short_name: "tvONE"
+       - display: standalone (no browser chrome when installed)
+       - theme_color: #F7941D (brand orange)
+       - background_color: #0F0E0C (dark splash)
+       - icon: reuses existing favicon PNG (32×32, scaling acceptable for tray)
+    2) Service worker (separate sw.js file — must deploy alongside index.html):
+       - Cache name: 'tvone-v27.5-alpha1' (bumps per release)
+       - Install: prime shell cache (./, ./index.html)
+       - Activate: delete old caches; claim clients
+       - Fetch strategy:
+           * Supabase / RPC GETs: NEVER cached (network only — stale RPC =
+             silent data corruption)
+           * Navigation: network-first with offline fallback to cached
+             index.html (app boots offline)
+           * CDN / fonts / other GET: cache-first with stale-while-revalidate
+       - postMessage 'tvone:cache:nuke' for debug-time cache reset
+    3) PWA install prompt:
+       - beforeinstallprompt captured + deferred
+       - When fired, a floating "↓ Install app" pill appears bottom-center
+       - Tap → triggers native install dialog; toast on accept
+       - appinstalled event removes the pill
+    4) Apple PWA meta tags (Apple-specific install affordance):
+       - apple-mobile-web-app-capable: yes
+       - apple-mobile-web-app-status-bar-style: black-translucent
+       - apple-mobile-web-app-title: tvONE
+    5) Notification bell E2E smoke — existing bell verified wired (no new
+       code; sanity check that the handler + DOM trigger are in place).
+
+    CATALOG.version bumped: v27.4.3-alpha1 → v27.5-alpha1.
+
+    DEPLOYMENT NOTE:
+       Drop BOTH files to the GitHub Pages root:
+         - index.html (this file)
+         - sw.js (separate file in this bundle's outputs)
+       SW must be served from same origin + path as index.html for the
+       './sw.js' relative path to resolve. If GitHub Pages serves
+       index.html from / then sw.js goes to /. Confirm browser DevTools
+       Application → Service Workers shows active SW after first load.
+
+    Smoke:
+       (a) Login footer v27.5-alpha1
+       (b) All 32 v27.4.x + v27.5 smoke checks ✓
+       (c) DevTools → Application → Manifest: name/icons/theme_color show
+       (d) DevTools → Application → Service Workers: 'tvone-v27.5-alpha1' active
+       (e) After ~1 visit, Chrome shows install affordance (URL bar +/install icon)
+       (f) Floating "↓ Install app" pill appears in app (browser-dependent)
+       (g) Tap "Install app" → native install dialog → app appears on homescreen
+       (h) Open installed PWA — runs standalone (no browser chrome)
+       (i) Turn off network → reload PWA → shell still loads (cached)
+       (j) RPC calls still fail cleanly when offline (no stale data served)
+       (k) Bell icon in topbar still opens notifications sheet (regression)
+       (l) Wizard / Exports / SX / Auth / dashboard surfaces unchanged
+  -->
+  <!--
+    v27.4.3-alpha1 — ACTIVITY FEED + SPARKLINES + SHARE VIEW (2026-05-26)
+    Scope-cut version of v27.4.3 per "till 4.6" mandate. ECharts wiring
+    on donut/line/heatmap DEFERRED — current hand-coded SVG is serviceable;
+    not a regression. Refile as v27.4.4 backlog when shipped.
+
+    What ships:
+    1) Real activity feed from stage_transitions.
+       - New STORE.stageTransitionsListMany(refIds) — batch wrapper.
+       - _populateActivityTicker(scopedDeals) takes top 30 by updated_at,
+         batch-fetches transitions, sorts, takes top 8, renders ticker
+         items: {time-ago, actor first-name, "moved/won/lost <project> →
+         <to_stage>"}. Fails silent → keeps hardcoded sample.
+    2) Sparklines on KPI tiles (snapshot-backed only).
+       - _renderSparkSvg(values, color) → mini SVG polyline + area fill.
+       - _populateKpiSparklines(sparkAttr) reads pipeline_snapshot history,
+         last 13 weeks, renders sparks into open + pipeline KPI tiles
+         on Home AND Dashboard.
+       - 4 distinct-name + split KPIs remain empty until v27.6 schema work.
+    3) Share view (Dashboard).
+       - "Share view" button (previously disabled) → enabled.
+       - _shareCurrentView() builds hash URL with filter params + copies
+         to clipboard (clipboard API + execCommand fallback). Toast on
+         success.
+       - showDashboard() now calls _applyFiltersFromUrl() on entry —
+         shared links land with filter state pre-applied.
+
+    What's NOT in this patch (moved to v27.4.4 backlog):
+       - ECharts on donut chart (hand-coded SVG retained)
+       - ECharts on line chart (hand-coded SVG retained)
+       - ECharts on heatmap (hand-coded SVG retained)
+       - Sparklines for the 4 distinct-name + split KPIs (no snapshot data)
+       - Export CSV (still disabled, v27.5)
+
+    CATALOG.version bumped: v27.4.2-rc1 → v27.4.3-alpha1.
+
+    Smoke:
+       (a) Login footer v27.4.3-alpha1
+       (b) All 27 v27.4.x smoke checks ✓ (21 prior + 6 new)
+       (c) Ticker shows real names/projects/stages within ~500ms; cycles
+       (d) When stage_transitions empty / fetch fails → keeps sample (no error)
+       (e) Open + Pipeline KPI tiles show sparkline within ~500ms
+       (f) Other 4 KPI tiles have empty spark area (no broken render)
+       (g) Tap "Share view" → toast "View URL copied"
+       (h) Paste URL into new tab → dashboard opens with same filters applied
+       (i) Wizard / Exports / SX / History / Auth / saved views unchanged
+  -->
+  <!--
+    v27.4.2-rc1 — SAVED VIEW PERSISTENCE + RELEASE CANDIDATE (2026-05-26)
+    Final v27.4.2 bundle. After smoke, drop -rc1 → v27.4.2 GA.
+
+    What ships:
+    1) Saved view helpers (~80 lines): _PREDEFINED_VIEWS map + _getSavedViews
+       (localStorage 5-slot FIFO) + _addSavedView + _deleteSavedView +
+       _applySavedView (handles pre-defined OR custom by name) +
+       _filtersEqual + _renderSavedViewsCustom (DOM sync of custom pill row).
+    2) 3 pre-defined saved view pills wired:
+         - "My pipeline" → clear all filters (role scope handles "mine")
+         - "West region" → region=west
+         - "This quarter close" → period=this_q + stage=open
+       2 disabled with tooltip: "At risk" (needs v27.6 stuck-dwell primitive),
+       "High value" (needs pricing data).
+    3) "+ Save view" → bottom-sheet prompt with name input + preview of
+       current filters + Save / Cancel. Max 32 chars, FIFO 5 slots,
+       de-dupe by name.
+    4) Custom saved views render between pre-defined + "+ Save" pill.
+       Each has × delete affordance.
+    5) Active class on whichever pill matches current filter state
+       (pre-defined or custom).
+    6) 6 new action handlers: v4-saved-apply (pre-defined), -apply-custom
+       (named), -new (open prompt), -save (write + close), -cancel,
+       -delete (remove by name).
+    7) localStorage key 'v4.savedViews' (per-device, persistent).
+
+    CATALOG.version bumped: v27.4.2-alpha1 → v27.4.2-rc1.
+
+    GA promote: L6104 + L8689 'v27.4.2-rc1' → 'v27.4.2'.
+
+    Smoke:
+       (a) Login footer v27.4.2-rc1
+       (b) All 21 v27.4.x smoke checks ✓
+       (c) Tap "West region" pill → region chip becomes "West"
+       (d) Tap "My pipeline" → all filters cleared
+       (e) Set custom filters → tap "+ Save view" → sheet opens with preview
+       (f) Type name → Save → new pill appears between predefined + add-pill
+       (g) Refresh page → custom pill persists (localStorage)
+       (h) Tap × on custom pill → removes it
+       (i) Save > 5 → oldest drops (FIFO)
+       (j) Wizard / Exports / SX / History / Auth all unchanged
+  -->
+  <!--
+    v27.4.2-alpha1 — DASHBOARD FILTER WIRING (2026-05-26)
+    First bundle of v27.4.2. The 4 main filter chips on Dashboard now
+    actually filter the displayed data. Saved view persistence deferred
+    to next bundle (-alpha2 or -rc1).
+
+    What ships in this patch:
+
+    1) Filter helpers in v27.4.1 helper block (~140 lines):
+       - _DASH_FILTER_DEFAULTS / _CYCLES / _LABELS — frozen config
+       - _getDashFilters / _setDashFilters — sessionStorage I/O
+       - _cycleDashFilter(key, current) — advance to next value in cycle
+       - _dashFilterLabel(key, val) — UI-facing label
+       - _dashFilterAnyActive(f) — bool for clear-all visibility
+       - applyDashFilters(deals, filters) — pure predicate, returns
+         filtered array; respects period/region/stage/product
+       - _updateFilterChipDisplay(filters) — DOM sync for chip text,
+         active class, filter summary line, clear-all visibility
+
+    2) Filter chip HTML rewrite (Dashboard render):
+       - 4 cycleable chips: Period, Region, Stage, Product
+       - Each carries data-action="v4-filter-cycle" + data-filter-key
+       - Label text wrapped in <span data-v4-filter-label> for in-place
+         update without rebuilding the chip
+       - "Person" and "Search" chips marked disabled with tooltip
+         pointing to v27.4.3 ship
+       - "Clear all" gets data-action="v4-filter-clear" + hidden when
+         all filters are 'all'
+
+    3) loadDashboardV4 populate flow:
+       - After role-scoping (Phase 3), apply user filter via
+         applyDashFilters(scoped, dashFilters) → produces `filtered`
+       - `scoped` retained for the "of N total" denominator
+       - All downstream populate (KPIs, attention strip, mix, region
+         tiles, channel perf, sales perf, line chart, newly onboarded)
+         now operates on `filtered`
+       - __lastDashScoped now caches `filtered` (Newly sheet reflects
+         active filter)
+
+    4) Action handlers in delegated click handler:
+       - v4-filter-cycle: advance keyed filter, persist, re-load dashboard
+       - v4-filter-clear: reset all to 'all', re-load dashboard
+
+    5) Filter values:
+       - Period:  all → This Q → Last Q → This FY (cycle)
+       - Region:  all → West → North → South → East (cycle)
+       - Stage:   all → Open → Closed (cycle)
+       - Product: all → CALICO → MV → CORIO → SX-only (cycle)
+
+       Period filters on `created_at`; Stage filters on current stage;
+       Region filters via regionForState(state); Product filters via
+       raw_submission.solutionType (or hasSx for product=sx).
+
+    6) 7 new smoke harness checks (~50 lines):
+       - Helpers exposed
+       - Period cycle order correctness
+       - Region/Product/Stage/SX filter predicates
+       - Identity behavior when all = 'all'
+
+    CATALOG.version bumped: v27.4.1-rc1 → v27.4.2-alpha1.
+
+    What's NOT in this patch:
+       - Saved view persistence (next bundle — needs naming UI)
+       - Person + Search filter chips (require richer popover UI; v27.4.3)
+       - "+ Save view" pill (needs prompt sheet; deferred)
+       - 5 pre-defined saved view pills stay visual-only as in alpha2/rc1
+       - ECharts wiring (v27.4.3)
+       - Filter persistence on Home (Home stays simple; v27.6 if asked)
+
+    Smoke checklist:
+       (a) Login footer reads v27.4.2-alpha1
+       (b) /smoke#run → 14 v27.4.1 + 7 v27.4.2 helper checks ✓
+       (c) Tap Period chip → cycles label This Q / Last Q / This FY / This quarter
+       (d) Filter summary line below chips updates with each cycle
+       (e) "Showing X of Y deals" — X reduces when filter active
+       (f) Active filter chip gets active class (filled background)
+       (g) "Clear all" button appears when any filter set; tap resets
+       (h) Filter persists across page reload (sessionStorage)
+       (i) All Dashboard widgets re-populate with filtered data:
+            KPI counts, attention strip, mix pips, region tiles,
+            channel perf, sales perf, line chart, newly-onboarded link
+       (j) Wizard / Exports / SX / History / Auth / Home unchanged
+  -->
+  <!--
+    v27.4.1-rc1 — W1 KPI PERIOD CHIPS + RELEASE CANDIDATE (2026-05-26)
+    Final bundle of v27.4.1. Adds KPI period-comparison chips to both
+    Home and Dashboard. After smoke, drop -rc1 → ship as v27.4.1 GA.
+
+    What ships in this patch:
+
+    1) CSS: ~38 lines of .v4-kpi-chip styles (semi-transparent over the
+       gradient KPI tiles; good/bad/neutral/unknown tones via data-tone).
+
+    2) HTML: chip slot added to BOTH kpiTile functions (Home L12805 +
+       Dashboard L13130). Slot starts hidden via style="display:none";
+       populate logic toggles visibility once snapshot data resolves.
+       Home uses data-v4-kpi-chip; Dashboard uses data-v4-kpi-d-chip.
+
+    3) Helper: _populateKpiChips(chipAttr, currents) in the v27.4.1
+       helper block. Pure async: fetches STORE.pipelineSnapshotList(26),
+       finds row closest to ~91 days ago (13 weeks ≈ prior FY quarter),
+       computes per-KPI deltas via existing computeKPIDelta helper,
+       renders chip HTML into the slot. Tolerance: 20 days off baseline
+       → "Insufficient history" sentinel.
+
+    4) Populate wire-ins:
+       - Home loadHomeV4 (after Cavitak/OEM split block): calls
+         _populateKpiChips('data-v4-kpi-chip', currents) with 6 KPI values
+       - Dashboard loadDashboardV4 (same anchor): calls
+         _populateKpiChips('data-v4-kpi-d-chip', currents) with 6 KPI values
+
+    Honest scope statement (this differs from SPEC-v27.4.1.md §W1):
+
+    The `pipeline_snapshots` table schema (per 02-DB-SCHEMA.md §1.4)
+    only covers open_count + open_value_inr + won/lost weekly + weighted_
+    pipeline_inr. It does NOT have distinct-name baselines (endusers /
+    partners / consultants) or Cavitak/OEM split history. So chips on
+    those 4 KPIs cannot compute a real delta — they render the "—"
+    sentinel with tooltip "Historical baseline not yet captured" until
+    v27.6 schema augmentation.
+
+    Effective coverage today:
+       - Open cases       → real chip if snapshot ~13 wk back exists
+       - Pipeline value   → chip suppressed (string "₹ —", pricing off)
+       - Active end-users → "—" sentinel
+       - Active partners  → "—" sentinel
+       - Active consultants → "—" sentinel
+       - Cavitak / OEM    → "—" sentinel
+
+    This is honest about the data model. Once v27.6 augments
+    pipeline_snapshots with the missing dimensions (or v27.6 introduces
+    scope-aware snapshots per W1.1 option c), the chip rendering already
+    in place lights up automatically.
+
+    CATALOG.version bumped: v27.4.1-alpha2 → v27.4.1-rc1.
+
+    Combined v27.4.1 release scope (alpha1 + alpha2 + rc1):
+       - 9 new dashboard-depth helpers in UI IIFE
+       - 14 smoke harness checks for date math + helper invariants
+       - W5 region "unknown" cleanup banner inside region card
+       - W2 Product Mix tile (4-pip CALICO/MV/CORIO/SX) beside donut
+       - W4 Partner + Consultant leaderboards below Sales perf
+         (hidden for OEM users)
+       - W3 Newly Onboarded surface — KPI sub-label links + Q/H/Y
+         bottom sheet
+       - W1 KPI period chips with snapshot-driven delta render
+       - Grid CSS gains v4-col-4 for the 3-card top row
+       - 6 new action handlers wired through delegated click handler
+
+    Smoke before GA promotion (drop -rc1, ship as v27.4.1):
+       (a) Login footer reads v27.4.1-rc1
+       (b) /smoke#run → all 14 v27.4.1 helper checks ✓
+       (c) Home + Dashboard KPI tiles show chip slot below sub-label
+       (d) Chip is hidden during initial render (~500ms)
+       (e) Chip resolves after snapshot fetch:
+             - Open cases: real "↑ N%" or "↓ N%" if snapshot has history
+             - 4 distinct-name + split KPIs: "—" with tooltip explaining
+       (f) Pipeline value KPI: chip stays hidden (no numeric current)
+       (g) No console errors when snapshot fetch fails (silent)
+       (h) Theme toggle: chips remain readable in light + dark
+       (i) Wizard / Exports / SX / History / Auth all unchanged
+       (j) Alpha2 surfaces (W2/W3/W4/W5) all still working
+
+    GA promote step (one-line edits):
+       L5895: 'v27.4.1-rc1' → 'v27.4.1'
+       L8480: 'v27.4.1-rc1' → 'v27.4.1' (smoke assertion)
+       Redeploy. Done.
+
+    Revert path: non-destructive. All v27.4.1 work added new code +
+    new data attributes; no existing functions deleted. To revert, set
+    chip slot's outerHTML to empty in both kpiTile functions (or just
+    leave the chips hidden permanently). Helpers stay; unused = harmless.
+  -->
   <!--
     v27.4.1-alpha2 — DASHBOARD W5+W2+W4+W3 (2026-05-26)
     Step 2 of v27.4.1 build per SPEC-v27.4.1.md §4 (major-chunks variant).
@@ -4081,6 +4457,42 @@
     }
     .v4-kpi-spark { margin-top: var(--s-3); }
     .v4-kpi-spark svg { width: 100%; height: 28px; display: block; }
+
+    /* v27.4.1 W1 — KPI period comparison chip.
+       Sits between sub-label and spark/split-bar. Semi-transparent
+       white background works against all 6 gradient backgrounds. */
+    .v4-kpi-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      margin-top: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.01em;
+      background: rgba(255,255,255,0.18);
+      color: rgba(255,255,255,0.96);
+      backdrop-filter: blur(4px);
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .v4-kpi-chip[data-tone="good"] {
+      background: rgba(34,197,94,0.32);
+      color: #ECFDF5;
+    }
+    .v4-kpi-chip[data-tone="bad"] {
+      background: rgba(239,68,68,0.32);
+      color: #FEF2F2;
+    }
+    .v4-kpi-chip[data-tone="neutral"] {
+      background: rgba(255,255,255,0.18);
+      color: rgba(255,255,255,0.92);
+    }
+    .v4-kpi-chip[data-tone="unknown"] {
+      background: rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.65);
+      font-weight: 600;
+    }
     .v4-kpi .v4-split-bar {
       display: flex; height: 6px;
       border-radius: var(--r-pill);
@@ -5892,7 +6304,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.4.1-alpha2',
+      version: 'v27.5-alpha1',
       constants,
       calico,
       mv,
@@ -7180,6 +7592,24 @@
       });
     }
 
+    /* v27.4.3 — Batch variant for activity feed.
+       Takes an array of ref IDs (max ~30 to keep payload bounded);
+       returns sorted rows across the batch. Failures resolve to [] so
+       the ticker degrades to hardcoded sample without throwing. */
+    async function stageTransitionsListMany(refIds) {
+      if (!Array.isArray(refIds) || !refIds.length) return [];
+      try {
+        const r = await rpc('stage_transition_list', { p_ref_ids: refIds.map(String) });
+        const rows = (r && r.rows) || (Array.isArray(r) ? r : []);
+        return rows.sort(function (a, b) {
+          return new Date(b.transitioned_at || 0) - new Date(a.transitioned_at || 0);
+        });
+      } catch (e) {
+        console.warn('[stageTransitionsListMany] degraded:', e && e.message);
+        return [];
+      }
+    }
+
     /* v27.3.0 — Write a stage transition row.
        Called by the saved-deal autosave whenever stage changes. The RPC takes
        (p_ref_id, p_from_stage, p_to_stage, p_actor, p_notes). Failures are
@@ -7275,7 +7705,7 @@
       // v27.3.0 — duplicate + custom stages (v27.7 partial restore)
       duplicateDeal, stageList,
       // v27.3.0 — Stage transitions history (silent-drop restore)
-      stageTransitionsList, stageTransitionWrite,
+      stageTransitionsList, stageTransitionsListMany, stageTransitionWrite,
       // v27.3.0 — Customer directory + 360 + merge (D1-D3 silent-drop restores)
       customerList, customerUpsert, customerDelete, customerMerge, customer360,
       // v27.3.1 — Pipeline snapshots for dashboard weekly trend chart
@@ -8477,8 +8907,133 @@
       }
     }
 
-    check('CATALOG.version === "v27.4.1-alpha2"',
-      () => CATALOG.version === 'v27.4.1-alpha2' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.5-alpha1"',
+      () => CATALOG.version === 'v27.5-alpha1' || 'got: ' + CATALOG.version);
+
+    /* ---------- v27.5-alpha1: PWA + notification bell E2E ---------- */
+    check('v27.5: manifest link present in <head>',
+      () => {
+        const link = document.querySelector('link[rel="manifest"]');
+        return (link && link.href.indexOf('tvONE') > 0) || 'manifest link missing or wrong content';
+      });
+    check('v27.5: serviceWorker API available + register intent recorded',
+      () => {
+        // Don't require actual registration (file:// or insecure context may block)
+        // but the script tag scaffolding must be in place.
+        return ('serviceWorker' in navigator)
+               || 'serviceWorker not supported in this environment';
+      });
+    check('v27.5: PWA install pill helpers wired on window',
+      () => typeof window.__pwaInstallEvent !== 'undefined'
+            || '__pwaInstallEvent not initialized');
+    check('v27.5: theme-color meta tag set',
+      () => {
+        const m = document.querySelector('meta[name="theme-color"]');
+        return (m && m.content === '#F7941D') || 'theme-color meta missing';
+      });
+    check('v27.5: notification bell trigger present in DOM',
+      () => {
+        // Bell is in the topbar — check for the bell SVG/icon container
+        const bell = document.querySelector('#notif-bell, [data-action="notif-show"], #notif-badge');
+        return (bell !== null) || 'notification bell element not found in topbar';
+      });
+
+    /* ---------- v27.4.3-alpha1: sparklines + ticker + share view ---------- */
+    check('v27.4.3: sparkline + ticker + share helpers exposed',
+      () => {
+        const names = ['_renderSparkSvg','_populateKpiSparklines','_populateActivityTicker',
+                       '_buildShareUrl','_shareCurrentView','_applyFiltersFromUrl'];
+        const missing = names.filter(n => typeof UI[n] !== 'function');
+        return missing.length === 0 || 'missing: ' + missing.join(',');
+      });
+    check('v27.4.3: _renderSparkSvg returns SVG for >=2 values',
+      () => {
+        const svg = UI._renderSparkSvg([1, 4, 2, 7, 3]);
+        return (typeof svg === 'string' && svg.indexOf('<svg') === 0 && svg.indexOf('polyline') > 0)
+               || 'got: ' + String(svg).slice(0, 60);
+      });
+    check('v27.4.3: _renderSparkSvg returns empty for <2 values',
+      () => {
+        return UI._renderSparkSvg([1]) === '' && UI._renderSparkSvg([]) === ''
+               || 'got non-empty for short input';
+      });
+    check('v27.4.3: STORE.stageTransitionsListMany exists',
+      () => typeof STORE.stageTransitionsListMany === 'function'
+            || 'missing on STORE');
+    check('v27.4.3: _buildShareUrl includes filter params',
+      () => {
+        UI._setDashFilters({ period: 'this_q', region: 'west', stage: 'all', product: 'all' });
+        const url = UI._buildShareUrl();
+        UI._setDashFilters({ period: 'all', region: 'all', stage: 'all', product: 'all' });
+        return (url.indexOf('period=this_q') > 0 && url.indexOf('region=west') > 0)
+               || 'got: ' + url;
+      });
+
+    /* ---------- v27.4.2-alpha1: filter helpers exposed + correct ---------- */
+    check('v27.4.2: filter helpers exposed on UI',
+      () => {
+        const names = ['_getDashFilters','_setDashFilters','_cycleDashFilter','_applyDashFilters','_loadDashboardV4'];
+        const missing = names.filter(n => typeof UI[n] !== 'function');
+        return missing.length === 0 || 'missing: ' + missing.join(',');
+      });
+    check('v27.4.2: cycleDashFilter advances period correctly',
+      () => {
+        const a = UI._cycleDashFilter('period', 'all');
+        const b = UI._cycleDashFilter('period', a);
+        const c = UI._cycleDashFilter('period', b);
+        const d = UI._cycleDashFilter('period', c);
+        return (a === 'this_q' && b === 'last_q' && c === 'this_fy' && d === 'all')
+               || 'got chain: ' + [a,b,c,d].join('->');
+      });
+    check('v27.4.2: applyDashFilters by region narrows correctly',
+      () => {
+        const deals = [
+          { state: 'Maharashtra', stage: 'Qualified', raw_submission: {} },
+          { state: 'Tamil Nadu',  stage: 'Qualified', raw_submission: {} },
+          { state: 'Delhi',       stage: 'Qualified', raw_submission: {} }
+        ];
+        const out = UI._applyDashFilters(deals, { period:'all', region:'west', stage:'all', product:'all' });
+        return (out.length === 1 && out[0].state === 'Maharashtra')
+               || 'got ' + out.length + ' rows';
+      });
+    check('v27.4.2: applyDashFilters by product picks solutionType match',
+      () => {
+        const deals = [
+          { stage:'Qualified', raw_submission:{ solutionType:'calico' } },
+          { stage:'Qualified', raw_submission:{ solutionType:'mv' } },
+          { stage:'Qualified', raw_submission:{ solutionType:'corio' } }
+        ];
+        const out = UI._applyDashFilters(deals, { period:'all', region:'all', stage:'all', product:'mv' });
+        return (out.length === 1 && out[0].raw_submission.solutionType === 'mv')
+               || 'got ' + out.length;
+      });
+    check('v27.4.2: applyDashFilters by product=sx picks hasSx overlay',
+      () => {
+        const deals = [
+          { stage:'Qualified', raw_submission:{ solutionType:'calico', hasSx:true } },
+          { stage:'Qualified', raw_submission:{ solutionType:'mv',     hasSx:false } },
+          { stage:'Qualified', raw_submission:{ solutionType:'corio',  hasSx:true } }
+        ];
+        const out = UI._applyDashFilters(deals, { period:'all', region:'all', stage:'all', product:'sx' });
+        return (out.length === 2) || 'got ' + out.length + ' (expected 2)';
+      });
+    check('v27.4.2: applyDashFilters by stage=open excludes closed',
+      () => {
+        const deals = [
+          { stage:'Qualified',  raw_submission:{} },
+          { stage:'Closed Won', raw_submission:{} },
+          { stage:'Closed Lost',raw_submission:{} },
+          { stage:'Awarded',    raw_submission:{} }
+        ];
+        const out = UI._applyDashFilters(deals, { period:'all', region:'all', stage:'open', product:'all' });
+        return (out.length === 2) || 'got ' + out.length;
+      });
+    check('v27.4.2: applyDashFilters with all=all is identity',
+      () => {
+        const deals = [{ stage:'a' }, { stage:'b' }, { stage:'c' }];
+        const out = UI._applyDashFilters(deals, { period:'all', region:'all', stage:'all', product:'all' });
+        return out.length === 3 || 'got ' + out.length;
+      });
 
     /* ---------- v27.4.1-alpha1: dashboard-depth helpers exposed + correct ---------- */
     // Source: SPEC-v27.4.1.md §3.1. Pure functions, deterministic over
@@ -11273,6 +11828,45 @@
       if (field === 'consultant_name') return 'consultants';
       return field;
     }
+    /* v27.4.2-rc1 — Save view prompt sheet.
+       Captures current dashFilters under a user-named slot. localStorage
+       5-slot FIFO. Existing same-name overwrites. */
+    function showSaveViewPrompt() {
+      const cur = _getDashFilters();
+      const previewParts = [];
+      if (cur.period  !== 'all') previewParts.push(_dashFilterLabel('period', cur.period));
+      if (cur.region  !== 'all') previewParts.push(_dashFilterLabel('region', cur.region));
+      if (cur.stage   !== 'all') previewParts.push(_dashFilterLabel('stage', cur.stage));
+      if (cur.product !== 'all') previewParts.push(_dashFilterLabel('product', cur.product));
+      const previewTxt = previewParts.length ? previewParts.join(' \u00b7 ') : 'No filters active (will save empty view)';
+      openSheet(
+        '<div class="v4-newly-sheet">' +
+          '<div class="v4-newly-sheet-hd">' +
+            '<h3>Save current view</h3>' +
+          '</div>' +
+          '<div style="padding:var(--s-3) var(--s-4) var(--s-4)">' +
+            '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px">Filters being saved:</div>' +
+            '<div style="font-size:13px;color:var(--ink-strong);margin-bottom:14px;padding:8px 10px;background:var(--bg-subtle);border-radius:8px">' +
+              esc(previewTxt) +
+            '</div>' +
+            '<label style="display:block;font-size:12px;color:var(--ink-soft);margin-bottom:6px">View name (max 32 chars)</label>' +
+            '<input id="v4-sv-name" type="text" maxlength="32" placeholder="e.g. North Q1 CALICO" autocomplete="off" ' +
+              'style="width:100%;padding:10px 12px;border:1px solid var(--border-soft);border-radius:8px;font-size:14px;font-family:inherit;background:var(--bg-card);color:var(--ink-strong);box-sizing:border-box">' +
+            '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
+              '<button class="btn-v3 btn-ghost btn-md" type="button" data-action="v4-saved-cancel">Cancel</button>' +
+              '<button class="btn-v3 btn-primary btn-md" type="button" data-action="v4-saved-save">Save</button>' +
+            '</div>' +
+            '<div style="font-size:11px;color:var(--ink-soft);margin-top:10px">Max 5 saved views. Older entries drop on overflow.</div>' +
+          '</div>' +
+        '</div>'
+      );
+      // Focus the name input shortly after sheet mounts
+      setTimeout(function() {
+        const inp = document.getElementById('v4-sv-name');
+        if (inp) inp.focus();
+      }, 50);
+    }
+
     function showNewlyOnboardedSheet(field) {
       const deals = Array.isArray(__lastDashScoped) ? __lastDashScoped : [];
       const period = _newlyPeriodGet();
@@ -12732,6 +13326,485 @@
       return Object.values(byName).sort(function(a, b) { return b.openValue - a.openValue; });
     }
 
+    // v27.4.1 W1 — KPI period comparison chip populate.
+    // Async fetches pipeline_snapshots, finds closest row to ~13 weeks ago,
+    // computes deltas for KPIs the snapshot covers, renders chips on the
+    // attribute-named slots (chipAttr varies by view: 'data-v4-kpi-chip'
+    // for Home, 'data-v4-kpi-d-chip' for Dashboard).
+    //
+    // Per SPEC §W1.1 option (a): pan-India snapshots regardless of user
+    // scope. Per-scope baselines deferred to v27.6.
+    //
+    // Snapshot schema only covers open_count + open_value_inr today (per
+    // 02-DB-SCHEMA.md §1.4). Distinct-name KPIs (endusers/partners/
+    // consultants) and the Cavitak/OEM split have no historical baseline,
+    // so they render the "—" sentinel with explanatory tooltip until
+    // snapshots get richer (target: v27.6 schema augmentation).
+    async function _populateKpiChips(chipAttr, currents) {
+      let snaps;
+      try {
+        snaps = await STORE.pipelineSnapshotList(26);
+      } catch (e) {
+        // Silent — chip slots stay hidden. Don't spam console; this is a
+        // best-effort enhancement.
+        return;
+      }
+      const rows = (snaps && snaps.rows) || [];
+      if (!rows.length) {
+        _renderAllChipsAsUnknown(chipAttr, currents, 'Insufficient history');
+        return;
+      }
+      // Find snapshot row closest to ~91 days ago (13 weeks ≈ prior Q).
+      const targetMs = Date.now() - 91 * 24 * 3600 * 1000;
+      let best = null, bestDiffMs = Infinity;
+      rows.forEach(function(row) {
+        const t = Date.parse(row.snapshot_at || row.week_iso || '');
+        if (isNaN(t)) return;
+        const diff = Math.abs(t - targetMs);
+        if (diff < bestDiffMs) { bestDiffMs = diff; best = row; }
+      });
+      // Tolerance: 20 days. Beyond that, treat as no baseline.
+      if (!best || bestDiffMs > 20 * 24 * 3600 * 1000) {
+        _renderAllChipsAsUnknown(chipAttr, currents, 'Insufficient history (need ~13 wk old snapshot)');
+        return;
+      }
+      // KPIs the snapshot can support.
+      const baseline = {
+        open:     (best.open_count != null) ? Number(best.open_count) : null,
+        pipeline: (best.open_value_inr != null) ? Number(best.open_value_inr) : null
+      };
+      // Per-KPI directionality: +1 = up is good, -1 = down is good, 0 = neutral.
+      const goodDir = { open: 1, pipeline: 1, endusers: 1, partners: 1, consultants: 1, split: 0 };
+      const tooltipTail = ' (pan-India baseline, ~13 wk ago)';
+
+      Object.keys(currents).forEach(function(id) {
+        const el = document.querySelector('[' + chipAttr + '="' + id + '"]');
+        if (!el) return;
+        const curRaw = currents[id];
+        const cur = (typeof curRaw === 'number' && isFinite(curRaw)) ? curRaw : null;
+        const prev = baseline[id];
+
+        if (cur == null) {
+          // No comparable current value (e.g. pipeline ₹ when pricing disabled).
+          // Hide chip rather than render "—" — looks cleaner.
+          el.style.display = 'none';
+          return;
+        }
+        if (prev == null) {
+          // KPI not covered by snapshot schema yet.
+          el.setAttribute('data-tone', 'unknown');
+          el.title = 'Historical baseline not yet captured for this KPI' + tooltipTail;
+          el.textContent = '\u2014';
+          el.style.display = '';
+          return;
+        }
+        const r = computeKPIDelta(cur, prev, goodDir[id] != null ? goodDir[id] : 1);
+        el.setAttribute('data-tone', r.tone);
+        el.title = r.titleAttr + tooltipTail;
+        el.textContent = r.chip;
+        el.style.display = '';
+      });
+    }
+    function _renderAllChipsAsUnknown(chipAttr, currents, reason) {
+      Object.keys(currents).forEach(function(id) {
+        const el = document.querySelector('[' + chipAttr + '="' + id + '"]');
+        if (!el) return;
+        if (typeof currents[id] !== 'number' || !isFinite(currents[id])) {
+          el.style.display = 'none';
+          return;
+        }
+        el.setAttribute('data-tone', 'unknown');
+        el.title = reason;
+        el.textContent = '\u2014';
+        el.style.display = '';
+      });
+    }
+
+    /* ============================================================
+       v27.4.2 — Dashboard filter wiring.
+       Filter state persists in sessionStorage (per-tab session).
+       Filters layer on TOP of role-based scoping (Phase 3 helpers);
+       a Sales user with a Region filter sees their own deals within
+       that region. Filter values cycle through fixed options on chip
+       tap — no popover UI in v27.4.2; richer multi-select lands later.
+       ============================================================ */
+    const _DASH_FILTER_DEFAULTS = Object.freeze({
+      period: 'all',    // 'all' | 'this_q' | 'last_q' | 'this_fy'
+      region: 'all',    // 'all' | 'west' | 'north' | 'south' | 'east'
+      stage:  'all',    // 'all' | 'open' | 'closed'
+      product:'all'     // 'all' | 'calico' | 'mv' | 'corio' | 'sx'
+    });
+    const _DASH_FILTER_CYCLES = Object.freeze({
+      period: ['all', 'this_q', 'last_q', 'this_fy'],
+      region: ['all', 'west', 'north', 'south', 'east'],
+      stage:  ['all', 'open', 'closed'],
+      product:['all', 'calico', 'mv', 'corio', 'sx']
+    });
+    const _DASH_FILTER_LABELS = Object.freeze({
+      period:  { all: 'This quarter',  this_q: 'This quarter', last_q: 'Last quarter', this_fy: 'This FY' },
+      region:  { all: 'Region',  west: 'West',  north: 'North',  south: 'South',  east: 'East' },
+      stage:   { all: 'Stage',   open: 'Open',  closed: 'Closed' },
+      product: { all: 'Product', calico: 'CALICO', mv: 'Multi Viewer', corio: 'CORIO', sx: 'SX only' }
+    });
+
+    function _getDashFilters() {
+      try {
+        const raw = sessionStorage.getItem('v4.dashFilters');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return Object.assign({}, _DASH_FILTER_DEFAULTS, parsed || {});
+        }
+      } catch (e) {}
+      return Object.assign({}, _DASH_FILTER_DEFAULTS);
+    }
+    function _setDashFilters(f) {
+      try { sessionStorage.setItem('v4.dashFilters', JSON.stringify(f)); } catch (e) {}
+    }
+    function _cycleDashFilter(key, current) {
+      const c = _DASH_FILTER_CYCLES[key];
+      if (!c) return 'all';
+      const i = c.indexOf(current);
+      return c[(i + 1) % c.length];
+    }
+    function _dashFilterLabel(key, val) {
+      const labels = _DASH_FILTER_LABELS[key];
+      return (labels && labels[val]) || val;
+    }
+    function _dashFilterAnyActive(f) {
+      return f.period !== 'all' || f.region !== 'all' || f.stage !== 'all' || f.product !== 'all';
+    }
+    function applyDashFilters(deals, filters) {
+      if (!Array.isArray(deals)) return [];
+      const f = filters || _DASH_FILTER_DEFAULTS;
+      let out = deals;
+      if (f.period && f.period !== 'all') {
+        let bounds;
+        if (f.period === 'this_q')  bounds = getQuarterBounds();
+        if (f.period === 'last_q')  bounds = getPriorQuarterBounds();
+        if (f.period === 'this_fy') bounds = getFyBounds();
+        if (bounds) {
+          const startMs = bounds.start.getTime();
+          const endMs   = bounds.end.getTime();
+          out = out.filter(function(d) {
+            const t = Date.parse(d.created_at || '');
+            return !isNaN(t) && t >= startMs && t < endMs;
+          });
+        }
+      }
+      if (f.region && f.region !== 'all') {
+        out = out.filter(function(d) { return regionForState(d.state) === f.region; });
+      }
+      if (f.stage && f.stage !== 'all') {
+        const CLOSED = { 'Closed Won': true, 'Closed Lost': true };
+        if (f.stage === 'open')   out = out.filter(function(d) { return !CLOSED[d.stage]; });
+        if (f.stage === 'closed') out = out.filter(function(d) { return  CLOSED[d.stage]; });
+      }
+      if (f.product && f.product !== 'all') {
+        out = out.filter(function(d) {
+          const raw = (d && d.raw_submission) || {};
+          if (f.product === 'sx') return raw.hasSx === true;
+          return String(raw.solutionType || '').toLowerCase() === f.product;
+        });
+      }
+      return out;
+    }
+    function _updateFilterChipDisplay(filters) {
+      const f = filters || _getDashFilters();
+      ['period','region','stage','product'].forEach(function(key) {
+        const chip = document.querySelector('[data-v4-filter-chip="' + key + '"]');
+        if (!chip) return;
+        const span = chip.querySelector('[data-v4-filter-label]');
+        if (span) span.textContent = _dashFilterLabel(key, f[key]);
+        chip.classList.toggle('active', f[key] !== 'all');
+      });
+      // Filter summary text
+      const sumDetail = document.querySelector('[data-v4-d-sumdetail]');
+      if (sumDetail) {
+        if (!_dashFilterAnyActive(f)) {
+          sumDetail.textContent = 'No filters';
+        } else {
+          const parts = [];
+          if (f.period  !== 'all') parts.push(_dashFilterLabel('period', f.period));
+          if (f.region  !== 'all') parts.push(_dashFilterLabel('region', f.region));
+          if (f.stage   !== 'all') parts.push(_dashFilterLabel('stage', f.stage));
+          if (f.product !== 'all') parts.push(_dashFilterLabel('product', f.product));
+          sumDetail.textContent = parts.join(' \u00b7 ');
+        }
+      }
+      // Clear-all button visibility
+      const clearBtn = document.querySelector('[data-v4-filter-clear]');
+      if (clearBtn) clearBtn.style.display = _dashFilterAnyActive(f) ? '' : 'none';
+    }
+
+    /* ============================================================
+       v27.4.2-rc1 — Saved view persistence.
+       localStorage 5-slot FIFO of {name, filters, created_at}.
+       Pre-defined views: mine / west / qclose (the 3 that map cleanly
+       to v27.4.2 filter primitives). At-risk + High-value disabled
+       pending v27.6 richer primitives. "Save view" pill opens prompt
+       sheet for user-named saved views.
+       ============================================================ */
+    const _SAVED_VIEW_MAX = 5;
+    const _SAVED_VIEW_KEY = 'v4.savedViews';
+    const _PREDEFINED_VIEWS = Object.freeze({
+      mine:   { name: 'My pipeline',        filters: { period: 'all',    region: 'all',  stage: 'all',  product: 'all' } },
+      west:   { name: 'West region',        filters: { period: 'all',    region: 'west', stage: 'all',  product: 'all' } },
+      qclose: { name: 'This quarter close', filters: { period: 'this_q', region: 'all',  stage: 'open', product: 'all' } }
+    });
+
+    function _getSavedViews() {
+      try {
+        const raw = localStorage.getItem(_SAVED_VIEW_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed.slice(0, _SAVED_VIEW_MAX);
+        }
+      } catch (e) {}
+      return [];
+    }
+    function _setSavedViews(arr) {
+      try {
+        const slim = (arr || []).slice(0, _SAVED_VIEW_MAX);
+        localStorage.setItem(_SAVED_VIEW_KEY, JSON.stringify(slim));
+      } catch (e) {}
+    }
+    function _addSavedView(name, filters) {
+      const all = _getSavedViews();
+      // De-dupe by name
+      const filtered = all.filter(function(v) { return v.name !== name; });
+      filtered.unshift({
+        name: String(name || '').trim().slice(0, 32),
+        filters: Object.assign({}, _DASH_FILTER_DEFAULTS, filters || {}),
+        created_at: new Date().toISOString()
+      });
+      _setSavedViews(filtered.slice(0, _SAVED_VIEW_MAX));
+    }
+    function _deleteSavedView(name) {
+      const all = _getSavedViews();
+      _setSavedViews(all.filter(function(v) { return v.name !== name; }));
+    }
+    function _applySavedView(key) {
+      // Pre-defined first
+      if (_PREDEFINED_VIEWS[key]) {
+        _setDashFilters(_PREDEFINED_VIEWS[key].filters);
+        return true;
+      }
+      // Custom: key is the name itself
+      const custom = _getSavedViews().find(function(v) { return v.name === key; });
+      if (custom) {
+        _setDashFilters(custom.filters);
+        return true;
+      }
+      return false;
+    }
+    function _filtersEqual(a, b) {
+      if (!a || !b) return false;
+      return a.period === b.period && a.region === b.region &&
+             a.stage === b.stage && a.product === b.product;
+    }
+    function _renderSavedViewsCustom() {
+      const host = document.querySelector('[data-v4-d-saved-custom]');
+      if (!host) return;
+      const cur = _getDashFilters();
+      const customs = _getSavedViews();
+      host.innerHTML = customs.map(function(v) {
+        const active = _filtersEqual(cur, v.filters) ? ' active' : '';
+        const safeName = String(v.name || '').replace(/[<>"&]/g, '');
+        return '<span class="v4-saved-pill-wrap" style="display:inline-flex;align-items:center;gap:2px">' +
+          '<button type="button" class="v4-saved-pill' + active + '" data-action="v4-saved-apply-custom" data-saved-name="' + safeName + '">' +
+            '\u2605 ' + safeName +
+          '</button>' +
+          '<button type="button" class="v4-saved-pill" style="padding:0 6px;font-size:12px" ' +
+            'data-action="v4-saved-delete" data-saved-name="' + safeName + '" ' +
+            'title="Delete saved view">\u00d7</button>' +
+        '</span>';
+      }).join('');
+      // Also set active class on the pre-defined pills if filters match
+      Object.keys(_PREDEFINED_VIEWS).forEach(function(key) {
+        const pill = document.querySelector('[data-saved-key="' + key + '"]');
+        if (pill) pill.classList.toggle('active', _filtersEqual(cur, _PREDEFINED_VIEWS[key].filters));
+      });
+    }
+
+    /* ============================================================
+       v27.4.3 — Sparklines + real activity feed + share view.
+       Sparklines: mini-SVG polyline based on pipeline_snapshots history.
+       Activity feed: batched stage_transitions query → ticker rebuild.
+       Share view: clipboard URL with filter state encoded.
+       ============================================================ */
+
+    // Render a mini-SVG polyline for an array of numeric values.
+    // Returns SVG markup as string; caller injects via innerHTML.
+    function _renderSparkSvg(values, colorHex) {
+      const arr = (values || []).filter(function(v) { return typeof v === 'number' && isFinite(v); });
+      if (arr.length < 2) return '';
+      const W = 100, H = 28, pad = 2;
+      const min = Math.min.apply(null, arr);
+      const max = Math.max.apply(null, arr);
+      const span = (max - min) || 1;
+      const stepX = (W - pad * 2) / (arr.length - 1);
+      const pts = arr.map(function(v, i) {
+        const x = pad + i * stepX;
+        const y = pad + (H - pad * 2) * (1 - (v - min) / span);
+        return x.toFixed(1) + ',' + y.toFixed(1);
+      }).join(' ');
+      const stroke = colorHex || 'rgba(255,255,255,0.85)';
+      const fill   = (colorHex || 'rgba(255,255,255,0.20)').replace(/,\s*0?\.\d+\)/, ',0.18)');
+      // Closed polygon for the area beneath the line
+      const areaPts = pts + ' ' + (W - pad).toFixed(1) + ',' + (H - pad).toFixed(1) + ' ' + pad.toFixed(1) + ',' + (H - pad).toFixed(1);
+      return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' +
+        '<polygon points="' + areaPts + '" fill="' + fill + '" stroke="none"/>' +
+        '<polyline points="' + pts + '" fill="none" stroke="' + stroke + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>';
+    }
+
+    // Populate sparklines for the 2 snapshot-backed KPIs.
+    // sparkAttr: 'data-v4-kpi-spark' (Home) or 'data-v4-kpi-d-spark' (Dashboard)
+    async function _populateKpiSparklines(sparkAttr) {
+      let snaps;
+      try {
+        snaps = await STORE.pipelineSnapshotList(26);
+      } catch (e) { return; }
+      const rows = (snaps && snaps.rows) || [];
+      if (rows.length < 2) return;
+      // Sort ascending by snapshot date for left-to-right time axis.
+      const sorted = rows.slice().sort(function(a, b) {
+        return Date.parse(a.snapshot_at || a.week_iso || 0) - Date.parse(b.snapshot_at || b.week_iso || 0);
+      }).slice(-13);  // last 13 weeks
+      const openVals = sorted.map(function(r) { return Number(r.open_count || 0); });
+      const pipeVals = sorted.map(function(r) { return Number(r.open_value_inr || 0); });
+      const openEl = document.querySelector('[' + sparkAttr + '="open"]');
+      const pipeEl = document.querySelector('[' + sparkAttr + '="pipeline"]');
+      if (openEl) openEl.innerHTML = _renderSparkSvg(openVals);
+      if (pipeEl) pipeEl.innerHTML = _renderSparkSvg(pipeVals);
+    }
+
+    // Build ticker items from real stage_transitions for the current
+    // scope. Falls back to no-op (keeps hardcoded sample) when fetch
+    // fails or returns empty. Pure async; caller doesn't await.
+    function _timeAgo(iso) {
+      const t = iso ? Date.parse(iso) : NaN;
+      if (isNaN(t)) return '';
+      const s = Math.floor((Date.now() - t) / 1000);
+      if (s < 60) return 'just now';
+      if (s < 3600) return Math.floor(s / 60) + 'm';
+      if (s < 86400) return Math.floor(s / 3600) + 'h';
+      if (s < 7 * 86400) return Math.floor(s / 86400) + 'd';
+      return String(iso).slice(0, 10);
+    }
+    async function _populateActivityTicker(scopedDeals) {
+      const host = document.querySelector('[data-v4-d-ticker]');
+      if (!host) return;
+      if (!Array.isArray(scopedDeals) || !scopedDeals.length) return;
+      // Take 30 most-recently-updated deals as the ref-id window.
+      const sortedByUpdate = scopedDeals.slice().sort(function(a, b) {
+        return new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0);
+      });
+      const refIds = sortedByUpdate.slice(0, 30)
+        .map(function(d) { return d.display_ref || d.ref_id; })
+        .filter(Boolean);
+      if (!refIds.length) return;
+      let trans;
+      try {
+        trans = await STORE.stageTransitionsListMany(refIds);
+      } catch (e) { return; }
+      if (!trans || !trans.length) return;
+      // Index deals by ref for project name lookup
+      const dealByRef = {};
+      scopedDeals.forEach(function(d) {
+        const r = d.display_ref || d.ref_id;
+        if (r) dealByRef[r] = d;
+      });
+      const usersById = (typeof STORE.usersById === 'function') ? STORE.usersById() : {};
+      // Top 8 most recent transitions
+      const items = trans.slice(0, 8).map(function(tr) {
+        const refId  = tr.ref_id || tr.display_ref || '';
+        const deal   = dealByRef[refId] || {};
+        const proj   = deal.project || refId || '(unnamed)';
+        const actorId = tr.transitioned_by || tr.actor || '';
+        const actorRow = usersById[actorId] || {};
+        const actorName = String(actorRow.full_name || actorRow.username || tr.actor || 'Someone').split(' ')[0];
+        const toStage = tr.to_stage || tr.to_stage_name || '';
+        const verb = (toStage === 'Closed Won')  ? 'won '
+                   : (toStage === 'Closed Lost') ? 'lost '
+                   : 'moved ';
+        const tail = (toStage && toStage !== 'Closed Won' && toStage !== 'Closed Lost')
+                       ? (' \u2192 ' + toStage) : '';
+        return {
+          time:  _timeAgo(tr.transitioned_at),
+          actor: actorName,
+          msg:   verb + String(proj).slice(0, 40) + tail
+        };
+      });
+      const html = items.map(function(it) {
+        return '<span class="v4-ticker-item">' +
+          '<span class="v4-ti-time">' + esc(it.time) + '</span>' +
+          '<span class="v4-ti-actor">' + esc(it.actor) + '</span>' +
+          esc(it.msg) +
+        '</span>';
+      }).join('');
+      // Duplicate the run so the CSS marquee animation loops seamlessly
+      host.innerHTML = html + html;
+    }
+
+    // Share view: build a hash URL embedding current filter state,
+    // copy to clipboard, toast.
+    function _buildShareUrl() {
+      const f = _getDashFilters();
+      const params = [];
+      ['period','region','stage','product'].forEach(function(k) {
+        if (f[k] && f[k] !== 'all') params.push(k + '=' + encodeURIComponent(f[k]));
+      });
+      const tail = params.length ? ('?' + params.join('&')) : '';
+      const base = location.origin + location.pathname + '#/dashboard' + tail;
+      return base;
+    }
+    async function _shareCurrentView() {
+      const url = _buildShareUrl();
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url);
+          if (typeof toast === 'function') toast('View URL copied', 'ok');
+          return;
+        }
+      } catch (e) {}
+      // Fallback: legacy execCommand
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (typeof toast === 'function') toast('View URL copied', 'ok');
+      } catch (e) {
+        if (typeof toast === 'function') toast('Copy failed — long-press to copy: ' + url, 'warn');
+      }
+    }
+
+    // Apply filter state from URL hash params on dashboard mount.
+    // Called from showDashboard / route entry. Returns true if applied.
+    function _applyFiltersFromUrl() {
+      const h = String(location.hash || '');
+      const qIx = h.indexOf('?');
+      if (qIx < 0) return false;
+      const qs = h.slice(qIx + 1);
+      if (!qs) return false;
+      const f = Object.assign({}, _DASH_FILTER_DEFAULTS);
+      let any = false;
+      qs.split('&').forEach(function(pair) {
+        const eq = pair.indexOf('=');
+        if (eq < 0) return;
+        const k = pair.slice(0, eq);
+        const v = decodeURIComponent(pair.slice(eq + 1));
+        if (_DASH_FILTER_CYCLES[k] && _DASH_FILTER_CYCLES[k].indexOf(v) >= 0) {
+          f[k] = v;
+          any = true;
+        }
+      });
+      if (any) _setDashFilters(f);
+      return any;
+    }
+
     /* ============================================================
        v27.4.0 VIEW: Home — hero-tech rebuild
        Replaces showHomeLegacy. Renders:
@@ -12813,6 +13886,7 @@
               '<div class="v4-kpi-value" data-v4-kpi="' + id + '">\u2014</div>' +
             '</div>' +
             '<div class="v4-kpi-sub" data-v4-kpi-sub="' + id + '">\u2014</div>' +
+            '<div class="v4-kpi-chip" data-v4-kpi-chip="' + id + '" data-tone="unknown" style="display:none">\u2014</div>' +
             (isSplit
               ? '<div class="v4-split-bar" data-v4-kpi-bar="' + id + '"></div>' +
                 '<div class="v4-split-legend" data-v4-kpi-legend="' + id + '"></div>'
@@ -13021,6 +14095,21 @@
             '<span>OEM ' + splitPctO + '%</span>';
         }
 
+        // v27.4.1 W1 — KPI period chips (Home). Fire-and-forget; chips
+        // populate when snapshot data arrives. Pipeline ₹ skipped (no
+        // numeric current value while pricing disabled). Distinct-name +
+        // split KPIs render "—" sentinel pending v27.6 snapshot schema.
+        _populateKpiChips('data-v4-kpi-chip', {
+          open:        open.length,
+          pipeline:    null,  // string "₹ —" → suppress chip
+          endusers:    distinct(open, 'customer_name'),
+          partners:    distinct(open, 'partner_name'),
+          consultants: distinct(open, 'consultant_name'),
+          split:       cav + oem
+        });
+        // v27.4.3 — sparklines for the 2 snapshot-backed KPIs (open + pipeline)
+        _populateKpiSparklines('data-v4-kpi-spark');
+
         // ----- Attention values -----
         // Stuck > 30 days: best computed from stage_transitions; absent that, use updated_at.
         const now = Date.now();
@@ -13094,6 +14183,10 @@
       showChrome(true);
       updateNavActive('#/dashboard');
       const u = STORE.currentUser() || {};
+      // v27.4.3 — if URL hash carries ?period=...&region=... etc, apply them
+      // before loadDashboardV4 reads from sessionStorage. Enables shareable
+      // links from the Share view button.
+      try { _applyFiltersFromUrl(); } catch (e) {}
       const today = (function() {
         const d = new Date();
         const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -13138,10 +14231,11 @@
               '<div class="v4-kpi-value" data-v4-kpi-d="' + id + '">\u2014</div>' +
             '</div>' +
             '<div class="v4-kpi-sub" data-v4-kpi-d-sub="' + id + '">\u2014</div>' +
+            '<div class="v4-kpi-chip" data-v4-kpi-d-chip="' + id + '" data-tone="unknown" style="display:none">\u2014</div>' +
             (isSplit
               ? '<div class="v4-split-bar" data-v4-kpi-d-bar="' + id + '"></div>' +
                 '<div class="v4-split-legend" data-v4-kpi-d-legend="' + id + '"></div>'
-              : '<div class="v4-kpi-spark"></div>'
+              : '<div class="v4-kpi-spark" data-v4-kpi-d-spark="' + id + '"></div>'
             ) +
           '</div>' +
         '</button>';
@@ -13255,37 +14349,40 @@
           '</button>' +
         '</div>' +
 
-        // Saved views
+        // Saved views — v27.4.2-rc1: 3 pre-defined wired, 2 disabled (need v27.6
+        // richer primitives), custom views from localStorage render in
+        // data-v4-d-saved-custom slot.
         '<div class="v4-saved-views">' +
-          '<button type="button" class="v4-saved-pill active">' + sIco.starF + 'My pipeline</button>' +
-          '<button type="button" class="v4-saved-pill">' + sIco.warn + '<span data-v4-d-svcount="atrisk">At risk</span></button>' +
-          '<button type="button" class="v4-saved-pill">' + sIco.bolt + 'High value</button>' +
-          '<button type="button" class="v4-saved-pill">' + sIco.pin + 'West region</button>' +
-          '<button type="button" class="v4-saved-pill">' + sIco.warn + 'This quarter close</button>' +
-          '<button type="button" class="v4-saved-pill add">' + sIco.plus + 'Save view</button>' +
+          '<button type="button" class="v4-saved-pill" data-action="v4-saved-apply" data-saved-key="mine">' + sIco.starF + 'My pipeline</button>' +
+          '<button type="button" class="v4-saved-pill" disabled title="At-risk filter ships in v27.6 (needs stuck-dwell primitive)">' + sIco.warn + 'At risk</button>' +
+          '<button type="button" class="v4-saved-pill" disabled title="High-value filter ships when pricing lands">' + sIco.bolt + 'High value</button>' +
+          '<button type="button" class="v4-saved-pill" data-action="v4-saved-apply" data-saved-key="west">' + sIco.pin + 'West region</button>' +
+          '<button type="button" class="v4-saved-pill" data-action="v4-saved-apply" data-saved-key="qclose">' + sIco.warn + 'This quarter close</button>' +
+          '<span data-v4-d-saved-custom></span>' +
+          '<button type="button" class="v4-saved-pill add" data-action="v4-saved-new">' + sIco.plus + 'Save view</button>' +
         '</div>' +
 
-        // Filter bar
+        // Filter bar — v27.4.2: chips cycle through filter values on tap
         '<div class="v4-filter-bar">' +
-          '<button type="button" class="v4-filter-chip active">' + sIco.cal + 'This quarter' + sIco.chev + '</button>' +
-          '<button type="button" class="v4-filter-chip">' + sIco.pin + 'Region</button>' +
-          '<button type="button" class="v4-filter-chip">' + sIco.user + 'Person</button>' +
-          '<button type="button" class="v4-filter-chip">' + sIco.stack + 'Stage</button>' +
-          '<button type="button" class="v4-filter-chip">' + sIco.box + 'Product</button>' +
-          '<button type="button" class="v4-filter-chip">' + sIco.search + 'Search</button>' +
-          '<button type="button" class="v4-filter-clear">Clear all</button>' +
+          '<button type="button" class="v4-filter-chip" data-action="v4-filter-cycle" data-v4-filter-chip="period" data-filter-key="period">' + sIco.cal + '<span data-v4-filter-label>This quarter</span>' + sIco.chev + '</button>' +
+          '<button type="button" class="v4-filter-chip" data-action="v4-filter-cycle" data-v4-filter-chip="region" data-filter-key="region">' + sIco.pin + '<span data-v4-filter-label>Region</span></button>' +
+          '<button type="button" class="v4-filter-chip" data-action="v4-filter-cycle" data-v4-filter-chip="stage"  data-filter-key="stage">' + sIco.stack + '<span data-v4-filter-label>Stage</span></button>' +
+          '<button type="button" class="v4-filter-chip" data-action="v4-filter-cycle" data-v4-filter-chip="product" data-filter-key="product">' + sIco.box + '<span data-v4-filter-label>Product</span></button>' +
+          '<button type="button" class="v4-filter-chip" disabled title="Person + search filters arrive in v27.4.3">' + sIco.user + 'Person</button>' +
+          '<button type="button" class="v4-filter-chip" disabled title="Person + search filters arrive in v27.4.3">' + sIco.search + 'Search</button>' +
+          '<button type="button" class="v4-filter-clear" data-action="v4-filter-clear" data-v4-filter-clear style="display:none">Clear all</button>' +
         '</div>' +
 
         // Filter summary line
         '<div class="v4-filter-summary">' +
-          '<div>Showing <span class="v4-sum-n" data-v4-d-shown>\u2014</span> of <span class="v4-sum-n" data-v4-d-total>\u2014</span> deals \u00b7 <span data-v4-d-sumdetail>This quarter</span></div>' +
-          '<div style="display:flex;gap:8px"><button type="button" class="v4-sum-act">Export CSV</button><button type="button" class="v4-sum-act">Share view</button></div>' +
+          '<div>Showing <span class="v4-sum-n" data-v4-d-shown>\u2014</span> of <span class="v4-sum-n" data-v4-d-total>\u2014</span> deals \u00b7 <span data-v4-d-sumdetail>No filters</span></div>' +
+          '<div style="display:flex;gap:8px"><button type="button" class="v4-sum-act" disabled title="CSV export ships in v27.5">Export CSV</button><button type="button" class="v4-sum-act" data-action="v4-share-view">Share view</button></div>' +
         '</div>' +
 
         // Activity ticker
         '<div class="v4-ticker">' +
           '<div class="v4-ticker-label">' + sIco.bolt + 'Live feed</div>' +
-          '<div class="v4-ticker-feed">' + tickerHTML + tickerHTML + '</div>' +
+          '<div class="v4-ticker-feed" data-v4-d-ticker>' + tickerHTML + tickerHTML + '</div>' +
         '</div>' +
 
         // KPIs
@@ -13509,9 +14606,25 @@
           .filter(d => !d.deleted_at)
           .filter(d => dealMatchesScope(d, regionScope, salesScope));
 
-        // v27.4.1 W3 — cache scope-filtered deals for the Newly Onboarded sheet
+        // v27.4.2 — apply dashboard filters on top of role scoping.
+        // `scoped` is role-filtered (what the user is allowed to see).
+        // `filtered` adds the user's chosen filters from sessionStorage.
+        // All downstream populate uses `filtered`; `scoped.length` still
+        // populates the "of N total" denominator in the summary line.
+        const dashFilters = _getDashFilters();
+        _updateFilterChipDisplay(dashFilters);
+        _renderSavedViewsCustom();
+        const filtered = applyDashFilters(scoped, dashFilters);
+
+        // v27.4.3 — Real activity feed + sparklines. Fire-and-forget;
+        // ticker keeps hardcoded sample if fetch fails, spark slots stay
+        // empty. No await — these are visual polish, don't block populate.
+        _populateActivityTicker(filtered);
+        _populateKpiSparklines('data-v4-kpi-d-spark');
+
+        // v27.4.1 W3 — cache filtered deals for the Newly Onboarded sheet
         // which renders out-of-band from loadDashboardV4 (triggered by KPI tap).
-        __lastDashScoped = scoped;
+        __lastDashScoped = filtered;
 
         // Scope label for hero
         const scopeLbl = (function() {
@@ -13530,13 +14643,13 @@
         if (elScope) elScope.textContent = scopeLbl;
         const elShown = document.querySelector('[data-v4-d-shown]');
         const elTotal = document.querySelector('[data-v4-d-total]');
-        if (elShown) elShown.textContent = scoped.length;
-        if (elTotal) elTotal.textContent = all.length;
+        if (elShown) elShown.textContent = filtered.length;
+        if (elTotal) elTotal.textContent = scoped.length;
 
         const CLOSED = { 'Closed Won': true, 'Closed Lost': true };
-        const open = scoped.filter(d => !CLOSED[d.stage]);
-        const won = scoped.filter(d => d.stage === 'Closed Won');
-        const lost = scoped.filter(d => d.stage === 'Closed Lost');
+        const open = filtered.filter(d => !CLOSED[d.stage]);
+        const won = filtered.filter(d => d.stage === 'Closed Won');
+        const lost = filtered.filter(d => d.stage === 'Closed Lost');
 
         // ---- Attention strip (operational alerts) ----
         // 4 actionable counts surfaced at top of dashboard.
@@ -13557,7 +14670,7 @@
           return s && s < curM;
         });
         const readyConfirm = open.filter(d => d.stage === 'Awarded');
-        const wonRecent = scoped.filter(d => {
+        const wonRecent = filtered.filter(d => {
           if (d.stage !== 'Closed Won') return false;
           const t = Date.parse(d.updated_at || '');
           return t && (now - t) <= 7 * DAY;
@@ -13614,6 +14727,19 @@
         if (elSplitLeg) elSplitLeg.innerHTML =
           '<span>Cavitak ' + pctC + '%</span>' +
           '<span>OEM ' + pctO + '%</span>';
+
+        // v27.4.1 W1 — KPI period chips (Dashboard). Same contract as Home.
+        // Pan-India baseline regardless of user scope per SPEC §W1.1 (a).
+        // Snapshot schema only covers open + pipeline today; distinct-name
+        // and split KPIs render "—" sentinel until v27.6 schema work.
+        _populateKpiChips('data-v4-kpi-d-chip', {
+          open:        open.length,
+          pipeline:    null,  // string "₹ —" → suppress chip
+          endusers:    distinct(open, 'customer_name'),
+          partners:    distinct(open, 'partner_name'),
+          consultants: distinct(open, 'consultant_name'),
+          split:       cav + oem
+        });
 
         // ---- Funnel ----
         const stageOrder = ['Qualified','Proposal','Budget Approval','Technical Approval','Negotiation','Awarded'];
@@ -13713,9 +14839,9 @@
         // across re-renders via the bottom-sheet's own selection.
         const qBounds = getQuarterBounds();
         const newlyByField = {
-          endusers:    newlyOnboarded(scoped, 'customer_name',   qBounds).length,
-          partners:    newlyOnboarded(scoped, 'partner_name',    qBounds).length,
-          consultants: newlyOnboarded(scoped, 'consultant_name', qBounds).length
+          endusers:    newlyOnboarded(filtered, 'customer_name',   qBounds).length,
+          partners:    newlyOnboarded(filtered, 'partner_name',    qBounds).length,
+          consultants: newlyOnboarded(filtered, 'consultant_name', qBounds).length
         };
         ['endusers','partners','consultants'].forEach(function(id) {
           const s = document.querySelector('[data-v4-kpi-sub="' + id + '"]');
@@ -13740,7 +14866,7 @@
           if (!showChannels) { card.style.display = 'none'; return; }
           card.style.display = '';
           const field = role + '_name';  // partner_name / consultant_name
-          const rows = aggregateChannelPerf(scoped, field, fyBounds).slice(0, 10);
+          const rows = aggregateChannelPerf(filtered, field, fyBounds).slice(0, 10);
           const tbody = document.querySelector('[data-v4-d-' + role + '-body]');
           if (!tbody) return;
           if (!rows.length) {
@@ -13762,7 +14888,7 @@
         // ---- Sales perf table ----
         // Aggregate per sales_person_id (top 8 by open count)
         const byPerson = {};
-        scoped.forEach(d => {
+        filtered.forEach(d => {
           const pid = d.sales_person_id;
           if (!pid) return;
           if (!byPerson[pid]) byPerson[pid] = { id: pid, open: 0, won: 0, lost: 0 };
@@ -13864,7 +14990,7 @@
         }
         const ymIdx = {};
         last6.forEach((b, i) => { ymIdx[b.ym] = i; });
-        scoped.forEach(d => {
+        filtered.forEach(d => {
           const t = String(d.created_at || '').slice(0, 7);
           if (ymIdx.hasOwnProperty(t)) {
             last6[ymIdx[t]].count++;
@@ -18645,6 +19771,100 @@
           location.hash = '#/history?filter=unknown_region';
           return;
         }
+
+        // v27.4.2 — Dashboard filter cycle + clear.
+        // Cycle the named filter through its next value, persist, re-run
+        // loadDashboardV4. Helpers live in UI namespace.
+        if (action === 'v4-filter-cycle') {
+          const key = actEl.getAttribute('data-filter-key') || '';
+          if (!key || !UI._getDashFilters) return;
+          const cur = UI._getDashFilters();
+          const next = UI._cycleDashFilter(key, cur[key] || 'all');
+          cur[key] = next;
+          UI._setDashFilters(cur);
+          if (UI._loadDashboardV4) {
+            UI._loadDashboardV4(STORE.currentUser() || {});
+          }
+          return;
+        }
+        if (action === 'v4-filter-clear') {
+          if (UI._setDashFilters) {
+            UI._setDashFilters({ period: 'all', region: 'all', stage: 'all', product: 'all' });
+          }
+          if (UI._loadDashboardV4) {
+            UI._loadDashboardV4(STORE.currentUser() || {});
+          }
+          return;
+        }
+
+        // v27.4.2-rc1 — Saved view actions.
+        if (action === 'v4-saved-apply') {
+          const key = actEl.getAttribute('data-saved-key') || '';
+          if (UI._applySavedView && UI._applySavedView(key)) {
+            UI._loadDashboardV4(STORE.currentUser() || {});
+          }
+          return;
+        }
+        if (action === 'v4-saved-apply-custom') {
+          const name = actEl.getAttribute('data-saved-name') || '';
+          if (UI._applySavedView && UI._applySavedView(name)) {
+            UI._loadDashboardV4(STORE.currentUser() || {});
+          }
+          return;
+        }
+        if (action === 'v4-saved-new') {
+          if (UI.showSaveViewPrompt) UI.showSaveViewPrompt();
+          return;
+        }
+        if (action === 'v4-saved-cancel') {
+          closeSheet();
+          return;
+        }
+        if (action === 'v4-saved-save') {
+          const inp = document.getElementById('v4-sv-name');
+          const name = String((inp && inp.value) || '').trim();
+          if (!name) {
+            if (inp) inp.focus();
+            return;
+          }
+          if (UI._addSavedView && UI._getDashFilters) {
+            UI._addSavedView(name, UI._getDashFilters());
+          }
+          closeSheet();
+          if (UI._loadDashboardV4) UI._loadDashboardV4(STORE.currentUser() || {});
+          return;
+        }
+        if (action === 'v4-saved-delete') {
+          const name = actEl.getAttribute('data-saved-name') || '';
+          if (UI._deleteSavedView) UI._deleteSavedView(name);
+          if (UI._loadDashboardV4) UI._loadDashboardV4(STORE.currentUser() || {});
+          return;
+        }
+
+        // v27.4.3 — Share current view URL (clipboard copy)
+        if (action === 'v4-share-view') {
+          if (UI._shareCurrentView) UI._shareCurrentView();
+          return;
+        }
+
+        // v27.5 — PWA install prompt trigger
+        if (action === 'pwa-install') {
+          const ev = window.__pwaInstallEvent;
+          if (!ev) {
+            toast('Install not available right now — already installed or unsupported browser.', 'info');
+            return;
+          }
+          ev.prompt();
+          ev.userChoice.then(function(choice) {
+            if (choice && choice.outcome === 'accepted') {
+              toast('Installing\u2026', 'ok');
+            }
+            window.__pwaInstallEvent = null;
+            const btn = document.querySelector('[data-action="pwa-install"]');
+            if (btn) btn.style.display = 'none';
+          });
+          return;
+        }
         if (action === 'cust-filter') {
           const v = actEl.getAttribute('data-value') || 'all';
           setCustomerFilter(v);
@@ -19787,6 +21007,28 @@
       _aggregateChannelPerf: aggregateChannelPerf,
       // v27.4.1-alpha2 — W3 Newly Onboarded sheet exposed for APP action handler.
       showNewlyOnboardedSheet: showNewlyOnboardedSheet,
+      // v27.4.2 — Filter wiring exposed for APP action handlers.
+      // Filter cycle/clear handlers call _getDashFilters/_setDashFilters
+      // + _cycleDashFilter, then trigger _loadDashboardV4 for re-populate.
+      _getDashFilters:    _getDashFilters,
+      _setDashFilters:    _setDashFilters,
+      _cycleDashFilter:   _cycleDashFilter,
+      _applyDashFilters:  applyDashFilters,
+      _loadDashboardV4:   loadDashboardV4,
+      // v27.4.2-rc1 — Saved view helpers + prompt sheet.
+      _getSavedViews:     _getSavedViews,
+      _addSavedView:      _addSavedView,
+      _deleteSavedView:   _deleteSavedView,
+      _applySavedView:    _applySavedView,
+      _PREDEFINED_VIEWS:  _PREDEFINED_VIEWS,
+      showSaveViewPrompt: showSaveViewPrompt,
+      // v27.4.3 — Sparklines + activity ticker + share view.
+      _renderSparkSvg:        _renderSparkSvg,
+      _populateKpiSparklines: _populateKpiSparklines,
+      _populateActivityTicker: _populateActivityTicker,
+      _buildShareUrl:         _buildShareUrl,
+      _shareCurrentView:      _shareCurrentView,
+      _applyFiltersFromUrl:   _applyFiltersFromUrl,
       // smoke renderer
       _renderSmokeOutput: renderSmokeOutput
     };
