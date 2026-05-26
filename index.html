@@ -13,6 +13,58 @@
        once the user lands on /dashboard. ~330KB gzipped. Pinned to a stable minor (5.5.x). -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
   <!--
+    v27.4.0-rc1 — DASHBOARD ATTENTION STRIP + RELEASE CANDIDATE (2026-05-26)
+    Final polish on top of -beta2 before GA. Two threads:
+
+    1) Dashboard attention strip added.
+       Previously Home had a 4-card "what needs my action" strip but
+       Dashboard didn't. Mockup v3 §D9 always included it; the rc1 patch
+       restores it. Reuses the Phase 4 .v4-attn-* CSS (zero new CSS).
+       Four cards above the saved-views row:
+         - Dormant > 30 days (warn) → #/history?filter=stuck
+         - Slipped close (danger)   → #/history?filter=slipped
+         - Ready to confirm (info)  → #/history?filter=ready  [Awarded stage]
+         - Won in last 7 days (success) → #/history?filter=won-recent
+       Counts computed in loadDashboardV4 from the same scope-filtered
+       deal list, using updated_at as proxy for stage-dwell time (real
+       stage_transitions wiring lands in v27.4.1).
+
+    2) Audit-vs-doc reconciliation done.
+       A pre-build audit of the deployed file revealed that the inventory
+       in 01-FEATURES.md was significantly stale. Items marked as
+       "currently violated" or "silently dropped" were actually already
+       shipped in v27.2.x: C1 T&C block (Excel + PDF), C2 Sales+Presales
+       contact footer, D16 Profile Setup Gate, WhatsApp share, Email
+       share (mailto), Duplicate deal, Customer Directory UI, AuditLog
+       viewer, Reset password user-side, Won confetti. The inventory
+       docs need a refresh pass — that's hygiene work for a later
+       session, doesn't gate code.
+
+    What's NOT in this patch (deferred to v27.4.1):
+       - ECharts wiring on donut/line/heatmap
+       - Filter chip + saved view actual wiring (still visual-only)
+       - Real activity feed from stage_transitions
+       - Period comparison chips on KPIs
+       - Newly Onboarded Q/H/Y surface
+       - Product mix family tile
+       - Partner/consultant leaderboards
+       - Mobile scroll/Z Fold overflow fix (needs repro)
+
+    Smoke before GA promotion (drop -rc1, ship as v27.4.0):
+       (a) #/home renders Phase 4 hero (no regression)
+       (b) #/dashboard renders new view with attention strip above saved views
+       (c) 4 attention counts populate non-em-dash within ~500ms
+       (d) Tapping each attention card routes to filtered history
+       (e) All Phase 5 widgets still render correctly
+       (f) Login footer reads v27.4.0-rc1
+       (g) Theme toggle still works
+       (h) Z Fold mobile test (per OP §4.5: hard-refresh required)
+
+    Foundation (Phase 3) + Home (Phase 4) + Dashboard (Phase 5) all
+    unchanged. Wizard / Engine / Exports / SX accordion / History /
+    Auth: ALL UNCHANGED.
+  -->
+  <!--
     v27.4.0-beta2 — DASHBOARD VIEW HERO REBUILD (2026-05-26)
     Phase 5 of v27.4.0. Adds the hero-tech Dashboard view per SPEC §7
     and mockup v3. Existing legacy code preserved under showDashboardLegacy.
@@ -5591,7 +5643,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.4.0-beta2',
+      version: 'v27.4.0-rc1',
       constants,
       calico,
       mv,
@@ -8176,8 +8228,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.4.0-beta2"',
-      () => CATALOG.version === 'v27.4.0-beta2' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.4.0-rc1"',
+      () => CATALOG.version === 'v27.4.0-rc1' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.3.12 invariants — SX redesign + step reduction ---------- */
     // Source: /mnt/user-data/outputs/SPEC-v27.3.12-sx-redesign-step-reduction.md
@@ -12529,6 +12581,40 @@
           '</div>' +
         '</div>' +
 
+        // Attention strip (operational alerts — 4 actionable counts)
+        // Reuses .v4-attn-* CSS from Phase 4 Home view. Each card taps
+        // through to History filtered to the matching deal set.
+        '<div class="v4-attn-row v4-stagger" style="margin-bottom:16px">' +
+          '<button type="button" class="v4-attn-card warn"    data-nav="#/history?filter=stuck">' +
+            '<div class="v4-attn-icon">' + sIco.warn + '</div>' +
+            '<div class="v4-attn-body">' +
+              '<div class="v4-attn-count" data-v4-d-attn="stuck">\u2014</div>' +
+              '<div class="v4-attn-label">Dormant &gt; 30 days</div>' +
+            '</div>' +
+          '</button>' +
+          '<button type="button" class="v4-attn-card danger"  data-nav="#/history?filter=slipped">' +
+            '<div class="v4-attn-icon">' + sIco.warn + '</div>' +
+            '<div class="v4-attn-body">' +
+              '<div class="v4-attn-count" data-v4-d-attn="slipped">\u2014</div>' +
+              '<div class="v4-attn-label">Slipped close</div>' +
+            '</div>' +
+          '</button>' +
+          '<button type="button" class="v4-attn-card info"    data-nav="#/history?filter=ready">' +
+            '<div class="v4-attn-icon">' + sIco.bolt + '</div>' +
+            '<div class="v4-attn-body">' +
+              '<div class="v4-attn-count" data-v4-d-attn="ready">\u2014</div>' +
+              '<div class="v4-attn-label">Ready to confirm</div>' +
+            '</div>' +
+          '</button>' +
+          '<button type="button" class="v4-attn-card success" data-nav="#/history?filter=won-recent">' +
+            '<div class="v4-attn-icon">' + sIco.starF + '</div>' +
+            '<div class="v4-attn-body">' +
+              '<div class="v4-attn-count" data-v4-d-attn="won">\u2014</div>' +
+              '<div class="v4-attn-label">Won in last 7 days</div>' +
+            '</div>' +
+          '</button>' +
+        '</div>' +
+
         // Saved views
         '<div class="v4-saved-views">' +
           '<button type="button" class="v4-saved-pill active">' + sIco.starF + 'My pipeline</button>' +
@@ -12747,6 +12833,39 @@
         const won = scoped.filter(d => d.stage === 'Closed Won');
         const lost = scoped.filter(d => d.stage === 'Closed Lost');
 
+        // ---- Attention strip (operational alerts) ----
+        // 4 actionable counts surfaced at top of dashboard.
+        // Stuck > 30d uses updated_at as a proxy until stage_transitions
+        // dwell-time wiring lands in v27.4.1.
+        const now = Date.now();
+        const DAY = 24 * 3600 * 1000;
+        const curM = (function() {
+          const d = new Date();
+          return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        })();
+        const stuck30 = open.filter(d => {
+          const t = Date.parse(d.updated_at || d.created_at || '');
+          return t && (now - t) > 30 * DAY;
+        });
+        const slippedAll = open.filter(d => {
+          const s = String(d.close_month || '').slice(0, 7);
+          return s && s < curM;
+        });
+        const readyConfirm = open.filter(d => d.stage === 'Awarded');
+        const wonRecent = scoped.filter(d => {
+          if (d.stage !== 'Closed Won') return false;
+          const t = Date.parse(d.updated_at || '');
+          return t && (now - t) <= 7 * DAY;
+        });
+        const setAttnD = function(kind, n) {
+          const el = document.querySelector('[data-v4-d-attn="' + kind + '"]');
+          if (el) el.textContent = String(n);
+        };
+        setAttnD('stuck',   stuck30.length);
+        setAttnD('slipped', slippedAll.length);
+        setAttnD('ready',   readyConfirm.length);
+        setAttnD('won',     wonRecent.length);
+
         // ---- KPIs ----
         const setK = function(id, val, sub) {
           const v = document.querySelector('[data-v4-kpi-d="' + id + '"]');
@@ -12898,7 +13017,7 @@
         }
 
         // ---- Stuck heatmap (open deals >30d in stage) ----
-        const now = Date.now();
+        // `now` and `DAY` already declared in attention strip section above.
         const stuckByStageRegion = {};
         const STAGES_HM = ['Qualified','Proposal','Budget','Technical','Negotiation'];
         const STAGE_MAP = { 'Qualified': 'Qualified', 'Proposal': 'Proposal', 'Budget Approval': 'Budget', 'Technical Approval': 'Technical', 'Negotiation': 'Negotiation' };
