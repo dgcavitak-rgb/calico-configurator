@@ -13,6 +13,7 @@
        once the user lands on /dashboard. ~330KB gzipped. Pinned to a stable minor (5.5.x). -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
   <!--
+<<<<<<< HEAD
     v27.3.14c — OFFICIAL BRAND LOGOS (2026-05-26 late night)
     Per Dipenkumar "Logos you are using is customer render use exact logos only"
     + "tvONE on left, Cavitak on right (co-branded)" / "Both at top, side-by-side".
@@ -95,6 +96,8 @@
   -->
 
   <!--
+=======
+>>>>>>> 16afeaccb009e24b61a87b201518c1087a4dd6c7
     v27.3.14a — SX ACCORDION (Issue G, 2026-05-26)
     Spec: /mnt/user-data/outputs/SPEC-G-sx-accordion.md (sign-off "Ok go ahead")
     Single focused ship — SX cards default to collapsed, expand on tap, force-open
@@ -4453,7 +4456,11 @@
     };
 
     return deepFreeze({
+<<<<<<< HEAD
       version: 'v27.3.14c',
+=======
+      version: 'v27.3.14a',
+>>>>>>> 16afeaccb009e24b61a87b201518c1087a4dd6c7
       constants,
       calico,
       mv,
@@ -7033,8 +7040,13 @@
       }
     }
 
+<<<<<<< HEAD
     check('CATALOG.version === "v27.3.14c"',
       () => CATALOG.version === 'v27.3.14c' || 'got: ' + CATALOG.version);
+=======
+    check('CATALOG.version === "v27.3.14a"',
+      () => CATALOG.version === 'v27.3.14a' || 'got: ' + CATALOG.version);
+>>>>>>> 16afeaccb009e24b61a87b201518c1087a4dd6c7
 
     /* ---------- v27.3.12 invariants — SX redesign + step reduction ---------- */
     // Source: /mnt/user-data/outputs/SPEC-v27.3.12-sx-redesign-step-reduction.md
@@ -7176,6 +7188,7 @@
       () => UI._STRUCTURAL_FIELDS.indexOf('_sxExpanded') >= 0
         || 'missing _sxExpanded in STRUCTURAL_FIELDS');
 
+<<<<<<< HEAD
     /* ---------- v27.3.14b invariants — SX handler scope fix + CM2 fan filter auto-include ---------- */
     // 2 fixes shipped in v27.3.14b:
     //   1. SX handlers moved from input listener to click listener (silent
@@ -7230,6 +7243,8 @@
           || 'missing data-key for: ' + missing.join(',');
       });
 
+=======
+>>>>>>> 16afeaccb009e24b61a87b201518c1087a4dd6c7
     /* ---------- v27.3.10 invariants — saved-deal UX cleanup ---------- */
     // Spec: /home/claude/work/SPEC-v27.3.10-saved-deal-ux.md
     // Three issues from screenshot 135582.jpg: notes removal, MV default row, double-decker buttons.
@@ -16341,11 +16356,200 @@
           return;
         }
 
+<<<<<<< HEAD
         /* v27.3.14b — SX handlers MOVED to click listener.
            These were misplaced in the input listener since v27.3.12;
            referencing `actEl` (declared only in click listener) caused
            silent ReferenceError on every SX button click. Block moved
            wholesale; see click listener tail for new home. */
+=======
+        /* v27.3.12 — NEW view-state SX handlers. The Photo 4 single-card UI
+           emits these actions; legacy per-line actions (sx-hdbt-add/set/qty/remove,
+           sx-aoc-add/set/qty/remove/len-delta) below stay for back-compat with
+           any in-flight UIs but the new render no longer emits them.
+           All view handlers: derive view → mutate via _applyXxxView → resync
+           sx_data sums → save draft → rerender. */
+        if (action === 'sx-hdbt-view-signal') {
+          _applySxHdbtView(wizardData, 'signal', actEl.getAttribute('data-value') || '');
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        if (action === 'sx-hdbt-view-resolution') {
+          _applySxHdbtView(wizardData, 'resolution', actEl.getAttribute('data-value') || '');
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        if (action === 'sx-hdbt-view-tx') {
+          const delta = parseInt(actEl.getAttribute('data-delta'), 10) || 0;
+          _applySxHdbtView(wizardData, 'tx', delta);
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        if (action === 'sx-hdbt-view-rx') {
+          const delta = parseInt(actEl.getAttribute('data-delta'), 10) || 0;
+          _applySxHdbtView(wizardData, 'rx', delta);
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        if (action === 'sx-aoc-view-resolution') {
+          _applySxAocView(wizardData, 'resolution', actEl.getAttribute('data-value') || '');
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        if (action === 'sx-aoc-view-distance') {
+          const delta = parseInt(actEl.getAttribute('data-delta'), 10) || 0;
+          _applySxAocView(wizardData, 'distance', delta);
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+
+        /* v27.3.0 §10 — SX line-item handlers (LEGACY — dead code after v27.3.12
+           UI redesign; new render emits view-state actions above. Kept for
+           hypothetical leftover callers; safe no-op if unreachable). */
+        // HDBaseT: add line
+        if (action === 'sx-hdbt-add') {
+          if (!Array.isArray(wizardData.sx_hdbt_lines)) wizardData.sx_hdbt_lines = [];
+          wizardData.sx_hdbt_lines.push({
+            id: 'h' + Date.now() + Math.floor(Math.random() * 1000),
+            direction: 'kit',
+            signal: 'Video',
+            resolution: '1080p',
+            qty: 1
+          });
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        // HDBaseT: set a key (direction/signal/resolution) on a line
+        if (action === 'sx-hdbt-set') {
+          const idx = parseInt(actEl.getAttribute('data-idx'), 10);
+          const key = actEl.getAttribute('data-key');
+          const value = actEl.getAttribute('data-value');
+          const line = wizardData.sx_hdbt_lines && wizardData.sx_hdbt_lines[idx];
+          if (line && key) {
+            line[key] = value;
+            _syncSxSums();
+            saveDraft();
+            rerenderPreservingScroll();
+          }
+          return;
+        }
+        // HDBaseT: change qty
+        if (action === 'sx-hdbt-qty') {
+          const idx = parseInt(actEl.getAttribute('data-idx'), 10);
+          const delta = parseInt(actEl.getAttribute('data-delta'), 10) || 0;
+          const line = wizardData.sx_hdbt_lines && wizardData.sx_hdbt_lines[idx];
+          if (line) {
+            line.qty = Math.max(0, (line.qty | 0) + delta);
+            _syncSxSums();
+            saveDraft();
+            rerenderPreservingScroll();
+          }
+          return;
+        }
+        // HDBaseT: remove line
+        if (action === 'sx-hdbt-remove') {
+          const idx = parseInt(actEl.getAttribute('data-idx'), 10);
+          if (wizardData.sx_hdbt_lines && wizardData.sx_hdbt_lines[idx]) {
+            wizardData.sx_hdbt_lines.splice(idx, 1);
+            _syncSxSums();
+            saveDraft();
+            rerenderPreservingScroll();
+          }
+          return;
+        }
+        // Splitter (DA): qty change for a model
+        if (action === 'sx-da-qty') {
+          const key = actEl.getAttribute('data-key');
+          const delta = parseInt(actEl.getAttribute('data-delta'), 10) || 0;
+          if (!wizardData.sx_da_counts) wizardData.sx_da_counts = { '612': 0, '614': 0, '618': 0 };
+          wizardData.sx_da_counts[key] = Math.max(0, (wizardData.sx_da_counts[key] | 0) + delta);
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        // v27.3.14a (Issue G) — SX card accordion toggle.
+        // No-op when the card has content (forced-open prevents data hiding).
+        // Click target is the entire .sx-card-head; the "+ Add" pill inside
+        // has pointer-events:none so the parent owns the click.
+        if (action === 'sx-toggle') {
+          const k = actEl.getAttribute('data-key');
+          if (!k) return;
+          if (!wizardData._sxExpanded || typeof wizardData._sxExpanded !== 'object') {
+            wizardData._sxExpanded = { hdbt: false, da: false, ap: false, aoc: false };
+          }
+          if (_sxCardHasContent(wizardData, k)) {
+            // Forced-open; ignore click. (No haptic, no toast — silent no-op.)
+            return;
+          }
+          wizardData._sxExpanded[k] = !wizardData._sxExpanded[k];
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        // AP-536 qty
+        if (action === 'sx-ap-qty') {
+          const delta = parseInt(actEl.getAttribute('data-delta'), 10) || 0;
+          wizardData.sx_ap_qty = Math.max(0, (wizardData.sx_ap_qty | 0) + delta);
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        // AOC: add line
+        if (action === 'sx-aoc-add') {
+          if (!Array.isArray(wizardData.sx_aoc_lines)) wizardData.sx_aoc_lines = [];
+          wizardData.sx_aoc_lines.push({
+            id: 'a' + Date.now() + Math.floor(Math.random() * 1000),
+            signal: 'HDMI',
+            jacket: 'Standard',
+            length: 10,
+            qty: 1
+          });
+          _syncSxSums();
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+        // AOC: change qty
+        if (action === 'sx-aoc-qty') {
+          const idx = parseInt(actEl.getAttribute('data-idx'), 10);
+          const delta = parseInt(actEl.getAttribute('data-delta'), 10) || 0;
+          const line = wizardData.sx_aoc_lines && wizardData.sx_aoc_lines[idx];
+          if (line) {
+            line.qty = Math.max(0, (line.qty | 0) + delta);
+            _syncSxSums();
+            saveDraft();
+            rerenderPreservingScroll();
+          }
+          return;
+        }
+        // AOC: remove line
+        if (action === 'sx-aoc-remove') {
+          const idx = parseInt(actEl.getAttribute('data-idx'), 10);
+          if (wizardData.sx_aoc_lines && wizardData.sx_aoc_lines[idx]) {
+            wizardData.sx_aoc_lines.splice(idx, 1);
+            _syncSxSums();
+            saveDraft();
+            rerenderPreservingScroll();
+          }
+          return;
+        }
+>>>>>>> 16afeaccb009e24b61a87b201518c1087a4dd6c7
       });
 
       /* v27.3.0 §10 — sync sx_data sums from the detail arrays. Keeps backward
