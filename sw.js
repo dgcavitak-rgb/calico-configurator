@@ -1,5 +1,5 @@
 // tvONE Product Selector — Service Worker
-// v27.5-alpha1 (2026-05-26)
+// v27.7-alpha1 (2026-05-26)
 //
 // Strategy:
 //   - Shell (index.html + CDN scripts): cache-first. On install, prime the
@@ -13,7 +13,7 @@
 // the activate handler. Promotes hard-refresh semantics for users with the
 // PWA installed.
 
-const CACHE_NAME = 'tvone-v27.5-alpha1';
+const CACHE_NAME = 'tvone-v27.7-alpha1';
 const SHELL_URLS = [
   './',
   './index.html'
