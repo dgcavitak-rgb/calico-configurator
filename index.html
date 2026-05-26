@@ -13,6 +13,71 @@
        once the user lands on /dashboard. ~330KB gzipped. Pinned to a stable minor (5.5.x). -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
   <!--
+    v27.4.0-beta2 — DASHBOARD VIEW HERO REBUILD (2026-05-26)
+    Phase 5 of v27.4.0. Adds the hero-tech Dashboard view per SPEC §7
+    and mockup v3. Existing legacy code preserved under showDashboardLegacy.
+
+    What ships in this patch:
+
+    1) CSS: ~450 lines of dashboard-specific .v4-* styles (after .v4-quick-btn).
+       - Saved views row (6 pills with active/add variants)
+       - Filter bar (period/region/person/stage/product chips + clear)
+       - Filter summary line with shown-of-total + export/share actions
+       - Activity ticker with 60s horizontal scroll animation
+       - Dashboard 12-col responsive grid (col-6 / col-12)
+       - Donut chart layout (svg + legend rows + percent bars)
+       - Region wrap: stylized India SVG + zone tiles with sparklines
+       - Sales table with avatar + velocity bar + win-pct chips (high/mid/low)
+       - Stuck-where heatmap (5x4 grid, 5 intensity levels h0-h4)
+       - Newly-added chart stats row + SVG host + toggle chips
+
+    2) JS: New showDashboard() and async loadDashboardV4(user) inside UI IIFE,
+       placed adjacent to Phase 4 home functions (v4 family stays grouped).
+       - Existing showDashboard renamed to showDashboardLegacy for revert
+       - UI.showDashboard export at L16811 picks up new function by name
+       - All charts hand-coded SVG (no ECharts wiring — deferred to v27.4.1
+         depth pass). Donut uses stroke-dasharray math (circumference
+         = 2 * PI * 60 = 376.99) to draw arcs. India map is stylized
+         4-blob abstraction matching mockup v3 §D4. Line chart computes
+         viewBox-relative path strings inline from 6-month aggregation.
+       - loadDashboardV4 wires all metrics through STORE.listDeals +
+         Phase 3 scope helpers (region/sales scoping, dealMatchesScope).
+
+    3) Filter bar wiring deferred: chips toggle visual state only.
+       Actual deal filtering uses Phase 3 scope baseline (user role
+       determines what's visible). Saved views are visual-only too.
+       Full filter wiring + persistence lands in v27.4.1.
+
+    4) Live ticker has hardcoded sample items (Vipul/Mohit/Arvind etc.)
+       to show the layout. Real stage_transitions feed wiring in v27.4.1.
+
+    What's NOT in this patch (deferred):
+       - ECharts wiring on donut / line / heatmap (v27.4.1)
+       - Filter chip wiring + memoization (v27.4.1)
+       - Saved view persistence (v27.4.1)
+       - Real activity feed from stage_transitions (v27.4.1)
+       - Stage Health / Cycle / Period chips / Newly Onboarded (v27.4.1)
+       - Region "unknown" cleanup link (v27.4.1)
+
+    Smoke before declaring v27.4.0 GA:
+       (a) #/dashboard renders new hero view (no console errors)
+       (b) 6 KPI tiles populate within ~500ms
+       (c) Donut arcs draw correctly (cav + oem sum to full circle)
+       (d) Region tiles + India map labels show correct zone counts
+       (e) Sales table shows top 8 people with velocity bars
+       (f) Heatmap cells color by stuck count intensity
+       (g) Line chart renders 6 months of created_at history
+       (h) Activity ticker scrolls horizontally and pauses on hover
+       (i) Filter chips toggle active state (no actual filtering yet)
+       (j) BU Head login → scope label shows region; Super → "Pan-India"
+       (k) Theme toggle still works (light/dark)
+       (l) #/home still works (Phase 4 untouched)
+
+    Foundation (Phase 3) + Home view (Phase 4) unchanged.
+    Wizard / Recommendation engine / Exports / T&C / Login / SX accordion /
+    History view: ALL UNCHANGED.
+  -->
+  <!--
     v27.4.0-beta1 — HOME VIEW HERO REBUILD (2026-05-26)
     Phase 4 of v27.4.0. Adds the new hero-tech Home view per SPEC §4 and
     mockup v3. Existing legacy code preserved under showHomeLegacy.
@@ -3969,6 +4034,438 @@
     html[data-theme="dark"] .v4-quick-btn:hover { color: var(--brand); }
     .v4-quick-btn svg { width: 16px; height: 16px; }
 
+    /* ============================================================
+       v27.4.0 DASHBOARD VIEW — full analytics styling
+       Adds: filter bar, saved views, activity ticker, region map,
+       donut, sales table, stuck heatmap, line chart, sparklines.
+       Reuses Phase 4 components: hero, KPIs, funnel, attention, chips.
+       ============================================================ */
+
+    /* Saved views row */
+    .v4-saved-views {
+      display: flex; gap: var(--s-2);
+      margin-bottom: var(--s-3);
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: var(--s-1) 0;
+    }
+    .v4-saved-views::-webkit-scrollbar { display: none; }
+    .v4-saved-pill {
+      appearance: none;
+      height: 30px;
+      padding: 0 var(--s-3);
+      border-radius: var(--r-pill);
+      font-size: 11.5px; font-weight: 600;
+      background: var(--bg-subtle);
+      color: var(--ink);
+      display: flex; align-items: center; gap: 6px;
+      white-space: nowrap;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all var(--dur-fast) ease;
+    }
+    .v4-saved-pill:hover { background: var(--brand-pale); color: var(--brand-deep); }
+    .v4-saved-pill.active {
+      background: var(--brand-pale);
+      color: var(--brand-deep);
+      border-color: rgba(247,148,29,0.18);
+    }
+    html[data-theme="dark"] .v4-saved-pill.active { color: var(--brand); }
+    .v4-saved-pill svg { width: 12px; height: 12px; opacity: 0.7; }
+    .v4-saved-pill.add {
+      background: transparent;
+      border: 1px dashed var(--border-strong);
+      color: var(--ink-soft);
+    }
+
+    /* Filter bar */
+    .v4-filter-bar {
+      display: flex; gap: var(--s-2);
+      margin-bottom: var(--s-3);
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: var(--s-1) 0;
+      touch-action: pan-x;
+    }
+    .v4-filter-bar::-webkit-scrollbar { display: none; }
+    .v4-filter-chip {
+      appearance: none;
+      height: 36px;
+      padding: 0 var(--s-3);
+      border-radius: var(--r-pill);
+      background: var(--bg-card);
+      border: 1px solid var(--border-mid);
+      font-size: 12px; font-weight: 600;
+      color: var(--ink-strong);
+      display: flex; align-items: center; gap: 6px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all var(--dur-fast) ease;
+    }
+    .v4-filter-chip:hover { border-color: var(--border-strong); background: var(--bg-subtle); }
+    .v4-filter-chip.active {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(247,148,29,0.22);
+    }
+    .v4-filter-chip svg { width: 13px; height: 13px; opacity: 0.7; }
+    .v4-filter-chip .v4-count-pill {
+      background: rgba(0,0,0,0.06);
+      font-size: 10px; font-weight: 700;
+      padding: 1px 6px;
+      border-radius: var(--r-pill);
+      font-variant-numeric: tabular-nums;
+    }
+    .v4-filter-chip.active .v4-count-pill { background: rgba(255,255,255,0.18); }
+    .v4-filter-clear {
+      appearance: none;
+      height: 36px;
+      padding: 0 var(--s-3);
+      font-size: 12px; font-weight: 700;
+      color: var(--brand-deep);
+      background: transparent; border: none;
+      white-space: nowrap;
+      border-radius: var(--r-pill);
+      cursor: pointer;
+    }
+    html[data-theme="dark"] .v4-filter-clear { color: var(--brand); }
+    .v4-filter-clear:hover { background: var(--brand-pale); }
+    .v4-filter-summary {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--s-3) var(--s-4);
+      background: var(--bg-subtle);
+      border-radius: var(--r-sm);
+      font-size: 12px;
+      margin-bottom: var(--s-5);
+      flex-wrap: wrap; gap: var(--s-3);
+      color: var(--ink-mid);
+    }
+    .v4-filter-summary .v4-sum-n { color: var(--ink-strong); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .v4-filter-summary .v4-sum-act {
+      height: 26px; padding: 0 var(--s-3);
+      font-size: 11px; font-weight: 600;
+      border-radius: var(--r-sm);
+      color: var(--ink); background: var(--bg-card);
+      border: 1px solid var(--border-mid);
+      cursor: pointer;
+    }
+    .v4-filter-summary .v4-sum-act:hover { border-color: var(--ink-mid); }
+
+    /* Activity ticker */
+    .v4-ticker {
+      display: flex; align-items: center; gap: var(--s-3);
+      padding: var(--s-3) var(--s-4);
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      margin-bottom: var(--s-5);
+      overflow: hidden;
+      position: relative;
+    }
+    .v4-ticker-label {
+      display: flex; align-items: center; gap: var(--s-2);
+      font-size: 10.5px; font-weight: 700;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      color: var(--ink-soft);
+      flex-shrink: 0;
+      padding-right: var(--s-3);
+      border-right: 1px solid var(--border-mid);
+    }
+    .v4-ticker-label svg { width: 12px; height: 12px; }
+    .v4-ticker-feed {
+      display: flex; gap: var(--s-5);
+      animation: v4Ticker 60s linear infinite;
+      flex-shrink: 0;
+      padding-left: var(--s-3);
+    }
+    .v4-ticker-item {
+      display: inline-flex; align-items: center; gap: var(--s-2);
+      font-size: 12px; color: var(--ink);
+      white-space: nowrap; font-weight: 500;
+    }
+    .v4-ticker-item .v4-ti-time {
+      color: var(--ink-faint);
+      font-size: 10.5px; font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .v4-ticker-item .v4-ti-actor { color: var(--ink-strong); font-weight: 700; }
+    @keyframes v4Ticker {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    .v4-ticker:hover .v4-ticker-feed { animation-play-state: paused; }
+
+    /* Dashboard grid */
+    .v4-dash-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--s-4);
+    }
+    @media (min-width: 1024px) {
+      .v4-dash-grid { grid-template-columns: repeat(12, 1fr); gap: var(--s-5); }
+      .v4-col-6  { grid-column: span 6; }
+      .v4-col-12 { grid-column: span 12; }
+    }
+
+    /* Donut chart */
+    .v4-donut-wrap {
+      display: flex; align-items: center; gap: var(--s-5);
+      flex-wrap: wrap;
+    }
+    .v4-donut-svg { flex-shrink: 0; }
+    .v4-donut-legend {
+      display: flex; flex-direction: column; gap: var(--s-3);
+      flex: 1; min-width: 160px;
+    }
+    .v4-legend-row {
+      display: flex; align-items: center; gap: var(--s-3);
+    }
+    .v4-legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%; flex-shrink: 0;
+    }
+    .v4-legend-bar {
+      height: 4px;
+      border-radius: var(--r-pill);
+      flex: 1;
+      background: var(--bg-subtle);
+      overflow: hidden;
+    }
+    .v4-legend-bar > span {
+      display: block; height: 100%;
+      border-radius: var(--r-pill);
+      animation: v4BarFill 700ms var(--ease-out) both;
+      transform-origin: left;
+    }
+    .v4-legend-label {
+      font-size: 12.5px; color: var(--ink);
+      font-weight: 600; min-width: 90px;
+    }
+    .v4-legend-value {
+      font-size: 14px; font-weight: 800;
+      color: var(--ink-strong);
+      font-variant-numeric: tabular-nums;
+      min-width: 30px; text-align: right;
+    }
+    .v4-legend-pct {
+      font-size: 11px; color: var(--ink-soft);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      min-width: 36px; text-align: right;
+    }
+
+    /* Region view: India silhouette + zone list */
+    .v4-region-wrap {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--s-5);
+    }
+    @media (min-width: 720px) {
+      .v4-region-wrap {
+        grid-template-columns: minmax(220px, 260px) 1fr;
+        align-items: center;
+      }
+    }
+    .v4-india-wrap {
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      padding: var(--s-3);
+      background: var(--bg-subtle);
+      border-radius: var(--r-md);
+      border: 1px solid var(--border-soft);
+      aspect-ratio: 1;
+      max-width: 260px;
+      margin: 0 auto;
+    }
+    .v4-india-svg { width: 100%; height: 100%; max-height: 220px; }
+    .v4-zone-blob { transition: filter var(--dur-base) ease; cursor: pointer; }
+    .v4-zone-blob:hover { filter: brightness(1.12); }
+    .v4-india-pulse {
+      position: absolute;
+      width: 8px; height: 8px;
+      background: var(--brand);
+      border-radius: 50%;
+      animation: v4Pulse 2s infinite;
+      color: rgba(247, 148, 29, 0.45);
+    }
+    .v4-zone-list {
+      display: flex; flex-direction: column; gap: var(--s-2);
+    }
+    .v4-zone-row {
+      display: grid;
+      grid-template-columns: 14px 1fr auto auto;
+      align-items: center; gap: var(--s-3);
+      padding: var(--s-3);
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      transition: all var(--dur-base) ease;
+    }
+    .v4-zone-row:hover { border-color: var(--border-mid); transform: translateX(2px); }
+    .v4-zone-pip { width: 14px; height: 14px; border-radius: var(--r-xs); }
+    .v4-zone-row .v4-zname { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
+    .v4-zone-row .v4-zmeta { font-size: 11px; color: var(--ink-soft); margin-top: 1px; font-weight: 500; }
+    .v4-zone-row .v4-zcount {
+      font-family: var(--font-display);
+      font-size: 18px; font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+    .v4-zone-row .v4-zspark { width: 50px; height: 22px; flex-shrink: 0; }
+
+    /* Sales table with velocity bars */
+    .v4-tbl-wrap { overflow-x: auto; }
+    .v4-tbl {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+    }
+    .v4-tbl th {
+      text-align: left; font-weight: 700;
+      font-size: 10.5px; text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--ink-soft);
+      padding: var(--s-3);
+      border-bottom: 1px solid var(--border-mid);
+      white-space: nowrap;
+      background: var(--bg-subtle);
+    }
+    .v4-tbl th.v4-num { text-align: right; }
+    .v4-tbl td {
+      padding: var(--s-3);
+      border-bottom: 1px solid var(--border-soft);
+      color: var(--ink); font-weight: 500;
+      vertical-align: middle;
+    }
+    .v4-tbl td.v4-num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+    .v4-tbl tr:last-child td { border-bottom: none; }
+    .v4-tbl tr.v4-row-link { cursor: pointer; transition: background var(--dur-fast) ease; }
+    .v4-tbl tr.v4-row-link:hover { background: var(--bg-subtle); }
+    .v4-person-cell { display: flex; align-items: center; gap: var(--s-2); }
+    .v4-person-avatar {
+      width: 28px; height: 28px;
+      border-radius: var(--r-pill);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700;
+      color: #fff; flex-shrink: 0;
+      letter-spacing: 0.04em;
+    }
+    .v4-person-name { font-weight: 600; color: var(--ink-strong); }
+    .v4-person-sub { font-size: 10.5px; color: var(--ink-soft); font-weight: 500; }
+    .v4-velocity-bar {
+      display: inline-flex; align-items: center; gap: var(--s-2);
+      width: 100%; max-width: 140px;
+    }
+    .v4-vb-track {
+      height: 6px;
+      background: var(--bg-subtle);
+      border-radius: var(--r-pill);
+      flex: 1; overflow: hidden;
+    }
+    .v4-vb-fill {
+      height: 100%;
+      border-radius: var(--r-pill);
+      background: var(--kpi-grad-1);
+      animation: v4BarFill 700ms var(--ease-out) both;
+      transform-origin: left;
+    }
+    .v4-win-pct {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      font-size: 12.5px;
+    }
+    .v4-win-pct.high { color: var(--success); }
+    .v4-win-pct.mid  { color: var(--warning); }
+    .v4-win-pct.low  { color: var(--danger); }
+
+    /* Stuck-where heatmap */
+    .v4-heatmap {
+      display: grid;
+      grid-template-columns: 100px repeat(4, 1fr);
+      gap: 4px; align-items: center;
+    }
+    .v4-hm-hd {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--ink-soft);
+      text-align: center;
+      padding: 4px 0;
+    }
+    .v4-hm-rowlbl {
+      font-size: 11px; font-weight: 600;
+      color: var(--ink);
+      padding-right: var(--s-2);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .v4-hm-cell {
+      aspect-ratio: 1.5;
+      border-radius: var(--r-xs);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink-strong);
+      background: var(--bg-subtle);
+      transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) ease;
+      cursor: pointer;
+      position: relative;
+    }
+    .v4-hm-cell:hover {
+      transform: scale(1.06);
+      box-shadow: var(--shadow-card);
+      z-index: 2;
+    }
+    .v4-hm-cell.h0 { background: var(--bg-subtle); color: var(--ink-faint); }
+    .v4-hm-cell.h1 { background: rgba(247, 148, 29, 0.18); color: var(--brand-deep); }
+    .v4-hm-cell.h2 { background: rgba(247, 148, 29, 0.36); color: var(--brand-deep); }
+    .v4-hm-cell.h3 { background: rgba(247, 148, 29, 0.56); color: #fff; }
+    .v4-hm-cell.h4 { background: var(--brand); color: #fff; }
+    html[data-theme="dark"] .v4-hm-cell.h1 { color: var(--brand); }
+    html[data-theme="dark"] .v4-hm-cell.h2 { color: #fff; }
+    .v4-hm-legend {
+      display: flex; align-items: center; gap: var(--s-3);
+      margin-top: var(--s-4);
+      padding-top: var(--s-3);
+      border-top: 1px solid var(--border-soft);
+      font-size: 11px; color: var(--ink-soft);
+      font-weight: 500; flex-wrap: wrap;
+    }
+    .v4-hm-scale {
+      display: flex; gap: 2px; align-items: center;
+    }
+    .v4-hm-scale-cell {
+      width: 18px; height: 14px;
+      border-radius: 3px;
+    }
+
+    /* Newly added line chart + stats */
+    .v4-chart-stats {
+      display: flex; gap: var(--s-5);
+      flex-wrap: wrap;
+      padding-bottom: var(--s-3);
+      border-bottom: 1px solid var(--border-soft);
+      margin-bottom: var(--s-3);
+    }
+    .v4-cs-label {
+      font-size: 10.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--ink-soft);
+    }
+    .v4-cs-value {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.025em;
+      margin-top: 2px;
+      color: var(--ink-strong);
+    }
+    .v4-chart-toggle {
+      display: flex; gap: var(--s-2);
+      margin-bottom: var(--s-3);
+    }
+    .v4-chart-toggle .v4-filter-chip { height: 30px; font-size: 11px; padding: 0 var(--s-3); }
+    .v4-chart-svg { width: 100%; height: 240px; display: block; overflow: visible; }
+
     /* --- v27.3.0 Stage transitions timeline --- */
     .st-timeline {
       padding: 16px 18px 12px 18px;
@@ -5094,7 +5591,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.4.0-beta1',
+      version: 'v27.4.0-beta2',
       constants,
       calico,
       mv,
@@ -7679,8 +8176,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.4.0-beta1"',
-      () => CATALOG.version === 'v27.4.0-beta1' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.4.0-beta2"',
+      () => CATALOG.version === 'v27.4.0-beta2' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.3.12 invariants — SX redesign + step reduction ---------- */
     // Source: /mnt/user-data/outputs/SPEC-v27.3.12-sx-redesign-step-reduction.md
@@ -11882,11 +12379,644 @@
     }
 
     /* ============================================================
-       VIEW: Dashboard — full analytics
-       8 KPI tiles + attention strip + stage funnel + region zones
-       + stuck/slipped table.
+       v27.4.0 VIEW: Dashboard — hero-tech rebuild
+       Replaces showDashboardLegacy. Renders the deep-analytics view
+       per SPEC §7 and mockup v3. Components:
+         - Hero header with live-sync pill
+         - Saved views (visual only in v27.4.0; persistence in v27.4.1)
+         - Filter bar (visual only; wiring deferred to v27.4.1)
+         - Activity ticker
+         - 6 hero KPI tiles (same as Home)
+         - Stage funnel
+         - Cavitak/OEM donut
+         - Region tiles + stylized India SVG
+         - Sales person win/loss table with velocity bars
+         - Stuck-where heatmap (stage × region)
+         - Newly-added cases SVG line chart with stats row
+       All charts are hand-coded SVG (no ECharts wiring this release —
+       deferred to v27.4.1 depth pass). Filter bar chips toggle visual
+       state only; actual deal filtering uses Phase 3 scope helpers
+       baseline (user role determines what's visible).
        ============================================================ */
     function showDashboard() {
+      showChrome(true);
+      updateNavActive('#/dashboard');
+      const u = STORE.currentUser() || {};
+      const today = (function() {
+        const d = new Date();
+        const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return days[d.getDay()] + ', ' + d.getDate() + ' ' + mons[d.getMonth()] + ' ' + d.getFullYear();
+      })();
+
+      const sIco = {
+        funnel:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>',
+        pie:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="2" x2="12" y2="12"/><line x1="12" y1="12" x2="20" y2="12"/></svg>',
+        map:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+        users:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>',
+        grid:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+        trend:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>',
+        cal:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+        pin:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+        user:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+        stack:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+        box:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
+        search:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+        starF:    '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+        warn:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+        bolt:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+        plus:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+        chev:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>',
+        kOpen:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/></svg>',
+        kCurr:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+        kEnd:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>',
+        kPart:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 7V5a3 3 0 0 0-3-3H11a3 3 0 0 0-3 3v2"/></svg>',
+        kCon:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+        kPie:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>'
+      };
+
+      function kpiTile(grad, id, label, ico, isSplit) {
+        return '<button type="button" class="v4-kpi ' + grad + '">' +
+          '<div class="v4-kpi-top">' +
+            '<div class="v4-kpi-label">' + esc(label) + '</div>' +
+            '<div class="v4-kpi-ico">' + ico + '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div class="v4-kpi-value-row">' +
+              '<div class="v4-kpi-value" data-v4-kpi-d="' + id + '">\u2014</div>' +
+            '</div>' +
+            '<div class="v4-kpi-sub" data-v4-kpi-d-sub="' + id + '">\u2014</div>' +
+            (isSplit
+              ? '<div class="v4-split-bar" data-v4-kpi-d-bar="' + id + '"></div>' +
+                '<div class="v4-split-legend" data-v4-kpi-d-legend="' + id + '"></div>'
+              : '<div class="v4-kpi-spark"></div>'
+            ) +
+          '</div>' +
+        '</button>';
+      }
+      function funnelRow(klass, name) {
+        return '<div class="v4-funnel-row">' +
+          '<span class="v4-chip ' + klass + '">' + esc(name) + '</span>' +
+          '<div class="v4-funnel-bar-wrap"><div class="v4-funnel-bar ' + klass + '" data-v4-d-funnel="' + esc(name) + '" style="width:0%">0</div></div>' +
+          '<span class="v4-funnel-meta" data-v4-d-funnel-pct="' + esc(name) + '">0%</span>' +
+        '</div>';
+      }
+
+      // India silhouette SVG — stylized 4-zone abstraction (per mockup v3 §D4)
+      function indiaSvg() {
+        return '<svg class="v4-india-svg" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg">' +
+          // NORTH
+          '<path class="v4-zone-blob" data-v4-zone-blob="north" d="M55,22 Q70,8 90,12 Q115,8 138,18 Q152,25 150,42 Q160,48 158,58 Q150,68 130,68 L85,68 Q65,72 55,60 Q42,52 48,38 Q52,28 55,22 Z" fill="#3B82F6" opacity="0.5"/>' +
+          // WEST (Cavitak HQ — most saturated)
+          '<path class="v4-zone-blob" data-v4-zone-blob="west" d="M48,72 Q40,80 38,95 Q32,110 38,128 Q42,142 55,148 Q70,150 80,140 Q90,128 90,110 Q92,90 88,75 Q72,68 48,72 Z" fill="#F7941D" opacity="0.9"/>' +
+          // EAST
+          '<path class="v4-zone-blob" data-v4-zone-blob="east" d="M132,72 Q145,75 152,85 Q165,90 168,72 Q175,68 180,80 Q178,95 172,108 Q160,120 145,118 Q132,115 128,105 Q125,90 132,72 Z" fill="#8B5CF6" opacity="0.3"/>' +
+          // SOUTH
+          '<path class="v4-zone-blob" data-v4-zone-blob="south" d="M92,140 Q82,155 80,175 Q82,195 95,205 Q108,200 112,180 Q115,160 110,145 Q102,138 92,140 Z" fill="#10B981" opacity="0.6"/>' +
+          // labels
+          '<text x="100" y="48"  text-anchor="middle" font-family="\'General Sans\', sans-serif" font-size="9"   font-weight="700" fill="#fff" letter-spacing="0.1em"  data-v4-zone-lbl="north">N \u00b7 0</text>' +
+          '<text x="62"  y="115" text-anchor="middle" font-family="\'General Sans\', sans-serif" font-size="11"  font-weight="800" fill="#fff" letter-spacing="0.05em" data-v4-zone-lbl="west">W \u00b7 0</text>' +
+          '<text x="152" y="92"  text-anchor="middle" font-family="\'General Sans\', sans-serif" font-size="9"   font-weight="700" fill="#fff" letter-spacing="0.1em"  data-v4-zone-lbl="east">E \u00b7 0</text>' +
+          '<text x="96"  y="178" text-anchor="middle" font-family="\'General Sans\', sans-serif" font-size="9.5" font-weight="700" fill="#fff" letter-spacing="0.08em" data-v4-zone-lbl="south">S \u00b7 0</text>' +
+        '</svg>';
+      }
+      function zoneRow(zone, name, color, meta) {
+        return '<button type="button" class="v4-zone-row">' +
+          '<div class="v4-zone-pip" style="background:' + color + '"></div>' +
+          '<div>' +
+            '<div class="v4-zname">' + esc(name) + '</div>' +
+            '<div class="v4-zmeta">' + esc(meta) + '</div>' +
+          '</div>' +
+          '<div class="v4-zcount" data-v4-zcount="' + zone + '">0</div>' +
+          '<svg class="v4-zspark" viewBox="0 0 50 22" preserveAspectRatio="none">' +
+            '<path d="M0,16 L10,12 L20,14 L30,8 L40,6 L50,4" fill="none" stroke="' + color + '" stroke-width="1.8" stroke-linecap="round"/>' +
+          '</svg>' +
+        '</button>';
+      }
+      function hmRow(klass, name, zones) {
+        // zones = ['west','north','south','east'] in column order
+        return '<div class="v4-hm-rowlbl"><span class="v4-chip ' + klass + '">' + esc(name) + '</span></div>' +
+          zones.map(z => '<div class="v4-hm-cell h0" data-v4-hm="' + esc(name) + '|' + z + '">0</div>').join('');
+      }
+
+      // Sample ticker items — Phase 5 ship has hardcoded sample. Wire to
+      // real stage_transitions feed in v27.4.1.
+      const tickerItems = [
+        ['3m',  'Vipul',     'moved Hilton DLF \u2192 Negotiation'],
+        ['12m', 'Mohit',     'added CALICO BoM to ITC Grand'],
+        ['28m', 'Arvind',    'won Marriott Pune'],
+        ['1h',  'Faiz',      'created Trident Bandra'],
+        ['2h',  'Ranjith K', 'escalated 2 deals to Shashank'],
+        ['3h',  'Tausif',    'updated CORIO config in Hyatt Goa']
+      ];
+      const tickerHTML = tickerItems.map(t =>
+        '<span class="v4-ticker-item"><span class="v4-ti-time">' + esc(t[0]) +
+        '</span><span class="v4-ti-actor">' + esc(t[1]) + '</span>' + esc(t[2]) + '</span>'
+      ).join('');
+
+      setRoot(
+        // Hero
+        '<div class="v4-hero">' +
+          '<div class="v4-hero-row">' +
+            '<div>' +
+              '<div class="v4-hero-greeting">Dashboard</div>' +
+              '<div class="v4-hero-sub">' + esc(today) + ' \u00b7 <span data-v4-d-scopelbl>loading\u2026</span></div>' +
+            '</div>' +
+            '<div class="v4-live-pill">' +
+              '<span class="v4-live-dot"></span>' +
+              '<span>Live</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
+        // Saved views
+        '<div class="v4-saved-views">' +
+          '<button type="button" class="v4-saved-pill active">' + sIco.starF + 'My pipeline</button>' +
+          '<button type="button" class="v4-saved-pill">' + sIco.warn + '<span data-v4-d-svcount="atrisk">At risk</span></button>' +
+          '<button type="button" class="v4-saved-pill">' + sIco.bolt + 'High value</button>' +
+          '<button type="button" class="v4-saved-pill">' + sIco.pin + 'West region</button>' +
+          '<button type="button" class="v4-saved-pill">' + sIco.warn + 'This quarter close</button>' +
+          '<button type="button" class="v4-saved-pill add">' + sIco.plus + 'Save view</button>' +
+        '</div>' +
+
+        // Filter bar
+        '<div class="v4-filter-bar">' +
+          '<button type="button" class="v4-filter-chip active">' + sIco.cal + 'This quarter' + sIco.chev + '</button>' +
+          '<button type="button" class="v4-filter-chip">' + sIco.pin + 'Region</button>' +
+          '<button type="button" class="v4-filter-chip">' + sIco.user + 'Person</button>' +
+          '<button type="button" class="v4-filter-chip">' + sIco.stack + 'Stage</button>' +
+          '<button type="button" class="v4-filter-chip">' + sIco.box + 'Product</button>' +
+          '<button type="button" class="v4-filter-chip">' + sIco.search + 'Search</button>' +
+          '<button type="button" class="v4-filter-clear">Clear all</button>' +
+        '</div>' +
+
+        // Filter summary line
+        '<div class="v4-filter-summary">' +
+          '<div>Showing <span class="v4-sum-n" data-v4-d-shown>\u2014</span> of <span class="v4-sum-n" data-v4-d-total>\u2014</span> deals \u00b7 <span data-v4-d-sumdetail>This quarter</span></div>' +
+          '<div style="display:flex;gap:8px"><button type="button" class="v4-sum-act">Export CSV</button><button type="button" class="v4-sum-act">Share view</button></div>' +
+        '</div>' +
+
+        // Activity ticker
+        '<div class="v4-ticker">' +
+          '<div class="v4-ticker-label">' + sIco.bolt + 'Live feed</div>' +
+          '<div class="v4-ticker-feed">' + tickerHTML + tickerHTML + '</div>' +
+        '</div>' +
+
+        // KPIs
+        '<div class="v4-kpi-grid v4-stagger">' +
+          kpiTile('g1', 'open',        'Open cases',         sIco.kOpen, false) +
+          kpiTile('g2', 'pipeline',    'Pipeline value',     sIco.kCurr, false) +
+          kpiTile('g4', 'endusers',    'Active end-users',   sIco.kEnd,  false) +
+          kpiTile('g4', 'partners',    'Active partners',    sIco.kPart, false) +
+          kpiTile('g4', 'consultants', 'Active consultants', sIco.kCon,  false) +
+          kpiTile('g3', 'split',       'Cavitak / OEM',      sIco.kPie,  true) +
+        '</div>' +
+
+        '<div style="height:20px"></div>' +
+
+        // Two-column dash grid
+        '<div class="v4-dash-grid">' +
+
+          // Funnel
+          '<div class="v4-card v4-col-6">' +
+            '<div class="v4-card-hd"><h3>Pipeline by stage</h3><span class="v4-hint" data-v4-d-funnel-total>\u2014 open</span></div>' +
+            '<div class="v4-card-bd">' +
+              '<div class="v4-funnel">' +
+                funnelRow('v4-s-lead',     'Qualified') +
+                funnelRow('v4-s-proposal', 'Proposal') +
+                funnelRow('v4-s-budget',   'Budget Approval') +
+                funnelRow('v4-s-tech',     'Technical Approval') +
+                funnelRow('v4-s-nego',     'Negotiation') +
+                funnelRow('v4-s-awarded',  'Awarded') +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+
+          // Donut
+          '<div class="v4-card v4-col-6">' +
+            '<div class="v4-card-hd"><h3>Origin split</h3><span class="v4-hint">Cavitak vs OEM \u00b7 by creator role</span></div>' +
+            '<div class="v4-card-bd">' +
+              '<div class="v4-donut-wrap">' +
+                '<svg class="v4-donut-svg" width="156" height="156" viewBox="0 0 156 156">' +
+                  '<circle cx="78" cy="78" r="60" fill="none" stroke="var(--bg-subtle)" stroke-width="22"/>' +
+                  '<circle data-v4-d-arc="cav" cx="78" cy="78" r="60" fill="none" stroke="#F7941D" stroke-width="22" ' +
+                    'stroke-dasharray="0 376.99" stroke-dashoffset="0" transform="rotate(-90 78 78)" stroke-linecap="round"/>' +
+                  '<circle data-v4-d-arc="oem" cx="78" cy="78" r="60" fill="none" stroke="#7C3AED" stroke-width="22" ' +
+                    'stroke-dasharray="0 376.99" stroke-dashoffset="0" transform="rotate(-90 78 78)" stroke-linecap="round"/>' +
+                  '<text data-v4-d-donut-n x="78" y="74" text-anchor="middle" font-family="\'General Sans\',sans-serif" font-size="30" font-weight="800" fill="var(--ink-strong)" style="letter-spacing:-0.03em">0</text>' +
+                  '<text x="78" y="94" text-anchor="middle" font-family="\'General Sans\',sans-serif" font-size="9.5" font-weight="700" fill="var(--ink-soft)" letter-spacing="0.12em">CASES</text>' +
+                '</svg>' +
+                '<div class="v4-donut-legend">' +
+                  '<div class="v4-legend-row">' +
+                    '<span class="v4-legend-dot" style="background:#F7941D"></span>' +
+                    '<span class="v4-legend-label">Cavitak</span>' +
+                    '<span class="v4-legend-value" data-v4-d-donut-cav>0</span>' +
+                    '<span class="v4-legend-pct" data-v4-d-donut-cav-pct>0%</span>' +
+                  '</div>' +
+                  '<div class="v4-legend-bar"><span data-v4-d-donut-cav-bar style="width:0%;background:#F7941D"></span></div>' +
+                  '<div class="v4-legend-row">' +
+                    '<span class="v4-legend-dot" style="background:#7C3AED"></span>' +
+                    '<span class="v4-legend-label">OEM</span>' +
+                    '<span class="v4-legend-value" data-v4-d-donut-oem>0</span>' +
+                    '<span class="v4-legend-pct" data-v4-d-donut-oem-pct>0%</span>' +
+                  '</div>' +
+                  '<div class="v4-legend-bar"><span data-v4-d-donut-oem-bar style="width:0%;background:#7C3AED"></span></div>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+
+          // Region (full width)
+          '<div class="v4-card v4-col-12">' +
+            '<div class="v4-card-hd"><h3>Regional distribution</h3><span class="v4-hint">open cases by zone</span></div>' +
+            '<div class="v4-card-bd">' +
+              '<div class="v4-region-wrap">' +
+                '<div class="v4-india-wrap">' +
+                  indiaSvg() +
+                  '<div class="v4-india-pulse" style="left:32%;top:50%"></div>' +
+                '</div>' +
+                '<div class="v4-zone-list">' +
+                  zoneRow('west',  'West',  '#F7941D', 'Maharashtra, Gujarat, Goa, MP +3') +
+                  zoneRow('north', 'North', '#3B82F6', 'Delhi, Haryana, UP, Punjab +6') +
+                  zoneRow('south', 'South', '#10B981', 'Karnataka, TN, AP, TG +3') +
+                  zoneRow('east',  'East',  '#8B5CF6', 'WB, Bihar, Odisha, NE +8') +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+
+          // Sales table
+          '<div class="v4-card v4-col-6">' +
+            '<div class="v4-card-hd"><h3>Sales performance</h3><span class="v4-hint">FY26-27 \u00b7 tap to drill</span></div>' +
+            '<div class="v4-card-bd" style="padding:0">' +
+              '<div class="v4-tbl-wrap">' +
+                '<table class="v4-tbl">' +
+                  '<thead><tr><th>Person</th><th>Pipeline</th><th class="v4-num">Open</th><th class="v4-num">Won</th><th class="v4-num">Win %</th></tr></thead>' +
+                  '<tbody data-v4-d-sales-body><tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:24px">Loading\u2026</td></tr></tbody>' +
+                '</table>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+
+          // Heatmap
+          '<div class="v4-card v4-col-6">' +
+            '<div class="v4-card-hd"><h3>Where deals stick</h3><span class="v4-hint">&gt; 30 days in stage \u00b7 by region</span></div>' +
+            '<div class="v4-card-bd">' +
+              '<div class="v4-heatmap">' +
+                '<div></div>' +
+                '<div class="v4-hm-hd">W</div><div class="v4-hm-hd">N</div><div class="v4-hm-hd">S</div><div class="v4-hm-hd">E</div>' +
+                hmRow('v4-s-lead',     'Qualified',          ['west','north','south','east']) +
+                hmRow('v4-s-proposal', 'Proposal',           ['west','north','south','east']) +
+                hmRow('v4-s-budget',   'Budget',             ['west','north','south','east']) +
+                hmRow('v4-s-tech',     'Technical',          ['west','north','south','east']) +
+                hmRow('v4-s-nego',     'Negotiation',        ['west','north','south','east']) +
+              '</div>' +
+              '<div class="v4-hm-legend">' +
+                '<span>Stuck count</span>' +
+                '<div class="v4-hm-scale">' +
+                  '<span>low</span>' +
+                  '<div class="v4-hm-scale-cell" style="background:var(--bg-subtle)"></div>' +
+                  '<div class="v4-hm-scale-cell" style="background:rgba(247,148,29,0.18)"></div>' +
+                  '<div class="v4-hm-scale-cell" style="background:rgba(247,148,29,0.36)"></div>' +
+                  '<div class="v4-hm-scale-cell" style="background:rgba(247,148,29,0.56)"></div>' +
+                  '<div class="v4-hm-scale-cell" style="background:var(--brand)"></div>' +
+                  '<span>high</span>' +
+                '</div>' +
+                '<span style="margin-left:auto">Total: <strong style="color:var(--ink-strong)" data-v4-d-hm-total>0</strong> stuck</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+
+          // Newly added line chart (full width)
+          '<div class="v4-card v4-col-12">' +
+            '<div class="v4-card-hd"><h3>Newly added cases</h3><span class="v4-hint">last 6 months</span></div>' +
+            '<div class="v4-card-bd">' +
+              '<div class="v4-chart-stats">' +
+                '<div><div class="v4-cs-label">Total new</div><div class="v4-cs-value" data-v4-d-line-total>0</div></div>' +
+                '<div><div class="v4-cs-label">Won so far</div><div class="v4-cs-value" data-v4-d-line-won>0</div></div>' +
+                '<div><div class="v4-cs-label">Avg per month</div><div class="v4-cs-value" data-v4-d-line-avg>0</div></div>' +
+                '<div><div class="v4-cs-label">Best month</div><div class="v4-cs-value" data-v4-d-line-best>\u2014</div></div>' +
+              '</div>' +
+              '<div data-v4-d-line-host></div>' +
+            '</div>' +
+          '</div>' +
+
+        '</div>'
+      );
+
+      loadDashboardV4(u);
+    }
+
+    /* Computes all dashboard metrics from STORE.listDeals and populates
+       the placeholders set up by showDashboard. Hand-coded SVG rendering
+       throughout (no ECharts wiring this release). */
+    async function loadDashboardV4(u) {
+      try {
+        const r = await STORE.listDeals({ limit: 500, offset: 0 });
+        const all = (r && r.rows) || [];
+
+        // Scope per role (Phase 3 helpers).
+        const regionScope = getRegionScope(u);
+        const salesScope = getSalesScope(u);
+        const scoped = all
+          .filter(d => !d.deleted_at)
+          .filter(d => dealMatchesScope(d, regionScope, salesScope));
+
+        // Scope label for hero
+        const scopeLbl = (function() {
+          if (u.permission_tier === 'super') return 'Pan-India';
+          if (u.org_function === 'BU Head') {
+            const rs = regionScope;
+            if (!rs || !rs.length) return 'Pan-India';
+            return rs.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' + ') + ' region';
+          }
+          if (u.org_function === 'Sales')    return 'My deals';
+          if (u.org_function === 'Presales') return 'My deals (Presales)';
+          if (u.org_function === 'OEM')      return 'My deals (OEM)';
+          return 'All visible';
+        })();
+        const elScope = document.querySelector('[data-v4-d-scopelbl]');
+        if (elScope) elScope.textContent = scopeLbl;
+        const elShown = document.querySelector('[data-v4-d-shown]');
+        const elTotal = document.querySelector('[data-v4-d-total]');
+        if (elShown) elShown.textContent = scoped.length;
+        if (elTotal) elTotal.textContent = all.length;
+
+        const CLOSED = { 'Closed Won': true, 'Closed Lost': true };
+        const open = scoped.filter(d => !CLOSED[d.stage]);
+        const won = scoped.filter(d => d.stage === 'Closed Won');
+        const lost = scoped.filter(d => d.stage === 'Closed Lost');
+
+        // ---- KPIs ----
+        const setK = function(id, val, sub) {
+          const v = document.querySelector('[data-v4-kpi-d="' + id + '"]');
+          const s = document.querySelector('[data-v4-kpi-d-sub="' + id + '"]');
+          if (v) v.textContent = String(val);
+          if (s) s.textContent = sub;
+        };
+        const distinct = function(arr, key) {
+          const seen = {}; let c = 0;
+          for (let i = 0; i < arr.length; i++) {
+            const k = String(arr[i][key] || '').trim().toLowerCase();
+            if (k && !seen[k]) { seen[k] = 1; c++; }
+          }
+          return c;
+        };
+        setK('open',        open.length,                       'across all stages');
+        setK('pipeline',    '\u20b9 \u2014',                   'pricing not yet enabled');
+        setK('endusers',    distinct(open, 'customer_name'),   'with open cases');
+        setK('partners',    distinct(open, 'partner_name'),    'with open cases');
+        setK('consultants', distinct(open, 'consultant_name'), 'with open cases');
+
+        // Cavitak / OEM split
+        const usersById = (typeof STORE.usersById === 'function') ? STORE.usersById() : {};
+        let cav = 0, oem = 0;
+        for (let i = 0; i < open.length; i++) {
+          const creator = usersById[open[i].created_by_user] || {};
+          if (creator.org_function === 'OEM') oem++; else cav++;
+        }
+        const splitTotal = cav + oem;
+        const pctC = splitTotal ? Math.round(cav / splitTotal * 100) : 0;
+        const pctO = splitTotal ? Math.round(oem / splitTotal * 100) : 0;
+        const elSplitV = document.querySelector('[data-v4-kpi-d="split"]');
+        const elSplitS = document.querySelector('[data-v4-kpi-d-sub="split"]');
+        const elSplitBar = document.querySelector('[data-v4-kpi-d-bar="split"]');
+        const elSplitLeg = document.querySelector('[data-v4-kpi-d-legend="split"]');
+        if (elSplitV) elSplitV.textContent = cav + ' / ' + oem;
+        if (elSplitS) elSplitS.textContent = 'creator role';
+        if (elSplitBar) elSplitBar.innerHTML =
+          '<span style="width:' + pctC + '%;background:#FB923C"></span>' +
+          '<span style="width:' + pctO + '%;background:#A78BFA"></span>';
+        if (elSplitLeg) elSplitLeg.innerHTML =
+          '<span>Cavitak ' + pctC + '%</span>' +
+          '<span>OEM ' + pctO + '%</span>';
+
+        // ---- Funnel ----
+        const stageOrder = ['Qualified','Proposal','Budget Approval','Technical Approval','Negotiation','Awarded'];
+        const stageCounts = {};
+        stageOrder.forEach(s => { stageCounts[s] = 0; });
+        open.forEach(d => { if (stageCounts.hasOwnProperty(d.stage)) stageCounts[d.stage]++; });
+        const maxC = Math.max.apply(null, [1].concat(stageOrder.map(s => stageCounts[s])));
+        stageOrder.forEach(s => {
+          const bar = document.querySelector('[data-v4-d-funnel="' + s + '"]');
+          const pct = document.querySelector('[data-v4-d-funnel-pct="' + s + '"]');
+          const c = stageCounts[s];
+          if (bar) { bar.style.width = (c / maxC * 100) + '%'; bar.textContent = String(c); }
+          if (pct) { pct.textContent = open.length ? Math.round(c / open.length * 100) + '%' : '0%'; }
+        });
+        const totEl = document.querySelector('[data-v4-d-funnel-total]');
+        if (totEl) totEl.textContent = open.length + ' open';
+
+        // ---- Donut (Cavitak / OEM) ----
+        const circ = 2 * Math.PI * 60;  // 376.99
+        const cavDash = splitTotal ? (cav / splitTotal) * circ : 0;
+        const oemDash = splitTotal ? (oem / splitTotal) * circ : 0;
+        const arcCav = document.querySelector('[data-v4-d-arc="cav"]');
+        const arcOem = document.querySelector('[data-v4-d-arc="oem"]');
+        if (arcCav) arcCav.setAttribute('stroke-dasharray', cavDash + ' ' + circ);
+        if (arcOem) {
+          arcOem.setAttribute('stroke-dasharray', oemDash + ' ' + circ);
+          arcOem.setAttribute('stroke-dashoffset', -cavDash);
+        }
+        const donutN = document.querySelector('[data-v4-d-donut-n]');
+        if (donutN) donutN.textContent = String(splitTotal);
+        const setEl = (sel, txt, attr) => {
+          const el = document.querySelector(sel);
+          if (el) { if (attr) el.style[attr] = txt; else el.textContent = txt; }
+        };
+        setEl('[data-v4-d-donut-cav]', String(cav));
+        setEl('[data-v4-d-donut-oem]', String(oem));
+        setEl('[data-v4-d-donut-cav-pct]', pctC + '%');
+        setEl('[data-v4-d-donut-oem-pct]', pctO + '%');
+        setEl('[data-v4-d-donut-cav-bar]', pctC + '%', 'width');
+        setEl('[data-v4-d-donut-oem-bar]', pctO + '%', 'width');
+
+        // ---- Region tiles + map labels ----
+        const zoneCounts = { west: 0, north: 0, south: 0, east: 0, unknown: 0 };
+        open.forEach(d => {
+          const z = regionForState(d.state);
+          if (zoneCounts.hasOwnProperty(z)) zoneCounts[z]++;
+        });
+        ['west','north','south','east'].forEach(z => {
+          const el = document.querySelector('[data-v4-zcount="' + z + '"]');
+          if (el) el.textContent = String(zoneCounts[z]);
+          const lbl = document.querySelector('[data-v4-zone-lbl="' + z + '"]');
+          if (lbl) lbl.textContent = z.charAt(0).toUpperCase() + ' \u00b7 ' + zoneCounts[z];
+        });
+
+        // ---- Sales perf table ----
+        // Aggregate per sales_person_id (top 8 by open count)
+        const byPerson = {};
+        scoped.forEach(d => {
+          const pid = d.sales_person_id;
+          if (!pid) return;
+          if (!byPerson[pid]) byPerson[pid] = { id: pid, open: 0, won: 0, lost: 0 };
+          if (CLOSED[d.stage]) {
+            if (d.stage === 'Closed Won') byPerson[pid].won++;
+            else byPerson[pid].lost++;
+          } else {
+            byPerson[pid].open++;
+          }
+        });
+        const personRows = Object.values(byPerson)
+          .sort((a, b) => b.open - a.open)
+          .slice(0, 8);
+        const maxOpen = Math.max.apply(null, [1].concat(personRows.map(p => p.open)));
+        const initials = function(name) {
+          return String(name || '?').trim().split(/\s+/).map(s => s.charAt(0).toUpperCase()).slice(0, 2).join('');
+        };
+        const avatarColors = ['#F7941D','#0891B2','#DB2777','#4F46E5','#15803D','#8B5CF6','#06B6D4','#475569'];
+        const tbody = document.querySelector('[data-v4-d-sales-body]');
+        if (tbody) {
+          if (!personRows.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:24px">No deals in scope.</td></tr>';
+          } else {
+            tbody.innerHTML = personRows.map((p, i) => {
+              const usr = usersById[p.id] || {};
+              const name = usr.full_name || usr.username || 'Unknown';
+              const region = usr.region || '';
+              const role = usr.org_function || '';
+              const sub = [region, role].filter(Boolean).join(' \u00b7 ');
+              const closed = p.won + p.lost;
+              const winPctTxt = (closed >= 3) ? Math.round(p.won / closed * 100) + '%' : '\u2014';
+              const winCls = (closed >= 3) ? (p.won / closed >= 0.6 ? 'high' : (p.won / closed >= 0.3 ? 'mid' : 'low')) : 'mid';
+              const velo = Math.round(p.open / maxOpen * 100);
+              const color = avatarColors[i % avatarColors.length];
+              return '<tr class="v4-row-link">' +
+                '<td><div class="v4-person-cell">' +
+                  '<div class="v4-person-avatar" style="background:' + color + '">' + esc(initials(name)) + '</div>' +
+                  '<div><div class="v4-person-name">' + esc(name) + '</div>' +
+                  '<div class="v4-person-sub">' + esc(sub) + '</div></div>' +
+                '</div></td>' +
+                '<td><div class="v4-velocity-bar"><div class="v4-vb-track"><div class="v4-vb-fill" style="width:' + velo + '%"></div></div></div></td>' +
+                '<td class="v4-num">' + p.open + '</td>' +
+                '<td class="v4-num">' + p.won + '</td>' +
+                '<td class="v4-num"><span class="v4-win-pct ' + winCls + '">' + winPctTxt + '</span></td>' +
+              '</tr>';
+            }).join('');
+          }
+        }
+
+        // ---- Stuck heatmap (open deals >30d in stage) ----
+        const now = Date.now();
+        const stuckByStageRegion = {};
+        const STAGES_HM = ['Qualified','Proposal','Budget','Technical','Negotiation'];
+        const STAGE_MAP = { 'Qualified': 'Qualified', 'Proposal': 'Proposal', 'Budget Approval': 'Budget', 'Technical Approval': 'Technical', 'Negotiation': 'Negotiation' };
+        let stuckTotal = 0;
+        open.forEach(d => {
+          const t = Date.parse(d.updated_at || d.created_at || '');
+          if (!t || (now - t) <= 30 * 24 * 3600 * 1000) return;
+          const hmStage = STAGE_MAP[d.stage];
+          if (!hmStage) return;
+          const zone = regionForState(d.state);
+          if (zone === 'unknown') return;
+          const key = hmStage + '|' + zone;
+          stuckByStageRegion[key] = (stuckByStageRegion[key] || 0) + 1;
+          stuckTotal++;
+        });
+        const cellMaxByStage = {};
+        STAGES_HM.forEach(s => {
+          cellMaxByStage[s] = Math.max.apply(null, [0].concat(
+            ['west','north','south','east'].map(z => stuckByStageRegion[s + '|' + z] || 0)
+          ));
+        });
+        STAGES_HM.forEach(s => {
+          ['west','north','south','east'].forEach(z => {
+            const cell = document.querySelector('[data-v4-hm="' + s + '|' + z + '"]');
+            if (!cell) return;
+            const c = stuckByStageRegion[s + '|' + z] || 0;
+            cell.textContent = String(c);
+            const max = cellMaxByStage[s] || 1;
+            const level = c === 0 ? 0 : Math.min(4, Math.ceil((c / max) * 4));
+            cell.className = 'v4-hm-cell h' + level;
+          });
+        });
+        const hmTotEl = document.querySelector('[data-v4-d-hm-total]');
+        if (hmTotEl) hmTotEl.textContent = String(stuckTotal);
+
+        // ---- Newly-added line chart ----
+        // Group scoped deals by created_at month, last 6 months
+        const last6 = [];
+        const baseD = new Date();
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(baseD.getFullYear(), baseD.getMonth() - i, 1);
+          last6.push({
+            ym: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'),
+            label: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()],
+            count: 0,
+            wonCount: 0
+          });
+        }
+        const ymIdx = {};
+        last6.forEach((b, i) => { ymIdx[b.ym] = i; });
+        scoped.forEach(d => {
+          const t = String(d.created_at || '').slice(0, 7);
+          if (ymIdx.hasOwnProperty(t)) {
+            last6[ymIdx[t]].count++;
+            if (d.stage === 'Closed Won') last6[ymIdx[t]].wonCount++;
+          }
+        });
+        const totalNew = last6.reduce((s, b) => s + b.count, 0);
+        const totalWon = last6.reduce((s, b) => s + b.wonCount, 0);
+        const avgMo = totalNew ? Math.round((totalNew / 6) * 10) / 10 : 0;
+        const bestIdx = last6.reduce((bi, b, i) => b.count > last6[bi].count ? i : bi, 0);
+        const bestLbl = last6[bestIdx].count ? (last6[bestIdx].count + ' \u00b7 ' + last6[bestIdx].label) : '\u2014';
+
+        const setLineStat = (sel, v) => { const el = document.querySelector(sel); if (el) el.textContent = String(v); };
+        setLineStat('[data-v4-d-line-total]', totalNew);
+        setLineStat('[data-v4-d-line-won]', totalWon);
+        setLineStat('[data-v4-d-line-avg]', avgMo);
+        setLineStat('[data-v4-d-line-best]', bestLbl);
+
+        // Render SVG line chart
+        const host = document.querySelector('[data-v4-d-line-host]');
+        if (host) {
+          const maxY = Math.max.apply(null, [5].concat(last6.map(b => b.count)));
+          const yTop = Math.ceil(maxY / 5) * 5;
+          // Map count to y-pixel: top=30, bottom=200 (range 170 px). y = 200 - (count / yTop * 170).
+          const xPos = i => 100 + i * 100;
+          const yPos = c => 200 - (c / yTop * 170);
+          const totalPath = last6.map((b, i) => (i === 0 ? 'M' : 'L') + xPos(i) + ',' + yPos(b.count)).join(' ');
+          const fillPath = totalPath + ' L' + xPos(5) + ',200 L' + xPos(0) + ',200 Z';
+          const wonPath = last6.map((b, i) => (i === 0 ? 'M' : 'L') + xPos(i) + ',' + yPos(b.wonCount)).join(' ');
+          const dots = last6.map((b, i) =>
+            '<circle cx="' + xPos(i) + '" cy="' + yPos(b.count) + '" r="5" fill="#F7941D" stroke="var(--bg-card)" stroke-width="2.5"/>' +
+            '<text x="' + xPos(i) + '" y="' + (yPos(b.count) - 8) + '" text-anchor="middle" font-family="\'General Sans\',sans-serif" font-size="11" font-weight="800" fill="var(--ink-strong)">' + b.count + '</text>'
+          ).join('');
+          const xLabels = last6.map((b, i) =>
+            '<text x="' + xPos(i) + '" y="222" text-anchor="middle" font-family="\'General Sans\',sans-serif" font-size="11" font-weight="700" fill="var(--ink-soft)">' + b.label + '</text>'
+          ).join('');
+          const yLabels = [0, Math.round(yTop / 2), yTop].map(v =>
+            '<text x="42" y="' + (yPos(v) + 4) + '" text-anchor="end" font-family="\'General Sans\',sans-serif" font-size="10" font-weight="600" fill="var(--ink-soft)">' + v + '</text>' +
+            '<line x1="52" y1="' + yPos(v) + '" x2="690" y2="' + yPos(v) + '" stroke="var(--border-soft)" stroke-width="1" stroke-dasharray="2,5"/>'
+          ).join('');
+          host.innerHTML =
+            '<svg class="v4-chart-svg" viewBox="0 0 700 240" preserveAspectRatio="none">' +
+              '<defs><linearGradient id="v4LineGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F7941D" stop-opacity="0.30"/><stop offset="100%" stop-color="#F7941D" stop-opacity="0"/></linearGradient></defs>' +
+              yLabels +
+              '<path d="' + fillPath + '" fill="url(#v4LineGrad)"/>' +
+              '<path d="' + totalPath + '" fill="none" stroke="#F7941D" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>' +
+              '<path d="' + wonPath + '" fill="none" stroke="#15803D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5,5"/>' +
+              dots + xLabels +
+            '</svg>' +
+            '<div style="display:flex;gap:16px;margin-top:12px;font-size:11.5px;font-weight:600;color:var(--ink-soft);flex-wrap:wrap">' +
+              '<span><span style="display:inline-block;width:14px;height:2.5px;background:#F7941D;margin-right:6px;vertical-align:middle;border-radius:2px"></span>Total new</span>' +
+              '<span><span style="display:inline-block;width:14px;height:0;border-top:2.5px dashed #15803D;margin-right:6px;vertical-align:middle"></span>Won so far</span>' +
+            '</div>';
+        }
+      } catch (err) {
+        console.error('[showDashboard] loadDashboardV4 failed', err);
+      }
+    }
+
+    /* ============================================================
+       VIEW: Dashboard (LEGACY, kept for revert)
+       v27.4.0-beta2 replaces this with showDashboard (hero-tech) below.
+       This function is no longer routed to; the export references the
+       new showDashboard by name. Rename this back and the new one to
+       showDashboardV4 to roll back without diff archaeology.
+       ============================================================ */
+    function showDashboardLegacy() {
       showChrome(true);
       updateNavActive('#/dashboard');
       const u = STORE.currentUser() || {};
