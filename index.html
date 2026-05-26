@@ -2704,16 +2704,20 @@
       margin-bottom: 24px;
     }
     .login-logos {
-      display: flex; align-items: center; justify-content: center; gap: 14px;
+      display: flex; align-items: center; justify-content: center; gap: 16px;
       margin-bottom: 14px;
     }
-    /* v27.3.14d — login logos now use the official tvONE + Cavitak PNGs via
-       EXPORT.LOGO_TVONE_DURI / EXPORT.LOGO_CAVITAK_DURI. Height matched so
-       both brand marks read with similar visual weight. */
-    .login-tvone-logo   { height: 30px; width: auto; display: inline-block; }
-    .login-cavitak-logo { height: 26px; width: auto; display: inline-block; }
+    /* v27.4.0-beta1 — login logo rebalance.
+       tvONE PNG = wordmark + "We Engineer Confidence" tagline (2 lines of content).
+       Cavitak PNG = single-line lightning + wordmark.
+       Equal pixel heights leave Cavitak visually undersized because tvONE's
+       tagline adds vertical mass. Cavitak bumped to 38px and tvONE held at 32px
+       so both brand marks read with similar weight. Divider grown to 34px to
+       hug the new logo heights. */
+    .login-tvone-logo   { height: 32px; width: auto; display: inline-block; }
+    .login-cavitak-logo { height: 38px; width: auto; display: inline-block; }
     .login-logo-divider {
-      width: 1px; height: 22px;
+      width: 1px; height: 34px;
       background: var(--border-mid);
     }
     .login-title {
@@ -5090,7 +5094,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.3.14d',
+      version: 'v27.4.0-beta1',
       constants,
       calico,
       mv,
@@ -7675,8 +7679,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.3.14d"',
-      () => CATALOG.version === 'v27.3.14d' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.4.0-beta1"',
+      () => CATALOG.version === 'v27.4.0-beta1' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.3.12 invariants — SX redesign + step reduction ---------- */
     // Source: /mnt/user-data/outputs/SPEC-v27.3.12-sx-redesign-step-reduction.md
