@@ -13,6 +13,114 @@
        once the user lands on /dashboard. ~330KB gzipped. Pinned to a stable minor (5.5.x). -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
   <!--
+    v27.4.0-beta1 — HOME VIEW HERO REBUILD (2026-05-26)
+    Phase 4 of v27.4.0. Adds the new hero-tech Home view per SPEC §4 and
+    mockup v3. Existing legacy code preserved under showHomeLegacy.
+
+    What ships in this patch:
+
+    1) CSS: ~330 lines of .v4-* prefixed styles (after .home-empty-cta).
+       - Hero with mesh background + live-sync pill
+       - Attention row (4 alert cards: warn/danger/info/success)
+       - 4 month tiles with colored ribbons + icons + value + sub
+       - 6 KPI tiles with gradient backgrounds, icons, sparkline area,
+         delta chip slot, and split-bar variant for Cavitak/OEM
+       - Card wrapper + stage funnel rows with bar-fill animation
+       - 8 stage chip colors (v4-s-lead..lost mapped to tokens from Phase 3)
+       - 3 quick-link buttons with hover glow
+       - v4Stagger / v4FadeUp / v4Pulse / v4BarFill keyframes
+
+    2) JS: New showHome() and async loadHomeV4(user) inside UI IIFE.
+       - Existing function showHome() renamed to showHomeLegacy() for
+         emergency revert (no code removed, just renamed)
+       - UI.showHome export at L16811 picks up the new function by name
+       - New showHome renders the full hero+attention+months+kpis+funnel
+         skeleton via setRoot, then calls loadHomeV4 to populate values
+       - loadHomeV4 calls STORE.listDeals, filters with Phase 3 scope
+         helpers (getRegionScope, getSalesScope, dealMatchesScope),
+         computes month-tile counts, distinct-name KPIs, Cavitak/OEM
+         split (by creator's org_function), 4 attention metrics,
+         and stage funnel bars
+
+    3) Pricing: pipeline ₹ KPI shows "₹ —" with sub "pricing not yet
+       enabled" per SPEC §5.5 — auto-works once tvONE pricing lands.
+
+    What's NOT in this patch (deferred):
+       - Dashboard view (#/dashboard still routes to legacy showDashboard)
+       - Filter bar / saved views
+       - Charts (donut, heatmap, India SVG, line chart) — Phase 5
+       - Period comparison chips on KPIs — v27.4.1 depth pass
+       - KPI sparkline data — placeholder areas reserved, line draw deferred
+
+    Smoke before Phase 5:
+       (a) Login → Home renders new hero view (no console errors)
+       (b) 6 KPI tiles populate with non-em-dash values for non-empty pipeline
+       (c) Cavitak/OEM split bar renders with correct percentages
+       (d) Stage funnel bars animate to correct widths
+       (e) Tap a month tile → routes to filtered history view
+       (f) BU Head login → scoped to region; Super login → pan-India
+
+    Foundation from -alpha (Phase 3) unchanged: STATE_TO_REGION, FY_CUTOFF,
+    regionForState, getRegionScope, getSalesScope, dealMatchesScope,
+    getChartTheme. All Phase 4 code consumes those helpers as designed.
+
+    Wizard / Recommendation engine / Exports / T&C / Login / SX accordion /
+    History view: ALL UNCHANGED.
+  -->
+  <!--
+    v27.4.0-alpha — DASHBOARD FOUNDATION (2026-05-26)
+    Phase 3 of the v27.4.0 dashboard rebuild per SPEC-v27.4.0-dashboard.md
+    and HANDOFF-dashboard-rebuild-1.md. Pure ADDITIONS only — zero
+    modification of existing render paths.
+
+    Foundation pieces added in this patch:
+
+    1) CSS tokens (additive, scoped to :root so theme-independent):
+       - KPI gradient tokens --kpi-grad-1..6 (amber/indigo/success/slate/pink/cyan).
+       - Stage chip color tokens --stage-lead/proposal/budget/tech/nego/awarded/won/lost.
+       - Hero mesh background --hero-mesh (radial gradient blend).
+       - Brand/surface aliases mapped onto existing --accent/--bg-card system so
+         dashboard CSS can use either naming convention.
+
+    2) Module-level constants (inside UI IIFE, before showDashboard):
+       - STATE_TO_REGION: frozen lookup table covering all 28 states + 8 UTs
+         mapping each Indian state to W/N/S/E zone. Surfaces 'unknown' bucket
+         for empty/misspelled states (per SPEC §6).
+       - FY_CUTOFF: 'YYYY-MM' string. Auto-rolls on April 1 each year so the
+         constant stays evergreen (OQ1 default per SPEC §15).
+
+    3) Pure helper functions:
+       - regionForState(stateStr) — lowercases and looks up in STATE_TO_REGION;
+         returns 'unknown' for empty / unknown values.
+       - getRegionScope(user) — returns null (pan-India) for super, or an array
+         of lowercased regions for BU Head. Splits comma-separated values
+         (Venu's row stores 'South,East') per SPEC §5.2 + OP §3.4.
+       - getSalesScope(user) — returns the right scoping object per role:
+         Sales→own id, Presales→{presales: id}, OEM→{created_by: id},
+         BU Head/Support/Super→null (BU Head gets region filter separately).
+       - dealMatchesScope(deal, regionScope, salesScope) — composes both
+         filters; pure function over a deal record. Tested against:
+         (a) Super → all match; (b) BU Head West → only W-region deals;
+         (c) Sales Vipul → only deals with sales_person_id === Vipul.id;
+         (d) Venu (South,East) → deals from S OR E.
+       - getChartTheme() — returns ECharts color overrides based on current
+         data-theme attr (text/axis/grid/tooltip). Spec §10.1.
+
+    These are foundation only. No render handlers wired yet. Home and
+    Dashboard views still render via the existing v27.3.x code paths.
+    Phase 4 (Home view) and Phase 5 (Dashboard view) land in the next chat
+    per session-split plan documented in HANDOFF-v27.4.0-phase3.md.
+
+    Smoke verification before phase 4:
+       (a) App loads, login works (no auth regression)
+       (b) Existing dashboard at #/dashboard still renders (untouched)
+       (c) regionForState('Maharashtra') === 'west' in DevTools console
+       (d) FY_CUTOFF returns 2026-04 for any date in FY26-27
+       (e) node --check passes on extracted inline script blocks.
+
+    NO functional change visible to user yet. This is the scaffold for v27.4.0.
+  -->
+  <!--
     v27.3.14d — LOGIN POLISH + THEME SIMPLIFICATION (2026-05-26 late night)
     Three asks from Dipenkumar: "just keep Light Dark Toggle, password hide
     unhide & also check logos on login page".
@@ -653,6 +761,39 @@
       --lh-display: 1.15; --lh-body: 1.5;
       /* legacy structural — preserved */
       --nav-h: 60px; --tap: 44px; --content-max: 540px;
+
+      /* v27.4.0 dashboard tokens — theme-independent gradients and chip colors.
+         These are scoped to :root so they hold consistent values across both
+         light and dark themes (KPI tile gradients self-contain their contrast
+         via white-on-color; stage chips are always solid color + white text). */
+      --kpi-grad-1: linear-gradient(135deg, #F7941D 0%, #B45309 65%, #7C2D12 100%);
+      --kpi-grad-2: linear-gradient(135deg, #4F46E5 0%, #3730A3 65%, #1E1B4B 100%);
+      --kpi-grad-3: linear-gradient(135deg, #15803D 0%, #166534 60%, #052E16 100%);
+      --kpi-grad-4: linear-gradient(135deg, #475569 0%, #1E293B 60%, #0F172A 100%);
+      --kpi-grad-5: linear-gradient(135deg, #DB2777 0%, #9D174D 65%, #500724 100%);
+      --kpi-grad-6: linear-gradient(135deg, #0891B2 0%, #0E7490 65%, #164E63 100%);
+
+      --stage-lead:     #3B82F6;
+      --stage-proposal: #EC4899;
+      --stage-budget:   #8B5CF6;
+      --stage-tech:     #06B6D4;
+      --stage-nego:     #F59E0B;
+      --stage-awarded:  #10B981;
+      --stage-won:      #15803D;
+      --stage-lost:     #B91C1C;
+
+      --hero-mesh: radial-gradient(at 0% 0%, rgba(247, 148, 29, 0.10) 0px, transparent 50%),
+                   radial-gradient(at 100% 0%, rgba(79, 70, 229, 0.06) 0px, transparent 50%),
+                   radial-gradient(at 50% 100%, rgba(21, 128, 61, 0.04) 0px, transparent 50%);
+
+      /* Brand aliases — map dashboard mockup naming onto production --accent system.
+         Mockup CSS uses --brand / --brand-deep / --brand-pale; production uses
+         --accent / --accent-deep / --accent-soft. Aliases let either name resolve
+         to the same value without forcing a global rename. */
+      --brand:      var(--accent, #F7941D);
+      --brand-deep: var(--accent-deep, #B45309);
+      --brand-pale: var(--accent-soft, rgba(247,148,29,0.10));
+      --brand-light: rgba(247, 148, 29, 0.18);
     }
     html[data-app="tvone"] {
       --amber-300: #FAC172; --amber-400: #F7A93D; --amber-500: #F7941D; --amber-600: #E8731C;
@@ -3397,6 +3538,432 @@
     }
     .home-empty-cta:hover { background: var(--accent-deep); }
     .home-empty-cta:active { transform: scale(0.97); }
+
+    /* ============================================================
+       v27.4.0 HOME VIEW — hero tech rebuild
+       Scoped under .v4-* prefix to avoid collisions with existing
+       .home-stat / .deal-list-card / .home-* classes (which remain
+       for legacy showHome fallback).
+       ============================================================ */
+
+    /* Stagger fade-in for grid children */
+    .v4-stagger > * { opacity: 0; animation: v4FadeUp 480ms var(--ease-out) forwards; }
+    .v4-stagger > *:nth-child(1) { animation-delay: 40ms; }
+    .v4-stagger > *:nth-child(2) { animation-delay: 80ms; }
+    .v4-stagger > *:nth-child(3) { animation-delay: 120ms; }
+    .v4-stagger > *:nth-child(4) { animation-delay: 160ms; }
+    .v4-stagger > *:nth-child(5) { animation-delay: 200ms; }
+    .v4-stagger > *:nth-child(6) { animation-delay: 240ms; }
+    @keyframes v4FadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes v4Pulse {
+      0%, 100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+      50%      { box-shadow: 0 0 0 6px transparent; opacity: 0.7; }
+    }
+    @keyframes v4BarFill {
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
+    }
+
+    /* Hero greeting */
+    .v4-hero {
+      position: relative;
+      background: var(--hero-mesh);
+      border-radius: var(--r-lg);
+      padding: var(--s-5);
+      margin-bottom: var(--s-5);
+      overflow: hidden;
+      border: 1px solid var(--border-soft);
+    }
+    .v4-hero-row {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: var(--s-4); flex-wrap: wrap;
+    }
+    .v4-hero-greeting {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--ink-strong);
+    }
+    .v4-hero-greeting .v4-brand { color: var(--brand-deep); }
+    html[data-theme="dark"] .v4-hero-greeting .v4-brand { color: var(--brand); }
+    .v4-hero-sub {
+      font-size: 13px; color: var(--ink-mid);
+      margin-top: 4px; font-weight: 500;
+    }
+    .v4-live-pill {
+      display: inline-flex; align-items: center; gap: var(--s-2);
+      padding: 4px var(--s-3) 4px var(--s-2);
+      background: var(--bg-card);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--r-pill);
+      font-size: 11px; font-weight: 600;
+      color: var(--ink-mid); white-space: nowrap;
+    }
+    .v4-live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%; background: var(--success);
+      color: rgba(21, 128, 61, 0.4);
+      animation: v4Pulse 2s infinite;
+      flex-shrink: 0;
+    }
+    @media (min-width: 768px) {
+      .v4-hero { padding: var(--s-6) var(--s-7); }
+      .v4-hero-greeting { font-size: 26px; }
+    }
+
+    /* Attention row (4 alert cards) */
+    .v4-attn-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--s-3);
+      margin-bottom: var(--s-5);
+    }
+    @media (min-width: 768px) {
+      .v4-attn-row { grid-template-columns: repeat(4, 1fr); }
+    }
+    .v4-attn-card {
+      padding: var(--s-3) var(--s-4);
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      display: flex; align-items: center; gap: var(--s-3);
+      cursor: pointer;
+      transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+      position: relative; overflow: hidden;
+    }
+    .v4-attn-card::before {
+      content: ''; position: absolute;
+      left: 0; top: 0; bottom: 0; width: 3px;
+    }
+    .v4-attn-card.warn::before    { background: var(--warning); }
+    .v4-attn-card.danger::before  { background: var(--danger); }
+    .v4-attn-card.info::before    { background: var(--info); }
+    .v4-attn-card.success::before { background: var(--success); }
+    .v4-attn-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px -8px rgba(15,14,12,0.12);
+    }
+    .v4-attn-icon {
+      width: 36px; height: 36px;
+      border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .v4-attn-card.warn    .v4-attn-icon { background: var(--warning-soft); color: var(--warning); }
+    .v4-attn-card.danger  .v4-attn-icon { background: var(--danger-soft);  color: var(--danger); }
+    .v4-attn-card.info    .v4-attn-icon { background: var(--info-soft);    color: var(--info); }
+    .v4-attn-card.success .v4-attn-icon { background: var(--success-soft); color: var(--success); }
+    .v4-attn-icon svg { width: 16px; height: 16px; }
+    .v4-attn-body { flex: 1; min-width: 0; }
+    .v4-attn-count {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 800;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums; line-height: 1;
+      color: var(--ink-strong);
+    }
+    .v4-attn-label {
+      font-size: 11px; font-weight: 600;
+      color: var(--ink-soft); margin-top: 4px;
+    }
+
+    /* Section titles */
+    .v4-section-title {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin: var(--s-6) 0 var(--s-3);
+      gap: var(--s-3);
+    }
+    .v4-section-title h2 {
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.10em; text-transform: uppercase;
+      color: var(--ink-mid);
+      margin: 0;
+    }
+    .v4-section-title .v4-section-link {
+      font-size: 12px; font-weight: 600;
+      color: var(--brand-deep);
+      cursor: pointer;
+    }
+    html[data-theme="dark"] .v4-section-title .v4-section-link { color: var(--brand); }
+
+    /* Month tiles */
+    .v4-month-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--s-3);
+    }
+    @media (min-width: 1024px) {
+      .v4-month-grid { grid-template-columns: repeat(4, 1fr); gap: var(--s-4); }
+    }
+    .v4-month-tile {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      padding: var(--s-4) var(--s-4) var(--s-5);
+      overflow: hidden; cursor: pointer;
+      transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) ease, border-color var(--dur-base) ease;
+    }
+    .v4-month-tile:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px -8px rgba(15,14,12,0.12);
+      border-color: var(--border-mid);
+    }
+    .v4-month-tile .v4-ribbon {
+      position: absolute; top: 0; left: 0; height: 3px; width: 100%;
+    }
+    .v4-month-tile.now      .v4-ribbon { background: linear-gradient(90deg, #F7941D 0%, #FB923C 100%); }
+    .v4-month-tile.next     .v4-ribbon { background: linear-gradient(90deg, #06B6D4 0%, #0E7490 100%); }
+    .v4-month-tile.slipped-m .v4-ribbon { background: linear-gradient(90deg, #F59E0B 0%, #B45309 100%); }
+    .v4-month-tile.slipped-q .v4-ribbon { background: linear-gradient(90deg, #DC2626 0%, #7F1D1D 100%); }
+    .v4-month-tile .v4-mt-label {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--ink-soft);
+      margin-bottom: var(--s-3);
+      display: flex; align-items: center; gap: var(--s-2);
+    }
+    .v4-mt-icon {
+      width: 22px; height: 22px;
+      border-radius: var(--r-xs);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .v4-month-tile.now      .v4-mt-icon { background: var(--brand-pale); color: var(--brand-deep); }
+    .v4-month-tile.next     .v4-mt-icon { background: var(--info-soft);    color: var(--info); }
+    .v4-month-tile.slipped-m .v4-mt-icon { background: var(--warning-soft); color: var(--warning); }
+    .v4-month-tile.slipped-q .v4-mt-icon { background: var(--danger-soft);  color: var(--danger); }
+    html[data-theme="dark"] .v4-month-tile.now .v4-mt-icon { color: var(--brand); }
+    .v4-mt-icon svg { width: 12px; height: 12px; }
+    .v4-month-tile .v4-mt-row {
+      display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s-2);
+    }
+    .v4-month-tile .v4-mt-value {
+      font-family: var(--font-display);
+      font-size: 30px; font-weight: 700;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums; line-height: 1;
+      color: var(--ink-strong);
+    }
+    .v4-month-tile .v4-mt-sub {
+      font-size: 11px; color: var(--ink-soft);
+      margin-top: var(--s-2); font-weight: 500;
+    }
+    @media (min-width: 1024px) {
+      .v4-month-tile { padding: var(--s-5); }
+      .v4-month-tile .v4-mt-value { font-size: 38px; }
+    }
+
+    /* Delta chip (▲/▼/±) — used in attn and month tiles */
+    .v4-delta {
+      display: inline-flex; align-items: center; gap: 2px;
+      font-size: 11px; font-weight: 700;
+      padding: 2px 6px; border-radius: var(--r-xs);
+      margin-bottom: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+    .v4-delta.up   { background: var(--success-soft); color: var(--success); }
+    .v4-delta.down { background: var(--danger-soft);  color: var(--danger); }
+    .v4-delta.flat { background: var(--bg-subtle);    color: var(--ink-soft); }
+
+    /* KPI tiles */
+    .v4-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--s-3);
+    }
+    @media (min-width: 1024px) {
+      .v4-kpi-grid { grid-template-columns: repeat(6, 1fr); gap: var(--s-4); }
+    }
+    .v4-kpi {
+      position: relative;
+      border-radius: var(--r-md);
+      padding: var(--s-4);
+      color: #fff; overflow: hidden;
+      min-height: 138px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      cursor: pointer;
+      transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) ease;
+    }
+    .v4-kpi:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px -8px rgba(15,14,12,0.18);
+    }
+    .v4-kpi.g1 { background: var(--kpi-grad-1); }
+    .v4-kpi.g2 { background: var(--kpi-grad-2); }
+    .v4-kpi.g3 { background: var(--kpi-grad-3); }
+    .v4-kpi.g4 { background: var(--kpi-grad-4); }
+    .v4-kpi.g5 { background: var(--kpi-grad-5); }
+    .v4-kpi.g6 { background: var(--kpi-grad-6); }
+    .v4-kpi::after {
+      content: ''; position: absolute;
+      top: 0; right: 0; width: 100px; height: 100px;
+      background: radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 70%);
+      pointer-events: none;
+    }
+    .v4-kpi-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: var(--s-2); position: relative;
+    }
+    .v4-kpi .v4-kpi-label {
+      font-size: 10.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      opacity: 0.88;
+    }
+    .v4-kpi .v4-kpi-ico {
+      width: 22px; height: 22px;
+      border-radius: var(--r-xs);
+      background: rgba(255,255,255,0.16);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .v4-kpi .v4-kpi-ico svg { width: 12px; height: 12px; }
+    .v4-kpi .v4-kpi-value-row {
+      display: flex; align-items: baseline; gap: var(--s-2);
+      margin-top: var(--s-3); flex-wrap: wrap;
+    }
+    .v4-kpi .v4-kpi-value {
+      font-family: var(--font-display);
+      font-size: 30px; font-weight: 800;
+      letter-spacing: -0.035em;
+      font-variant-numeric: tabular-nums; line-height: 1.05;
+    }
+    .v4-kpi .v4-kpi-sub {
+      font-size: 10.5px; opacity: 0.78;
+      font-weight: 500; margin-top: 4px;
+    }
+    .v4-kpi-spark { margin-top: var(--s-3); }
+    .v4-kpi-spark svg { width: 100%; height: 28px; display: block; }
+    .v4-kpi .v4-split-bar {
+      display: flex; height: 6px;
+      border-radius: var(--r-pill);
+      overflow: hidden; margin-top: var(--s-3);
+      background: rgba(255, 255, 255, 0.15);
+    }
+    .v4-kpi .v4-split-bar > span {
+      display: block; height: 100%;
+      animation: v4BarFill 700ms var(--ease-out) both;
+      transform-origin: left;
+    }
+    .v4-kpi .v4-split-legend {
+      display: flex; justify-content: space-between;
+      font-size: 10px; font-weight: 700;
+      margin-top: var(--s-2); opacity: 0.92;
+      letter-spacing: 0.02em;
+    }
+
+    /* Card wrapper (for funnel) */
+    .v4-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+    .v4-card-hd {
+      padding: var(--s-4) var(--s-5);
+      border-bottom: 1px solid var(--border-soft);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: var(--s-3); flex-wrap: wrap;
+    }
+    .v4-card-hd h3 {
+      font-family: var(--font-display);
+      font-size: 14px; font-weight: 700;
+      letter-spacing: -0.01em;
+      margin: 0;
+    }
+    .v4-card-hd .v4-hint {
+      font-size: 11px; color: var(--ink-soft);
+      font-weight: 500;
+    }
+    .v4-card-bd { padding: var(--s-5); }
+
+    /* Stage funnel */
+    .v4-funnel { display: flex; flex-direction: column; gap: var(--s-2); }
+    .v4-funnel-row {
+      display: grid;
+      grid-template-columns: 116px 1fr 56px;
+      align-items: center; gap: var(--s-3);
+      cursor: pointer;
+      transition: opacity var(--dur-fast) ease;
+    }
+    .v4-funnel-row:hover { opacity: 0.85; }
+    .v4-funnel-bar-wrap {
+      position: relative;
+      height: 28px;
+      background: var(--bg-subtle);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+    }
+    .v4-funnel-bar {
+      height: 100%;
+      border-radius: var(--r-sm);
+      display: flex; align-items: center;
+      padding-left: var(--s-3);
+      color: #fff;
+      font-size: 12px; font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      transform-origin: left;
+      animation: v4BarFill 800ms var(--ease-out) both;
+    }
+    .v4-funnel-meta {
+      text-align: right;
+      font-size: 11px; font-weight: 600;
+      color: var(--ink-soft);
+      font-variant-numeric: tabular-nums;
+    }
+    @media (max-width: 640px) {
+      .v4-funnel-row { grid-template-columns: 90px 1fr 44px; gap: var(--s-2); }
+    }
+
+    /* Stage chips (8 colors) */
+    .v4-chip {
+      display: inline-flex; align-items: center;
+      height: 20px; padding: 0 var(--s-2);
+      border-radius: var(--r-pill);
+      font-size: 10.5px; font-weight: 700;
+      color: #fff; letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+    .v4-s-lead     { background: var(--stage-lead); }
+    .v4-s-proposal { background: var(--stage-proposal); }
+    .v4-s-budget   { background: var(--stage-budget); }
+    .v4-s-tech     { background: var(--stage-tech); }
+    .v4-s-nego     { background: var(--stage-nego); }
+    .v4-s-awarded  { background: var(--stage-awarded); }
+    .v4-s-won      { background: var(--stage-won); }
+    .v4-s-lost     { background: var(--stage-lost); }
+
+    /* Quick links footer */
+    .v4-quick {
+      display: grid; gap: var(--s-3);
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: var(--s-5);
+    }
+    .v4-quick-btn {
+      appearance: none;
+      height: 60px;
+      border-radius: var(--r-md);
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      display: flex; align-items: center; justify-content: center;
+      gap: var(--s-2);
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 13px; color: var(--ink-strong);
+      cursor: pointer;
+      transition: all var(--dur-base) var(--ease-out);
+    }
+    .v4-quick-btn:hover {
+      border-color: var(--brand);
+      color: var(--brand-deep);
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 4px var(--brand-pale);
+    }
+    html[data-theme="dark"] .v4-quick-btn:hover { color: var(--brand); }
+    .v4-quick-btn svg { width: 16px; height: 16px; }
 
     /* --- v27.3.0 Stage transitions timeline --- */
     .st-timeline {
@@ -10557,10 +11124,14 @@
        ============================================================ */
 
     /* ============================================================
-       VIEW: Home — simple personal snapshot
-       4 quick KPIs + My Deals list. Heavy analytics live in #/dashboard.
+       VIEW: Home — simple personal snapshot (LEGACY, kept for revert)
+       v27.4.0 replaces this with showHome (hero-tech rebuild) below.
+       This function is no longer routed to; the export references the
+       new showHome by name. Keeping the code intact preserves the
+       emergency revert path: rename this back to showHome and the
+       new one to showHomeV4 to roll back without diff archaeology.
        ============================================================ */
-    function showHome() {
+    function showHomeLegacy() {
       showChrome(true);
       updateNavActive('#/home');
       const u = STORE.currentUser() || {};
@@ -10847,6 +11418,463 @@
         out.push(y + '-' + String(mm + 1).padStart(2, '0'));
       }
       return out;
+    }
+
+    /* ============================================================
+       v27.4.0 DASHBOARD FOUNDATION — pure additions, no rewiring yet
+       Phase 3 of dashboard rebuild per SPEC-v27.4.0-dashboard.md §5 and §6.
+       Consumed by future Phase 4 (Home) and Phase 5 (Dashboard).
+       Existing showDashboard below is untouched in this patch.
+       ============================================================ */
+
+    // State → region zone map. All 28 states + 8 UTs.
+    // Keys are lowercased on lookup so input casing doesn't matter.
+    // 'unknown' is a fallback bucket surfaced only when its count > 0
+    // (per SPEC §6.2 — drives v27.4.1 cleanup link for misspelled states).
+    const STATE_TO_REGION = Object.freeze({
+      // West (7)
+      'maharashtra': 'west', 'gujarat': 'west', 'goa': 'west',
+      'madhya pradesh': 'west', 'chhattisgarh': 'west',
+      'dadra and nagar haveli': 'west', 'daman and diu': 'west',
+      // North (10)
+      'delhi': 'north', 'haryana': 'north', 'punjab': 'north',
+      'himachal pradesh': 'north', 'uttarakhand': 'north',
+      'uttar pradesh': 'north', 'rajasthan': 'north',
+      'jammu and kashmir': 'north', 'ladakh': 'north', 'chandigarh': 'north',
+      // South (7)
+      'karnataka': 'south', 'tamil nadu': 'south', 'andhra pradesh': 'south',
+      'telangana': 'south', 'kerala': 'south', 'puducherry': 'south',
+      'lakshadweep': 'south',
+      // East (12)
+      'west bengal': 'east', 'odisha': 'east', 'bihar': 'east',
+      'jharkhand': 'east', 'assam': 'east', 'sikkim': 'east',
+      'arunachal pradesh': 'east', 'meghalaya': 'east', 'manipur': 'east',
+      'mizoram': 'east', 'nagaland': 'east', 'tripura': 'east',
+      'andaman and nicobar': 'east'
+    });
+
+    // FY cutoff — auto-rolls on April 1 each year (per SPEC §15 OQ1 default).
+    // Returns 'YYYY-MM' string for the current Indian fiscal year start.
+    // FY26-27 = '2026-04'; FY27-28 = '2027-04' starting Apr 1 2027.
+    function getFYCutoff() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = d.getMonth();  // 0=Jan, 11=Dec
+      // Apr (m=3) → use this year's Apr. Earlier → use last year's Apr.
+      const fyYear = (m >= 3) ? y : y - 1;
+      return fyYear + '-04';
+    }
+    const FY_CUTOFF = getFYCutoff();
+
+    // Resolve a deal's state to its W/N/S/E zone. Empty/misspelled → 'unknown'.
+    // Multi-state ("Karnataka, Tamil Nadu") → 'unknown' for v27.4.0; deferred to v27.4.1.
+    function regionForState(stateStr) {
+      const k = String(stateStr || '').trim().toLowerCase();
+      if (!k) return 'unknown';
+      return STATE_TO_REGION[k] || 'unknown';
+    }
+
+    // Region-scoping filter for the logged-in user.
+    // Returns null = no filter (pan-India). Returns array of zone strings = whitelist.
+    // BU Head with multi-region row (e.g. Venu = 'South,East') → ['south', 'east']
+    // per SPEC §5.2 and OP §3.4 (handle the comma-split case explicitly).
+    function getRegionScope(user) {
+      if (!user) return null;
+      if (user.permission_tier === 'super') return null;
+      if (user.org_function !== 'BU Head') return null;  // BU Head is the only role that region-filters
+      const raw = String(user.region || '').trim();
+      if (!raw) return null;  // misconfigured: show pan-India rather than nothing
+      return raw.split(',').map(function(s) { return s.trim().toLowerCase(); }).filter(Boolean);
+    }
+
+    // Sales/Presales/OEM scoping for the logged-in user.
+    // Returns a scope descriptor:
+    //   null              → no person filter (Super / BU Head / Support)
+    //   <uuid string>     → match deals.sales_person_id === this uuid (Sales)
+    //   { presales: uuid }→ match deals.presales_person_id === this uuid (Presales)
+    //   { created_by: uuid } → match deals.created_by_user === this uuid (OEM)
+    function getSalesScope(user) {
+      if (!user) return null;
+      if (user.permission_tier === 'super') return null;
+      if (user.org_function === 'Sales') return user.id;
+      if (user.org_function === 'Presales') return { presales: user.id };
+      if (user.org_function === 'OEM') return { created_by: user.id };
+      // BU Head and Support see pan-region (BU Head gets region filter separately).
+      return null;
+    }
+
+    // Pure predicate: does a deal record pass both scopes?
+    // Used by KPI aggregations to filter the deal_list payload client-side.
+    function dealMatchesScope(deal, regionScope, salesScope) {
+      if (!deal) return false;
+      // Region scope (BU Head)
+      if (regionScope && regionScope.length) {
+        const zone = regionForState(deal.state);
+        if (regionScope.indexOf(zone) === -1) return false;
+      }
+      // Sales scope (Sales / Presales / OEM)
+      if (salesScope) {
+        if (typeof salesScope === 'string') {
+          if (String(deal.sales_person_id || '') !== salesScope) return false;
+        } else if (salesScope.presales) {
+          if (String(deal.presales_person_id || '') !== salesScope.presales) return false;
+        } else if (salesScope.created_by) {
+          if (String(deal.created_by_user || '') !== salesScope.created_by) return false;
+        }
+      }
+      return true;
+    }
+
+    // ECharts color tokens that respect current data-theme.
+    // Phase 5 charts read from this so dark-mode swaps colors via setOption
+    // without a full chart re-init (per SPEC §10.1).
+    function getChartTheme() {
+      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      return {
+        textColor:     dark ? '#E5E7EB' : '#111827',
+        axisLineColor: dark ? '#374151' : '#E5E7EB',
+        gridLineColor: dark ? '#1F2937' : '#F3F4F6',
+        tooltipBg:     dark ? '#1F2937' : '#FFFFFF',
+        tooltipBorder: dark ? '#374151' : '#E5E7EB'
+      };
+    }
+
+    /* ============================================================
+       v27.4.0 VIEW: Home — hero-tech rebuild
+       Replaces showHomeLegacy. Renders:
+         - Hero greeting with live-sync pill
+         - 4 attention cards (stuck / slipped / ready-to-confirm / won)
+         - 4 month tiles (closing this/next, slipped last m/q)
+         - 6 hero KPI tiles (open / pipeline ₹ / 3 actives / Cavitak-OEM)
+         - Stage funnel
+         - 3 quick-link buttons
+       Scoping uses Phase 3 helpers: getRegionScope, getSalesScope,
+       dealMatchesScope. Pipeline ₹ shows "—" until tvONE pricing lands.
+       ============================================================ */
+    function showHome() {
+      showChrome(true);
+      updateNavActive('#/home');
+      const u = STORE.currentUser() || {};
+      const firstName = String(u.full_name || u.username || 'there').split(' ')[0] || 'there';
+      const greeting = (function() {
+        const h = new Date().getHours();
+        if (h < 12) return 'Morning';
+        if (h < 17) return 'Afternoon';
+        return 'Evening';
+      })();
+      const today = (function() {
+        const d = new Date();
+        const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return days[d.getDay()] + ', ' + d.getDate() + ' ' + mons[d.getMonth()] + ' ' + d.getFullYear();
+      })();
+      const roleLabel = String(u.org_function || '') + (u.region ? ' · ' + u.region : '');
+
+      // Tiny inline SVG helpers — kept inline so no external sprite needed.
+      const svgArrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+      const svgClock = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+      const svgAlert = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+      const svgCheckCircle = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+      const svgCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      const svgCalendar = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+      const svgChevDown = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+      const svgTrendDown = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>';
+      const svgIcoOpen     = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/></svg>';
+      const svgIcoCurrency = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
+      const svgIcoUsers    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>';
+      const svgIcoPartner  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 7V5a3 3 0 0 0-3-3H11a3 3 0 0 0-3 3v2"/></svg>';
+      const svgIcoUser     = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+      const svgIcoPie      = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>';
+      const svgIcoPlus     = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+      const svgIcoList     = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>';
+      const svgIcoDash     = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>';
+      const svgFunnel      = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
+
+      function attnCard(kind, count, label, ico) {
+        return '<button type="button" class="v4-attn-card ' + kind + '">' +
+          '<div class="v4-attn-icon">' + ico + '</div>' +
+          '<div class="v4-attn-body">' +
+            '<div class="v4-attn-count" data-v4-attn="' + kind + '">' + esc(count) + '</div>' +
+            '<div class="v4-attn-label">' + esc(label) + '</div>' +
+          '</div>' +
+        '</button>';
+      }
+      function monthTile(kind, label, icon, navHref) {
+        return '<button type="button" class="v4-month-tile ' + kind + '" data-nav="' + esc(navHref) + '">' +
+          '<span class="v4-ribbon"></span>' +
+          '<div class="v4-mt-label"><span class="v4-mt-icon">' + icon + '</span>' + esc(label) + '</div>' +
+          '<div class="v4-mt-row">' +
+            '<div class="v4-mt-value" data-v4-mt="' + kind + '">\u2014</div>' +
+          '</div>' +
+          '<div class="v4-mt-sub" data-v4-mt-sub="' + kind + '">\u2014</div>' +
+        '</button>';
+      }
+      function kpiTile(grad, id, label, ico, isSplit) {
+        return '<button type="button" class="v4-kpi ' + grad + '">' +
+          '<div class="v4-kpi-top">' +
+            '<div class="v4-kpi-label">' + esc(label) + '</div>' +
+            '<div class="v4-kpi-ico">' + ico + '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div class="v4-kpi-value-row">' +
+              '<div class="v4-kpi-value" data-v4-kpi="' + id + '">\u2014</div>' +
+            '</div>' +
+            '<div class="v4-kpi-sub" data-v4-kpi-sub="' + id + '">\u2014</div>' +
+            (isSplit
+              ? '<div class="v4-split-bar" data-v4-kpi-bar="' + id + '"></div>' +
+                '<div class="v4-split-legend" data-v4-kpi-legend="' + id + '"></div>'
+              : '<div class="v4-kpi-spark" data-v4-kpi-spark="' + id + '"></div>'
+            ) +
+          '</div>' +
+        '</button>';
+      }
+      function funnelRow(klass, name) {
+        return '<div class="v4-funnel-row" data-v4-funnel-stage="' + esc(name) + '">' +
+          '<span class="v4-chip ' + klass + '">' + esc(name) + '</span>' +
+          '<div class="v4-funnel-bar-wrap"><div class="v4-funnel-bar ' + klass + '" data-v4-funnel-bar="' + esc(name) + '" style="width:0%">0</div></div>' +
+          '<span class="v4-funnel-meta" data-v4-funnel-pct="' + esc(name) + '">0%</span>' +
+        '</div>';
+      }
+
+      setRoot(
+        // Hero
+        '<div class="v4-hero">' +
+          '<div class="v4-hero-row">' +
+            '<div>' +
+              '<div class="v4-hero-greeting">' + esc(greeting) + ', <span class="v4-brand">' + esc(firstName) + '</span></div>' +
+              '<div class="v4-hero-sub">' + esc(today) + (roleLabel ? ' \u00b7 ' + esc(roleLabel) : '') + '</div>' +
+            '</div>' +
+            '<div class="v4-live-pill">' +
+              '<span class="v4-live-dot"></span>' +
+              '<span>Live</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
+        // Attention row (4 cards)
+        '<div class="v4-attn-row v4-stagger">' +
+          attnCard('warn',    '\u2014', 'Stuck > 30 days',  svgClock) +
+          attnCard('danger',  '\u2014', 'Slipped close',    svgAlert) +
+          attnCard('info',    '\u2014', 'Ready to confirm', svgCheckCircle) +
+          attnCard('success', '\u2014', 'Won this month',   svgCheck) +
+        '</div>' +
+
+        // Month tiles
+        '<div class="v4-section-title"><h2>This and Next Month</h2></div>' +
+        '<div class="v4-month-grid v4-stagger">' +
+          monthTile('now',       'Closing this month',    svgCalendar, '#/history?filter=closing-now') +
+          monthTile('next',      'Closing next month',    svgChevDown, '#/history?filter=closing-next') +
+          monthTile('slipped-m', 'Slipped last month',    svgClock,    '#/history?filter=slipped-month') +
+          monthTile('slipped-q', 'Slipped last quarter',  svgTrendDown,'#/history?filter=slipped-quarter') +
+        '</div>' +
+
+        // KPIs
+        '<div class="v4-section-title"><h2>Key Metrics</h2></div>' +
+        '<div class="v4-kpi-grid v4-stagger">' +
+          kpiTile('g1', 'open',        'Open cases',         svgIcoOpen,     false) +
+          kpiTile('g2', 'pipeline',    'Pipeline value',     svgIcoCurrency, false) +
+          kpiTile('g4', 'endusers',    'Active end-users',   svgIcoUsers,    false) +
+          kpiTile('g4', 'partners',    'Active partners',    svgIcoPartner,  false) +
+          kpiTile('g4', 'consultants', 'Active consultants', svgIcoUser,     false) +
+          kpiTile('g3', 'split',       'Cavitak / OEM',      svgIcoPie,      true) +
+        '</div>' +
+
+        // Funnel
+        '<div class="v4-section-title"><h2>Pipeline Stages</h2></div>' +
+        '<div class="v4-card">' +
+          '<div class="v4-card-hd">' +
+            '<h3>Pipeline by stage</h3>' +
+            '<span class="v4-hint" data-v4-funnel-total>\u2014 open</span>' +
+          '</div>' +
+          '<div class="v4-card-bd">' +
+            '<div class="v4-funnel">' +
+              funnelRow('v4-s-lead',     'Qualified') +
+              funnelRow('v4-s-proposal', 'Proposal') +
+              funnelRow('v4-s-budget',   'Budget Approval') +
+              funnelRow('v4-s-tech',     'Technical Approval') +
+              funnelRow('v4-s-nego',     'Negotiation') +
+              funnelRow('v4-s-awarded',  'Awarded') +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
+        // Quick links
+        '<div class="v4-quick v4-stagger">' +
+          '<button type="button" class="v4-quick-btn" data-nav="#/wizard">' + svgIcoPlus + '<span>New deal</span></button>' +
+          '<button type="button" class="v4-quick-btn" data-nav="#/history">' + svgIcoList + '<span>View history</span></button>' +
+          '<button type="button" class="v4-quick-btn" data-nav="#/dashboard">' + svgIcoDash + '<span>Dashboard</span></button>' +
+        '</div>'
+      );
+
+      loadHomeV4(u);
+    }
+
+    /* Loads deals via STORE.listDeals, applies Phase 3 scope helpers,
+       computes month tiles + 6 KPIs + 4 attention metrics + funnel counts,
+       and populates the DOM placeholders set up by showHome.
+       Pipeline ₹ stays "₹ —" since tvONE has no pricing yet (SPEC §5.5). */
+    async function loadHomeV4(u) {
+      try {
+        const r = await STORE.listDeals({ limit: 500, offset: 0 });
+        const all = (r && r.rows) || [];
+
+        const regionScope = getRegionScope(u);
+        const salesScope = getSalesScope(u);
+        const scoped = all
+          .filter(d => !d.deleted_at)
+          .filter(d => dealMatchesScope(d, regionScope, salesScope));
+
+        // Stage classification — mirror the legacy _isOpenStage rule.
+        const CLOSED = { 'Closed Won': true, 'Closed Lost': true };
+        const open = scoped.filter(d => !CLOSED[d.stage]);
+
+        // ----- Month tile values -----
+        const curM = _currentYYYYMM();
+        const nextM = (function() {
+          const d = new Date(); d.setMonth(d.getMonth() + 1);
+          return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        })();
+        const lastM = (function() {
+          const d = new Date(); d.setMonth(d.getMonth() - 1);
+          return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        })();
+        const lastQMonths = (function() {
+          const d = new Date();
+          const m = d.getMonth();
+          const qStart = Math.floor(m / 3) * 3 - 3;
+          const y = (qStart < 0) ? d.getFullYear() - 1 : d.getFullYear();
+          const startM = (qStart + 12) % 12;
+          const out = [];
+          for (let i = 0; i < 3; i++) {
+            const mm = (startM + i) % 12;
+            const yy = (startM + i >= 12) ? y + 1 : y;
+            out.push(yy + '-' + String(mm + 1).padStart(2, '0'));
+          }
+          return out;
+        })();
+        const ymOfDeal = function(d) {
+          const s = String(d.close_month || '');
+          return s.length >= 7 ? s.slice(0, 7) : '';
+        };
+        const closingNow  = open.filter(d => ymOfDeal(d) === curM);
+        const closingNext = open.filter(d => ymOfDeal(d) === nextM);
+        const slippedM    = open.filter(d => { const ym = ymOfDeal(d); return ym && ym === lastM && ym < curM; });
+        const slippedQ    = open.filter(d => { const ym = ymOfDeal(d); return ym && lastQMonths.indexOf(ym) >= 0; });
+
+        const setMt = function(kind, val, sub) {
+          const v = document.querySelector('[data-v4-mt="' + kind + '"]');
+          const s = document.querySelector('[data-v4-mt-sub="' + kind + '"]');
+          if (v) v.textContent = String(val);
+          if (s) s.textContent = sub;
+        };
+        const monLbl = (function(ym) {
+          if (!ym) return '\u2014';
+          const m = ym.match(/^(\d{4})-(\d{2})/);
+          if (!m) return ym;
+          const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+          return names[Number(m[2]) - 1] + ' ' + m[1];
+        });
+        setMt('now',        closingNow.length,  monLbl(curM) + ' \u00b7 \u20b9 \u2014');
+        setMt('next',       closingNext.length, monLbl(nextM) + ' \u00b7 \u20b9 \u2014');
+        setMt('slipped-m',  slippedM.length,    monLbl(lastM) + ' \u00b7 still open');
+        setMt('slipped-q',  slippedQ.length,    'prior quarter \u00b7 still open');
+
+        // ----- KPI tile values -----
+        const setK = function(id, val, sub) {
+          const v = document.querySelector('[data-v4-kpi="' + id + '"]');
+          const s = document.querySelector('[data-v4-kpi-sub="' + id + '"]');
+          if (v) v.textContent = String(val);
+          if (s) s.textContent = sub;
+        };
+        const distinct = function(arr, key) {
+          const seen = {}; let c = 0;
+          for (let i = 0; i < arr.length; i++) {
+            const k = String(arr[i][key] || '').trim().toLowerCase();
+            if (k && !seen[k]) { seen[k] = 1; c++; }
+          }
+          return c;
+        };
+        setK('open',        open.length,                       'across all stages');
+        setK('pipeline',    '\u20b9 \u2014',                   'pricing not yet enabled');
+        setK('endusers',    distinct(open, 'customer_name'),   'with open cases');
+        setK('partners',    distinct(open, 'partner_name'),    'with open cases');
+        setK('consultants', distinct(open, 'consultant_name'), 'with open cases');
+
+        // Cavitak / OEM split — bucket by creator's org_function.
+        // Default to 'Cavitak' if creator role unknown.
+        const usersById = (typeof STORE.usersById === 'function') ? STORE.usersById() : {};
+        let cav = 0, oem = 0;
+        for (let i = 0; i < open.length; i++) {
+          const creator = usersById[open[i].created_by_user] || {};
+          if (creator.org_function === 'OEM') oem++; else cav++;
+        }
+        const splitTotal = cav + oem;
+        const splitPctC = splitTotal ? Math.round(cav / splitTotal * 100) : 0;
+        const splitPctO = splitTotal ? Math.round(oem / splitTotal * 100) : 0;
+        const splitV = document.querySelector('[data-v4-kpi="split"]');
+        const splitS = document.querySelector('[data-v4-kpi-sub="split"]');
+        const splitBar = document.querySelector('[data-v4-kpi-bar="split"]');
+        const splitLeg = document.querySelector('[data-v4-kpi-legend="split"]');
+        if (splitV) splitV.textContent = cav + ' / ' + oem;
+        if (splitS) splitS.textContent = 'creator role';
+        if (splitBar) {
+          splitBar.innerHTML =
+            '<span style="width:' + splitPctC + '%;background:#FB923C"></span>' +
+            '<span style="width:' + splitPctO + '%;background:#A78BFA"></span>';
+        }
+        if (splitLeg) {
+          splitLeg.innerHTML =
+            '<span>Cavitak ' + splitPctC + '%</span>' +
+            '<span>OEM ' + splitPctO + '%</span>';
+        }
+
+        // ----- Attention values -----
+        // Stuck > 30 days: best computed from stage_transitions; absent that, use updated_at.
+        const now = Date.now();
+        const stuck30 = open.filter(d => {
+          const t = Date.parse(d.updated_at || d.created_at || '');
+          return t && (now - t) > 30 * 24 * 3600 * 1000;
+        });
+        const readyConfirm = open.filter(d => d.stage === 'Awarded');
+        const wonThisMonth = scoped.filter(d => {
+          if (d.stage !== 'Closed Won') return false;
+          const t = Date.parse(d.updated_at || '');
+          if (!t) return false;
+          const td = new Date(t);
+          return td.getFullYear() + '-' + String(td.getMonth() + 1).padStart(2, '0') === curM;
+        });
+        const setAttn = function(kind, n) {
+          const el = document.querySelector('[data-v4-attn="' + kind + '"]');
+          if (el) el.textContent = String(n);
+        };
+        setAttn('warn',    stuck30.length);
+        setAttn('danger',  slippedM.length + slippedQ.length);
+        setAttn('info',    readyConfirm.length);
+        setAttn('success', wonThisMonth.length);
+
+        // ----- Funnel bars (open deals only) -----
+        const stageOrder = ['Qualified', 'Proposal', 'Budget Approval', 'Technical Approval', 'Negotiation', 'Awarded'];
+        const stageCounts = {};
+        stageOrder.forEach(s => { stageCounts[s] = 0; });
+        open.forEach(d => { if (stageCounts.hasOwnProperty(d.stage)) stageCounts[d.stage]++; });
+        const maxCount = Math.max.apply(null, [1].concat(stageOrder.map(s => stageCounts[s])));
+        stageOrder.forEach(s => {
+          const bar = document.querySelector('[data-v4-funnel-bar="' + s + '"]');
+          const pct = document.querySelector('[data-v4-funnel-pct="' + s + '"]');
+          const count = stageCounts[s];
+          if (bar) {
+            bar.style.width = (count / maxCount * 100) + '%';
+            bar.textContent = String(count);
+          }
+          if (pct) {
+            pct.textContent = open.length ? Math.round(count / open.length * 100) + '%' : '0%';
+          }
+        });
+        const totalEl = document.querySelector('[data-v4-funnel-total]');
+        if (totalEl) totalEl.textContent = open.length + ' open';
+      } catch (err) {
+        console.error('[showHome] loadHomeV4 failed', err);
+      }
     }
 
     /* ============================================================
