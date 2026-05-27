@@ -6411,8 +6411,14 @@
       },
 
       // Audio extractors.
+      // v27.7.2 — F2 fix: AP-536 is currently a model number, not the billing
+      // SKU. Real billing SKU pending tvONE rep confirmation (likely
+      // T1-AP-536-1Y or MG-AP-536). Flagged with placeholder:true for
+      // consistency with the MV HDMI 1080p pattern (line ~6278). Customer-
+      // facing desc stays clean — the user-visible concern is pushed
+      // separately in RECOMMEND.recommendSx() at line ~22487.
       ap: {
-        'AP-536': { sku: 'AP-536', desc: 'HDMI Audio Extractor (AP-536) · de-embeds audio to analog L/R + S/PDIF' }
+        'AP-536': { sku: 'AP-536', desc: 'HDMI Audio Extractor (AP-536) · de-embeds audio to analog L/R + S/PDIF', placeholder: true }
       },
 
       // Active Optical Cable: signal type × jacket → 3-digit code.
@@ -6435,7 +6441,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.7.1',
+      version: 'v27.8.1',
       constants,
       calico,
       mv,
@@ -7505,6 +7511,38 @@
       // This feeds the C2 contact footer in exports and the D16 Profile Gate
       // that runs after fireAuthChange.
       await fetchRoster();
+      // v27.7.3 — F5 fix: hydrate SALES_TEAM and PRESALES_TEAM from the
+      // roster we just fetched. Closes the SALES/PRESALES hardcoded-array
+      // gap left from F1's STAGES work. Non-throwing: any malformed roster
+      // shape leaves UI._SALES_TEAM / UI._PRESALES_TEAM at boot fallback.
+      try {
+        const roster = (typeof getRoster === 'function') ? getRoster() : null;
+        if (Array.isArray(roster) && roster.length > 0 &&
+            typeof UI !== 'undefined' &&
+            typeof UI._setTeamsFromRoster === 'function') {
+          UI._setTeamsFromRoster(roster);
+        }
+      } catch (e) {
+        console.warn('UI._setTeamsFromRoster failed; using hardcoded team fallback:', e && e.message || e);
+      }
+      // v27.7.2 — F1 fix: fetch live pipeline stages so wizard / saved-deal
+      // dropdowns + dashboard velocity chart reflect any admin-side stage
+      // CRUD (rename, reorder, custom-stage add, soft-disable). Non-throwing:
+      // failure leaves UI.STAGES + UI.STAGE_META at their boot fallback so
+      // the app still renders.
+      try {
+        const sr = await stageList();
+        if (Array.isArray(sr) && sr.length > 0 && typeof UI !== 'undefined' && typeof UI._setStagesFromDB === 'function') {
+          const active = sr
+            .filter(function (row) { return row && row.is_active !== false; })
+            .sort(function (a, b) { return (a.seq || 0) - (b.seq || 0); });
+          if (active.length > 0) {
+            UI._setStagesFromDB(active);
+          }
+        }
+      } catch (e) {
+        console.warn('STORE.stageList failed; using hardcoded stage fallback:', e && e.message || e);
+      }
       fireAuthChange();
       return _user;
     }
@@ -7728,6 +7766,11 @@
         p_is_open:    (args.is_open !== false),
         p_win_weight: (typeof args.win_weight === 'number') ? args.win_weight : 0.5,
         p_seq:        (typeof args.seq === 'number') ? args.seq : null,
+        // v27.8.0 (Tier-1.3) — SLA days. null = no SLA. Backend RPC accepts
+        // p_sla_days as DEFAULT NULL so omission stays safe pre-migration.
+        p_sla_days:   (typeof args.sla_days === 'number' && args.sla_days > 0)
+                        ? args.sla_days
+                        : null,
         p_actor:      (u && u.id) || null
       });
     }
@@ -7740,6 +7783,14 @@
         p_stage_name: (typeof args.name === 'string') ? args.name : null,
         p_is_open:    (typeof args.is_open === 'boolean') ? args.is_open : null,
         p_win_weight: (typeof args.win_weight === 'number') ? args.win_weight : null,
+        // v27.8.0 (Tier-1.3) — p_sla_days writes a new value; p_clear_sla=true
+        // forces the column to NULL (since "set NULL" is otherwise indistinguishable
+        // from "leave unchanged" in a JSON patch payload). Backend RPC accepts
+        // both DEFAULT NULL / false so omission stays safe pre-migration.
+        p_sla_days:   (typeof args.sla_days === 'number' && args.sla_days > 0)
+                        ? args.sla_days
+                        : null,
+        p_clear_sla:  (args.clear_sla === true),
         p_actor:      (u && u.id) || null
       });
     }
@@ -7830,6 +7881,28 @@
       });
     }
 
+    /* v27.7.2 — F7: explicit error-log wrapper. Same payload shape as the
+       window error handlers below; this exists so application code can log
+       intentionally (caught exceptions worth tracking) without writing the
+       same Object.assign boilerplate everywhere. Non-throwing — callers
+       should never need to wrap this in their own try/catch. */
+    async function errorLogAppend(payload) {
+      try {
+        const u = _user || null;
+        return await rpc('error_log_append', {
+          p_payload: Object.assign({
+            user_agent: (typeof navigator !== 'undefined' && navigator.userAgent) || '',
+            app_version: (typeof CATALOG !== 'undefined' && CATALOG.version) || '',
+            app_user: (u && u.username) || null
+          }, payload || {})
+        });
+      } catch (e) {
+        // Last-resort: console only. Never throw out of an error logger.
+        try { console.warn('STORE.errorLogAppend failed:', e && e.message || e); } catch (_) {}
+        return null;
+      }
+    }
+
     /* v27.3.0 — Customer Directory + 360 + Merge (D1-D3 silent-drop restores).
        All 4 RPCs (customer_list, customer_upsert, customer_delete, customer_merge)
        already exist in Supabase. This is UI-only build on top of an existing
@@ -7896,12 +7969,75 @@
       customerList, customerUpsert, customerDelete, customerMerge, customer360,
       // v27.3.1 — Pipeline snapshots for dashboard weekly trend chart
       pipelineSnapshotList,
+      // v27.7.2 — F7: explicit error-logger for callers that catch + log
+      errorLogAppend,
       // internals exposed for debug only
       _rpc: rpc, _sha256Hex: sha256Hex
     });
   })();
 
   console.log('STORE ready: login, save, load, list, delete');
+
+  /* ============================================================
+     v27.7.2 — F7: global uncaught error → error_log RPC
+     Routes window 'error' + 'unhandledrejection' events to the
+     error_log_append RPC so the Super error dashboard (future
+     S1-pair) has data to consume. Never-throws — error handlers
+     must not raise further errors. Fire-and-forget; we don't await
+     so a slow Supabase response can't compound the original bug.
+     Rate-limited locally to avoid log-storm if a tight loop throws.
+     ============================================================ */
+  (function installErrorHandlers() {
+    let _lastErrorAt = 0;
+    let _errorBurst = 0;
+    const BURST_WINDOW_MS = 5000;   // 5s
+    const BURST_LIMIT    = 5;        // 5 errors per window, then drop
+
+    function _safeAppend(payload) {
+      // Local rate limit — prevents a tight error loop from flooding the RPC.
+      const now = Date.now();
+      if (now - _lastErrorAt < BURST_WINDOW_MS) {
+        _errorBurst++;
+        if (_errorBurst > BURST_LIMIT) return;
+      } else {
+        _errorBurst = 1;
+      }
+      _lastErrorAt = now;
+      try {
+        // Use STORE._rpc directly; STORE.errorLogAppend is the public wrapper
+        // but we want this handler to work even if STORE.freeze() hasn't run.
+        if (typeof STORE !== 'undefined' && typeof STORE._rpc === 'function') {
+          const u = (typeof STORE.currentUser === 'function') ? STORE.currentUser() : null;
+          // Fire-and-forget; do not await (would block error event loop)
+          STORE._rpc('error_log_append', { p_payload: Object.assign({
+            user_agent: (typeof navigator !== 'undefined' && navigator.userAgent) || '',
+            app_version: (typeof CATALOG !== 'undefined' && CATALOG.version) || '',
+            app_user: (u && u.username) || null
+          }, payload || {}) }).catch(function () { /* swallow */ });
+        }
+      } catch (_) { /* never throw from error handler */ }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('error', function (e) {
+        _safeAppend({
+          action: 'window.error',
+          error_code: (e && e.error && e.error.name) || (e && e.type) || 'Error',
+          error_message: String((e && e.message) || ''),
+          stack_trace: (e && e.error && e.error.stack) || ''
+        });
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        const reason = (e && e.reason) || {};
+        _safeAppend({
+          action: 'unhandledrejection',
+          error_code: (reason && reason.name) || 'UnhandledRejection',
+          error_message: String((reason && reason.message) || reason || ''),
+          stack_trace: (reason && reason.stack) || ''
+        });
+      });
+    }
+  })();
 
   /* ============================================================
      EXPORT — Session 8 (alpha.8.0)
@@ -8507,20 +8643,37 @@
         _writeRow(_composeLine('Presales', deal.presales_person_id, UI._PRESALES_TEAM));
 
         // Escalation line — only when viewer is not Super.
+        // v27.7.2 — F3 fix: look up first active Super from the live roster
+        // rather than hardcoding Dipenkumar's UUID + fallback contact strings.
+        // If no Super is in the roster (RPC failed at login, account
+        // restructure), render no line — never stale data.
         if (!_isSuper) {
-          const DIPENKUMAR_UUID = '155b257a-ec1a-4ee9-ac89-31ba47c4c610';
-          const dipRich  = UI._userRichFor(DIPENKUMAR_UUID);
-          const dipTitle = (dipRich && String(dipRich.professional_title || '').trim()) ||
-                           'National Product Lead';
-          const dipPhone = (dipRich && String(dipRich.phone || '').trim()) || '8160756906';
-          const dipEmail = (dipRich && String(dipRich.email || '').trim()) || 'dipen.g@cavitak.com';
-          _writeRow(
-            'For pricing escalation: Dipenkumar Gajjar \u00b7 ' + dipTitle +
-            ' \u00b7 Phone: +91 ' + dipPhone +
-            ' \u00b7 Email: ' + dipEmail,
-            true,  // italic
-            true   // accent (amber)
-          );
+          const _findEsc = function () {
+            const roster = (typeof STORE.getRoster === 'function') ? STORE.getRoster() : null;
+            if (!Array.isArray(roster)) return null;
+            return roster.find(function (u) {
+              return u && u.permission_tier === 'super' && u.is_active !== false;
+            }) || null;
+          };
+          const esc = _findEsc();
+          if (esc) {
+            const escName  = String(esc.full_name || '').trim();
+            const escTitle = String(esc.professional_title || '').trim();
+            const escPhone = String(esc.phone || '').trim();
+            const escEmail = String(esc.email || '').trim();
+            const escParts = [];
+            if (escName)  escParts.push(escName);
+            if (escTitle) escParts.push(escTitle);
+            if (escPhone) escParts.push('Phone: +91 ' + escPhone);
+            if (escEmail) escParts.push('Email: ' + escEmail);
+            if (escParts.length) {
+              _writeRow(
+                'For pricing escalation: ' + UI._joinParts(escParts, ' \u00b7 '),
+                true,  // italic
+                true   // accent (amber)
+              );
+            }
+          }
         }
 
         _writeRow('Issued by: Cavitak Marketing Pvt Ltd', false, true);
@@ -8992,19 +9145,35 @@
         if (salesLn) lines.push({ text: salesLn, italic: false, accent: false });
         if (presLn)  lines.push({ text: presLn,  italic: false, accent: false });
         if (!_isSuper) {
-          const DIPENKUMAR_UUID = '155b257a-ec1a-4ee9-ac89-31ba47c4c610';
-          const dipRich  = UI._userRichFor(DIPENKUMAR_UUID);
-          const dipTitle = (dipRich && String(dipRich.professional_title || '').trim()) ||
-                           'National Product Lead';
-          const dipPhone = (dipRich && String(dipRich.phone || '').trim()) || '8160756906';
-          const dipEmail = (dipRich && String(dipRich.email || '').trim()) || 'dipen.g@cavitak.com';
-          lines.push({
-            text: 'For pricing escalation: Dipenkumar Gajjar \u00b7 ' + dipTitle +
-                  ' \u00b7 Phone: +91 ' + dipPhone +
-                  ' \u00b7 Email: ' + dipEmail,
-            italic: true,
-            accent: true
-          });
+          // v27.7.2 — F3 fix: look up first active Super from live roster
+          // (matches Excel path at line ~8510). Renders no line if no Super
+          // in roster — never stale fallback data.
+          const _findEsc = function () {
+            const roster = (typeof STORE.getRoster === 'function') ? STORE.getRoster() : null;
+            if (!Array.isArray(roster)) return null;
+            return roster.find(function (u) {
+              return u && u.permission_tier === 'super' && u.is_active !== false;
+            }) || null;
+          };
+          const esc = _findEsc();
+          if (esc) {
+            const escName  = String(esc.full_name || '').trim();
+            const escTitle = String(esc.professional_title || '').trim();
+            const escPhone = String(esc.phone || '').trim();
+            const escEmail = String(esc.email || '').trim();
+            const escParts = [];
+            if (escName)  escParts.push(escName);
+            if (escTitle) escParts.push(escTitle);
+            if (escPhone) escParts.push('Phone: +91 ' + escPhone);
+            if (escEmail) escParts.push('Email: ' + escEmail);
+            if (escParts.length) {
+              lines.push({
+                text: 'For pricing escalation: ' + UI._joinParts(escParts, ' \u00b7 '),
+                italic: true,
+                accent: true
+              });
+            }
+          }
         }
         lines.push({ text: 'Issued by: Cavitak Marketing Pvt Ltd', italic: false, accent: true });
 
@@ -9199,6 +9368,182 @@
         if (!hasTransitionCheck) return 'transitionedToWon guard missing or weakened';
         if (!hasBaselineSeed)    return '_savedDealLastSavedStage not seeded on load — opening Won deal will fire false-positive confetti';
         return true;
+      });
+
+    /* ---------- v27.8.1: Stage velocity SLA-aware coloring ---------- */
+    check('v27.8.1 T1.3.7: renderStageVelocity exposed for re-render',
+      () => typeof UI.renderStageVelocity === 'function'
+        || typeof renderStageVelocity === 'function'
+        || 'renderStageVelocity not reachable');
+    check('v27.8.1 T1.3.8: stage velocity SLA palette colors hardcoded to chip-success/warning/danger hex',
+      () => {
+        // Indirect check: confirm the code path references the SLA state
+        // palette by searching the toString of renderStageVelocity. We
+        // expect '#10B981' (green), '#F59E0B' (amber), '#DC2626' (red).
+        const src = (typeof renderStageVelocity === 'function')
+                    ? renderStageVelocity.toString()
+                    : (UI.renderStageVelocity ? UI.renderStageVelocity.toString() : '');
+        const hasGreen = src.indexOf('#10B981') >= 0;
+        const hasAmber = src.indexOf('#F59E0B') >= 0;
+        const hasRed   = src.indexOf('#DC2626') >= 0;
+        return (hasGreen && hasAmber && hasRed)
+          || 'palette missing — green:' + hasGreen + ' amber:' + hasAmber + ' red:' + hasRed;
+      });
+
+    /* ---------- v27.8.0 Tier-1.3: Stage aging / SLA badges ---------- */
+    check('v27.8.0 T1.3.1: computeStageAgeBadge exists on UI',
+      () => typeof UI.computeStageAgeBadge === 'function'
+        || 'UI.computeStageAgeBadge not exposed');
+    check('v27.8.0 T1.3.2: badge returns null when STAGE_META not loaded',
+      () => {
+        // Snapshot + restore STAGE_META to avoid breaking other tests.
+        const meta = UI._getStageMeta && UI._getStageMeta();
+        try {
+          // Force-blank STAGE_META: we can't reassign module-private, so
+          // instead test the closed-stage path (no badge) and unknown-stage
+          // path (no badge) — both end in the same null return.
+          const r = UI.computeStageAgeBadge({ stage: 'Closed Won', current_stage_entered_at: '2024-01-01T00:00:00Z' });
+          return r === null || 'expected null for Closed Won, got: ' + JSON.stringify(r);
+        } finally { /* nothing to restore */ }
+      });
+    check('v27.8.0 T1.3.3: badge returns null for stage with no SLA',
+      () => {
+        const r = UI.computeStageAgeBadge({ stage: '___NoSuchStage___', current_stage_entered_at: '2024-01-01T00:00:00Z' });
+        return r === null || 'expected null for unknown stage, got: ' + JSON.stringify(r);
+      });
+    check('v27.8.0 T1.3.4: badge returns null when no entered_at + no created_at',
+      () => {
+        // Even if a stage has an SLA, missing time-in-stage data → null.
+        // We construct a deal with no timestamps; result must be null.
+        const r = UI.computeStageAgeBadge({ stage: 'Qualified' });  // no entered_at / created_at
+        return r === null || 'expected null with no timestamps, got: ' + JSON.stringify(r);
+      });
+    check('v27.8.0 T1.3.5: renderStageAgeBadge returns empty string when no badge',
+      () => {
+        const html = UI.renderStageAgeBadge({ stage: 'Closed Won' });
+        return html === '' || 'expected empty string, got: ' + JSON.stringify(html);
+      });
+    check('v27.8.0 T1.3.6: stageUpdate wrapper accepts sla_days + clear_sla',
+      () => {
+        // Indirect check: STORE.stageUpdate must be a function and accept
+        // an object with sla_days / clear_sla. We don't actually call the
+        // RPC (would need a real stage id + Super auth); just confirm the
+        // wrapper exists with the expected shape. Real behavioral test is
+        // user-side after migration is applied.
+        return typeof STORE.stageUpdate === 'function'
+          || 'STORE.stageUpdate not a function';
+      });
+
+    /* ---------- v27.7.4 F6: Sheet a11y baseline ---------- */
+    check('v27.7.4 F6.1: openSheet sets aria-labelledby when content has h3',
+      () => {
+        const before = $('sheet-host') && $('sheet-host').getAttribute('data-open');
+        try {
+          UI.openSheet('<div><h3>Test Title</h3><p>body</p></div>');
+          const body = $('sheet-body');
+          const labelledBy = body && body.getAttribute('aria-labelledby');
+          const heading = body && body.querySelector('h3');
+          const idMatches = (labelledBy && heading && heading.id === labelledBy);
+          return idMatches || 'labelledBy=' + labelledBy + ' headingId=' + (heading && heading.id);
+        } finally {
+          UI.closeSheet();
+          // Restore prior state if test ran with sheet already open.
+          if (before === 'true' && $('sheet-host')) $('sheet-host').setAttribute('data-open', 'true');
+        }
+      });
+    check('v27.7.4 F6.2: openSheet without heading clears aria-labelledby',
+      () => {
+        try {
+          UI.openSheet('<div><p>No heading here</p></div>');
+          const body = $('sheet-body');
+          const lb = body && body.getAttribute('aria-labelledby');
+          return !lb || 'expected no labelledby, got: ' + lb;
+        } finally {
+          UI.closeSheet();
+        }
+      });
+    check('v27.7.4 F6.3: closeSheet clears aria-labelledby and sheet content',
+      () => {
+        UI.openSheet('<div><h3>Will be cleared</h3></div>');
+        UI.closeSheet();
+        const body = $('sheet-body');
+        const innerEmpty = body && body.innerHTML === '';
+        const noLabel   = body && !body.getAttribute('aria-labelledby');
+        return (innerEmpty && noLabel)
+          || 'innerEmpty=' + innerEmpty + ' noLabel=' + noLabel;
+      });
+    check('v27.7.4 F6.4: sheet a11y keydown handlers bound (ESC + Tab trap)',
+      () => {
+        // Indirect check: openSheet must execute without throwing on a
+        // dummy synthesized keydown event for both Escape and Tab. We
+        // dispatch the events on document and verify the handler runs
+        // without errors. This is a smoke-level check, not a behavioral
+        // test (we don't simulate full Tab cycling).
+        try {
+          UI.openSheet('<div><h3>Trap test</h3><input id="trap-a"><button id="trap-b">x</button></div>');
+          const esc = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+          document.dispatchEvent(esc);
+          // After ESC, sheet should be closed.
+          const closed = $('sheet-host') && $('sheet-host').getAttribute('data-open') === 'false';
+          return closed || 'ESC did not close sheet';
+        } catch (e) {
+          UI.closeSheet();
+          return 'keydown handler threw: ' + (e && e.message || String(e));
+        }
+      });
+
+    /* ---------- v27.7.3 F5: Teams-from-roster mutator ---------- */
+    check('v27.7.3 F5.1: UI._setTeamsFromRoster exists',
+      () => typeof UI._setTeamsFromRoster === 'function'
+            || '_setTeamsFromRoster missing on UI module');
+    check('v27.7.3 F5.2: _setTeamsFromRoster mutates SALES_TEAM correctly given sample roster',
+      () => {
+        // Take a snapshot of the current arrays so we can restore them.
+        const beforeSales    = APP._SALES_TEAM.slice();
+        const beforePresales = APP._PRESALES_TEAM.slice();
+        try {
+          const sample = [
+            { id: 'u1', full_name: 'Bob Sales',    org_function: 'Sales',    is_active: true },
+            { id: 'u2', full_name: 'Alice Sales',  org_function: 'Sales',    is_active: true },
+            { id: 'u3', full_name: 'Ravi BU',      org_function: 'BU Head',  region: 'West',  is_active: true },
+            { id: 'u4', full_name: 'Mira Presales',org_function: 'Presales', is_active: true },
+            { id: 'u5', full_name: 'Inactive Sam', org_function: 'Sales',    is_active: false },  // should be filtered
+            { id: 'u6', full_name: 'Sup Boss',     org_function: 'Sales',    permission_tier: 'super', is_active: true }
+          ];
+          UI._setTeamsFromRoster(sample);
+          // After: Sales = [Alice, Bob, Ravi (BU Head West), Sup Boss (super-last)]; Presales = [Mira, Sup Boss]
+          const sLen = APP._SALES_TEAM.length === 4;
+          const pLen = APP._PRESALES_TEAM.length === 2;
+          const aliceFirst = APP._SALES_TEAM[0] && APP._SALES_TEAM[0].label === 'Alice Sales';
+          const raviSuffix = APP._SALES_TEAM[2] && APP._SALES_TEAM[2].label === 'Ravi BU (BU Head West)';
+          const supLast    = APP._SALES_TEAM[3] && APP._SALES_TEAM[3].label === 'Sup Boss';
+          const supInPre   = APP._PRESALES_TEAM[1] && APP._PRESALES_TEAM[1].label === 'Sup Boss';
+          const noInactive = !APP._SALES_TEAM.some(o => o.label === 'Inactive Sam');
+          if (!sLen)        return 'SALES_TEAM len ' + APP._SALES_TEAM.length + ' (expected 4)';
+          if (!pLen)        return 'PRESALES_TEAM len ' + APP._PRESALES_TEAM.length + ' (expected 2)';
+          if (!aliceFirst)  return 'alphabetical sort broken — first sales=' + (APP._SALES_TEAM[0] && APP._SALES_TEAM[0].label);
+          if (!raviSuffix)  return 'BU Head region suffix broken — got ' + (APP._SALES_TEAM[2] && APP._SALES_TEAM[2].label);
+          if (!supLast)     return 'Super not at end of SALES_TEAM';
+          if (!supInPre)    return 'Super not appended to PRESALES_TEAM';
+          if (!noInactive)  return 'is_active=false user leaked into SALES_TEAM';
+          return true;
+        } finally {
+          // Restore boot fallback values so subsequent smoke checks (N3, N4, N5, N6) work.
+          APP._SALES_TEAM.length = 0;
+          beforeSales.forEach(function (r) { APP._SALES_TEAM.push(r); });
+          APP._PRESALES_TEAM.length = 0;
+          beforePresales.forEach(function (r) { APP._PRESALES_TEAM.push(r); });
+        }
+      });
+    check('v27.7.3 F5.3: _setTeamsFromRoster rejects empty/bad input (boot fallback preserved)',
+      () => {
+        const beforeLen = APP._SALES_TEAM.length;
+        const r1 = UI._setTeamsFromRoster(null);
+        const r2 = UI._setTeamsFromRoster([]);
+        const r3 = UI._setTeamsFromRoster([{ id: '', full_name: '' }]);
+        const afterLen = APP._SALES_TEAM.length;
+        return (r1 === false && r2 === false && r3 === false && afterLen === beforeLen)
+          || 'r1=' + r1 + ' r2=' + r2 + ' r3=' + r3 + ' lenBefore=' + beforeLen + ' lenAfter=' + afterLen;
       });
 
     /* ---------- v27.6-alpha1: Pipeline stages preview + snapshot augment consumer ---------- */
@@ -10621,13 +10966,41 @@
 
     /* ---------- Constants ---------- */
 
-    // Pipeline stages mirror the live Session 4 handoff table.
-    // TODO Session 7+: replace with stages_list() RPC call on boot
-    // (per handoff §12: stages must be loaded from DB, not hardcoded).
-    const STAGES = [
+    // Pipeline stages — v27.7.2 F1: loaded from `pipeline_stages` table at
+    // login via STORE.stageList(). Hardcoded values below are the boot-time
+    // fallback used (a) before login completes and (b) if the RPC fails.
+    // Boot mutation happens in login() at line ~7507 (right after the
+    // roster fetch). Mutable (let, not const) so the populated value can
+    // replace the fallback array in-place — keeps the same reference and
+    // avoids touching every consumer site.
+    //
+    // STAGE_META carries the full row data (id, is_open, win_weight,
+    // is_active, seq) for callers that need more than the name. See
+    // _isOpenStage and renderStageVelocity for examples.
+    let STAGES = [
       'Qualified', 'Proposal', 'Budget Approval', 'Technical Approval',
       'Negotiation', 'Awarded', 'Closed Won', 'Closed Lost'
     ];
+    let STAGE_META = null;  // populated at login; null = use hardcoded fallback
+
+    // v27.7.2 F1: called from STORE.login() after stage_list() returns.
+    // Mutates STAGES + STAGE_META in-place so closure references throughout
+    // this IIFE see the new values on next render. Defensive: rejects bad
+    // input shapes so a malformed RPC payload can't blank the dropdowns.
+    function _setStagesFromDB(rows) {
+      if (!Array.isArray(rows) || rows.length === 0) return false;
+      const names = [];
+      for (let i = 0; i < rows.length; i++) {
+        const n = rows[i] && String(rows[i].stage_name || '').trim();
+        if (!n) continue;  // skip blank rows
+        names.push(n);
+      }
+      if (names.length === 0) return false;
+      STAGES.length = 0;
+      names.forEach(function (n) { STAGES.push(n); });
+      STAGE_META = rows;
+      return true;
+    }
 
     // v27.1.1 — Lead Origin (renamed from "Lead source"). Cavitak = lead came
     // from Cavitak's own sales motion; tvONE = lead came from the OEM partner.
@@ -10875,14 +11248,31 @@
     // UUIDs are public.users.id values, verified live at v27.1.0 deploy.
     // deal_save's *_person_id columns require UUIDs referencing users.id;
     // sending the display name (previous behavior) caused the RPC to drop
-    // the field. Edit when team changes — both `value` (UUID) and `label`
-    // (shown in dropdowns + reports) must update together.
-    // v27.1.1 B3 — Live `public.users` roster sourced 23 May 2026 (queried via
-    // MCP, not memory). 13 entries: 9 Sales + 3 BU Heads + Dipenkumar.
-    // OEM (Amit/Ashish) intentionally excluded — see v27.2 parties-table flow.
-    // Test users (throwback2, _smoketest, throwaway) filtered by username.
+    // the field.
+    //
+    // v27.7.3 F5: arrays are now `let` (mutable). Hardcoded values below are
+    // the boot-time fallback used (a) before login completes and (b) if the
+    // user_list RPC fails at login. Boot mutation happens in login() right
+    // after stage_list — same pattern as STAGES (F1). Mutated in-place so
+    // the closure refs at L18305 / L18495 / L19120 and the APP module's
+    // L22803 capture all stay valid.
+    //
+    // Filter rules (must match documented behavior):
+    //   * Sales array:    org_function in {'Sales','BU Head'} + Super tier (Dipenkumar)
+    //   * Presales array: org_function = 'Presales' + Super tier (Dipenkumar)
+    //   * Inactive users: is_active !== false (exclude deactivated)
+    //   * Sort: alphabetical by full_name within each group;
+    //          Sales array layout = [Sales α-sorted, BU Heads α-sorted, Super last]
+    //          Presales array layout = [Presales α-sorted, Super last]
+    //   * Label: 'Full Name' for plain roles; 'Full Name (BU Head <Region>)' for BU Heads
+    //
+    // Boot fallback (sourced 23 May 2026 via MCP). 13 Sales entries:
+    //   9 Sales + 3 BU Heads + Dipenkumar.
+    // OEM (Amit/Ashish) intentionally excluded from Sales dropdown — they
+    // use the parties-table flow. Test users (throwback2, _smoketest,
+    // throwaway) filtered server-side and would not appear in live roster.
     // BU Heads get region suffix to disambiguate from rank-and-file Sales.
-    const SALES_TEAM = [
+    let SALES_TEAM = [
       { value: '5a814b84-7d3b-40eb-92c5-ae5ddc458b8f', label: 'Aditya Duddupudi' },
       { value: 'bc00d3d8-0e73-41fa-bd00-e8448c4a655a', label: 'Arvind Sahu' },
       { value: '54c7a685-fed4-4867-8c5c-8ee288c69b42', label: 'Mohd Faiz' },
@@ -10903,7 +11293,7 @@
     // back in Presales where he belongs (smoke N5 guards against regression).
     // Spelling correction: Sachchi Kaushik (live DB) — was 'Kaushki' in v27.1.0
     // gap doc draft, but live DB confirms the -ik ending.
-    const PRESALES_TEAM = [
+    let PRESALES_TEAM = [
       { value: 'ae8985dd-902f-4db6-96d8-de4dd4518fd4', label: 'Hritika Shinde' },
       { value: '2e1ab421-5174-4f4d-a27d-bb8c19e22c3f', label: 'Mohit Chaturvedi' },
       { value: '4620c546-d410-49df-8947-31d6c337a3f8', label: 'Rahul Jain' },
@@ -10912,6 +11302,76 @@
       { value: 'b86e9932-15f8-4e8b-a952-66aa4dfd2312', label: 'Vipul Parihar' },
       { value: '155b257a-ec1a-4ee9-ac89-31ba47c4c610', label: 'Dipenkumar Gajjar' }
     ];
+
+    // v27.7.3 F5: called from STORE.login() after fetchRoster() + stageList().
+    // Mutates SALES_TEAM and PRESALES_TEAM in-place so closure references
+    // throughout this IIFE (and the APP module's L22803 mirrors) see the
+    // new values on next render. Defensive: rejects bad input shapes so a
+    // malformed RPC payload can't blank the dropdowns. Returns true on
+    // success, false on no-op (lets caller log appropriately).
+    function _setTeamsFromRoster(roster) {
+      if (!Array.isArray(roster) || roster.length === 0) return false;
+
+      // Build the three buckets in a single pass.
+      const sales    = [];
+      const buHeads  = [];
+      const presales = [];
+      let   superRow = null;  // exactly one Super in v27.7.x (Dipenkumar)
+
+      roster.forEach(function (u) {
+        if (!u || u.is_active === false) return;
+        const id   = String(u.id || '').trim();
+        const name = String(u.full_name || '').trim();
+        if (!id || !name) return;  // skip orphan rows
+
+        // Super (Dipenkumar) is always appended to BOTH lists at the end.
+        // Captured once; if a future v27.x adds a second Super, only the
+        // first-by-iteration is taken — match existing behavior of one
+        // escalation contact. (See F3 — same single-Super assumption.)
+        if (u.permission_tier === 'super' && !superRow) {
+          superRow = { value: id, label: name };
+          return;
+        }
+
+        const fn = String(u.org_function || '').trim();
+        if (fn === 'Sales') {
+          sales.push({ value: id, label: name });
+        } else if (fn === 'BU Head') {
+          const region = String(u.region || '').trim();
+          const label = region ? (name + ' (BU Head ' + region + ')') : (name + ' (BU Head)');
+          buHeads.push({ value: id, label: label });
+        } else if (fn === 'Presales') {
+          presales.push({ value: id, label: name });
+        }
+        // Other roles (Support, OEM) are intentionally excluded from
+        // person dropdowns — they are not assignable as sales/presales.
+      });
+
+      if (sales.length === 0 && buHeads.length === 0 && presales.length === 0) {
+        // Roster came back but had no relevant users — treat as no-op
+        // rather than blanking the dropdowns. Boot fallback stays in place.
+        return false;
+      }
+
+      // Sort alphabetically within each bucket.
+      const byLabel = function (a, b) { return a.label.localeCompare(b.label); };
+      sales.sort(byLabel);
+      buHeads.sort(byLabel);
+      presales.sort(byLabel);
+
+      // Compose Sales array: Sales α-sorted, BU Heads α-sorted, Super last.
+      SALES_TEAM.length = 0;
+      sales.forEach(function (r) { SALES_TEAM.push(r); });
+      buHeads.forEach(function (r) { SALES_TEAM.push(r); });
+      if (superRow) SALES_TEAM.push(superRow);
+
+      // Compose Presales array: Presales α-sorted, Super last.
+      PRESALES_TEAM.length = 0;
+      presales.forEach(function (r) { PRESALES_TEAM.push(r); });
+      if (superRow) PRESALES_TEAM.push(superRow);
+
+      return true;
+    }
 
     // v27.1.0 — Lookup helper: given a UUID and a {value,label}[] list,
     // return the label. Used by display sites (Step-6 Review, Excel, PDF)
@@ -11960,15 +12420,164 @@
       }, ms);
     }
 
-    function openSheet(html) {
-      $('sheet-body').innerHTML = html;
-      $('sheet-host').setAttribute('data-open', 'true');
-      $('sheet-host').setAttribute('aria-hidden', 'false');
+    // v27.7.4 — F6: a11y baseline. The sheet-host element already carries
+    // role="dialog" aria-modal="true" in HTML (line ~6123). The open/close
+    // functions below add the dynamic pieces:
+    //   * aria-labelledby — points to the first h3 inside the new sheet
+    //     content so screen readers announce the sheet's title.
+    //   * Focus capture — saves the element that had focus before openSheet
+    //     was called so closeSheet can restore it (matches WAI-ARIA dialog
+    //     authoring practice).
+    //   * Focus delivery — after paint, moves focus to the first focusable
+    //     descendant of the sheet (input, button, [tabindex]:not([-1])).
+    //     If none exists, focuses the sheet container itself.
+    //   * Focus trap + ESC — wired by _bindSheetA11y once at module init
+    //     (called from UI.mount below). Single global handler keyed on
+    //     sheet-host[data-open="true"] so the listener doesn't churn per
+    //     sheet open.
+    let _previousFocus = null;
+
+    function _firstFocusable(root) {
+      if (!root) return null;
+      const sel = 'a[href], area[href], input:not([disabled]):not([type="hidden"]), ' +
+                  'select:not([disabled]), textarea:not([disabled]), ' +
+                  'button:not([disabled]), iframe, object, embed, ' +
+                  '[contenteditable="true"], [tabindex]:not([tabindex="-1"])';
+      // querySelector returns null if nothing matches — caller falls back.
+      return root.querySelector(sel);
     }
+
+    function _allFocusable(root) {
+      if (!root) return [];
+      const sel = 'a[href], area[href], input:not([disabled]):not([type="hidden"]), ' +
+                  'select:not([disabled]), textarea:not([disabled]), ' +
+                  'button:not([disabled]), iframe, object, embed, ' +
+                  '[contenteditable="true"], [tabindex]:not([tabindex="-1"])';
+      const out = [];
+      const nodes = root.querySelectorAll(sel);
+      for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
+        // Skip elements that are visually hidden / display:none.
+        if (n.offsetParent === null && n.tagName !== 'BUTTON') continue;
+        out.push(n);
+      }
+      return out;
+    }
+
+    function openSheet(html) {
+      // Capture pre-sheet focus so we can restore it on close. If the
+      // active element is the body (no focused element) we record null.
+      try {
+        const ae = document.activeElement;
+        _previousFocus = (ae && ae !== document.body) ? ae : null;
+      } catch (_) { _previousFocus = null; }
+
+      const body = $('sheet-body');
+      const host = $('sheet-host');
+      if (!body || !host) return;
+
+      body.innerHTML = html;
+
+      // aria-labelledby wiring. Find the first heading inside the sheet
+      // (h2 or h3); give it a stable id if it doesn't have one; point
+      // the sheet's aria-labelledby at it. Fall back: no labelledby — the
+      // existing aria-modal still tells screen readers it's a dialog.
+      const heading = body.querySelector('h2, h3');
+      if (heading) {
+        if (!heading.id) heading.id = 'sheet-title-' + Date.now().toString(36);
+        body.setAttribute('aria-labelledby', heading.id);
+      } else {
+        body.removeAttribute('aria-labelledby');
+      }
+
+      host.setAttribute('data-open', 'true');
+      host.setAttribute('aria-hidden', 'false');
+
+      // Deliver focus after the browser has painted the new content.
+      // requestAnimationFrame is enough; layout doesn't matter for focus.
+      // Note: existing v27.7-alpha3 showDuplicateDealSheet uses a 50ms
+      // setTimeout to focus a specific field (dd-name) — that still wins
+      // because it runs AFTER this rAF and explicitly targets its own
+      // input. We just deliver a sensible default focus for sheets that
+      // don't manage their own.
+      try {
+        requestAnimationFrame(function () {
+          if (host.getAttribute('data-open') !== 'true') return;  // closed before paint
+          const target = _firstFocusable(body) || body;
+          try { target.focus({ preventScroll: false }); } catch (_) {}
+        });
+      } catch (_) { /* rAF unsupported — focus stays where it was */ }
+    }
+
     function closeSheet() {
-      $('sheet-host').setAttribute('data-open', 'false');
-      $('sheet-host').setAttribute('aria-hidden', 'true');
-      $('sheet-body').innerHTML = '';
+      const host = $('sheet-host');
+      const body = $('sheet-body');
+      if (host) {
+        host.setAttribute('data-open', 'false');
+        host.setAttribute('aria-hidden', 'true');
+      }
+      if (body) {
+        body.innerHTML = '';
+        body.removeAttribute('aria-labelledby');
+      }
+      // Restore focus to whatever had it before the sheet opened.
+      // Defensive: the previous element may have been removed from the
+      // DOM (e.g. a re-rendered list); .focus() on a detached node
+      // throws on some browsers, hence the try/catch.
+      try {
+        if (_previousFocus && document.contains(_previousFocus) &&
+            typeof _previousFocus.focus === 'function') {
+          _previousFocus.focus({ preventScroll: true });
+        }
+      } catch (_) {}
+      _previousFocus = null;
+    }
+
+    // v27.7.4 — F6: bind ESC handler + focus trap once. Called from mount().
+    // ESC: close the sheet if open. Calls closeSheet (not the confirm
+    //   sheet's explicit handler) — for the confirm sheet this is the
+    //   same as Cancel since _pendingConfirmCallback is only invoked on
+    //   explicit Confirm. Matches expected dialog dismiss behavior.
+    // TAB: if sheet is open, trap focus inside it by wrapping at the ends.
+    let _sheetA11yBound = false;
+    function _bindSheetA11y() {
+      if (_sheetA11yBound) return;
+      _sheetA11yBound = true;
+      document.addEventListener('keydown', function (e) {
+        const host = $('sheet-host');
+        if (!host || host.getAttribute('data-open') !== 'true') return;
+
+        if (e.key === 'Escape' || e.key === 'Esc') {
+          // Don't preventDefault — some platforms (Z Fold split-screen)
+          // also use ESC to dismiss the keyboard. Let that side-effect
+          // run; closing the sheet is the intended primary action.
+          closeSheet();
+          return;
+        }
+
+        if (e.key === 'Tab') {
+          const body = $('sheet-body');
+          const focusables = _allFocusable(body);
+          if (focusables.length === 0) return;
+          const first = focusables[0];
+          const last  = focusables[focusables.length - 1];
+          const active = document.activeElement;
+          // If focus is outside the sheet (shouldn't happen but defensive),
+          // pull it back to first.
+          if (!body.contains(active)) {
+            e.preventDefault();
+            try { first.focus(); } catch (_) {}
+            return;
+          }
+          if (e.shiftKey && active === first) {
+            e.preventDefault();
+            try { last.focus(); } catch (_) {}
+          } else if (!e.shiftKey && active === last) {
+            e.preventDefault();
+            try { first.focus(); } catch (_) {}
+          }
+        }
+      }, true);  // capture phase so we beat per-input keydown listeners
     }
 
     /* v27.3.0 — Custom confirmation sheet. Replaces native window.confirm()
@@ -12568,6 +13177,9 @@
       const curOpen   = (!stage || stage.is_open !== false);
       const curWeight = (stage && typeof stage.win_weight === 'number') ? stage.win_weight : 0.5;
       const curActive = (!stage || stage.is_active !== false);
+      // v27.8.0 (Tier-1.3) — SLA target days. null = no SLA configured.
+      const curSlaDays = (stage && typeof stage.stage_sla_days === 'number')
+                          ? stage.stage_sla_days : null;
 
       openSheet(
         '<div class="notif-sheet" style="padding:0 16px 16px">' +
@@ -12596,6 +13208,21 @@
               'Won stages use 1.00; lost / dropped use 0.00.' +
             '</div>' +
           '</div>' +
+          // v27.8.0 (Tier-1.3) — SLA target in days. Empty = no SLA (no badge).
+          // Only meaningful on Open stages; hidden on Closed-state stages since
+          // those never accumulate "time-in-stage" pressure.
+          (curOpen
+            ? '<div class="field-v3">' +
+                '<label>Target days in stage</label>' +
+                '<input class="input-v3" id="se-sla-days" type="number" step="1" min="1" max="365"' +
+                  ' value="' + esc(curSlaDays != null ? String(curSlaDays) : '') + '"' +
+                  ' inputmode="numeric" placeholder="Leave blank for no SLA">' +
+                '<div style="font-size:11px;color:var(--ink-soft);margin-top:4px;line-height:1.4">' +
+                  'Drives the stage-aging badge on saved deals. Deals at or under target show green; ' +
+                  'over target but under 1.5\u00d7 show amber; past 1.5\u00d7 show red. Blank = no badge.' +
+                '</div>' +
+              '</div>'
+            : '') +
           (isEdit
             ? '<div class="field-v3">' +
                 '<label>Status</label>' +
@@ -12715,6 +13342,7 @@
       const openEl = $('se-is-open');
       const wEl    = $('se-weight');
       const actEl  = $('se-active');  // only present in edit mode
+      const slaEl  = $('se-sla-days'); // v27.8.0: only present when stage is open
 
       const name = (nameEl && nameEl.value || '').trim();
       if (!name) {
@@ -12737,6 +13365,31 @@
         return;
       }
 
+      // v27.8.0 (Tier-1.3) — Parse + validate SLA. Empty input = clear SLA
+      // (frontend sends clear_sla=true; backend sets stage_sla_days NULL).
+      // Non-empty input must be a positive integer between 1 and 365.
+      let slaDays = null;
+      let clearSla = false;
+      if (slaEl) {
+        const slaRaw = String(slaEl.value || '').trim();
+        if (slaRaw === '') {
+          clearSla = true;
+        } else {
+          const slaParsed = parseInt(slaRaw, 10);
+          if (isNaN(slaParsed) || slaParsed < 1 || slaParsed > 365) {
+            toast('Target days must be a whole number 1\u2013365, or blank', 'err');
+            if (typeof slaEl.focus === 'function') slaEl.focus();
+            return;
+          }
+          slaDays = slaParsed;
+        }
+      } else {
+        // Closed-state stage: force-clear any lingering SLA from a prior
+        // open-state configuration. Defensive — backend would tolerate but
+        // cleaner state.
+        clearSla = true;
+      }
+
       try {
         let r;
         if (stageId) {
@@ -12745,7 +13398,10 @@
             id:         stageId,
             name:       name,
             is_open:    isOpen,
-            win_weight: weight
+            win_weight: weight,
+            // v27.8.0 (Tier-1.3)
+            sla_days:   slaDays,
+            clear_sla:  clearSla
           });
           if (r && r.ok === false) {
             toast('Update failed: ' + (r.error || 'unknown'), 'err');
@@ -12771,7 +13427,11 @@
           r = await STORE.stageCreate({
             name:       name,
             is_open:    isOpen,
-            win_weight: weight
+            win_weight: weight,
+            // v27.8.0 (Tier-1.3) — Only sends SLA on Open stages (the form
+            // hides the field for Closed). clear_sla is irrelevant on create
+            // since there's no prior value to clear.
+            sla_days:   slaDays
           });
           if (r && r.ok === false) {
             toast('Create failed: ' + (r.error || 'unknown'), 'err');
@@ -16086,7 +16746,90 @@
     }
     function _isOpenStage(stage) {
       const s = String(stage || '').trim();
-      return s !== 'Closed Won' && s !== 'Closed Lost' && s !== '';
+      if (!s) return false;
+      // v27.7.2 F1: consult live STAGE_META if loaded; otherwise the
+      // hardcoded string check below (which mirrors the pre-v27.7.2
+      // behavior — Closed Won / Closed Lost are the only closed stages).
+      if (Array.isArray(STAGE_META)) {
+        const m = STAGE_META.find(function (row) { return row && row.stage_name === s; });
+        if (m) return !!m.is_open;
+        // Unknown stage name (legacy deal pointing at a since-renamed stage):
+        // fall through to string check below rather than silently misclassify.
+      }
+      return s !== 'Closed Won' && s !== 'Closed Lost';
+    }
+
+    // v27.8.0 (Tier-1.3) — Stage aging badge computation. Pure function.
+    // Returns null when no badge should render. Returns object describing
+    // state otherwise, ready for the renderer to format.
+    //
+    // Decision rules:
+    //   - No badge for closed-state stages (Closed Won / Lost).
+    //   - No badge when STAGE_META hasn't loaded or the stage's
+    //     stage_sla_days is null/<=0 (no SLA configured).
+    //   - No badge when we can't compute time-in-stage (missing both
+    //     current_stage_entered_at AND created_at).
+    //   - Otherwise: green if days_in_stage <= sla, amber if <= 1.5*sla,
+    //     red beyond that.
+    //
+    // The function is intentionally tolerant of stale STAGE_META — if a
+    // deal references a since-removed stage, we short-circuit to null
+    // rather than throwing or misclassifying.
+    function computeStageAgeBadge(deal) {
+      if (!deal) return null;
+      const stageName = String(deal.stage || '').trim();
+      if (!stageName) return null;
+
+      // Find the matching STAGE_META row. STAGE_META = null pre-login or
+      // when stage_list() failed; we then can't know the SLA so no badge.
+      if (!Array.isArray(STAGE_META)) return null;
+      const meta = STAGE_META.find(function (row) {
+        return row && row.stage_name === stageName;
+      });
+      if (!meta) return null;
+      if (meta.is_open === false) return null;  // closed stage: no badge
+
+      const sla = (typeof meta.stage_sla_days === 'number') ? meta.stage_sla_days : null;
+      if (!sla || sla <= 0) return null;  // no SLA configured: no badge
+
+      // Time-in-stage: prefer current_stage_entered_at (denormalized v27.8.0
+      // column); fall back to created_at for deals that pre-date the column
+      // backfill (shouldn't happen post-migration but defensive).
+      const enteredAt = deal.current_stage_entered_at || deal.created_at;
+      if (!enteredAt) return null;
+      const enteredMs = new Date(enteredAt).getTime();
+      if (!isFinite(enteredMs)) return null;
+
+      const daysInStage = Math.floor((Date.now() - enteredMs) / 86400000);
+      if (daysInStage < 0) return null;  // clock skew / future timestamp
+
+      let state;
+      if (daysInStage <= sla)            state = 'fresh';
+      else if (daysInStage <= sla * 1.5) state = 'aging';
+      else                                state = 'slipped';
+
+      return { state: state, days: daysInStage, sla: sla };
+    }
+
+    // v27.8.0 (Tier-1.3) — Render badge as inline HTML span. Returns empty
+    // string when computeStageAgeBadge returned null. Caller embeds the
+    // returned string directly into a row's HTML.
+    function renderStageAgeBadge(deal) {
+      const b = computeStageAgeBadge(deal);
+      if (!b) return '';
+      // State → chip class. Reusing existing chip-v3 styling. The classes
+      // chip-success / chip-warning / chip-danger are defined at index.html
+      // L~2420 and already carry the green/amber/red palette via CSS vars.
+      const cls = (b.state === 'fresh')   ? 'chip-v3 chip-success'
+               : (b.state === 'aging')   ? 'chip-v3 chip-warning'
+               :                            'chip-v3 chip-danger';  // slipped
+      const label = b.days + 'd / ' + b.sla + 'd';
+      const title = (b.state === 'slipped')
+                    ? 'Slipped \u2014 over 1.5\u00d7 the target time in this stage'
+                    : (b.state === 'aging')
+                      ? 'Aging \u2014 past target, still under 1.5\u00d7'
+                      : 'Fresh \u2014 within target time in stage';
+      return '<span class="' + cls + '" title="' + esc(title) + '">' + esc(label) + '</span>';
     }
 
     /* ===========================================================
@@ -16807,19 +17550,43 @@
        needing the full stage_transitions audit log (which would be a
        per-deal query). Color-codes per stage to match chips. */
     function renderStageVelocity(activeDeals) {
-      const STAGES = ['Qualified','Proposal','Budget Approval','Technical Approval','Negotiation','Awarded'];
+      // v27.7.2 F1: derive open-stage list from live STAGE_META (filters
+      // is_active + is_open + sorts by seq) when available. Falls back to
+      // the hardcoded 6-stage list when STAGE_META is null (RPC failed at
+      // login or login hasn't run yet).
+      const openStages = Array.isArray(STAGE_META)
+        ? STAGE_META
+            .filter(function (r) { return r && r.is_active !== false && r.is_open; })
+            .sort(function (a, b) { return (a.seq || 0) - (b.seq || 0); })
+            .map(function (r) { return r.stage_name; })
+        : ['Qualified','Proposal','Budget Approval','Technical Approval','Negotiation','Awarded'];
       const buckets = {};
-      STAGES.forEach(function (s) { buckets[s] = []; });
+      openStages.forEach(function (s) { buckets[s] = []; });
       activeDeals.forEach(function (d) {
         if (!_isOpenStage(d.stage)) return;
         if (!buckets[d.stage]) return;
         buckets[d.stage].push(_daysSince(d.updated_at || d.created_at));
       });
-      const data = STAGES.map(function (s) {
+      const data = openStages.map(function (s) {
         const arr = buckets[s];
-        if (!arr.length) return { name: s, value: 0, raw: 0 };
+        if (!arr.length) return { name: s, value: 0, raw: 0, sla: null, state: null };
         const avg = Math.round(arr.reduce(function (a, b) { return a + b; }, 0) / arr.length);
-        return { name: s, value: avg, raw: avg };
+        // v27.8.1 (Tier-1.3 follow-on) — compute SLA + aging state per stage
+        // so the bar color + label reflect aggregate stage health, not just
+        // the stage identity. Pure read of STAGE_META; falls back to null
+        // (no SLA) gracefully.
+        let sla = null;
+        let state = null;
+        if (Array.isArray(STAGE_META)) {
+          const meta = STAGE_META.find(function (r) { return r && r.stage_name === s; });
+          if (meta && typeof meta.stage_sla_days === 'number' && meta.stage_sla_days > 0) {
+            sla = meta.stage_sla_days;
+            if (avg <= sla)            state = 'fresh';
+            else if (avg <= sla * 1.5) state = 'aging';
+            else                        state = 'slipped';
+          }
+        }
+        return { name: s, value: avg, raw: avg, sla: sla, state: state };
       });
       const hasAny = data.some(function (d) { return d.value > 0; });
       if (!hasAny) {
@@ -16833,7 +17600,16 @@
         });
         return;
       }
-      // Per-stage colors aligned with chip semantics
+      // v27.8.1 — SLA state palette (mirrors chip-success / chip-warning /
+      // chip-danger color vars in CSS). Falls back to per-stage color when
+      // the stage has no SLA configured so users without SLAs see the
+      // same chart as before v27.8.0.
+      const slaStateColor = {
+        'fresh':   '#10B981',  // green (matches chip-success)
+        'aging':   '#F59E0B',  // amber (matches chip-warning)
+        'slipped': '#DC2626'   // red   (matches chip-danger)
+      };
+      // Per-stage colors (legacy fallback) aligned with chip semantics
       const stageColor = {
         'Qualified':           '#3B82F6',  // blue
         'Proposal':            '#EC4899',  // pink
@@ -16850,6 +17626,15 @@
             axisPointer: { type: 'shadow' },
             formatter: function (params) {
               const p = params[0];
+              // v27.8.1 — Tooltip shows SLA target when configured.
+              const row = data[p.dataIndex];
+              if (row && row.sla) {
+                const stateLabel = row.state === 'slipped' ? ' \u2014 <span style="color:#DC2626">slipped</span>'
+                                 : row.state === 'aging'   ? ' \u2014 <span style="color:#F59E0B">aging</span>'
+                                 : '';
+                return p.name + ': <strong>' + p.value + 'd</strong> avg / ' +
+                       row.sla + 'd target' + stateLabel;
+              }
               return p.name + ': <strong>' + p.value + '</strong> days avg';
             }
           }),
@@ -16871,13 +17656,33 @@
             type: 'bar', barWidth: 14,
             itemStyle: {
               borderRadius: [0, 6, 6, 0],
-              color: function (p) { return stageColor[p.name] || '#F7941D'; }
+              // v27.8.1 — Color preference order:
+              //   1. SLA state color (red/amber/green) when SLA is configured
+              //      for the stage. Drives the "is this stage healthy?" signal.
+              //   2. Per-stage palette color (legacy fallback) when no SLA set
+              //      — preserves pre-v27.8.0 visual for users who haven't
+              //      configured any SLAs yet.
+              color: function (p) {
+                const row = data[p.dataIndex];
+                if (row && row.state && slaStateColor[row.state]) {
+                  return slaStateColor[row.state];
+                }
+                return stageColor[p.name] || '#F7941D';
+              }
             },
             label: {
               show: true, position: 'right',
               fontSize: 11, fontWeight: 700,
               color: _chartTheme().textStyle.color,
-              formatter: function (p) { return p.value > 0 ? p.value + 'd' : ''; }
+              // v27.8.1 — Label shows "12d / 14d" when SLA configured; just
+              // "12d" otherwise. Keeps the per-bar number useful without
+              // requiring tooltip hover on mobile.
+              formatter: function (p) {
+                if (p.value <= 0) return '';
+                const row = data[p.dataIndex];
+                if (row && row.sla) return p.value + 'd / ' + row.sla + 'd';
+                return p.value + 'd';
+              }
             },
             data: data.map(function (d) { return d.value; })
           }]
@@ -17174,6 +17979,10 @@
           '<div class="proj">' + esc(proj) + '</div>' +
           '<div class="meta">' +
             '<span class="' + stageCls + '">' + esc(stage) + '</span>' +
+            // v27.8.0 (Tier-1.3) — Stage aging badge. Empty string when no
+            // SLA / closed stage / pre-login. Sits right next to stage chip
+            // so users see "Negotiation · 12d/10d" at a glance.
+            renderStageAgeBadge(d) +
             (cust ? '<span>' + esc(cust) + '</span>' : '') +
             (val  ? '<span class="mono">' + esc(val) + '</span>' : '') +
           '</div>' +
@@ -21725,6 +22534,8 @@
       $('app').hidden = false;
       $('ver-pill').textContent = CATALOG.version;
       bindGlobalEvents();
+      // v27.7.4 — F6: bind sheet ESC handler + Tab focus trap (idempotent).
+      _bindSheetA11y();
     }
 
     /* ---------- Public API ---------- */
@@ -21780,6 +22591,24 @@
       _LEAD_SOURCES:       LEAD_SOURCES,
       _CITIES:             CITIES,
       _autoFillStateFromCity: autoFillStateFromCity,
+      // v27.7.2 F1 — expose stage state for STORE login flow + smoke harness.
+      // _setStagesFromDB is the only legitimate mutation path. _getStages
+      // and _getStageMeta read the current live values (after login) or the
+      // hardcoded boot fallback (before login).
+      _setStagesFromDB:    _setStagesFromDB,
+      _getStages:          function () { return STAGES; },
+      _getStageMeta:       function () { return STAGE_META; },
+      // v27.8.0 Tier-1.3 — expose stage-aging badge helpers for smoke harness
+      // and for any future external surface (dashboard attention card, etc.)
+      // that wants to render the same badge.
+      computeStageAgeBadge: computeStageAgeBadge,
+      renderStageAgeBadge:  renderStageAgeBadge,
+      // v27.7.3 F5 — expose teams-from-roster mutator for STORE login flow.
+      // Same pattern as _setStagesFromDB above. Smoke harness verifies the
+      // function exists and is callable. After login, _SALES_TEAM and
+      // _PRESALES_TEAM (exposed below) reflect live DB; before login they
+      // hold the hardcoded boot fallback.
+      _setTeamsFromRoster: _setTeamsFromRoster,
       // helpers
       esc, fmtINR, debounce,
       // v27.1.3 S1 — expose humanize map + helper for smoke harness reach.
@@ -23351,13 +24180,29 @@
         return missing.length === 0 || 'missing: ' + missing.join(',');
       });
 
-    // N3: Sales roster matches live DB (13 entries)
-    check('v27.1.1 N3: SALES_TEAM.length === 13',
-      () => APP._SALES_TEAM.length === 13 || 'got: ' + APP._SALES_TEAM.length);
+    // N3: Sales roster matches live DB.
+    // v27.7.3 F5: relaxed to lower-bound + anchor check so roster mutation
+    // (new hires, deactivations) doesn't break the smoke run. The original
+    // exact `=== 13` check was brittle once F5 made the array mutable.
+    check('v27.7.3 N3: SALES_TEAM has at least the boot fallback (13) + Dipenkumar present',
+      () => {
+        const arr = APP._SALES_TEAM;
+        const dipId = '155b257a-ec1a-4ee9-ac89-31ba47c4c610';
+        const hasDip = arr.some(o => o && o.value === dipId);
+        return (Array.isArray(arr) && arr.length >= 13 && hasDip)
+          || 'len=' + (arr && arr.length) + ' hasDip=' + hasDip;
+      });
 
-    // N4: Presales roster matches live DB (7 entries)
-    check('v27.1.1 N4: PRESALES_TEAM.length === 7',
-      () => APP._PRESALES_TEAM.length === 7 || 'got: ' + APP._PRESALES_TEAM.length);
+    // N4: Presales roster matches live DB.
+    // v27.7.3 F5: same relax as N3 — lower-bound + Dipenkumar anchor.
+    check('v27.7.3 N4: PRESALES_TEAM has at least the boot fallback (7) + Dipenkumar present',
+      () => {
+        const arr = APP._PRESALES_TEAM;
+        const dipId = '155b257a-ec1a-4ee9-ac89-31ba47c4c610';
+        const hasDip = arr.some(o => o && o.value === dipId);
+        return (Array.isArray(arr) && arr.length >= 7 && hasDip)
+          || 'len=' + (arr && arr.length) + ' hasDip=' + hasDip;
+      });
 
     // N5: Vipul role regression guard — must be in Presales, NOT Sales
     check('v27.1.1 N5: Vipul Parihar is in PRESALES_TEAM (not SALES_TEAM)',

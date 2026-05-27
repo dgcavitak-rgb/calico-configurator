@@ -1,5 +1,26 @@
 // tvONE Product Selector — Service Worker
-// v27.7.1 (2026-05-27)
+// v27.8.1 (2026-05-27)
+//
+// Changelog:
+//   v27.8.1 — Tier-1.3 follow-on: stage velocity bars on the dashboard
+//             now color by SLA state (fresh/aging/slipped) instead of
+//             per-stage palette when SLA is configured. Bar labels show
+//             "avg / target" format. No DB changes. Frontend-only ship.
+//   v27.8.0 — Tier-1.3 ships: stage aging / SLA badges. Adds
+//             stage_sla_days column on pipeline_stages + denormalized
+//             current_stage_entered_at on deals. New helpers
+//             computeStageAgeBadge / renderStageAgeBadge. Badge renders
+//             on saved deals list next to stage chip. Requires
+//             MIGRATION-v27_8_0-stage-sla.sql applied first.
+//   v27.7.4 — Bundle ships F6 (a11y baseline: openSheet focus management +
+//             aria-labelledby + ESC handler + Tab focus trap). No SW logic
+//             change — CACHE_NAME bump only.
+//   v27.7.3 — Bundle ships F5 (SALES_TEAM / PRESALES_TEAM from live roster
+//             at login, no more hardcoded UUID arrays).
+//   v27.7.2 — Bundle ships F1 (stages-from-DB), F2 (AP-536 placeholder
+//             flag), F3 (de-hardcoded escalation contact), F7 (uncaught
+//             error → error_log).
+//   v27.7.1 — Manifest fix (minimal manifest, no embedded PNG / hex)
 //
 // Strategy:
 //   - Shell (index.html + CDN scripts): cache-first. On install, prime the
@@ -13,7 +34,7 @@
 // the activate handler. Promotes hard-refresh semantics for users with the
 // PWA installed.
 
-const CACHE_NAME = 'tvone-v27.7.1';
+const CACHE_NAME = 'tvone-v27.8.1';
 const SHELL_URLS = [
   './',
   './index.html'
