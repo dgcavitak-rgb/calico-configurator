@@ -5182,6 +5182,78 @@
         align-items: center;
       }
     }
+    /* v27.14.0 — Region bar chart (Option B redesign). Replaces the
+       abstract India SVG + zone tile grid. 4 horizontal bars stacked
+       vertically, each: dot + label/meta column, bar track, count/pct.
+       Track grows up to ~50% of card width on wide screens, full width
+       on mobile. Clean and scannable. */
+    .v4-region-bars {
+      display: flex; flex-direction: column;
+      gap: var(--s-3);
+      padding-top: var(--s-2);
+    }
+    .v4-rbar-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 180px) 1fr minmax(70px, 90px);
+      align-items: center; gap: var(--s-3);
+      padding: var(--s-2) var(--s-3);
+      border-radius: var(--r-md);
+      transition: background var(--dur-base) ease;
+    }
+    .v4-rbar-row:hover { background: var(--bg-subtle); }
+    @media (max-width: 540px) {
+      .v4-rbar-row {
+        grid-template-columns: minmax(96px, 120px) 1fr minmax(60px, 70px);
+        gap: var(--s-2);
+        padding: var(--s-2);
+      }
+    }
+    .v4-rbar-label {
+      display: flex; align-items: center; gap: var(--s-2);
+      min-width: 0;
+    }
+    .v4-rbar-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .v4-rbar-text { min-width: 0; }
+    .v4-rbar-name {
+      font-size: 13px; font-weight: 700;
+      color: var(--ink-strong); letter-spacing: 0.02em;
+    }
+    .v4-rbar-meta {
+      font-size: 10.5px; color: var(--ink-soft);
+      font-weight: 500; margin-top: 1px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .v4-rbar-track {
+      position: relative;
+      height: 18px;
+      background: var(--bg-subtle);
+      border-radius: 9px;
+      overflow: hidden;
+    }
+    .v4-rbar-fill {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      border-radius: 9px;
+      transition: width var(--dur-slow) cubic-bezier(0.4, 0, 0.2, 1);
+      min-width: 0;
+    }
+    .v4-rbar-stats {
+      display: flex; align-items: baseline; gap: var(--s-2);
+      justify-content: flex-end;
+    }
+    .v4-rbar-count {
+      font-size: 16px; font-weight: 800;
+      color: var(--ink-strong);
+      letter-spacing: -0.02em;
+    }
+    .v4-rbar-pct {
+      font-size: 11px; font-weight: 600;
+      color: var(--ink-soft);
+    }
     .v4-india-wrap {
       position: relative;
       display: flex; align-items: center; justify-content: center;
@@ -6512,7 +6584,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.13.1',
+      version: 'v27.14.0',
       constants,
       calico,
       mv,
@@ -16236,6 +16308,30 @@
           '</svg>' +
         '</button>';
       }
+      // v27.14.0 — Horizontal bar row for Regional Distribution redesign
+      // (Option B: dropped abstract India SVG in favor of clean scannable
+      // bars). Preserves the same data-v4-zcount and data-v4-zone-lbl
+      // attributes used by loadDashboardV4 zone update logic, so no
+      // wiring change needed in the data layer.
+      function regionBarRow(zone, name, color, meta) {
+        return '<div class="v4-rbar-row" data-v4-rbar-row="' + zone + '">' +
+          '<div class="v4-rbar-label">' +
+            '<div class="v4-rbar-dot" style="background:' + color + '"></div>' +
+            '<div class="v4-rbar-text">' +
+              '<div class="v4-rbar-name">' + esc(name) + '</div>' +
+              '<div class="v4-rbar-meta">' + esc(meta) + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="v4-rbar-track">' +
+            '<div class="v4-rbar-fill" data-v4-rbar-fill="' + zone + '" ' +
+              'style="width:0%;background:' + color + '"></div>' +
+          '</div>' +
+          '<div class="v4-rbar-stats">' +
+            '<span class="v4-rbar-count" data-v4-zcount="' + zone + '">0</span>' +
+            '<span class="v4-rbar-pct" data-v4-zone-lbl="' + zone + '">0%</span>' +
+          '</div>' +
+        '</div>';
+      }
       function hmRow(klass, name, zones) {
         // zones = ['west','north','south','east'] in column order
         return '<div class="v4-hm-rowlbl"><span class="v4-chip ' + klass + '">' + esc(name) + '</span></div>' +
@@ -16357,9 +16453,15 @@
         // Two-column dash grid
         '<div class="v4-dash-grid">' +
 
-          // Funnel
-          '<div class="v4-card v4-col-4">' +
-            '<div class="v4-card-hd"><h3>Pipeline by stage</h3><span class="v4-hint" data-v4-d-funnel-total>\u2014 open</span></div>' +
+          // v27.14.0 — Stage funnel promoted to full-width top position.
+          // Per owner-perspective feedback: pipeline funnel is the most
+          // important strategic view, deserves prominence over attention
+          // cards / product mix / regional. Now spans 12 cols (full width).
+          '<div class="v4-card v4-col-12">' +
+            '<div class="v4-card-hd">' +
+              '<h3>Pipeline by stage</h3>' +
+              '<span class="v4-hint" data-v4-d-funnel-total>\u2014 open</span>' +
+            '</div>' +
             '<div class="v4-card-bd">' +
               '<div class="v4-funnel">' +
                 funnelRow('v4-s-lead',     'Qualified') +
@@ -16372,8 +16474,12 @@
             '</div>' +
           '</div>' +
 
+          // v27.14.0 — Original funnel position (v4-col-4) retired; the new
+          // full-width promotion above replaces it. Other cards shift up.
+
           // v27.4.1 W2 — Product Mix tile (CALICO / MV / CORIO / SX overlay)
-          '<div class="v4-card v4-col-4">' +
+          // v27.14.0 — Promoted from col-4 to col-6 since funnel moved to col-12 above
+          '<div class="v4-card v4-col-6">' +
             '<div class="v4-card-hd"><h3>Product mentions</h3><span class="v4-hint">families across open deals \u00b7 SX overlays</span></div>' +
             '<div class="v4-card-bd">' +
               '<div class="v4-mix-grid" data-v4-d-mix-grid>' +
@@ -16403,7 +16509,8 @@
           '</div>' +
 
           // Donut
-          '<div class="v4-card v4-col-4">' +
+          // v27.14.0 — Promoted from col-4 to col-6 since funnel moved to col-12 above
+          '<div class="v4-card v4-col-6">' +
             '<div class="v4-card-hd"><h3>Origin split</h3><span class="v4-hint">Cavitak vs OEM \u00b7 by creator role</span></div>' +
             '<div class="v4-card-bd">' +
               '<div class="v4-donut-wrap">' +
@@ -16437,6 +16544,12 @@
           '</div>' +
 
           // Region (full width)
+          // v27.14.0 — Redesigned per Option B: dropped abstract India SVG
+          // blobs + 4 zone tile rows. Replaced with single clean horizontal
+          // bar chart. Owner-perspective: faster scan, no decorative map,
+          // bars sorted by count descending so the dominant region reads first.
+          // Same data wiring: data-v4-zcount + data-v4-zone-lbl preserved
+          // so loadDashboardV4 zone update (L16780) keeps working unchanged.
           '<div class="v4-card v4-col-12">' +
             '<div class="v4-card-hd"><h3>Regional distribution</h3><span class="v4-hint">open cases by zone</span></div>' +
             '<div class="v4-card-bd">' +
@@ -16446,17 +16559,17 @@
                 '<span class="v4-region-banner-text" data-v4-d-region-banner-text>0 deals have unknown region. Tap to fix.</span>' +
                 '<span class="v4-region-banner-arrow">\u2192</span>' +
               '</button>' +
-              '<div class="v4-region-wrap">' +
-                '<div class="v4-india-wrap">' +
-                  indiaSvg() +
-                  '<div class="v4-india-pulse" style="left:32%;top:50%"></div>' +
-                '</div>' +
-                '<div class="v4-zone-list">' +
-                  zoneRow('west',  'West',  '#F7941D', 'Maharashtra, Gujarat, Goa, MP +3') +
-                  zoneRow('north', 'North', '#3B82F6', 'Delhi, Haryana, UP, Punjab +6') +
-                  zoneRow('south', 'South', '#10B981', 'Karnataka, TN, AP, TG +3') +
-                  zoneRow('east',  'East',  '#8B5CF6', 'WB, Bihar, Odisha, NE +8') +
-                '</div>' +
+              // v27.14.0 — Horizontal bar chart. 4 rows, each with:
+              //   - colored zone dot + zone name + state hint
+              //   - horizontal bar (width set by JS in loadDashboardV4)
+              //   - count + pct on the right
+              // Order: West first (Cavitak HQ + densest typically), then North,
+              // South, East. Keep stable to avoid jumpy bars on data updates.
+              '<div class="v4-region-bars">' +
+                regionBarRow('west',  'West',  '#F7941D', 'Maharashtra, Gujarat, Goa, MP +3') +
+                regionBarRow('north', 'North', '#3B82F6', 'Delhi, Haryana, UP, Punjab +6') +
+                regionBarRow('south', 'South', '#10B981', 'Karnataka, TN, AP, TG +3') +
+                regionBarRow('east',  'East',  '#8B5CF6', 'WB, Bihar, Odisha, NE +8') +
               '</div>' +
             '</div>' +
           '</div>' +
@@ -16715,16 +16828,50 @@
         if (totEl) totEl.textContent = open.length + ' open';
 
         // ---- Donut (Cavitak / OEM) ----
+        // v27.13.2 — Three rendering states must be handled cleanly:
+        //   (a) Both zero    → render nothing (totally empty)
+        //   (b) One is zero  → render full ring as solid; suppress the
+        //                      zero-side completely (otherwise stroke-linecap:
+        //                      round renders a "0 dasharray" as a visible
+        //                      rounded dot at the start position — the
+        //                      reported "OEM dot when count is 0" bug).
+        //   (c) Both nonzero → standard two-arc split.
         const circ = 2 * Math.PI * 60;  // 376.99
-        const cavDash = splitTotal ? (cav / splitTotal) * circ : 0;
-        const oemDash = splitTotal ? (oem / splitTotal) * circ : 0;
         const arcCav = document.querySelector('[data-v4-d-arc="cav"]');
         const arcOem = document.querySelector('[data-v4-d-arc="oem"]');
-        if (arcCav) arcCav.setAttribute('stroke-dasharray', cavDash + ' ' + circ);
-        if (arcOem) {
-          arcOem.setAttribute('stroke-dasharray', oemDash + ' ' + circ);
-          arcOem.setAttribute('stroke-dashoffset', -cavDash);
+
+        if (arcCav && arcOem) {
+          if (splitTotal === 0) {
+            // (a) Empty: hide both arcs entirely.
+            arcCav.setAttribute('stroke-dasharray', '0 ' + circ);
+            arcCav.style.display = 'none';
+            arcOem.setAttribute('stroke-dasharray', '0 ' + circ);
+            arcOem.style.display = 'none';
+          } else if (oem === 0) {
+            // (b1) Cavitak-only: full ring, no OEM dot.
+            arcCav.style.display = '';
+            arcCav.setAttribute('stroke-dasharray', circ + ' 0');
+            arcCav.setAttribute('stroke-dashoffset', '0');
+            arcOem.style.display = 'none';
+          } else if (cav === 0) {
+            // (b2) OEM-only: full ring, no Cavitak dot.
+            arcOem.style.display = '';
+            arcOem.setAttribute('stroke-dasharray', circ + ' 0');
+            arcOem.setAttribute('stroke-dashoffset', '0');
+            arcCav.style.display = 'none';
+          } else {
+            // (c) Standard split: both arcs visible, rotated as expected.
+            const cavDash = (cav / splitTotal) * circ;
+            const oemDash = (oem / splitTotal) * circ;
+            arcCav.style.display = '';
+            arcCav.setAttribute('stroke-dasharray', cavDash + ' ' + circ);
+            arcCav.setAttribute('stroke-dashoffset', '0');
+            arcOem.style.display = '';
+            arcOem.setAttribute('stroke-dasharray', oemDash + ' ' + circ);
+            arcOem.setAttribute('stroke-dashoffset', -cavDash);
+          }
         }
+
         const donutN = document.querySelector('[data-v4-d-donut-n]');
         if (donutN) donutN.textContent = String(splitTotal);
         const setEl = (sel, txt, attr) => {
@@ -16738,17 +16885,38 @@
         setEl('[data-v4-d-donut-cav-bar]', pctC + '%', 'width');
         setEl('[data-v4-d-donut-oem-bar]', pctO + '%', 'width');
 
-        // ---- Region tiles + map labels ----
+        // ---- Region bars (v27.14.0: Option B horizontal bar chart) ----
         const zoneCounts = { west: 0, north: 0, south: 0, east: 0, unknown: 0 };
         open.forEach(d => {
           const z = regionForState(d.state);
           if (zoneCounts.hasOwnProperty(z)) zoneCounts[z]++;
         });
-        ['west','north','south','east'].forEach(z => {
-          const el = document.querySelector('[data-v4-zcount="' + z + '"]');
-          if (el) el.textContent = String(zoneCounts[z]);
+        // v27.14.0 — Region bar maxC (excludes 'unknown' which has its own banner)
+        const knownZones = ['west','north','south','east'];
+        const regionMaxC = Math.max.apply(null, [1].concat(
+          knownZones.map(z => zoneCounts[z])
+        ));
+        const regionTotal = knownZones.reduce(
+          (sum, z) => sum + zoneCounts[z], 0
+        );
+        knownZones.forEach(z => {
+          // Count cell (preserved data-v4-zcount selector for compatibility)
+          const cnt = document.querySelector('[data-v4-zcount="' + z + '"]');
+          if (cnt) cnt.textContent = String(zoneCounts[z]);
+          // Bar fill width (proportional to maxC)
+          const fill = document.querySelector('[data-v4-rbar-fill="' + z + '"]');
+          if (fill) {
+            const widthPct = (zoneCounts[z] / regionMaxC) * 100;
+            fill.style.width = widthPct + '%';
+          }
+          // Percentage label (replaces old "W · 5" map-label format)
           const lbl = document.querySelector('[data-v4-zone-lbl="' + z + '"]');
-          if (lbl) lbl.textContent = z.charAt(0).toUpperCase() + ' \u00b7 ' + zoneCounts[z];
+          if (lbl) {
+            const pct = regionTotal > 0
+              ? Math.round((zoneCounts[z] / regionTotal) * 100)
+              : 0;
+            lbl.textContent = pct + '%';
+          }
         });
 
         // ---- v27.4.1 W5: Region "unknown" cleanup banner ----

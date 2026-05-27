@@ -1,7 +1,18 @@
 // tvONE Product Selector — Service Worker
-// v27.13.1 (2026-05-27)
+// v27.14.0 (2026-05-28)
 //
 // Changelog:
+//   v27.14.0 — Dashboard reframe: stage funnel promoted from 1/3-width
+//             tile to full-width top position per owner perspective;
+//             regional chart redesigned (Option B) — abstract India SVG
+//             blobs replaced with clean horizontal bar chart. Product
+//             mentions + Origin split rebalanced to col-6 each. No
+//             backend changes. CACHE_NAME bump only.
+//   v27.13.2 — OEM donut empty-state fix: when one side is 0, the SVG
+//             stroke-linecap:round was rendering the zero-dasharray as a
+//             visible rounded dot at the start position. Now handles 3
+//             states cleanly: both zero (hide), one zero (full ring), both
+//             nonzero (split). CACHE_NAME bump only.
 //   v27.13.1 — Dashboard visual fixes (frontend-only): null-safe ticker
 //             formatter + ticker CSS overlap fix on Z Fold, 'Unknown' →
 //             defensive name cascade with UUID fallback, funnel bar empty
@@ -55,7 +66,7 @@
 // the activate handler. Promotes hard-refresh semantics for users with the
 // PWA installed.
 
-const CACHE_NAME = 'tvone-v27.13.1';
+const CACHE_NAME = 'tvone-v27.14.0';
 const SHELL_URLS = [
   './',
   './index.html'
