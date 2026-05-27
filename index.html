@@ -66,6 +66,90 @@
        once the user lands on /dashboard. ~330KB gzipped. Pinned to a stable minor (5.5.x). -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
   <!--
+    v27.7.0 — PIPELINE STAGES ADMIN + EMAIL POLISH + DUPLICATE DEAL (2026-05-27)
+    The "till 4.6" deferral list is closed. v27.7 delivers what v27.5 and
+    v27.6 deferred. Released as 3 alpha stamps over 24 hours then promoted
+    to v27.7.0 once the smoke matrix passed.
+
+    Session A — Pipeline stages CRUD (v27.7-alpha1):
+       Super can now add / edit / reorder / disable pipeline stages from the
+       in-app sheet (no DB access needed). Read-only preview from v27.6 was
+       replaced with full ↑/↓ reorder, Edit, Disable/Enable controls plus
+       "+ Add stage" footer. Stage edit sheet validates name (≤64 chars) and
+       win_weight (0.0–1.0) client-side; backend re-validates and gates on
+       permission_tier='super' regardless. Disabling is soft — existing deals
+       retain stage_id and continue to roll up to the dashboard.
+
+       Backend (companion SQL applied to production):
+         MIGRATION-v27_7-alpha1-pipeline-stages-admin.sql
+         + 5 columns on pipeline_stages (description, allow_won, allow_lost,
+           is_active, created_at)
+         + 4 SECURITY DEFINER RPCs: stage_create / stage_update /
+           stage_set_active / stage_reorder
+         Two-phase swap (seq += 10000 then 1..N) sidesteps UNIQUE(seq) during
+         reorder so we don't need an intermediate state on the client.
+
+    Session A.5 — Email polish (v27.7-alpha2):
+       _buildMailtoUrl rewritten. Subject is brand-prefixed for inbox scan
+       ("Cavitak | Quotation — {project} (Ref: {ref})"). Body adds a 15-day
+       validity line. Signature block includes professional_title + +91 phone
+       from the user profile; both lines collapse via .filter() if blank.
+       Mail-client compose window is where the user makes any final edits —
+       no in-app body editor needed.
+
+    Session B — Duplicate deal (v27.7-alpha3):
+       The ugly native prompt() at sd-duplicate is gone. Replaced with a
+       proper sheet (showDuplicateDealSheet): chip with source ref, project
+       name pre-filled "<src> (copy)" with the " (copy)" suffix selected so
+       the user can immediately type to overwrite. Button text changes to
+       "Duplicating…" during in-flight to block double-submit.
+
+       Critical finding: the deal_duplicate RPC referenced by STORE since
+       v27.3.0 never existed in the DB — every Duplicate tap was silently
+       failing. New backend RPC ships:
+         MIGRATION-v27_7-alpha3-deal-duplicate.sql
+         + deal_duplicate(p_src_display_ref text, p_new_project text, p_actor uuid)
+         Copies: project_lines, deal_screens, deal_config, bs_deal_specs,
+         customer/partner/consultant party links, contacts, notes, budget,
+         lead_source, deal_source, raw_submission.
+         Resets: status (→ 'saved'), close_month, outcome_reason*, confirmed_*,
+         edited_*, zoho_record_id, deleted_at.
+         Generates new TV-NNNNNNNN display_ref matching frontend genDisplayRef.
+         Logs stage_transitions row "duplicated from TV-XXX" for provenance.
+
+       STORE.duplicateDeal wrapper now passes p_actor (RPC requires it; old
+       wrapper would have returned invalid_actor even after the RPC landed).
+
+    Session C.1 — Won-deal confetti:
+       Already shipped in v27.3.0 and verified intact through the v27.7 line.
+       Triggers when (newStage === 'Closed Won' && prevStage !== 'Closed Won').
+       60 CSS-animated particles in brand colors, ~2.6s duration. Respects
+       prefers-reduced-motion. _savedDealLastSavedStage is seeded on load so
+       opening a Won deal doesn't fire a false-positive on first autosave.
+       2 new smoke checks (v27.7-C.1, C.2) lock the trigger guards in place.
+
+    Session C.2 — OEM Amit deep flow verify:
+       Deferred to v27.7 backlog (manual smoke through real OEM-tagged
+       paths; out of scope for an automated build session).
+
+    CATALOG.version: v27.6-alpha1 → v27.7-alpha1 → v27.7-alpha2 →
+                     v27.7-alpha3 → v27.7.0
+    sw.js CACHE_NAME: tvone-v27.6-alpha1 → … → tvone-v27.7.0
+
+    Pending repo housekeeping (separate from this codebase):
+       - GitHub Actions: bump checkout@v4 → v5 and upload-artifact@v4 → v5
+         in .github/workflows/*.yml before June 2, 2026 (deprecation).
+       - Same chore in sister repo brightsign-selector.
+
+    Smoke matrix (v27.7.0 final):
+       - CATALOG.version === "v27.7.0"                                  ✓
+       - 6 v27.7-A checks (stage CRUD backend wrappers + UI presence)   ✓ × 6
+       - 3 v27.7-A UI helpers exposed on UI module                       ✓ × 3
+       - 3 v27.7-B checks (duplicate sheet wiring + p_actor passthrough) ✓ × 3
+       - 2 v27.7-C checks (confetti machinery + trigger guard)           ✓ × 2
+       - All prior v27.4 / v27.5 / v27.6 checks                          ✓
+  -->
+  <!--
     v27.6-alpha1 — PIPELINE STAGES PREVIEW + SNAPSHOT AUGMENT CONSUMER (2026-05-26)
     Final bundle of the "till 4.6" mandate. Email templates UI deferred to
     v27.7. OEM Amit deep flow verify deferred to v27.7.
@@ -6350,7 +6434,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.7-alpha3',
+      version: 'v27.7.0',
       constants,
       calico,
       mv,
@@ -9008,8 +9092,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.7-alpha3"',
-      () => CATALOG.version === 'v27.7-alpha3' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.7.0"',
+      () => CATALOG.version === 'v27.7.0' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.7-alpha1: Pipeline stages CRUD (Session A backend wrappers) ---------- */
     check('v27.7-A.1: STORE.stageCreate exists',
@@ -9088,6 +9172,32 @@
           ? STORE.duplicateDeal.toString() : '';
         return fn.indexOf('p_actor') > 0
                || 'duplicateDeal wrapper missing p_actor — RPC will return invalid_actor';
+      });
+
+    /* ---------- v27.7.0: Confetti (Session C.1) ---------- */
+    check('v27.7-C.1: confetti CSS + JS machinery present (DOM injection, not library)',
+      () => {
+        // Spot-check both the @keyframes (in <style>) and the function body.
+        const html = document.documentElement.outerHTML;
+        const hasKeyframes = /@keyframes confetti-fall/.test(html);
+        const hasReducedMotion = /prefers-reduced-motion.*confetti-particle/s.test(html);
+        if (!hasKeyframes) return 'confetti-fall keyframes missing';
+        if (!hasReducedMotion) return 'prefers-reduced-motion guard missing (a11y regression)';
+        return true;
+      });
+    check('v27.7-C.2: won-deal trigger guards against initial-load false positive',
+      () => {
+        // The save handler must compute transitionedToWon as
+        // (newStage === Closed Won && prevStage !== Closed Won), AND the
+        // deal-load codepath must seed _savedDealLastSavedStage from the
+        // current stage. Without that seed, opening an already-Won deal
+        // would fire confetti on first autosave. Source-string check.
+        const html = document.documentElement.outerHTML;
+        const hasTransitionCheck = /transitionedToWon\s*=\s*\(newStage\s*===\s*'Closed Won'\s*&&\s*prevStage\s*!==\s*'Closed Won'\)/.test(html);
+        const hasBaselineSeed   = /_savedDealLastSavedStage\s*=\s*\(deal\s*&&\s*deal\.stage\)/.test(html);
+        if (!hasTransitionCheck) return 'transitionedToWon guard missing or weakened';
+        if (!hasBaselineSeed)    return '_savedDealLastSavedStage not seeded on load — opening Won deal will fire false-positive confetti';
+        return true;
       });
 
     /* ---------- v27.6-alpha1: Pipeline stages preview + snapshot augment consumer ---------- */
