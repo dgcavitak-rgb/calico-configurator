@@ -66,6 +66,52 @@
        once the user lands on /dashboard. ~330KB gzipped. Pinned to a stable minor (5.5.x). -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" defer></script>
   <!--
+    v27.6-alpha1 — PIPELINE STAGES PREVIEW + SNAPSHOT AUGMENT CONSUMER (2026-05-26)
+    Final bundle of the "till 4.6" mandate. Email templates UI deferred to
+    v27.7. OEM Amit deep flow verify deferred to v27.7.
+
+    What ships in the HTML:
+    1) Super-only Pipeline Stages preview sheet.
+       - New menu item "Pipeline stages" in user-menu sheet (Super only).
+       - Bottom-sheet renders the live pipeline_stages table via
+         STORE.stageList(), sorted by seq.
+       - Per-stage row: seq badge / name / OPEN/CLOSED chip / win-weight % /
+         disabled Edit button (tooltip: ships in v27.7).
+       - "+ Add stage" disabled button at bottom (tooltip: ships in v27.7).
+       - Replaces "no admin visibility" hole; Super can now SEE all 8 stages
+         + their order + win weights without DB access.
+    2) Snapshot-augment consumer.
+       - _populateKpiChips() baseline object extended from 2 columns to 7.
+       - Pre-migration: 4 chips render "—" sentinel (unchanged behaviour).
+       - Post-migration (after applying companion `.sql` delta + waiting for
+         next pg_cron weekly capture, OR manually invoking
+         pipeline_snapshot_capture()): all 6 chips light up with real
+         period-over-period deltas.
+       - No frontend regression risk — null-tolerant.
+
+    What ships as a separate delta file (apply via Supabase MCP next session):
+       MIGRATION-v27.6-pipeline-snapshot-augment.sql
+       - ALTER TABLE pipeline_snapshots ADD 5 columns
+       - CREATE OR REPLACE FUNCTION pipeline_snapshot_capture()
+       - Backfill statement (one-shot, fills the just-augmented columns
+         on the most recent snapshot row using current deal data)
+
+    CATALOG.version bumped: v27.5-alpha1 → v27.6-alpha1.
+
+    Smoke:
+       (a) Login footer v27.6-alpha1
+       (b) All 34 v27.4-6 smoke checks ✓
+       (c) Super avatar menu shows "Pipeline stages" entry (Sales sees none)
+       (d) Tap → sheet opens, shows 8 stages from RPC (Qualified..Closed Lost),
+           sorted by seq, open/closed chips correct, win weights shown
+       (e) "+ Add stage" + "Edit" buttons are visibly disabled with tooltip
+       (f) 4 KPI chips still show "—" until SQL migration applied
+       (g) After applying migration + manually calling capture RPC → 6 chips
+           with real deltas on next dashboard load
+       (h) PWA install / SW / wizard / exports / saved views / activity ticker
+           / sparklines / share view all unchanged
+  -->
+  <!--
     v27.5-alpha1 — PWA (manifest + service worker) + install prompt (2026-05-26)
     Scope-cut version of v27.5 per "till 4.6" mandate. OEM Amit deep flow
     verify deferred to v27.7 backlog. Email templates deferred to v27.7.
@@ -6304,7 +6350,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.5-alpha1',
+      version: 'v27.7-alpha3',
       constants,
       calico,
       mv,
@@ -7565,11 +7611,16 @@
       });
     }
 
-    /* v27.3.0 — Duplicate a deal (v27.7 partial restore) */
+    /* v27.3.0 — Duplicate a deal (v27.7-alpha3: backend RPC landed).
+       The deal_duplicate RPC requires p_actor (any existing user.id); without
+       it the RPC returns {ok:false, error:'invalid_actor'}. Older wrapper
+       calls without actor silently failed. */
     async function duplicateDeal(srcRefId, newProjectName) {
+      const u = currentUser();
       return rpc('deal_duplicate', {
         p_src_display_ref: String(srcRefId),
-        p_new_project: String(newProjectName || '').trim() || null
+        p_new_project:     String(newProjectName || '').trim() || null,
+        p_actor:           (u && u.id) || null
       });
     }
 
@@ -7577,6 +7628,54 @@
     async function stageList() {
       const r = await rpc('stage_list', {});
       return (r && r.rows) || (Array.isArray(r) ? r : []);
+    }
+
+    /* v27.7-alpha1 — Pipeline stages CRUD (Session A).
+       4 RPCs paired below; all SECURITY DEFINER on backend with permission_tier='super'
+       gate. Frontend callers should assume failure can return {ok:false, error:'...'}
+       and surface a toast. UI gating prevents non-Super from seeing the controls,
+       but defense-in-depth means RPCs reject the call too. */
+    async function stageCreate(args) {
+      args = args || {};
+      const u = currentUser();
+      return rpc('stage_create', {
+        p_stage_name: String(args.name || '').trim(),
+        p_is_open:    (args.is_open !== false),
+        p_win_weight: (typeof args.win_weight === 'number') ? args.win_weight : 0.5,
+        p_seq:        (typeof args.seq === 'number') ? args.seq : null,
+        p_actor:      (u && u.id) || null
+      });
+    }
+    async function stageUpdate(args) {
+      args = args || {};
+      const u = currentUser();
+      if (!args.id) throw new Error('stageUpdate: id required');
+      return rpc('stage_update', {
+        p_id:         String(args.id),
+        p_stage_name: (typeof args.name === 'string') ? args.name : null,
+        p_is_open:    (typeof args.is_open === 'boolean') ? args.is_open : null,
+        p_win_weight: (typeof args.win_weight === 'number') ? args.win_weight : null,
+        p_actor:      (u && u.id) || null
+      });
+    }
+    async function stageSetActive(id, isActive) {
+      const u = currentUser();
+      if (!id) throw new Error('stageSetActive: id required');
+      return rpc('stage_set_active', {
+        p_id:        String(id),
+        p_is_active: !!isActive,
+        p_actor:     (u && u.id) || null
+      });
+    }
+    async function stageReorder(orderedIds) {
+      const u = currentUser();
+      if (!Array.isArray(orderedIds) || !orderedIds.length) {
+        throw new Error('stageReorder: orderedIds array required');
+      }
+      return rpc('stage_reorder', {
+        p_ordered_ids: orderedIds.map(String),
+        p_actor:       (u && u.id) || null
+      });
     }
 
     /* v27.3.0 — Stage transitions history (silent-drop restore).
@@ -7704,6 +7803,8 @@
       resetPasswordRequest, resetPasswordListPending, resetPasswordApprove,
       // v27.3.0 — duplicate + custom stages (v27.7 partial restore)
       duplicateDeal, stageList,
+      // v27.7-alpha1 — Pipeline stages CRUD (Session A backend)
+      stageCreate, stageUpdate, stageSetActive, stageReorder,
       // v27.3.0 — Stage transitions history (silent-drop restore)
       stageTransitionsList, stageTransitionsListMany, stageTransitionWrite,
       // v27.3.0 — Customer directory + 360 + merge (D1-D3 silent-drop restores)
@@ -8907,8 +9008,103 @@
       }
     }
 
-    check('CATALOG.version === "v27.5-alpha1"',
-      () => CATALOG.version === 'v27.5-alpha1' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.7-alpha3"',
+      () => CATALOG.version === 'v27.7-alpha3' || 'got: ' + CATALOG.version);
+
+    /* ---------- v27.7-alpha1: Pipeline stages CRUD (Session A backend wrappers) ---------- */
+    check('v27.7-A.1: STORE.stageCreate exists',
+      () => typeof STORE.stageCreate === 'function'
+            || 'stageCreate wrapper missing on STORE');
+    check('v27.7-A.2: STORE.stageUpdate exists',
+      () => typeof STORE.stageUpdate === 'function'
+            || 'stageUpdate wrapper missing on STORE');
+    check('v27.7-A.3: STORE.stageSetActive exists',
+      () => typeof STORE.stageSetActive === 'function'
+            || 'stageSetActive wrapper missing on STORE');
+    check('v27.7-A.4: STORE.stageReorder exists',
+      () => typeof STORE.stageReorder === 'function'
+            || 'stageReorder wrapper missing on STORE');
+    check('v27.7-A.5: STORE.stageList returns rows with is_active field (v27.7 schema)',
+      async () => {
+        try {
+          const rows = await STORE.stageList();
+          if (!Array.isArray(rows) || !rows.length) return 'no stages returned (expected 8)';
+          const first = rows[0];
+          return (typeof first.is_active === 'boolean')
+                 || 'first row missing is_active (schema migration may not be applied)';
+        } catch (e) {
+          return 'stage_list RPC threw: ' + (e && e.message || String(e));
+        }
+      });
+    check('v27.7-A.6: stage_list returns all 8 baseline stages',
+      async () => {
+        try {
+          const rows = await STORE.stageList();
+          return (Array.isArray(rows) && rows.length >= 8)
+                 || 'expected ≥8 stages, got ' + (Array.isArray(rows) ? rows.length : 'non-array');
+        } catch (e) {
+          return 'stage_list threw: ' + (e && e.message || String(e));
+        }
+      });
+    check('v27.7-A.7: UI.showStageEditSheet exists (admin sheet entry point)',
+      () => typeof UI.showStageEditSheet === 'function'
+            || 'showStageEditSheet missing on UI');
+    check('v27.7-A.8: UI stage admin handlers exist (move/toggle/save)',
+      () => {
+        const names = ['_handleStageMove','_handleStageToggle','_handleStageSave'];
+        const missing = names.filter(n => typeof UI[n] !== 'function');
+        return missing.length === 0
+               || 'missing: ' + missing.join(',');
+      });
+    check('v27.7-A.9: showPipelineStagesSheet wires admin actions (no longer disabled)',
+      () => {
+        // Source-string check: the new admin renderer should reference all the
+        // admin action names. If any are missing the function was reverted to
+        // the v27.6 read-only stub.
+        const fn = (typeof UI.showPipelineStagesSheet === 'function')
+          ? UI.showPipelineStagesSheet.toString() : '';
+        const need = ['um-stages-add','um-stages-edit','um-stages-up','um-stages-down','um-stages-toggle'];
+        const miss = need.filter(k => fn.indexOf(k) < 0);
+        return miss.length === 0
+               || 'missing admin actions in sheet markup: ' + miss.join(',');
+      });
+
+    /* ---------- v27.7-alpha3: Duplicate deal (Session B) ---------- */
+    check('v27.7-B.1: UI.showDuplicateDealSheet exists',
+      () => typeof UI.showDuplicateDealSheet === 'function'
+            || 'showDuplicateDealSheet missing on UI');
+    check('v27.7-B.2: showDuplicateDealSheet wires submit + cancel actions',
+      () => {
+        const fn = (typeof UI.showDuplicateDealSheet === 'function')
+          ? UI.showDuplicateDealSheet.toString() : '';
+        const need = ['sd-dup-submit','sd-dup-cancel','dd-name'];
+        const miss = need.filter(k => fn.indexOf(k) < 0);
+        return miss.length === 0
+               || 'missing in sheet markup: ' + miss.join(',');
+      });
+    check('v27.7-B.3: STORE.duplicateDeal wrapper passes p_actor (RPC requires it)',
+      () => {
+        const fn = (typeof STORE.duplicateDeal === 'function')
+          ? STORE.duplicateDeal.toString() : '';
+        return fn.indexOf('p_actor') > 0
+               || 'duplicateDeal wrapper missing p_actor — RPC will return invalid_actor';
+      });
+
+    /* ---------- v27.6-alpha1: Pipeline stages preview + snapshot augment consumer ---------- */
+    check('v27.6: STORE.stageList exists (pipeline stages preview backend)',
+      () => typeof STORE.stageList === 'function'
+            || 'stageList RPC wrapper missing on STORE');
+    check('v27.6: _populateKpiChips augmented to read 5 new snapshot columns',
+      () => {
+        // Quick check: the source string contains references to the new columns
+        const fn = (UI && typeof UI._populateKpiChips === 'function')
+          ? UI._populateKpiChips.toString() : '';
+        const need = ['distinct_endusers_count','distinct_partners_count',
+                      'distinct_consultants_count','cavitak_count','oem_count'];
+        const miss = need.filter(function(k) { return fn.indexOf(k) < 0; });
+        return miss.length === 0
+               || 'missing baseline keys: ' + miss.join(',');
+      });
 
     /* ---------- v27.5-alpha1: PWA + notification bell E2E ---------- */
     check('v27.5: manifest link present in <head>',
@@ -12109,6 +12305,9 @@
           act: 'um-audit' });
         items.push({ label: 'Password resets', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="16" r="1"/><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
           act: 'um-resets' });
+        // v27.6 — Pipeline stages preview (read-only; custom-stage management ships in v27.7+)
+        items.push({ label: 'Pipeline stages', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>',
+          act: 'um-stages' });
       }
       items.push({ label: 'About this app', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
         act: 'um-about' });
@@ -12130,6 +12329,402 @@
           }).join('') +
         '</div>'
       );
+    }
+
+    /* v27.6 — Pipeline stages preview (Super-only, read-only).
+       Renders the live pipeline_stages table from Supabase so the Super
+       can SEE what stages exist without DB access. Write operations
+       (add/edit/reorder/disable) require backend schema work on
+       pipeline_stages (currently has fixed seq+name); shipping that
+       backend is v27.7+ scope. For now, the "+ Add stage" + per-row
+       edit buttons render but toast "coming in v27.7" — surfaces the
+       feature as planned without lying about availability. */
+    /* v27.7-alpha1 — Pipeline stages admin (Session A frontend).
+       Module-level cache populated on every render of showPipelineStagesSheet.
+       Used by edit/move/toggle handlers to resolve stage_id → full row without
+       a second round-trip. Re-render via showPipelineStagesSheet() after any
+       mutation refreshes the cache from the source of truth (DB). */
+    let _stagesCache = [];
+
+    /* v27.7-alpha1 — Full Pipeline stages admin (Super-only).
+       Replaces the v27.6 read-only preview. Each row gets ↑/↓ (reorder), Edit
+       (opens showStageEditSheet), and Disable/Enable (soft toggle via
+       STORE.stageSetActive). Footer "+ Add stage" opens the edit sheet in
+       create mode. Banner surfaces inactive count if any. */
+    async function showPipelineStagesSheet() {
+      openSheet(
+        '<div class="notif-sheet">' +
+          '<div class="notif-sheet-head"><h3>Pipeline stages</h3><span class="chip-v3 chip-accent">SUPER</span></div>' +
+          '<div style="padding:8px 16px;color:var(--ink-soft);font-size:13px">Loading\u2026</div>' +
+        '</div>'
+      );
+      let stages;
+      try {
+        stages = await STORE.stageList();
+      } catch (e) {
+        stages = [];
+      }
+      const rows = Array.isArray(stages) ? stages : (stages && stages.rows) || [];
+      // Sort by seq ascending; ensures display order matches workflow order.
+      rows.sort(function (a, b) { return (a.seq || 0) - (b.seq || 0); });
+      _stagesCache = rows;
+
+      const inactiveCount = rows.filter(function (s) { return s.is_active === false; }).length;
+      const lastIdx = rows.length - 1;
+
+      const stageRowHtml = rows.length
+        ? rows.map(function (s, idx) {
+            const isOpen   = s.is_open !== false;
+            const isActive = s.is_active !== false;
+            const weight   = (typeof s.win_weight === 'number')
+                               ? (Math.round(s.win_weight * 100) + '%')
+                               : '\u2014';
+            const seqLabel = (typeof s.seq === 'number' ? String(s.seq) : '?');
+            const stateBadge = isOpen
+              ? '<span class="chip-v3" style="background:rgba(34,197,94,0.15);color:#22c55e;font-size:11px;padding:2px 8px">OPEN</span>'
+              : '<span class="chip-v3" style="background:rgba(148,163,184,0.15);color:var(--ink-soft);font-size:11px;padding:2px 8px">CLOSED</span>';
+            const inactiveBadge = !isActive
+              ? '<span class="chip-v3" style="background:rgba(239,68,68,0.15);color:#ef4444;font-size:11px;padding:2px 8px;margin-left:4px">DISABLED</span>'
+              : '';
+            const rowStyle = 'display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);' +
+                             (isActive ? '' : 'opacity:0.55;');
+            const stageNameEsc = esc(s.stage_name || s.name || '(unnamed)');
+            const stageIdEsc   = esc(s.id || '');
+
+            // Per-row controls. Up disabled at top, down disabled at bottom.
+            const upBtn = '<button type="button" class="v4-sum-act" data-action="um-stages-up" data-stage-id="' + stageIdEsc + '"' +
+              (idx === 0 ? ' disabled style="padding:6px 8px;min-width:32px;opacity:0.3"' : ' style="padding:6px 8px;min-width:32px"') +
+              ' title="Move up" aria-label="Move ' + stageNameEsc + ' up">\u2191</button>';
+            const downBtn = '<button type="button" class="v4-sum-act" data-action="um-stages-down" data-stage-id="' + stageIdEsc + '"' +
+              (idx === lastIdx ? ' disabled style="padding:6px 8px;min-width:32px;opacity:0.3"' : ' style="padding:6px 8px;min-width:32px"') +
+              ' title="Move down" aria-label="Move ' + stageNameEsc + ' down">\u2193</button>';
+            const editBtn = '<button type="button" class="v4-sum-act" data-action="um-stages-edit" data-stage-id="' + stageIdEsc + '"' +
+              ' title="Edit ' + stageNameEsc + '" style="padding:6px 10px">Edit</button>';
+            const toggleLabel = isActive ? 'Disable' : 'Enable';
+            const toggleBtn = '<button type="button" class="v4-sum-act" data-action="um-stages-toggle" data-stage-id="' + stageIdEsc + '"' +
+              ' data-active="' + (isActive ? '1' : '0') + '"' +
+              ' title="' + toggleLabel + ' ' + stageNameEsc + '" style="padding:6px 10px">' + toggleLabel + '</button>';
+
+            return '<div style="' + rowStyle + '">' +
+              '<div style="width:24px;height:24px;flex:0 0 24px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ink-soft)">' + esc(seqLabel) + '</div>' +
+              '<div style="flex:1;min-width:0">' +
+                '<div style="font-weight:600;color:var(--ink-strong);font-size:14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
+                  stageNameEsc + stateBadge + inactiveBadge +
+                '</div>' +
+                '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px">Win weight ' + weight + '</div>' +
+              '</div>' +
+              '<div style="display:flex;gap:4px;flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end">' +
+                upBtn + downBtn + editBtn + toggleBtn +
+              '</div>' +
+            '</div>';
+          }).join('')
+        : '<div style="padding:16px;text-align:center;color:var(--ink-soft);font-size:13px">No stages found.</div>';
+
+      const inactiveBanner = inactiveCount > 0
+        ? '<div style="padding:8px 16px;background:rgba(239,68,68,0.08);border-bottom:1px solid var(--border);color:#ef4444;font-size:12px;line-height:1.4">' +
+            inactiveCount + ' stage' + (inactiveCount === 1 ? '' : 's') + ' disabled \u2014 shown below with reduced opacity. ' +
+            'Existing deals retain disabled stages and continue to roll up.' +
+          '</div>'
+        : '';
+
+      openSheet(
+        '<div class="notif-sheet" style="padding-bottom:0">' +
+          '<div class="notif-sheet-head">' +
+            '<h3>Pipeline stages</h3>' +
+            '<span class="chip-v3 chip-accent">SUPER</span>' +
+          '</div>' +
+          '<div style="padding:6px 16px 10px;color:var(--ink-soft);font-size:12px;line-height:1.5">' +
+            'Add, rename, reorder, or disable stages. Use \u2191/\u2193 to change order. ' +
+            'Disabling is soft \u2014 existing deals keep the stage but new deals won\'t see it as an option.' +
+          '</div>' +
+          inactiveBanner +
+          '<div style="border-top:1px solid var(--border);max-height:55vh;overflow-y:auto">' +
+            stageRowHtml +
+          '</div>' +
+          '<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">' +
+            '<button type="button" class="btn-v3 btn-primary btn-md" data-action="um-stages-add">+ Add stage</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+
+    /* v27.7-alpha1 — Stage edit / create sheet.
+       stage=null  → create mode (no is_active field, no id)
+       stage=obj   → edit mode (includes is_active toggle + data-stage-id on save) */
+    function showStageEditSheet(stage) {
+      const isEdit = !!stage;
+      const curName   = (stage && stage.stage_name) || '';
+      const curOpen   = (!stage || stage.is_open !== false);
+      const curWeight = (stage && typeof stage.win_weight === 'number') ? stage.win_weight : 0.5;
+      const curActive = (!stage || stage.is_active !== false);
+
+      openSheet(
+        '<div class="notif-sheet" style="padding:0 16px 16px">' +
+          '<div class="notif-sheet-head" style="padding-left:0;padding-right:0">' +
+            '<h3>' + (isEdit ? 'Edit stage' : 'Add stage') + '</h3>' +
+            '<span class="chip-v3 chip-accent">SUPER</span>' +
+          '</div>' +
+          '<div class="field-v3">' +
+            '<label>Stage name *</label>' +
+            '<input class="input-v3" id="se-name" type="text" maxlength="64"' +
+              ' value="' + esc(curName) + '" placeholder="e.g. Negotiation" autocomplete="off">' +
+          '</div>' +
+          '<div class="field-v3">' +
+            '<label>Stage type *</label>' +
+            '<select class="input-v3" id="se-is-open">' +
+              '<option value="true"' + (curOpen ? ' selected' : '') + '>Open \u2014 deal still in pipeline</option>' +
+              '<option value="false"' + (!curOpen ? ' selected' : '') + '>Closed \u2014 won / lost / dropped</option>' +
+            '</select>' +
+          '</div>' +
+          '<div class="field-v3">' +
+            '<label>Win weight *</label>' +
+            '<input class="input-v3" id="se-weight" type="number" step="0.05" min="0" max="1"' +
+              ' value="' + esc(String(curWeight)) + '" inputmode="decimal">' +
+            '<div style="font-size:11px;color:var(--ink-soft);margin-top:4px;line-height:1.4">' +
+              '0.00 to 1.00. Used by the dashboard to weight pipeline value (e.g. 0.5 \u2248 50% likely to win). ' +
+              'Won stages use 1.00; lost / dropped use 0.00.' +
+            '</div>' +
+          '</div>' +
+          (isEdit
+            ? '<div class="field-v3">' +
+                '<label>Status</label>' +
+                '<select class="input-v3" id="se-active">' +
+                  '<option value="true"' + (curActive ? ' selected' : '') + '>Active \u2014 visible in stage pickers</option>' +
+                  '<option value="false"' + (!curActive ? ' selected' : '') + '>Disabled \u2014 hidden from new deals</option>' +
+                '</select>' +
+                '<div style="font-size:11px;color:var(--ink-soft);margin-top:4px;line-height:1.4">' +
+                  'Disabling is soft. Existing deals retain the stage_id.' +
+                '</div>' +
+              '</div>'
+            : '') +
+          '<div style="display:flex;gap:8px;margin-top:12px">' +
+            '<button class="btn-v3 btn-ghost btn-md" type="button" data-action="um-stages-cancel" style="flex:1">Cancel</button>' +
+            '<button class="btn-v3 btn-primary btn-md" type="button" data-action="um-stages-save"' +
+              (isEdit ? ' data-stage-id="' + esc(stage.id) + '"' : '') +
+              ' style="flex:2">' + (isEdit ? 'Update stage' : 'Create stage') + '</button>' +
+          '</div>' +
+        '</div>'
+      );
+
+      // Focus name field for keyboard-first users on mobile / Z Fold split-screen.
+      setTimeout(function () {
+        const el = $('se-name');
+        if (el && typeof el.focus === 'function') el.focus();
+      }, 50);
+    }
+
+    /* v27.7-alpha1 — Reorder handler. Swaps target with neighbor in
+       _stagesCache, sends full ordered ID array to backend. Backend uses a
+       two-phase swap (seq += 10000 then 1..N) to dodge the UNIQUE(seq)
+       constraint, so we don't need any client-side intermediate state. */
+    async function _handleStageMove(id, direction) {
+      const rows = _stagesCache.slice().sort(function (a, b) {
+        return (a.seq || 0) - (b.seq || 0);
+      });
+      const idx = rows.findIndex(function (r) { return r.id === id; });
+      if (idx < 0) {
+        toast('Stage not found \u2014 refreshing', 'warn');
+        showPipelineStagesSheet();
+        return;
+      }
+      const swapIdx = (direction === 'up') ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= rows.length) return;  // out of bounds — silently ignore
+      const ordered = rows.slice();
+      const tmp = ordered[idx];
+      ordered[idx] = ordered[swapIdx];
+      ordered[swapIdx] = tmp;
+      try {
+        const r = await STORE.stageReorder(ordered.map(function (s) { return s.id; }));
+        if (r && r.ok === false) {
+          toast('Reorder failed: ' + (r.error || 'unknown'), 'err');
+          return;
+        }
+        toast('Reordered', 'ok');
+        showPipelineStagesSheet();
+      } catch (e) {
+        toast('Reorder failed: ' + (e && e.message || String(e)), 'err');
+      }
+    }
+
+    /* v27.7-alpha1 — Disable / enable a stage. Disable shows a confirmation
+       sheet first (decision #4 from session-close). We don't know the
+       attached_deals count in advance from the cache, but the RPC returns it
+       on success — we surface that count in the post-toast. Re-enable
+       (currentlyActive=false → true) is non-destructive, so no confirm. */
+    function _handleStageToggle(id, currentlyActive) {
+      const stage = _stagesCache.find(function (s) { return s.id === id; });
+      if (!stage) {
+        toast('Stage not found \u2014 refreshing', 'warn');
+        showPipelineStagesSheet();
+        return;
+      }
+
+      function doToggle() {
+        STORE.stageSetActive(id, !currentlyActive).then(function (r) {
+          if (r && r.ok === false) {
+            toast('Toggle failed: ' + (r.error || 'unknown'), 'err');
+            return;
+          }
+          const attached = (r && typeof r.attached_deals === 'number') ? r.attached_deals : 0;
+          let msg;
+          if (!currentlyActive) {
+            msg = 'Stage re-enabled';
+          } else if (attached > 0) {
+            msg = 'Stage disabled \u00b7 ' + attached + ' deal' + (attached === 1 ? '' : 's') + ' retain stage';
+          } else {
+            msg = 'Stage disabled';
+          }
+          toast(msg, 'ok');
+          showPipelineStagesSheet();
+        }).catch(function (err) {
+          toast('Toggle failed: ' + (err && err.message || String(err)), 'err');
+        });
+      }
+
+      if (currentlyActive) {
+        showConfirmSheet(
+          'Disable "' + (stage.stage_name || 'this stage') + '"?',
+          'Deals already in this stage keep it and continue to roll up to the dashboard. New deals will no longer see this stage as an option. You can re-enable it later.',
+          { confirmLabel: 'Disable', danger: true },
+          doToggle
+        );
+      } else {
+        doToggle();
+      }
+    }
+
+    /* v27.7-alpha1 — Save handler for showStageEditSheet.
+       stageId=null  → create via STORE.stageCreate
+       stageId=uuid  → update via STORE.stageUpdate, then if is_active changed,
+                       follow with STORE.stageSetActive (separate RPC by design).
+       Validates client-side before either RPC. Backend re-validates and gates
+       on permission_tier='super' regardless. */
+    async function _handleStageSave(stageId) {
+      const nameEl = $('se-name');
+      const openEl = $('se-is-open');
+      const wEl    = $('se-weight');
+      const actEl  = $('se-active');  // only present in edit mode
+
+      const name = (nameEl && nameEl.value || '').trim();
+      if (!name) {
+        toast('Stage name is required', 'err');
+        if (nameEl && typeof nameEl.focus === 'function') nameEl.focus();
+        return;
+      }
+      if (name.length > 64) {
+        toast('Stage name must be 64 characters or fewer', 'err');
+        return;
+      }
+
+      const isOpen = openEl ? (openEl.value === 'true') : true;
+
+      const weightRaw = (wEl && wEl.value || '').trim();
+      const weight = parseFloat(weightRaw);
+      if (isNaN(weight) || weight < 0 || weight > 1) {
+        toast('Win weight must be between 0.00 and 1.00', 'err');
+        if (wEl && typeof wEl.focus === 'function') wEl.focus();
+        return;
+      }
+
+      try {
+        let r;
+        if (stageId) {
+          // EDIT MODE
+          r = await STORE.stageUpdate({
+            id:         stageId,
+            name:       name,
+            is_open:    isOpen,
+            win_weight: weight
+          });
+          if (r && r.ok === false) {
+            toast('Update failed: ' + (r.error || 'unknown'), 'err');
+            return;
+          }
+          // If is_active changed, fire stageSetActive too. (Backend has separate RPC.)
+          if (actEl) {
+            const newActive = (actEl.value === 'true');
+            const cached = _stagesCache.find(function (s) { return s.id === stageId; });
+            const wasActive = cached ? (cached.is_active !== false) : true;
+            if (newActive !== wasActive) {
+              const r2 = await STORE.stageSetActive(stageId, newActive);
+              if (r2 && r2.ok === false) {
+                toast('Status update failed: ' + (r2.error || 'unknown'), 'err');
+                showPipelineStagesSheet();  // partial success — refresh anyway
+                return;
+              }
+            }
+          }
+          toast('Stage updated', 'ok');
+        } else {
+          // CREATE MODE
+          r = await STORE.stageCreate({
+            name:       name,
+            is_open:    isOpen,
+            win_weight: weight
+          });
+          if (r && r.ok === false) {
+            toast('Create failed: ' + (r.error || 'unknown'), 'err');
+            return;
+          }
+          toast('Stage created', 'ok');
+        }
+        showPipelineStagesSheet();
+      } catch (e) {
+        toast('Save failed: ' + (e && e.message || String(e)), 'err');
+      }
+    }
+
+    /* v27.7-alpha3 — Duplicate deal sheet. Replaces the v27.3 native prompt().
+       Pre-fills project name with "<source> (copy)" so the user just edits the
+       suffix. Spells out what's copied (lines, screens, config, customer) and
+       what's reset (status, closure, audit, CRM ID) so they aren't surprised.
+       Submit calls STORE.duplicateDeal via the sd-dup-submit handler.
+       Cancel closes the sheet without firing the RPC. */
+    function showDuplicateDealSheet(deal) {
+      const srcRef  = (deal && (deal.display_ref || deal.ref_id)) || '';
+      const srcProj = (deal && deal.project) || '';
+      const suggested = srcProj ? (srcProj + ' (copy)') : '';
+      openSheet(
+        '<div class="notif-sheet" style="padding:0 16px 16px">' +
+          '<div class="notif-sheet-head" style="padding-left:0;padding-right:0">' +
+            '<h3>Duplicate deal</h3>' +
+            (srcRef ? '<span class="chip-v3 chip-info">' + esc(srcRef) + '</span>' : '') +
+          '</div>' +
+          '<p style="font-size:13px;color:var(--ink-soft);margin:0 0 14px;line-height:1.5">' +
+            'Creates a new deal with a fresh <strong>TV-</strong> reference. ' +
+            '<strong style="color:var(--ink-strong)">Copied:</strong> line items, screens, configuration, customer / partner / consultant, contacts, notes, budget. ' +
+            '<strong style="color:var(--ink-strong)">Reset:</strong> status (\u2192 saved), close month, outcome, confirmation, audit log, CRM ID.' +
+          '</p>' +
+          '<div class="field-v3">' +
+            '<label>New project name *</label>' +
+            '<input class="input-v3" id="dd-name" type="text" maxlength="200"' +
+              ' value="' + esc(suggested) + '" placeholder="e.g. Hospital ABC \u2014 Phase 2"' +
+              ' autocomplete="off">' +
+            '<div style="font-size:11px;color:var(--ink-soft);margin-top:4px;line-height:1.4">' +
+              'Tip: edit the suffix or replace entirely. Source remains untouched.' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;margin-top:12px">' +
+            '<button class="btn-v3 btn-ghost btn-md" type="button" data-action="sd-dup-cancel" style="flex:1">Cancel</button>' +
+            '<button class="btn-v3 btn-primary btn-md" type="button" data-action="sd-dup-submit"' +
+              ' data-src-ref="' + esc(srcRef) + '" style="flex:2">Create duplicate</button>' +
+          '</div>' +
+        '</div>'
+      );
+      // Focus the name field, select the " (copy)" suffix so the user can
+      // immediately type to overwrite it or tap to edit the base name.
+      setTimeout(function () {
+        const el = $('dd-name');
+        if (!el || typeof el.focus !== 'function') return;
+        el.focus();
+        try {
+          // Select just the " (copy)" suffix if present
+          const v = el.value || '';
+          const idx = v.lastIndexOf(' (copy)');
+          if (idx > 0) el.setSelectionRange(idx, v.length);
+          else el.select();
+        } catch (e) { /* setSelectionRange unsupported — ignore */ }
+      }, 50);
     }
 
     /* v27.3.0 — About sheet (version + build info + acknowledgments).
@@ -13369,9 +13964,19 @@
         return;
       }
       // KPIs the snapshot can support.
+      // v27.6 — augmented to read the 5 new columns added by migration
+      // `2026_05_26_pipeline_snapshot_augment`. Pre-migration these are
+      // null and the chip degrades to "—" via the existing `prev == null`
+      // branch below. Post-migration the chips light up automatically.
       const baseline = {
-        open:     (best.open_count != null) ? Number(best.open_count) : null,
-        pipeline: (best.open_value_inr != null) ? Number(best.open_value_inr) : null
+        open:        (best.open_count != null)               ? Number(best.open_count)               : null,
+        pipeline:    (best.open_value_inr != null)           ? Number(best.open_value_inr)           : null,
+        endusers:    (best.distinct_endusers_count != null)  ? Number(best.distinct_endusers_count)  : null,
+        partners:    (best.distinct_partners_count != null)  ? Number(best.distinct_partners_count)  : null,
+        consultants: (best.distinct_consultants_count != null) ? Number(best.distinct_consultants_count) : null,
+        split:       (best.cavitak_count != null && best.oem_count != null)
+                       ? (Number(best.cavitak_count) + Number(best.oem_count))
+                       : null
       };
       // Per-KPI directionality: +1 = up is good, -1 = down is good, 0 = neutral.
       const goodDir = { open: 1, pipeline: 1, endusers: 1, partners: 1, consultants: 1, split: 0 };
@@ -15311,7 +15916,13 @@
         : 'https://wa.me/?text=' + text;
     }
 
-    /* Email share — builds mailto: URL with subject + body + CC to sender */
+    /* Email share — builds mailto: URL with subject + body + CC to sender.
+       v27.7-alpha2 — Polished body. Subject is brand-prefixed for inbox
+       scannability. Body cites Excel BoQ + PDF spec by name, declares a
+       15-day validity (Cavitak standard), and signs off with full block:
+       name, professional_title (omit if blank), +91 phone (omit if blank),
+       company. Empty signature lines are filtered so we never render a
+       stray blank line. */
     function _buildMailtoUrl(deal) {
       const ref  = deal.display_ref || deal.ref_id || '';
       const proj = deal.project || '(no project name)';
@@ -15320,21 +15931,32 @@
       const sender = (function () {
         try {
           const u = STORE.currentUser();
-          return { name: u ? (u.full_name || u.username || '') : '', email: u ? (u.email || '') : '' };
-        } catch (e) { return { name: '', email: '' }; }
+          return {
+            name:  u ? (u.full_name || u.username || '') : '',
+            email: u ? (u.email || '') : '',
+            title: u ? String(u.professional_title || '').trim() : '',
+            phone: u ? String(u.phone || '').trim() : ''
+          };
+        } catch (e) { return { name: '', email: '', title: '', phone: '' }; }
       })();
-      const subject = 'Quotation — ' + proj + ' (' + ref + ')';
+      const subject = 'Cavitak | Quotation \u2014 ' + proj + ' (Ref: ' + ref + ')';
+      // Signature lines — drop empties so we never render a blank line for an
+      // unset profile field. Always anchor with the company line.
+      const sigLines = [
+        sender.name || 'Cavitak Marketing',
+        sender.title,
+        sender.phone ? '+91 ' + sender.phone : '',
+        'Cavitak Marketing Pvt. Ltd.'
+      ].filter(function (s) { return s && String(s).trim().length > 0; });
       const body = [
         'Dear ' + (cust || 'Sir/Madam') + ',',
         '',
-        'Please find the attached quotation (Excel + PDF) for ' + proj + ' (ref: ' + ref + ').',
+        'Attached is our quotation (Excel BoQ + PDF technical specification) for ' + proj + ', reference ' + ref + '.',
         '',
-        'Kindly review and revert in case of any clarifications.',
+        'Validity: 15 days from the date of this email. Kindly review and revert with any clarifications.',
         '',
-        'Best regards,',
-        sender.name || 'Cavitak Marketing',
-        'Cavitak Marketing Pvt Ltd'
-      ].join('\r\n');
+        'Best regards,'
+      ].concat(sigLines).join('\r\n');
       const params = [];
       if (sender.email) params.push('cc=' + encodeURIComponent(sender.email));
       params.push('subject=' + encodeURIComponent(subject));
@@ -20017,24 +20639,52 @@
           return;
         }
 
-        // v27.3.0 — Duplicate deal (v27.7 partial restore)
+        // v27.3.0 — Duplicate deal (v27.7-alpha3: proper sheet replaces native prompt())
         if (action === 'sd-duplicate') {
           if (!_savedDealData) return;
           const srcRef = _savedDealData.display_ref || _savedDealData.ref_id;
           if (!srcRef) return;
-          const newName = prompt('New project name (leave blank to copy current):', _savedDealData.project || '');
-          if (newName === null) return;
-          STORE.duplicateDeal(srcRef, newName.trim()).then(function (r) {
+          showDuplicateDealSheet(_savedDealData);
+          return;
+        }
+        // v27.7-alpha3 — Duplicate sheet submit (calls deal_duplicate, navigates to new deal)
+        if (action === 'sd-dup-submit') {
+          const srcRef = actEl.getAttribute('data-src-ref');
+          if (!srcRef) return;
+          const newNameEl = $('dd-name');
+          const newName = (newNameEl && newNameEl.value || '').trim();
+          if (!newName) {
+            toast('Project name is required', 'err');
+            if (newNameEl && typeof newNameEl.focus === 'function') newNameEl.focus();
+            return;
+          }
+          if (newName.length > 200) {
+            toast('Project name is too long (max 200)', 'err');
+            return;
+          }
+          // Disable the button while in flight to prevent double-submit
+          actEl.setAttribute('disabled', 'true');
+          actEl.textContent = 'Duplicating\u2026';
+          STORE.duplicateDeal(srcRef, newName).then(function (r) {
             if (r && r.ok === false) {
               toast('Duplicate failed: ' + (r.error || 'unknown'), 'err');
+              actEl.removeAttribute('disabled');
+              actEl.textContent = 'Create duplicate';
               return;
             }
-            const newRef = (r && (r.display_ref || r.ref_id)) || '';
-            toast('Duplicated as ' + newRef, 'ok');
+            const newRef = (r && r.display_ref) || '';
+            closeSheet();
+            toast('Duplicated as ' + (newRef || 'new deal'), 'ok');
             if (newRef) location.hash = '#/quote/' + newRef;
           }).catch(function (err) {
             toast('Duplicate failed: ' + (err && err.message || String(err)), 'err');
+            actEl.removeAttribute('disabled');
+            actEl.textContent = 'Create duplicate';
           });
+          return;
+        }
+        if (action === 'sd-dup-cancel') {
+          closeSheet();
           return;
         }
         if (action === 'um-changepw') {
@@ -20049,6 +20699,53 @@
         }
         if (action === 'um-resets') {
           showResetPasswordPanel();
+          return;
+        }
+        // v27.6 — Pipeline stages preview (Super-only)
+        if (action === 'um-stages') {
+          showPipelineStagesSheet();
+          return;
+        }
+        // v27.7-alpha1 — Pipeline stages admin (Super-only)
+        if (action === 'um-stages-add') {
+          showStageEditSheet(null);
+          return;
+        }
+        if (action === 'um-stages-edit') {
+          const stageId = actEl.getAttribute('data-stage-id');
+          if (!stageId) return;
+          const stage = _stagesCache.find(function (s) { return s.id === stageId; });
+          if (!stage) {
+            toast('Stage not in cache \u2014 refreshing', 'warn');
+            showPipelineStagesSheet();
+            return;
+          }
+          showStageEditSheet(stage);
+          return;
+        }
+        if (action === 'um-stages-up') {
+          const stageId = actEl.getAttribute('data-stage-id');
+          if (stageId) _handleStageMove(stageId, 'up');
+          return;
+        }
+        if (action === 'um-stages-down') {
+          const stageId = actEl.getAttribute('data-stage-id');
+          if (stageId) _handleStageMove(stageId, 'down');
+          return;
+        }
+        if (action === 'um-stages-toggle') {
+          const stageId = actEl.getAttribute('data-stage-id');
+          const activeStr = actEl.getAttribute('data-active');
+          if (stageId) _handleStageToggle(stageId, activeStr === '1');
+          return;
+        }
+        if (action === 'um-stages-save') {
+          const stageId = actEl.getAttribute('data-stage-id');  // null for create
+          _handleStageSave(stageId || null);
+          return;
+        }
+        if (action === 'um-stages-cancel') {
+          showPipelineStagesSheet();
           return;
         }
         if (action === 'um-about') {
@@ -21026,9 +21723,22 @@
       _renderSparkSvg:        _renderSparkSvg,
       _populateKpiSparklines: _populateKpiSparklines,
       _populateActivityTicker: _populateActivityTicker,
+      // v27.6 — expose for smoke check verifying snapshot-column consumer
+      _populateKpiChips:       _populateKpiChips,
       _buildShareUrl:         _buildShareUrl,
       _shareCurrentView:      _shareCurrentView,
       _applyFiltersFromUrl:   _applyFiltersFromUrl,
+      // v27.7-alpha1 — Pipeline stages admin (Session A frontend).
+      // Exposed so the smoke harness can verify the UI helpers exist and so
+      // the APP click delegate (which lives outside this IIFE) can reach them
+      // via UI.* if it ever needs to bypass the data-action wiring.
+      showPipelineStagesSheet: showPipelineStagesSheet,
+      showStageEditSheet:      showStageEditSheet,
+      _handleStageMove:        _handleStageMove,
+      _handleStageToggle:      _handleStageToggle,
+      _handleStageSave:        _handleStageSave,
+      // v27.7-alpha3 — Duplicate deal sheet (Session B frontend).
+      showDuplicateDealSheet:  showDuplicateDealSheet,
       // smoke renderer
       _renderSmokeOutput: renderSmokeOutput
     };
