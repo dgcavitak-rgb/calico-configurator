@@ -6350,7 +6350,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.7-alpha2',
+      version: 'v27.7-alpha3',
       constants,
       calico,
       mv,
@@ -7611,11 +7611,16 @@
       });
     }
 
-    /* v27.3.0 — Duplicate a deal (v27.7 partial restore) */
+    /* v27.3.0 — Duplicate a deal (v27.7-alpha3: backend RPC landed).
+       The deal_duplicate RPC requires p_actor (any existing user.id); without
+       it the RPC returns {ok:false, error:'invalid_actor'}. Older wrapper
+       calls without actor silently failed. */
     async function duplicateDeal(srcRefId, newProjectName) {
+      const u = currentUser();
       return rpc('deal_duplicate', {
         p_src_display_ref: String(srcRefId),
-        p_new_project: String(newProjectName || '').trim() || null
+        p_new_project:     String(newProjectName || '').trim() || null,
+        p_actor:           (u && u.id) || null
       });
     }
 
@@ -9003,8 +9008,8 @@
       }
     }
 
-    check('CATALOG.version === "v27.7-alpha2"',
-      () => CATALOG.version === 'v27.7-alpha2' || 'got: ' + CATALOG.version);
+    check('CATALOG.version === "v27.7-alpha3"',
+      () => CATALOG.version === 'v27.7-alpha3' || 'got: ' + CATALOG.version);
 
     /* ---------- v27.7-alpha1: Pipeline stages CRUD (Session A backend wrappers) ---------- */
     check('v27.7-A.1: STORE.stageCreate exists',
@@ -9062,6 +9067,27 @@
         const miss = need.filter(k => fn.indexOf(k) < 0);
         return miss.length === 0
                || 'missing admin actions in sheet markup: ' + miss.join(',');
+      });
+
+    /* ---------- v27.7-alpha3: Duplicate deal (Session B) ---------- */
+    check('v27.7-B.1: UI.showDuplicateDealSheet exists',
+      () => typeof UI.showDuplicateDealSheet === 'function'
+            || 'showDuplicateDealSheet missing on UI');
+    check('v27.7-B.2: showDuplicateDealSheet wires submit + cancel actions',
+      () => {
+        const fn = (typeof UI.showDuplicateDealSheet === 'function')
+          ? UI.showDuplicateDealSheet.toString() : '';
+        const need = ['sd-dup-submit','sd-dup-cancel','dd-name'];
+        const miss = need.filter(k => fn.indexOf(k) < 0);
+        return miss.length === 0
+               || 'missing in sheet markup: ' + miss.join(',');
+      });
+    check('v27.7-B.3: STORE.duplicateDeal wrapper passes p_actor (RPC requires it)',
+      () => {
+        const fn = (typeof STORE.duplicateDeal === 'function')
+          ? STORE.duplicateDeal.toString() : '';
+        return fn.indexOf('p_actor') > 0
+               || 'duplicateDeal wrapper missing p_actor — RPC will return invalid_actor';
       });
 
     /* ---------- v27.6-alpha1: Pipeline stages preview + snapshot augment consumer ---------- */
@@ -12646,6 +12672,59 @@
       } catch (e) {
         toast('Save failed: ' + (e && e.message || String(e)), 'err');
       }
+    }
+
+    /* v27.7-alpha3 — Duplicate deal sheet. Replaces the v27.3 native prompt().
+       Pre-fills project name with "<source> (copy)" so the user just edits the
+       suffix. Spells out what's copied (lines, screens, config, customer) and
+       what's reset (status, closure, audit, CRM ID) so they aren't surprised.
+       Submit calls STORE.duplicateDeal via the sd-dup-submit handler.
+       Cancel closes the sheet without firing the RPC. */
+    function showDuplicateDealSheet(deal) {
+      const srcRef  = (deal && (deal.display_ref || deal.ref_id)) || '';
+      const srcProj = (deal && deal.project) || '';
+      const suggested = srcProj ? (srcProj + ' (copy)') : '';
+      openSheet(
+        '<div class="notif-sheet" style="padding:0 16px 16px">' +
+          '<div class="notif-sheet-head" style="padding-left:0;padding-right:0">' +
+            '<h3>Duplicate deal</h3>' +
+            (srcRef ? '<span class="chip-v3 chip-info">' + esc(srcRef) + '</span>' : '') +
+          '</div>' +
+          '<p style="font-size:13px;color:var(--ink-soft);margin:0 0 14px;line-height:1.5">' +
+            'Creates a new deal with a fresh <strong>TV-</strong> reference. ' +
+            '<strong style="color:var(--ink-strong)">Copied:</strong> line items, screens, configuration, customer / partner / consultant, contacts, notes, budget. ' +
+            '<strong style="color:var(--ink-strong)">Reset:</strong> status (\u2192 saved), close month, outcome, confirmation, audit log, CRM ID.' +
+          '</p>' +
+          '<div class="field-v3">' +
+            '<label>New project name *</label>' +
+            '<input class="input-v3" id="dd-name" type="text" maxlength="200"' +
+              ' value="' + esc(suggested) + '" placeholder="e.g. Hospital ABC \u2014 Phase 2"' +
+              ' autocomplete="off">' +
+            '<div style="font-size:11px;color:var(--ink-soft);margin-top:4px;line-height:1.4">' +
+              'Tip: edit the suffix or replace entirely. Source remains untouched.' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;margin-top:12px">' +
+            '<button class="btn-v3 btn-ghost btn-md" type="button" data-action="sd-dup-cancel" style="flex:1">Cancel</button>' +
+            '<button class="btn-v3 btn-primary btn-md" type="button" data-action="sd-dup-submit"' +
+              ' data-src-ref="' + esc(srcRef) + '" style="flex:2">Create duplicate</button>' +
+          '</div>' +
+        '</div>'
+      );
+      // Focus the name field, select the " (copy)" suffix so the user can
+      // immediately type to overwrite it or tap to edit the base name.
+      setTimeout(function () {
+        const el = $('dd-name');
+        if (!el || typeof el.focus !== 'function') return;
+        el.focus();
+        try {
+          // Select just the " (copy)" suffix if present
+          const v = el.value || '';
+          const idx = v.lastIndexOf(' (copy)');
+          if (idx > 0) el.setSelectionRange(idx, v.length);
+          else el.select();
+        } catch (e) { /* setSelectionRange unsupported — ignore */ }
+      }, 50);
     }
 
     /* v27.3.0 — About sheet (version + build info + acknowledgments).
@@ -20560,24 +20639,52 @@
           return;
         }
 
-        // v27.3.0 — Duplicate deal (v27.7 partial restore)
+        // v27.3.0 — Duplicate deal (v27.7-alpha3: proper sheet replaces native prompt())
         if (action === 'sd-duplicate') {
           if (!_savedDealData) return;
           const srcRef = _savedDealData.display_ref || _savedDealData.ref_id;
           if (!srcRef) return;
-          const newName = prompt('New project name (leave blank to copy current):', _savedDealData.project || '');
-          if (newName === null) return;
-          STORE.duplicateDeal(srcRef, newName.trim()).then(function (r) {
+          showDuplicateDealSheet(_savedDealData);
+          return;
+        }
+        // v27.7-alpha3 — Duplicate sheet submit (calls deal_duplicate, navigates to new deal)
+        if (action === 'sd-dup-submit') {
+          const srcRef = actEl.getAttribute('data-src-ref');
+          if (!srcRef) return;
+          const newNameEl = $('dd-name');
+          const newName = (newNameEl && newNameEl.value || '').trim();
+          if (!newName) {
+            toast('Project name is required', 'err');
+            if (newNameEl && typeof newNameEl.focus === 'function') newNameEl.focus();
+            return;
+          }
+          if (newName.length > 200) {
+            toast('Project name is too long (max 200)', 'err');
+            return;
+          }
+          // Disable the button while in flight to prevent double-submit
+          actEl.setAttribute('disabled', 'true');
+          actEl.textContent = 'Duplicating\u2026';
+          STORE.duplicateDeal(srcRef, newName).then(function (r) {
             if (r && r.ok === false) {
               toast('Duplicate failed: ' + (r.error || 'unknown'), 'err');
+              actEl.removeAttribute('disabled');
+              actEl.textContent = 'Create duplicate';
               return;
             }
-            const newRef = (r && (r.display_ref || r.ref_id)) || '';
-            toast('Duplicated as ' + newRef, 'ok');
+            const newRef = (r && r.display_ref) || '';
+            closeSheet();
+            toast('Duplicated as ' + (newRef || 'new deal'), 'ok');
             if (newRef) location.hash = '#/quote/' + newRef;
           }).catch(function (err) {
             toast('Duplicate failed: ' + (err && err.message || String(err)), 'err');
+            actEl.removeAttribute('disabled');
+            actEl.textContent = 'Create duplicate';
           });
+          return;
+        }
+        if (action === 'sd-dup-cancel') {
+          closeSheet();
           return;
         }
         if (action === 'um-changepw') {
@@ -21630,6 +21737,8 @@
       _handleStageMove:        _handleStageMove,
       _handleStageToggle:      _handleStageToggle,
       _handleStageSave:        _handleStageSave,
+      // v27.7-alpha3 — Duplicate deal sheet (Session B frontend).
+      showDuplicateDealSheet:  showDuplicateDealSheet,
       // smoke renderer
       _renderSmokeOutput: renderSmokeOutput
     };
