@@ -1,7 +1,19 @@
 // tvONE Product Selector — Service Worker
-// v27.14.0 (2026-05-28)
+// v27.16.0 (2026-05-28)
 //
 // Changelog:
+//   v27.16.0 — Home + Dashboard major rebuild ("Command."). Home:
+//             operational focus-list (slipped + closing this month) with
+//             per-deal days-overdue / days-left, this-week strip, scrolling
+//             team ticker — replaces KPI/attention/month-tile grid (moved
+//             to Dashboard). Center FAB nav button → New Deal wizard.
+//             Dashboard: mission-control telemetry strip, 4 hero KPIs,
+//             8-tile velocity grid w/ sparklines, 2 semicircle gauges
+//             (win rate + composite health score), month-segment stacked
+//             bar, India map with count-scaled region pins, per-rep health
+//             badges in sales table. Theme-aware (Choice X — all surfaces
+//             obey light/dark). Additive: existing funnel/donut/region/
+//             heatmap/filter/saved-views wiring preserved. CACHE_NAME bump.
 //   v27.14.0 — Dashboard reframe: stage funnel promoted from 1/3-width
 //             tile to full-width top position per owner perspective;
 //             regional chart redesigned (Option B) — abstract India SVG
@@ -66,7 +78,7 @@
 // the activate handler. Promotes hard-refresh semantics for users with the
 // PWA installed.
 
-const CACHE_NAME = 'tvone-v27.14.0';
+const CACHE_NAME = 'tvone-v27.16.0';
 const SHELL_URLS = [
   './',
   './index.html'

@@ -2415,6 +2415,54 @@
     .bottom-nav button:active { transform: scale(0.95); background: transparent; }
     .bottom-nav button .icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
+    /* v27.15.0 — Center FAB ("+") button. The middle nav slot (New Deal)
+       is promoted to a raised circular floating action button per the
+       Command. dashboard reference. Taps straight to the New Deal wizard.
+       Sits above the nav bar, amber gradient, with a soft glow. */
+    .bottom-nav button.nav-fab {
+      flex: 0 0 auto;
+      min-height: 0;
+      align-self: center;
+      margin-top: -22px;        /* lift it above the bar */
+      padding: 0;
+      gap: 0;
+    }
+    .bottom-nav button.nav-fab .fab-circle {
+      width: 54px; height: 54px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #F7941D 0%, #E8731C 100%);
+      display: grid; place-items: center;
+      box-shadow:
+        0 6px 18px rgba(232,115,28,0.42),
+        0 2px 6px rgba(15,14,12,0.20);
+      transition: transform var(--dur-base) var(--ease-spring),
+                  box-shadow var(--dur-base) var(--ease-out);
+    }
+    .bottom-nav button.nav-fab .fab-circle .icon {
+      width: 26px; height: 26px;
+      stroke: #fff; stroke-width: 2.6;
+    }
+    .bottom-nav button.nav-fab:active .fab-circle {
+      transform: scale(0.92);
+      box-shadow:
+        0 3px 10px rgba(232,115,28,0.40),
+        0 1px 3px rgba(15,14,12,0.20);
+    }
+    .bottom-nav button.nav-fab .fab-label {
+      font: 700 9px var(--font-display);
+      color: var(--ink-soft);
+      margin-top: 3px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    /* The FAB never shows the active-page indicator bar */
+    .bottom-nav button.nav-fab[aria-current="page"]::before { display: none; }
+    html[data-theme="dark"] .bottom-nav button.nav-fab .fab-circle {
+      box-shadow:
+        0 6px 20px rgba(247,148,29,0.40),
+        0 2px 6px rgba(0,0,0,0.45);
+    }
+
     /* Tricolor bar permanently hidden in v27.3.0 */
     .tricolor-bar { display: none !important; }
 
@@ -4411,6 +4459,264 @@
       .v4-hero-greeting { font-size: 26px; }
     }
 
+    /* ============================================================
+       v27.15.0 — Operational Home redesign.
+       Replaces attention cards + month tiles + KPI grid with an
+       action-first focus list (slipped + closing) + this-week strip
+       + scrolling team ticker. KPIs/funnel move to Dashboard.
+       Built on existing design tokens; theme-aware (Choice X).
+       ============================================================ */
+
+    /* Hero open-count chip (top-right beside Live) */
+    .v15-open-stat { text-align: right; }
+    .v15-open-label {
+      font-family: var(--font-mono);
+      font-size: 9px; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--ink-soft);
+      margin-bottom: 2px;
+    }
+    .v15-open-num {
+      font-family: var(--font-mono);
+      font-size: 26px; font-weight: 700;
+      letter-spacing: -0.04em; color: var(--ink-strong);
+      line-height: 1;
+    }
+    .v15-open-sub { font-size: 10px; color: var(--ink-soft); margin-top: 3px; }
+
+    /* Section label (mono, code-comment style) */
+    .v15-section {
+      display: flex; align-items: center; justify-content: space-between;
+      margin: var(--s-5) 0 var(--s-3);
+    }
+    .v15-section h2 {
+      margin: 0; font-family: var(--font-mono);
+      font-size: 10px; font-weight: 700; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--ink-soft);
+    }
+    .v15-section .v15-badge {
+      font-family: var(--font-mono); font-size: 10px;
+      background: var(--ink-strong); color: var(--bg-page);
+      padding: 3px 8px; border-radius: 4px; font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    /* Focus block (slipped / closing) */
+    .v15-focus {
+      background: var(--bg-card);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--r-lg);
+      overflow: hidden; position: relative;
+      margin-bottom: var(--s-3);
+    }
+    .v15-focus::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    }
+    .v15-focus[data-tone="red"]::before   { background: var(--danger); }
+    .v15-focus[data-tone="amber"]::before { background: var(--brand); }
+    .v15-focus-hd {
+      padding: var(--s-4) var(--s-4) var(--s-3);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: var(--s-3);
+      border-bottom: 1px dashed var(--border-soft);
+    }
+    .v15-focus-hd-l { display: flex; align-items: baseline; gap: var(--s-3); }
+    .v15-focus-count {
+      font-family: var(--font-mono);
+      font-size: 30px; font-weight: 700; letter-spacing: -0.04em;
+      line-height: 1;
+    }
+    .v15-focus[data-tone="red"]   .v15-focus-count { color: var(--danger); }
+    .v15-focus[data-tone="amber"] .v15-focus-count { color: var(--brand); }
+    .v15-focus-title {
+      font-size: 13px; font-weight: 700; color: var(--ink-strong);
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .v15-focus-sub {
+      font-family: var(--font-mono); font-size: 10px;
+      color: var(--ink-soft); margin-top: 2px; letter-spacing: 0.04em;
+    }
+
+    /* Deal row inside focus block */
+    .v15-deal {
+      padding: var(--s-4);
+      border-bottom: 1px solid var(--border-soft);
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 4px var(--s-4); align-items: center;
+      cursor: pointer; width: 100%;
+      background: transparent; border-left: 0; border-right: 0; border-top: 0;
+      text-align: left;
+      transition: background var(--dur-base) var(--ease-out);
+    }
+    .v15-deal:last-child { border-bottom: 0; }
+    .v15-deal:active { background: var(--bg-subtle); }
+    .v15-deal-customer {
+      font-size: 15px; font-weight: 700; color: var(--ink-strong);
+      letter-spacing: -0.01em;
+    }
+    .v15-deal-line2 { margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .v15-deal-chip {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px; border-radius: var(--r-pill);
+      font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: #fff;
+    }
+    .v15-deal-ref {
+      font-family: var(--font-mono); font-size: 10px;
+      color: var(--ink-soft); letter-spacing: 0.04em;
+    }
+    .v15-deal-meta {
+      font-family: var(--font-mono); font-size: 10px;
+      color: var(--ink-soft); margin-top: 4px; letter-spacing: 0.02em;
+    }
+    .v15-deal-right { text-align: right; }
+    .v15-deal-days {
+      font-family: var(--font-mono); font-weight: 700;
+      font-size: 16px; letter-spacing: -0.03em; line-height: 1;
+    }
+    .v15-deal[data-overdue="true"]  .v15-deal-days { color: var(--danger); }
+    .v15-deal[data-overdue="false"] .v15-deal-days { color: var(--brand); }
+    .v15-deal-days-lbl {
+      font-family: var(--font-mono); font-size: 9px;
+      color: var(--ink-soft); text-transform: uppercase;
+      letter-spacing: 0.08em; margin-top: 3px;
+    }
+    .v15-focus-more {
+      padding: var(--s-3) var(--s-4); text-align: center;
+      background: var(--bg-subtle); cursor: pointer; width: 100%;
+      border: 0; border-top: 1px dashed var(--border-soft);
+      font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+      color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .v15-focus-more:active { background: var(--border-soft); }
+    .v15-focus-empty {
+      padding: var(--s-5) var(--s-4); text-align: center;
+      font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft);
+      letter-spacing: 0.04em;
+    }
+
+    /* This-week strip (dark accent ribbon — theme-aware) */
+    .v15-week {
+      background: var(--bg-instrument, var(--ink-strong));
+      color: var(--bg-page);
+      border-radius: var(--r-lg);
+      padding: var(--s-4);
+      display: grid; grid-template-columns: auto 1fr auto;
+      gap: var(--s-3); align-items: center;
+      position: relative; overflow: hidden;
+      margin-bottom: var(--s-3);
+      border: 1px solid var(--border-mid);
+    }
+    html[data-theme="dark"] .v15-week {
+      background: #141210; color: var(--ink-strong);
+      box-shadow: 0 0 0 1px rgba(247,169,61,0.08);
+    }
+    html[data-theme="light"] .v15-week {
+      background: #1A1815; color: #F5F4F1;
+    }
+    .v15-week-label {
+      font-family: var(--font-mono); font-size: 9px;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      writing-mode: vertical-lr; transform: rotate(180deg);
+      padding-right: 6px; border-right: 1px solid rgba(255,255,255,0.15);
+      opacity: 0.6;
+    }
+    .v15-week-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
+    .v15-week-num {
+      font-family: var(--font-mono); font-size: 22px; font-weight: 700;
+      letter-spacing: -0.04em; line-height: 1;
+    }
+    .v15-week-num.pos { color: #34D399; }
+    .v15-week-num.amber { color: #F7A93D; }
+    .v15-week-lbl {
+      font-family: var(--font-mono); font-size: 9px;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      opacity: 0.55; margin-top: 4px;
+    }
+    .v15-week-trend {
+      font-family: var(--font-mono); font-size: 10px;
+      opacity: 0.6; text-align: right; letter-spacing: 0.04em;
+    }
+    .v15-week-trend strong { display: block; color: #34D399; font-size: 13px; }
+
+    /* Team ticker (single-line scroll) */
+    .v15-ticker {
+      border: 1px solid var(--border-mid);
+      border-radius: var(--r-lg);
+      background: var(--bg-card);
+      overflow: hidden; position: relative;
+      display: flex; align-items: center; height: 44px;
+      margin-bottom: var(--s-3);
+    }
+    .v15-ticker-badge {
+      flex-shrink: 0; padding: 0 14px; height: 100%;
+      display: flex; align-items: center; gap: 6px;
+      background: var(--brand); color: #1A1815;
+      font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      z-index: 3; position: relative;
+    }
+    .v15-ticker-badge::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--danger);
+      animation: v15TickPulse 1.4s infinite;
+    }
+    @keyframes v15TickPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.6); }
+      70% { box-shadow: 0 0 0 5px rgba(220,38,38,0); }
+    }
+    .v15-ticker::after {
+      content: ''; position: absolute; top: 0; right: 0; bottom: 0;
+      width: 50px; z-index: 2; pointer-events: none;
+      background: linear-gradient(to right, transparent, var(--bg-card));
+    }
+    .v15-ticker-track {
+      display: flex; gap: 26px; padding-left: 18px;
+      white-space: nowrap;
+      animation: v15TickScroll 48s linear infinite;
+      will-change: transform;
+    }
+    .v15-ticker:active .v15-ticker-track { animation-play-state: paused; }
+    @keyframes v15TickScroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    .v15-ti {
+      font-size: 13px; color: var(--ink-mid);
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    .v15-ti .who { font-weight: 700; color: var(--brand-deep); }
+    html[data-theme="dark"] .v15-ti .who { color: var(--brand); }
+    .v15-ti .what { color: var(--ink-soft); }
+    .v15-ti .time { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); }
+    .v15-ti .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .v15-ti .dot.stage { background: #818CF8; }
+    .v15-ti .dot.add   { background: var(--success); }
+    .v15-ti .dot.win   { background: var(--brand); }
+    .v15-ti .dot.lose  { background: var(--danger); }
+    .v15-ti-sep { color: var(--ink-faint); font-family: var(--font-mono); }
+
+    /* Quick actions (2-up) */
+    .v15-quick { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); margin-bottom: var(--s-5); }
+    .v15-qbtn {
+      padding: var(--s-4); border-radius: var(--r-lg);
+      border: 1px solid var(--border-mid); background: var(--bg-card);
+      text-align: left; cursor: pointer; display: flex; align-items: center; gap: var(--s-3);
+      transition: transform var(--dur-base) var(--ease-out);
+    }
+    .v15-qbtn:active { transform: scale(0.98); }
+    .v15-qbtn.primary { background: var(--ink-strong); color: var(--bg-page); border-color: var(--ink-strong); }
+    .v15-qbtn-ico { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; background: var(--bg-subtle); flex-shrink: 0; }
+    .v15-qbtn.primary .v15-qbtn-ico { background: rgba(255,255,255,0.10); }
+    .v15-qbtn-ico svg { width: 16px; height: 16px; stroke: var(--ink-strong); fill: none; stroke-width: 2.2; }
+    .v15-qbtn.primary .v15-qbtn-ico svg { stroke: var(--bg-page); }
+    .v15-qbtn-label { font-weight: 700; font-size: 13px; line-height: 1.2; }
+    .v15-qbtn-hint {
+      font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--ink-soft); margin-top: 3px;
+    }
+    .v15-qbtn.primary .v15-qbtn-hint { color: rgba(255,255,255,0.5); }
+
     /* Attention row (4 alert cards) */
     .v4-attn-row {
       display: grid;
@@ -5187,6 +5493,19 @@
        vertically, each: dot + label/meta column, bar track, count/pct.
        Track grows up to ~50% of card width on wide screens, full width
        on mobile. Clean and scannable. */
+    /* v27.16.0 — India map (Phase 3). Theme-aware via currentColor on
+       the land path; pins use explicit zone colors. Sits above the
+       region bars in the regional card. */
+    .mc-map-wrap {
+      display: flex; justify-content: center;
+      padding: var(--s-2) 0 var(--s-4);
+      color: var(--ink-strong);
+    }
+    .mc-india { width: 160px; height: auto; max-height: 220px; overflow: visible; }
+    .mc-pin-glow { animation: v4Pulse 2.4s infinite; }
+    .mc-pin-core { transition: r var(--dur-slow) var(--ease-spring); }
+    .mc-region-bars, .v4-region-bars { /* anchor — keep bars below map */ }
+
     .v4-region-bars {
       display: flex; flex-direction: column;
       gap: var(--s-3);
@@ -5424,6 +5743,162 @@
       width: 18px; height: 14px;
       border-radius: 3px;
     }
+
+    /* ============================================================
+       v27.16.0 — Mission-control Dashboard ("Command.") styles.
+       Theme-aware (Choice X): all surfaces use design tokens.
+       Instrument panels (telemetry, gauges) use a recessed
+       --bg-instrument surface that reads as darker-than-card in
+       dark theme, same-as-card in light. Glow on hero numbers +
+       LEDs + sparklines per the approved reference image.
+       ============================================================ */
+
+    /* Instrument surface token (Choice X). Light = card; dark = recessed. */
+    html[data-theme="light"] { --mc-instrument: #FFFFFF; --mc-scanline: rgba(10,10,11,0.015); --mc-glow: none; }
+    html[data-theme="dark"]  { --mc-instrument: #141210; --mc-scanline: rgba(255,255,255,0.012); --mc-glow: 0 0 0 1px rgba(247,169,61,0.08); }
+
+    /* Mission-control telemetry strip */
+    .mc-strip {
+      background: var(--bg-sunk, var(--bg-subtle));
+      border: 1px solid var(--border-soft);
+      border-radius: var(--r-md);
+      padding: 8px 12px; margin-bottom: var(--s-3);
+      display: flex; align-items: center; gap: 10px;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .mc-strip::-webkit-scrollbar { display: none; }
+    .mc-cell {
+      display: flex; align-items: center; gap: 6px;
+      font-family: var(--font-mono); font-size: 9px;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--ink-soft); white-space: nowrap;
+    }
+    .mc-cell .lbl { color: var(--ink-faint); }
+    .mc-cell .val { color: var(--ink-strong); font-weight: 700; }
+    .mc-cell .val.green { color: var(--success); }
+    .mc-cell .val.amber { color: var(--brand-deep); }
+    html[data-theme="dark"] .mc-cell .val.amber { color: var(--brand); }
+    .mc-sep { color: var(--ink-faint); }
+    .mc-led { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .mc-led.green { background: var(--success); box-shadow: 0 0 6px var(--success); animation: v4Pulse 2s infinite; }
+    .mc-led.amber { background: var(--brand); box-shadow: 0 0 6px var(--brand); }
+    .mc-led.red   { background: var(--danger); box-shadow: 0 0 6px var(--danger); animation: v4Pulse 1.4s infinite; }
+
+    /* HERO TELEMETRY (4-up instrument grid) */
+    .mc-telemetry {
+      background: var(--mc-instrument);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--r-lg);
+      overflow: hidden; position: relative;
+      margin-bottom: var(--s-3);
+      box-shadow: var(--mc-glow);
+    }
+    .mc-telemetry::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background-image: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, var(--mc-scanline) 2px, var(--mc-scanline) 3px);
+    }
+    .mc-tel-hd {
+      padding: 9px 12px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border-soft); position: relative; z-index: 1;
+      font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+    }
+    .mc-tel-hd-l { display: flex; align-items: center; gap: 8px; color: var(--ink-soft); font-weight: 700; }
+    .mc-tel-hd-l::before { content: ''; width: 6px; height: 6px; background: var(--brand); box-shadow: 0 0 6px var(--brand); }
+    .mc-tel-hd-r { color: var(--success); font-weight: 700; }
+    .mc-tel-grid { display: grid; grid-template-columns: 1fr 1fr; position: relative; z-index: 1; }
+    .mc-tel-cell { padding: 14px 12px; border-right: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); position: relative; }
+    .mc-tel-cell:nth-child(2n) { border-right: 0; }
+    .mc-tel-cell:nth-last-child(-n+2) { border-bottom: 0; }
+    .mc-tel-cell::before, .mc-tel-cell::after { content: ''; position: absolute; width: 8px; height: 8px; border: 1.5px solid var(--border-strong); pointer-events: none; }
+    .mc-tel-cell::before { top: 6px; left: 6px; border-right: 0; border-bottom: 0; }
+    .mc-tel-cell::after { bottom: 6px; right: 6px; border-left: 0; border-top: 0; }
+    .mc-tel-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .mc-tel-val { font-family: var(--font-mono); font-size: 30px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; color: var(--ink-strong); }
+    .mc-tel-val.red { color: var(--danger); }
+    .mc-tel-val.amber { color: var(--brand); }
+    html[data-theme="dark"] .mc-tel-val.amber { text-shadow: 0 0 16px rgba(247,169,61,0.4); }
+    html[data-theme="dark"] .mc-tel-val.red { text-shadow: 0 0 16px rgba(251,113,133,0.35); }
+    .mc-tel-val .u { font-size: 11px; color: var(--ink-faint); font-weight: 500; margin-left: 4px; }
+    .mc-tel-delta { font-family: var(--font-mono); font-size: 9px; margin-top: 8px; color: var(--ink-soft); letter-spacing: 0.04em; }
+    .mc-tel-delta.up { color: var(--success); }
+    .mc-tel-delta.down { color: var(--danger); }
+
+    /* VELOCITY GRID (8 KPI tiles w/ sparkline) */
+    .mc-velocity { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-2); margin-bottom: var(--s-3); }
+    .mc-vt {
+      background: var(--bg-card); border: 1px solid var(--border-mid);
+      border-radius: var(--r-md); padding: 11px; position: relative; overflow: hidden; min-height: 88px;
+    }
+    .mc-vt-hd { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .mc-vt-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); font-weight: 800; }
+    .mc-vt-led { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+    .mc-vt-led.amber { background: var(--brand); }
+    .mc-vt-led.red { background: var(--danger); }
+    .mc-vt-led.off { background: var(--border-strong); }
+    .mc-vt-val { font-family: var(--font-mono); font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; margin-bottom: 4px; color: var(--ink-strong); }
+    .mc-vt-val .u { font-size: 10px; color: var(--ink-faint); font-weight: 500; margin-left: 3px; }
+    .mc-vt-val.red { color: var(--danger); }
+    .mc-vt-val.amber { color: var(--brand); }
+    .mc-vt-val.green { color: var(--success); }
+    .mc-vt-sub { font-family: var(--font-mono); font-size: 9px; color: var(--ink-faint); letter-spacing: 0.04em; }
+    .mc-vt-spark { position: absolute; bottom: 6px; left: 11px; right: 11px; height: 16px; pointer-events: none; opacity: 0.5; }
+    .mc-vt-spark svg { width: 100%; height: 100%; display: block; }
+
+    /* GAUGES (2 semicircle instruments) */
+    .mc-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-2); margin-bottom: var(--s-3); }
+    .mc-gauge {
+      background: var(--mc-instrument); border: 1px solid var(--border-mid);
+      border-radius: var(--r-md); padding: 14px 12px 10px; position: relative; overflow: hidden;
+      box-shadow: var(--mc-glow);
+    }
+    .mc-gauge::after { content: ''; position: absolute; inset: 0; pointer-events: none; background-image: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, var(--mc-scanline) 2px, var(--mc-scanline) 3px); }
+    .mc-gauge-hd { font-family: var(--font-mono); font-size: 9px; color: var(--ink-soft); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; position: relative; z-index: 1; }
+    .mc-gauge-wrap { position: relative; height: 72px; margin-top: 4px; z-index: 1; }
+    .mc-gauge-wrap svg { width: 100%; height: 100%; display: block; }
+    .mc-gauge-track { stroke: var(--bg-track, var(--bg-subtle)); }
+    .mc-gauge-val { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; font-family: var(--font-mono); font-size: 22px; font-weight: 700; letter-spacing: -0.04em; color: var(--ink-strong); }
+    .mc-gauge-val .u { font-size: 10px; color: var(--ink-faint); margin-left: 2px; }
+    .mc-gauge-foot { margin-top: 6px; display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 8px; color: var(--ink-faint); position: relative; z-index: 1; letter-spacing: 0.04em; }
+
+    /* MONTH SEGMENT (stacked bar) */
+    .mc-segment {
+      background: var(--bg-card); border: 1px solid var(--border-mid);
+      border-radius: var(--r-md); padding: 13px; margin-bottom: var(--s-3);
+    }
+    .mc-seg-hd { display: flex; justify-content: space-between; margin-bottom: 10px; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }
+    .mc-seg-hd-l { font-weight: 700; color: var(--ink-strong); letter-spacing: 0.06em; }
+    .mc-seg-hd-r { color: var(--ink-soft); }
+    .mc-seg-track { height: 32px; display: flex; border-radius: 5px; overflow: hidden; background: var(--bg-subtle); }
+    .mc-seg-fill { height: 100%; display: flex; align-items: center; padding: 0 8px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: #fff; transition: width var(--dur-slow) var(--ease-out); }
+    .mc-seg-won { background: var(--success); }
+    .mc-seg-close { background: var(--brand); }
+    .mc-seg-risk { background: var(--danger); }
+    .mc-seg-open { background: var(--ink-faint); color: var(--bg-page); }
+    .mc-seg-legend { display: flex; gap: 12px; margin-top: 8px; font-family: var(--font-mono); font-size: 9px; color: var(--ink-soft); flex-wrap: wrap; letter-spacing: 0.04em; }
+    .mc-seg-legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .mc-seg-legend i { width: 8px; height: 8px; border-radius: 2px; }
+
+    /* PRODUCT DONUT */
+    .mc-donut-wrap { display: grid; grid-template-columns: 120px 1fr; gap: var(--s-4); align-items: center; }
+    .mc-donut-svg { width: 120px; height: 120px; display: block; }
+    .mc-donut-legend { display: flex; flex-direction: column; gap: 8px; }
+    .mc-donut-row { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); }
+    .mc-donut-row .sw { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+    .mc-donut-row .nm { flex: 1; font-size: 11px; font-weight: 700; color: var(--ink-strong); letter-spacing: 0.04em; }
+    .mc-donut-row .ct { font-size: 13px; font-weight: 700; color: var(--ink-strong); }
+    .mc-donut-row .pc { font-size: 9px; color: var(--ink-soft); width: 34px; text-align: right; }
+
+    /* HEALTH BADGE (per-rep) */
+    .mc-health {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 34px; padding: 2px 6px; border-radius: var(--r-pill);
+      font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+      border: 1.5px solid currentColor;
+    }
+    .mc-health.good { color: var(--success); }
+    .mc-health.ok   { color: var(--brand-deep); }
+    html[data-theme="dark"] .mc-health.ok { color: var(--brand); }
+    .mc-health.poor { color: var(--danger); }
 
     /* Newly added line chart + stats */
     .v4-chart-stats {
@@ -6245,9 +6720,11 @@
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
         Dashboard
       </button>
-      <button data-nav="#/quote/new" type="button" aria-label="New Quote">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        New
+      <button data-nav="#/quote/new" type="button" aria-label="New Deal" class="nav-fab">
+        <span class="fab-circle">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </span>
+        <span class="fab-label">New</span>
       </button>
       <button data-nav="#/history" type="button" aria-label="History">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
@@ -6584,7 +7061,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.14.0',
+      version: 'v27.16.0',
       constants,
       calico,
       mv,
@@ -15863,130 +16340,98 @@
       const svgIcoDash     = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>';
       const svgFunnel      = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
 
-      function attnCard(kind, count, label, ico) {
-        return '<button type="button" class="v4-attn-card ' + kind + '">' +
-          '<div class="v4-attn-icon">' + ico + '</div>' +
-          '<div class="v4-attn-body">' +
-            '<div class="v4-attn-count" data-v4-attn="' + kind + '">' + esc(count) + '</div>' +
-            '<div class="v4-attn-label">' + esc(label) + '</div>' +
-          '</div>' +
-        '</button>';
-      }
-      function monthTile(kind, label, icon, navHref) {
-        return '<button type="button" class="v4-month-tile ' + kind + '" data-nav="' + esc(navHref) + '">' +
-          '<span class="v4-ribbon"></span>' +
-          '<div class="v4-mt-label"><span class="v4-mt-icon">' + icon + '</span>' + esc(label) + '</div>' +
-          '<div class="v4-mt-row">' +
-            '<div class="v4-mt-value" data-v4-mt="' + kind + '">\u2014</div>' +
-          '</div>' +
-          '<div class="v4-mt-sub" data-v4-mt-sub="' + kind + '">\u2014</div>' +
-        '</button>';
-      }
-      function kpiTile(grad, id, label, ico, isSplit) {
-        return '<button type="button" class="v4-kpi ' + grad + '">' +
-          '<div class="v4-kpi-top">' +
-            '<div class="v4-kpi-label">' + esc(label) + '</div>' +
-            '<div class="v4-kpi-ico">' + ico + '</div>' +
-          '</div>' +
-          '<div>' +
-            '<div class="v4-kpi-value-row">' +
-              '<div class="v4-kpi-value" data-v4-kpi="' + id + '">\u2014</div>' +
-            '</div>' +
-            '<div class="v4-kpi-sub" data-v4-kpi-sub="' + id + '">\u2014</div>' +
-            '<div class="v4-kpi-chip" data-v4-kpi-chip="' + id + '" data-tone="unknown" style="display:none">\u2014</div>' +
-            (isSplit
-              ? '<div class="v4-split-bar" data-v4-kpi-bar="' + id + '"></div>' +
-                '<div class="v4-split-legend" data-v4-kpi-legend="' + id + '"></div>'
-              : '<div class="v4-kpi-spark" data-v4-kpi-spark="' + id + '"></div>'
-            ) +
-          '</div>' +
-        '</button>';
-      }
-      function funnelRow(klass, name) {
-        return '<div class="v4-funnel-row" data-v4-funnel-stage="' + esc(name) + '">' +
-          '<span class="v4-chip ' + klass + '">' + esc(name) + '</span>' +
-          '<div class="v4-funnel-bar-wrap"><div class="v4-funnel-bar ' + klass + '" data-v4-funnel-bar="' + esc(name) + '" style="width:0%">0</div></div>' +
-          '<span class="v4-funnel-meta" data-v4-funnel-pct="' + esc(name) + '">0%</span>' +
-        '</div>';
-      }
+      // v27.15.0 — Operational Home. Helpers below build the new
+      // focus-list + week-strip + ticker structure. Old attnCard/
+      // monthTile/kpiTile/funnelRow helpers retired (moved to Dashboard).
+      const svgPlus = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+      const svgList = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>';
 
       setRoot(
-        // Hero
+        // Hero greeting + open count
         '<div class="v4-hero">' +
           '<div class="v4-hero-row">' +
             '<div>' +
               '<div class="v4-hero-greeting">' + esc(greeting) + ', <span class="v4-brand">' + esc(firstName) + '</span></div>' +
               '<div class="v4-hero-sub">' + esc(today) + (roleLabel ? ' \u00b7 ' + esc(roleLabel) : '') + '</div>' +
-              // v27.12.0 — Offline sync badge. Host element always present;
-              // _refreshSyncBadge populates only when queue has drafts so
-              // the badge is invisible by default and doesn't shift layout.
               '<div id="sync-badge-host" style="margin-top:8px"></div>' +
             '</div>' +
-            '<div class="v4-live-pill">' +
-              '<span class="v4-live-dot"></span>' +
-              '<span>Live</span>' +
+            '<div class="v15-open-stat">' +
+              '<div class="v15-open-label">Open</div>' +
+              '<div class="v15-open-num" data-v15-open>\u2014</div>' +
+              '<div class="v15-open-sub">across all stages</div>' +
             '</div>' +
           '</div>' +
         '</div>' +
 
-        // Attention row (4 cards)
-        '<div class="v4-attn-row v4-stagger">' +
-          attnCard('warn',    '\u2014', 'Stuck > 30 days',  svgClock) +
-          attnCard('danger',  '\u2014', 'Slipped close',    svgAlert) +
-          attnCard('info',    '\u2014', 'Ready to confirm', svgCheckCircle) +
-          attnCard('success', '\u2014', 'Won this month',   svgCheck) +
+        // Focus today
+        '<div class="v15-section">' +
+          '<h2>// Focus Today</h2>' +
+          '<span class="v15-badge" data-v15-focus-total>\u2014 items</span>' +
         '</div>' +
 
-        // Month tiles
-        '<div class="v4-section-title"><h2>This and Next Month</h2></div>' +
-        '<div class="v4-month-grid v4-stagger">' +
-          monthTile('now',       'Closing this month',    svgCalendar, '#/history?filter=closing-now') +
-          monthTile('next',      'Closing next month',    svgChevDown, '#/history?filter=closing-next') +
-          monthTile('slipped-m', 'Slipped last month',    svgClock,    '#/history?filter=slipped-month') +
-          monthTile('slipped-q', 'Slipped last quarter',  svgTrendDown,'#/history?filter=slipped-quarter') +
-        '</div>' +
-
-        // KPIs
-        '<div class="v4-section-title"><h2>Key Metrics</h2></div>' +
-        '<div class="v4-kpi-grid v4-stagger">' +
-          kpiTile('g1', 'open',        'Open cases',         svgIcoOpen,     false) +
-          kpiTile('g2', 'pipeline',    'Pipeline value',     svgIcoCurrency, false) +
-          kpiTile('g4', 'endusers',    'Active end-users',   svgIcoUsers,    false) +
-          kpiTile('g4', 'partners',    'Active partners',    svgIcoPartner,  false) +
-          kpiTile('g4', 'consultants', 'Active consultants', svgIcoUser,     false) +
-          kpiTile('g3', 'split',       'Cavitak / OEM',      svgIcoPie,      true) +
-        '</div>' +
-
-        // Funnel
-        '<div class="v4-section-title"><h2>Pipeline Stages</h2></div>' +
-        '<div class="v4-card">' +
-          '<div class="v4-card-hd">' +
-            '<h3>Pipeline by stage</h3>' +
-            '<span class="v4-hint" data-v4-funnel-total>\u2014 open</span>' +
-          '</div>' +
-          '<div class="v4-card-bd">' +
-            '<div class="v4-funnel">' +
-              funnelRow('v4-s-lead',     'Qualified') +
-              funnelRow('v4-s-proposal', 'Proposal') +
-              funnelRow('v4-s-budget',   'Budget Approval') +
-              funnelRow('v4-s-tech',     'Technical Approval') +
-              funnelRow('v4-s-nego',     'Negotiation') +
-              funnelRow('v4-s-awarded',  'Awarded') +
+        // Slipped focus block (populated by loadHomeV4)
+        '<div class="v15-focus" data-tone="red">' +
+          '<div class="v15-focus-hd">' +
+            '<div class="v15-focus-hd-l">' +
+              '<div class="v15-focus-count" data-v15-slip-count>\u2014</div>' +
+              '<div>' +
+                '<div class="v15-focus-title">Slipped past close date</div>' +
+                '<div class="v15-focus-sub">Needs action \u00b7 oldest first</div>' +
+              '</div>' +
             '</div>' +
           '</div>' +
+          '<div data-v15-slip-list></div>' +
         '</div>' +
 
-        // Quick links
-        '<div class="v4-quick v4-stagger">' +
-          '<button type="button" class="v4-quick-btn" data-nav="#/wizard">' + svgIcoPlus + '<span>New deal</span></button>' +
-          '<button type="button" class="v4-quick-btn" data-nav="#/history">' + svgIcoList + '<span>View history</span></button>' +
-          '<button type="button" class="v4-quick-btn" data-nav="#/dashboard">' + svgIcoDash + '<span>Dashboard</span></button>' +
+        // Closing this month focus block
+        '<div class="v15-focus" data-tone="amber">' +
+          '<div class="v15-focus-hd">' +
+            '<div class="v15-focus-hd-l">' +
+              '<div class="v15-focus-count" data-v15-close-count>\u2014</div>' +
+              '<div>' +
+                '<div class="v15-focus-title">Closing this month</div>' +
+                '<div class="v15-focus-sub" data-v15-close-sub>\u2014</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div data-v15-close-list></div>' +
+        '</div>' +
+
+        // This-week strip
+        '<div class="v15-week">' +
+          '<div class="v15-week-label">This Week</div>' +
+          '<div class="v15-week-stats">' +
+            '<div><div class="v15-week-num pos" data-v15-wk-new>\u2014</div><div class="v15-week-lbl">New</div></div>' +
+            '<div><div class="v15-week-num amber" data-v15-wk-won>\u2014</div><div class="v15-week-lbl">Won</div></div>' +
+            '<div><div class="v15-week-num" data-v15-wk-lost>\u2014</div><div class="v15-week-lbl">Lost</div></div>' +
+          '</div>' +
+          '<div class="v15-week-trend" data-v15-wk-trend></div>' +
+        '</div>' +
+
+        // Team updates ticker
+        '<div class="v15-section">' +
+          '<h2>// Team Updates</h2>' +
+          '<span class="v4-hint" style="font-family:var(--font-mono);font-size:10px;color:var(--ink-faint)">live</span>' +
+        '</div>' +
+        '<div class="v15-ticker">' +
+          '<div class="v15-ticker-badge"><span>LIVE</span></div>' +
+          '<div class="v15-ticker-track" data-v15-ticker></div>' +
+        '</div>' +
+
+        // Quick actions
+        '<div class="v15-quick">' +
+          '<button type="button" class="v15-qbtn primary" data-nav="#/quote/new">' +
+            '<div class="v15-qbtn-ico">' + svgPlus + '</div>' +
+            '<div><div class="v15-qbtn-label">New deal</div><div class="v15-qbtn-hint">start wizard</div></div>' +
+          '</button>' +
+          '<button type="button" class="v15-qbtn" data-nav="#/history">' +
+            '<div class="v15-qbtn-ico">' + svgList + '</div>' +
+            '<div><div class="v15-qbtn-label">View all</div><div class="v15-qbtn-hint" data-v15-allcount>deals</div></div>' +
+          '</button>' +
         '</div>'
       );
 
       loadHomeV4(u);
-      // v27.12.0 — Refresh offline sync badge. Idempotent: empties host
-      // when queue is empty so this is safe to call on every showHome.
       _refreshSyncBadge();
     }
 
@@ -16042,12 +16487,6 @@
         const slippedM    = open.filter(d => { const ym = ymOfDeal(d); return ym && ym === lastM && ym < curM; });
         const slippedQ    = open.filter(d => { const ym = ymOfDeal(d); return ym && lastQMonths.indexOf(ym) >= 0; });
 
-        const setMt = function(kind, val, sub) {
-          const v = document.querySelector('[data-v4-mt="' + kind + '"]');
-          const s = document.querySelector('[data-v4-mt-sub="' + kind + '"]');
-          if (v) v.textContent = String(val);
-          if (s) s.textContent = sub;
-        };
         const monLbl = (function(ym) {
           if (!ym) return '\u2014';
           const m = ym.match(/^(\d{4})-(\d{2})/);
@@ -16055,133 +16494,241 @@
           const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
           return names[Number(m[2]) - 1] + ' ' + m[1];
         });
-        setMt('now',        closingNow.length,  monLbl(curM) + ' \u00b7 \u20b9 \u2014');
-        setMt('next',       closingNext.length, monLbl(nextM) + ' \u00b7 \u20b9 \u2014');
-        setMt('slipped-m',  slippedM.length,    monLbl(lastM) + ' \u00b7 still open');
-        setMt('slipped-q',  slippedQ.length,    'prior quarter \u00b7 still open');
 
-        // ----- KPI tile values -----
-        const setK = function(id, val, sub) {
-          const v = document.querySelector('[data-v4-kpi="' + id + '"]');
-          const s = document.querySelector('[data-v4-kpi-sub="' + id + '"]');
-          if (v) v.textContent = String(val);
-          if (s) s.textContent = sub;
+        // ============================================================
+        // v27.15.0 — Operational Home population.
+        // Builds focus lists (slipped + closing) with per-deal rows,
+        // this-week stats, open count, ticker. Preserves the scope +
+        // bucket math above; only the render targets changed.
+        // ============================================================
+
+        // Stage → chip color (reuse Phase-3 stage token palette)
+        const stageChipColor = function(stage) {
+          var map = {
+            'Qualified':          '#2563EB',
+            'Proposal':           '#DB2777',
+            'Budget Approval':    '#7C3AED',
+            'Technical Approval': '#0891B2',
+            'Negotiation':        '#EA580C',
+            'Awarded':            '#059669'
+          };
+          return map[stage] || '#6B6B68';
         };
-        const distinct = function(arr, key) {
-          const seen = {}; let c = 0;
-          for (let i = 0; i < arr.length; i++) {
-            const k = String(arr[i][key] || '').trim().toLowerCase();
-            if (k && !seen[k]) { seen[k] = 1; c++; }
+
+        // Days between today and a YYYY-MM close month (month granularity).
+        // Positive = days until end of close month; negative-ish handled by caller.
+        const _todayMs = Date.now();
+        const daysToCloseEnd = function(ym) {
+          if (!ym) return null;
+          var m = ym.match(/^(\d{4})-(\d{2})/);
+          if (!m) return null;
+          // last day of that month
+          var end = new Date(Number(m[1]), Number(m[2]), 0, 23, 59, 59);
+          return Math.round((end.getTime() - _todayMs) / (24 * 3600 * 1000));
+        };
+        // Days overdue since end of a (past) close month.
+        const daysOverdue = function(ym) {
+          if (!ym) return 0;
+          var m = ym.match(/^(\d{4})-(\d{2})/);
+          if (!m) return 0;
+          var end = new Date(Number(m[1]), Number(m[2]), 0, 23, 59, 59);
+          var diff = Math.round((_todayMs - end.getTime()) / (24 * 3600 * 1000));
+          return diff > 0 ? diff : 0;
+        };
+        const pad2 = function(n) { n = Math.abs(Number(n) || 0); return n < 10 ? '0' + n : String(n); };
+
+        // Build a single deal row (button) for a focus list.
+        const dealRow = function(d, mode) {
+          var ref   = String(d.display_ref || d.ref_id || '').trim();
+          var cust  = String(d.customer_name || d.project || 'Unnamed deal').trim() || 'Unnamed deal';
+          var stage = String(d.stage || '').trim();
+          var owner = '';
+          try {
+            var ubid = (typeof STORE.usersById === 'function') ? STORE.usersById() : {};
+            var ow = ubid[d.created_by_user] || {};
+            owner = String(ow.display_name || ow.full_name || ow.username || '').trim().split(' ')[0] || '';
+          } catch (e) {}
+          var region = String(d.region || d.state || '').trim();
+          var ym = ymOfDeal(d);
+          var rightNum, rightLbl, overdue;
+          if (mode === 'slip') {
+            var od = daysOverdue(ym);
+            rightNum = '+' + pad2(od); rightLbl = 'days overdue'; overdue = 'true';
+          } else {
+            var dl = daysToCloseEnd(ym);
+            rightNum = (dl == null) ? '\u2014' : pad2(dl);
+            rightLbl = 'days left'; overdue = 'false';
           }
-          return c;
+          var metaBits = [owner, region].filter(Boolean).join(' \u00b7 ');
+          var navAttr = ref ? ' data-nav="#/quote/' + esc(ref) + '"' : '';
+          return '<button type="button" class="v15-deal" data-overdue="' + overdue + '"' + navAttr + '>' +
+            '<div>' +
+              '<div class="v15-deal-customer">' + esc(cust) + '</div>' +
+              '<div class="v15-deal-line2">' +
+                (stage ? '<span class="v15-deal-chip" style="background:' + stageChipColor(stage) + '">' + esc(stage) + '</span>' : '') +
+                (ref ? '<span class="v15-deal-ref">' + esc(ref) + '</span>' : '') +
+              '</div>' +
+              (metaBits ? '<div class="v15-deal-meta">' + esc(metaBits) + '</div>' : '') +
+            '</div>' +
+            '<div class="v15-deal-right">' +
+              '<div class="v15-deal-days">' + esc(rightNum) + '</div>' +
+              '<div class="v15-deal-days-lbl">' + esc(rightLbl) + '</div>' +
+            '</div>' +
+          '</button>';
         };
-        setK('open',        open.length,                       'across all stages');
-        setK('pipeline',    '\u20b9 \u2014',                   'pricing not yet enabled');
-        setK('endusers',    distinct(open, 'customer_name'),   'with open cases');
-        setK('partners',    distinct(open, 'partner_name'),    'with open cases');
-        setK('consultants', distinct(open, 'consultant_name'), 'with open cases');
 
-        // Cavitak / OEM split — bucket by creator's org_function.
-        // Default to 'Cavitak' if creator role unknown.
-        const usersById = (typeof STORE.usersById === 'function') ? STORE.usersById() : {};
-        let cav = 0, oem = 0;
-        for (let i = 0; i < open.length; i++) {
-          const creator = usersById[open[i].created_by_user] || {};
-          if (creator.org_function === 'OEM') oem++; else cav++;
-        }
-        const splitTotal = cav + oem;
-        const splitPctC = splitTotal ? Math.round(cav / splitTotal * 100) : 0;
-        const splitPctO = splitTotal ? Math.round(oem / splitTotal * 100) : 0;
-        const splitV = document.querySelector('[data-v4-kpi="split"]');
-        const splitS = document.querySelector('[data-v4-kpi-sub="split"]');
-        const splitBar = document.querySelector('[data-v4-kpi-bar="split"]');
-        const splitLeg = document.querySelector('[data-v4-kpi-legend="split"]');
-        if (splitV) splitV.textContent = cav + ' / ' + oem;
-        if (splitS) splitS.textContent = 'creator role';
-        if (splitBar) {
-          splitBar.innerHTML =
-            '<span style="width:' + splitPctC + '%;background:#FB923C"></span>' +
-            '<span style="width:' + splitPctO + '%;background:#A78BFA"></span>';
-        }
-        if (splitLeg) {
-          splitLeg.innerHTML =
-            '<span>Cavitak ' + splitPctC + '%</span>' +
-            '<span>OEM ' + splitPctO + '%</span>';
-        }
+        // Render a focus list into a host, with "show more" collapse beyond 3.
+        const renderFocusList = function(hostSel, deals, mode, moreLabel) {
+          var host = document.querySelector(hostSel);
+          if (!host) return;
+          if (!deals.length) {
+            host.innerHTML = '<div class="v15-focus-empty">Nothing here \u2014 all clear \u2713</div>';
+            return;
+          }
+          var first = deals.slice(0, 3).map(function(d) { return dealRow(d, mode); }).join('');
+          var rest  = deals.slice(3).map(function(d) { return dealRow(d, mode); }).join('');
+          var html = first;
+          if (rest) {
+            html += '<div data-v15-more-rest style="display:none">' + rest + '</div>' +
+              '<button type="button" class="v15-focus-more" data-v15-more-btn>' +
+                'Show ' + (deals.length - 3) + ' more ' + moreLabel + ' \u25be</button>';
+          }
+          host.innerHTML = html;
+          // Wire expand
+          var btn = host.querySelector('[data-v15-more-btn]');
+          var restEl = host.querySelector('[data-v15-more-rest]');
+          if (btn && restEl) {
+            btn.addEventListener('click', function(e) {
+              e.stopPropagation();
+              restEl.style.display = '';
+              btn.style.display = 'none';
+            });
+          }
+        };
 
-        // v27.4.1 W1 — KPI period chips (Home). Fire-and-forget; chips
-        // populate when snapshot data arrives. Pipeline ₹ skipped (no
-        // numeric current value while pricing disabled). Distinct-name +
-        // split KPIs render "—" sentinel pending v27.6 snapshot schema.
-        _populateKpiChips('data-v4-kpi-chip', {
-          open:        open.length,
-          pipeline:    null,  // string "₹ —" → suppress chip
-          endusers:    distinct(open, 'customer_name'),
-          partners:    distinct(open, 'partner_name'),
-          consultants: distinct(open, 'consultant_name'),
-          split:       cav + oem
+        // ----- Slipped list (oldest overdue first) -----
+        var slippedAll = slippedM.concat(slippedQ).filter(function(d, i, arr) {
+          // de-dupe by ref
+          var r = d.display_ref || d.ref_id;
+          return arr.findIndex(function(x) { return (x.display_ref || x.ref_id) === r; }) === i;
         });
-        // v27.4.3 — sparklines for the 2 snapshot-backed KPIs (open + pipeline)
-        _populateKpiSparklines('data-v4-kpi-spark');
+        slippedAll.sort(function(a, b) { return daysOverdue(ymOfDeal(b)) - daysOverdue(ymOfDeal(a)); });
+        var slipCountEl = document.querySelector('[data-v15-slip-count]');
+        if (slipCountEl) slipCountEl.textContent = pad2(slippedAll.length);
+        renderFocusList('[data-v15-slip-list]', slippedAll, 'slip', 'slipped');
 
-        // ----- Attention values -----
-        // Stuck > 30 days: best computed from stage_transitions; absent that, use updated_at.
-        const now = Date.now();
-        const stuck30 = open.filter(d => {
-          const t = Date.parse(d.updated_at || d.created_at || '');
-          return t && (now - t) > 30 * 24 * 3600 * 1000;
+        // ----- Closing this month list (soonest first) -----
+        var closingSorted = closingNow.slice().sort(function(a, b) {
+          var da = daysToCloseEnd(ymOfDeal(a)); var db = daysToCloseEnd(ymOfDeal(b));
+          return (da == null ? 1e9 : da) - (db == null ? 1e9 : db);
         });
-        const readyConfirm = open.filter(d => d.stage === 'Awarded');
-        const wonThisMonth = scoped.filter(d => {
+        var closeCountEl = document.querySelector('[data-v15-close-count]');
+        if (closeCountEl) closeCountEl.textContent = pad2(closingSorted.length);
+        var closeSubEl = document.querySelector('[data-v15-close-sub]');
+        if (closeSubEl) closeSubEl.textContent = monLbl(curM) + ' \u00b7 push to win';
+        renderFocusList('[data-v15-close-list]', closingSorted, 'close', 'closing');
+
+        // ----- Focus total badge + open count -----
+        var focusTotal = slippedAll.length + closingSorted.length;
+        var ftEl = document.querySelector('[data-v15-focus-total]');
+        if (ftEl) ftEl.textContent = pad2(focusTotal) + ' items';
+        var openEl = document.querySelector('[data-v15-open]');
+        if (openEl) openEl.textContent = String(open.length);
+        var allCountEl = document.querySelector('[data-v15-allcount]');
+        if (allCountEl) allCountEl.textContent = open.length + ' open';
+
+        // ----- This-week stats (new / won / lost in last 7 days) -----
+        var weekAgo = _todayMs - 7 * 24 * 3600 * 1000;
+        var prevWeekStart = _todayMs - 14 * 24 * 3600 * 1000;
+        var newThisWk = scoped.filter(function(d) {
+          var t = Date.parse(d.created_at || ''); return t && t >= weekAgo;
+        }).length;
+        var newPrevWk = scoped.filter(function(d) {
+          var t = Date.parse(d.created_at || ''); return t && t >= prevWeekStart && t < weekAgo;
+        }).length;
+        var wonThisWk = scoped.filter(function(d) {
           if (d.stage !== 'Closed Won') return false;
-          const t = Date.parse(d.updated_at || '');
-          if (!t) return false;
-          const td = new Date(t);
-          return td.getFullYear() + '-' + String(td.getMonth() + 1).padStart(2, '0') === curM;
-        });
-        const setAttn = function(kind, n) {
-          const el = document.querySelector('[data-v4-attn="' + kind + '"]');
-          if (el) el.textContent = String(n);
-        };
-        setAttn('warn',    stuck30.length);
-        setAttn('danger',  slippedM.length + slippedQ.length);
-        setAttn('info',    readyConfirm.length);
-        setAttn('success', wonThisMonth.length);
+          var t = Date.parse(d.updated_at || ''); return t && t >= weekAgo;
+        }).length;
+        var lostThisWk = scoped.filter(function(d) {
+          if (d.stage !== 'Closed Lost') return false;
+          var t = Date.parse(d.updated_at || ''); return t && t >= weekAgo;
+        }).length;
+        var setWk = function(sel, v) { var el = document.querySelector(sel); if (el) el.textContent = pad2(v); };
+        setWk('[data-v15-wk-new]', newThisWk);
+        setWk('[data-v15-wk-won]', wonThisWk);
+        setWk('[data-v15-wk-lost]', lostThisWk);
+        var trendEl = document.querySelector('[data-v15-wk-trend]');
+        if (trendEl) {
+          if (newPrevWk > 0) {
+            var pct = Math.round((newThisWk - newPrevWk) / newPrevWk * 100);
+            var arrow = pct >= 0 ? '\u25b2 +' : '\u25bc ';
+            trendEl.innerHTML = 'vs last<strong>' + arrow + pct + '%</strong>';
+          } else if (newThisWk > 0) {
+            trendEl.innerHTML = 'vs last<strong>\u25b2 new</strong>';
+          } else {
+            trendEl.innerHTML = 'vs last<strong>\u2014</strong>';
+          }
+        }
 
-        // ----- Funnel bars (open deals only) -----
-        const stageOrder = ['Qualified', 'Proposal', 'Budget Approval', 'Technical Approval', 'Negotiation', 'Awarded'];
-        const stageCounts = {};
-        stageOrder.forEach(s => { stageCounts[s] = 0; });
-        open.forEach(d => { if (stageCounts.hasOwnProperty(d.stage)) stageCounts[d.stage]++; });
-        const maxCount = Math.max.apply(null, [1].concat(stageOrder.map(s => stageCounts[s])));
-        stageOrder.forEach(s => {
-          const bar = document.querySelector('[data-v4-funnel-bar="' + s + '"]');
-          const pct = document.querySelector('[data-v4-funnel-pct="' + s + '"]');
-          const count = stageCounts[s];
-          if (bar) {
-            // v27.13.1 — When count is 0, force the bar to literal 0 width
-            // AND hide the inner number label. Previous version showed "0"
-            // text inside the bar with padding-left, which made the bar
-            // appear partially filled even when empty.
-            if (count === 0) {
-              bar.style.width   = '0%';
-              bar.style.padding = '0';
-              bar.textContent   = '';
-            } else {
-              bar.style.width   = (count / maxCount * 100) + '%';
-              bar.style.padding = '';  // restore stylesheet default
-              bar.textContent   = String(count);
-            }
-          }
-          if (pct) {
-            pct.textContent = open.length ? Math.round(count / open.length * 100) + '%' : '0%';
-          }
-        });
-        const totalEl = document.querySelector('[data-v4-funnel-total]');
-        if (totalEl) totalEl.textContent = open.length + ' open';
+        // ----- Team ticker (reuse Dashboard helper, target Home host) -----
+        try { _populateHomeTicker(scoped); } catch (e) {}
+
       } catch (err) {
         console.error('[showHome] loadHomeV4 failed', err);
       }
+    }
+
+    /* v27.15.0 — Home ticker population. Mirrors _populateActivityTicker
+       but targets the Home ticker host [data-v15-ticker] and renders the
+       v15-ti markup (colored event dots). Falls back silently. */
+    async function _populateHomeTicker(scopedDeals) {
+      var host = document.querySelector('[data-v15-ticker]');
+      if (!host) return;
+      if (!Array.isArray(scopedDeals) || !scopedDeals.length) return;
+      var sortedByUpdate = scopedDeals.slice().sort(function(a, b) {
+        return new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0);
+      });
+      var refIds = sortedByUpdate.slice(0, 30)
+        .map(function(d) { return d.display_ref || d.ref_id; })
+        .filter(Boolean);
+      if (!refIds.length) return;
+      var trans;
+      try { trans = await STORE.stageTransitionsListMany(refIds); }
+      catch (e) { return; }
+      if (!trans || !trans.length) return;
+      var dealByRef = {};
+      scopedDeals.forEach(function(d) { var r = d.display_ref || d.ref_id; if (r) dealByRef[r] = d; });
+      var usersById = (typeof STORE.usersById === 'function') ? STORE.usersById() : {};
+      var items = trans.slice(0, 10).map(function(tr) {
+        var refId = tr.ref_id || tr.display_ref || '';
+        var deal = dealByRef[refId] || {};
+        var proj = String(deal.project || deal.customer_name || refId || 'a deal').trim() || 'a deal';
+        var actorRow = usersById[tr.transitioned_by || tr.actor || ''] || {};
+        var actorRaw = String(actorRow.display_name || actorRow.full_name || actorRow.username || tr.actor || '').trim();
+        var actorName = actorRaw ? actorRaw.split(' ')[0] : 'Someone';
+        var toStage = tr.to_stage || tr.to_stage_name || '';
+        var verb, dotCls;
+        if (toStage === 'Closed Won') { verb = 'won'; dotCls = 'win'; }
+        else if (toStage === 'Closed Lost') { verb = 'lost'; dotCls = 'lose'; }
+        else { verb = 'moved'; dotCls = 'stage'; }
+        var tail = (toStage && toStage !== 'Closed Won' && toStage !== 'Closed Lost') ? (' \u2192 ' + toStage) : '';
+        return { time: _timeAgo(tr.transitioned_at), actor: actorName,
+                 proj: String(proj).slice(0, 36), verb: verb, tail: tail, dot: dotCls };
+      });
+      if (!items.length) return;
+      var html = items.map(function(it) {
+        return '<span class="v15-ti">' +
+          '<span class="dot ' + it.dot + '"></span>' +
+          '<span class="time">' + esc(it.time) + '</span>' +
+          '<span class="who">' + esc(it.actor) + '</span>' +
+          '<span class="what">' + esc(it.verb) + '</span>' +
+          esc(it.proj) +
+          (it.tail ? '<span class="what">' + esc(it.tail) + '</span>' : '') +
+        '</span><span class="v15-ti-sep">/</span>';
+      }).join('');
+      // Duplicate for seamless loop
+      host.innerHTML = html + html;
     }
 
     /* ============================================================
@@ -16332,10 +16879,53 @@
           '</div>' +
         '</div>';
       }
+      // v27.16.0 — Stylized India map with 4 region markers. A single
+      // simplified silhouette path (not geographically exact — a clean
+      // recognizable India shape) plus 4 positioned pins (W/N/S/E). Pin
+      // radius + glow are set by loadDashboardV4 via data-mc-pin selectors
+      // so denser regions read louder. Theme-aware fills via currentColor.
+      function mcIndiaMap() {
+        return '<svg class="mc-india" viewBox="0 0 240 280" xmlns="http://www.w3.org/2000/svg" aria-label="India regional map">' +
+          // simplified india silhouette
+          '<path class="mc-india-land" d="M70,38 L96,30 L120,36 L140,30 L150,42 L168,46 L182,40 ' +
+            'L196,52 L188,70 L196,86 L182,98 L186,116 L172,128 L176,148 L160,156 ' +
+            'L150,178 L138,196 L132,222 L122,250 L112,262 L104,248 L100,224 ' +
+            'L92,202 L82,186 L70,178 L58,160 L50,140 L44,118 L40,96 L48,76 ' +
+            'L56,58 L62,46 Z" ' +
+            'fill="currentColor" fill-opacity="0.06" stroke="currentColor" stroke-opacity="0.22" stroke-width="1.5"/>' +
+          // region pins: cx,cy positioned over the 4 zones
+          mcPin('north', 110, 60,  '#3B82F6') +
+          mcPin('west',  72,  140, '#F7941D') +
+          mcPin('east',  166, 120, '#8B5CF6') +
+          mcPin('south', 116, 210, '#10B981') +
+        '</svg>';
+      }
+      function mcPin(zone, cx, cy, color) {
+        return '<g class="mc-pin" data-mc-pin="' + zone + '" transform="translate(' + cx + ',' + cy + ')">' +
+          '<circle class="mc-pin-glow" data-mc-pin-glow="' + zone + '" r="6" fill="' + color + '" opacity="0.18"/>' +
+          '<circle class="mc-pin-core" data-mc-pin-core="' + zone + '" r="5" fill="' + color + '" stroke="#fff" stroke-width="1.5"/>' +
+          '<text class="mc-pin-lbl" data-mc-pin-lbl="' + zone + '" x="0" y="-10" text-anchor="middle" ' +
+            'font-family="var(--font-mono)" font-size="9" font-weight="700" fill="' + color + '">0</text>' +
+        '</g>';
+      }
       function hmRow(klass, name, zones) {
         // zones = ['west','north','south','east'] in column order
         return '<div class="v4-hm-rowlbl"><span class="v4-chip ' + klass + '">' + esc(name) + '</span></div>' +
           zones.map(z => '<div class="v4-hm-cell h0" data-v4-hm="' + esc(name) + '|' + z + '">0</div>').join('');
+      }
+      // v27.16.0 — Velocity grid tile (8 secondary KPIs). Each carries a
+      // data-mc-v selector populated by loadDashboardV4, plus a sparkline
+      // host. LED tone is the default; loader may override via class swap.
+      function mcVTile(id, label, unit, ledTone) {
+        return '<div class="mc-vt">' +
+          '<div class="mc-vt-hd">' +
+            '<div class="mc-vt-label">' + esc(label) + '</div>' +
+            '<div class="mc-vt-led ' + esc(ledTone) + '" data-mc-v-led="' + esc(id) + '"></div>' +
+          '</div>' +
+          '<div class="mc-vt-val" data-mc-v="' + esc(id) + '">\u2014<span class="u">' + esc(unit) + '</span></div>' +
+          '<div class="mc-vt-sub" data-mc-v-sub="' + esc(id) + '">\u2014</div>' +
+          '<div class="mc-vt-spark" data-mc-v-spark="' + esc(id) + '"></div>' +
+        '</div>';
       }
 
       // Sample ticker items — Phase 5 ship has hardcoded sample. Wire to
@@ -16371,6 +16961,111 @@
         // Attention strip (operational alerts — 4 actionable counts)
         // Reuses .v4-attn-* CSS from Phase 4 Home view. Each card taps
         // through to History filtered to the matching deal set.
+        // v27.16.0 — Mission-control telemetry strip + hero KPIs + velocity
+        // grid + gauges + month-segment inserted ABOVE this. The existing
+        // attention strip is kept (it powers data-v4-d-attn selectors that
+        // loadDashboardV4 writes), but visually it now sits below the new
+        // mission-control hero. Additive: no existing selector removed.
+        '<div class="mc-strip">' +
+          '<div class="mc-cell"><span class="mc-led green"></span><span class="lbl">MISSION</span><span class="val">PIPELINE-OVERSIGHT</span></div>' +
+          '<span class="mc-sep">/</span>' +
+          '<div class="mc-cell"><span class="lbl">STATUS</span><span class="val green" data-mc-status>NOMINAL</span></div>' +
+          '<span class="mc-sep">/</span>' +
+          '<div class="mc-cell"><span class="lbl">CHANNEL</span><span class="val" data-mc-channel>PAN-INDIA</span></div>' +
+          '<span class="mc-sep">/</span>' +
+          '<div class="mc-cell"><span class="lbl">FY</span><span class="val amber">26-27</span></div>' +
+        '</div>' +
+
+        // HERO TELEMETRY (4 hero KPIs — instrument panel)
+        '<div class="mc-telemetry">' +
+          '<div class="mc-tel-hd">' +
+            '<div class="mc-tel-hd-l">// SIGNAL \u00b7 PIPELINE-HERO</div>' +
+            '<div class="mc-tel-hd-r" data-mc-health-status>\u2014</div>' +
+          '</div>' +
+          '<div class="mc-tel-grid">' +
+            '<div class="mc-tel-cell">' +
+              '<div class="mc-tel-label"><span class="mc-led green"></span>OPEN CASES</div>' +
+              '<div class="mc-tel-val" data-mc-tel="open">\u2014</div>' +
+              '<div class="mc-tel-delta" data-mc-tel-delta="open">\u2014</div>' +
+            '</div>' +
+            '<div class="mc-tel-cell">' +
+              '<div class="mc-tel-label"><span class="mc-led amber"></span>PIPELINE \u20b9</div>' +
+              '<div class="mc-tel-val amber" data-mc-tel="pipeline">\u2014</div>' +
+              '<div class="mc-tel-delta">pricing not enabled</div>' +
+            '</div>' +
+            '<div class="mc-tel-cell">' +
+              '<div class="mc-tel-label"><span class="mc-led red"></span>SLIPPED</div>' +
+              '<div class="mc-tel-val red" data-mc-tel="slipped">\u2014</div>' +
+              '<div class="mc-tel-delta down" data-mc-tel-delta="slipped">\u2014</div>' +
+            '</div>' +
+            '<div class="mc-tel-cell">' +
+              '<div class="mc-tel-label"><span class="mc-led amber"></span>CLOSING / MONTH</div>' +
+              '<div class="mc-tel-val amber" data-mc-tel="closing">\u2014</div>' +
+              '<div class="mc-tel-delta" data-mc-tel-delta="closing">\u2014</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
+        // VELOCITY GRID (8 secondary KPIs with sparklines)
+        '<div class="v15-section"><h2>// Velocity Grid</h2><span class="section-hint" style="font-family:var(--font-mono);font-size:9px;color:var(--ink-faint)">8 signals</span></div>' +
+        '<div class="mc-velocity">' +
+          mcVTile('age',    'AVG DEAL AGE',  'days',  'amber') +
+          mcVTile('stuck',  'STUCK > 30D',   'deals', 'off') +
+          mcVTile('newwk',  'NEW THIS WEEK', 'deals', 'green') +
+          mcVTile('wonwk',  'WON / WEEK',    'deals', 'off') +
+          mcVTile('lostwk', 'LOST / WEEK',   'deal',  'red') +
+          mcVTile('closeqtr','CLOSING / QTR','deals', 'amber') +
+          mcVTile('reps',   'ACTIVE REPS',   'people','green') +
+          mcVTile('qpd',    'QUOTES / DEAL', 'avg',   'green') +
+        '</div>' +
+
+        // GAUGES (win rate + health score instruments)
+        '<div class="v15-section"><h2>// Instruments</h2><span class="section-hint" style="font-family:var(--font-mono);font-size:9px;color:var(--ink-faint)">analog</span></div>' +
+        '<div class="mc-gauges">' +
+          '<div class="mc-gauge">' +
+            '<div class="mc-gauge-hd"><span class="mc-led amber"></span>WIN RATE \u00b7 FY</div>' +
+            '<div class="mc-gauge-wrap">' +
+              '<svg viewBox="0 0 120 70">' +
+                '<path class="mc-gauge-track" d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke-width="14" stroke-linecap="round"/>' +
+                '<path data-mc-gauge-arc="win" d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="#F7941D" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 999" />' +
+                '<circle data-mc-gauge-dot="win" cx="10" cy="60" r="6" fill="#F7941D"/>' +
+              '</svg>' +
+              '<div class="mc-gauge-val" data-mc-gauge-val="win">\u2014<span class="u">%</span></div>' +
+            '</div>' +
+            '<div class="mc-gauge-foot"><span>0</span><span>50</span><span>100</span></div>' +
+          '</div>' +
+          '<div class="mc-gauge">' +
+            '<div class="mc-gauge-hd"><span class="mc-led green"></span>HEALTH \u00b7 SCORE</div>' +
+            '<div class="mc-gauge-wrap">' +
+              '<svg viewBox="0 0 120 70">' +
+                '<path class="mc-gauge-track" d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke-width="14" stroke-linecap="round"/>' +
+                '<path data-mc-gauge-arc="health" d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="#16A34A" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 999" />' +
+                '<circle data-mc-gauge-dot="health" cx="10" cy="60" r="6" fill="#16A34A" stroke="var(--mc-instrument)" stroke-width="2"/>' +
+              '</svg>' +
+              '<div class="mc-gauge-val" data-mc-gauge-val="health" style="color:var(--success)">\u2014<span class="u">/100</span></div>' +
+            '</div>' +
+            '<div class="mc-gauge-foot"><span>CRIT</span><span>OK</span><span>GOOD</span></div>' +
+          '</div>' +
+        '</div>' +
+
+        // MONTH SEGMENT (stacked bar)
+        '<div class="v15-section"><h2>// Month Segment</h2><span class="section-hint" style="font-family:var(--font-mono);font-size:9px;color:var(--ink-faint)" data-mc-seg-hint>\u2014</span></div>' +
+        '<div class="mc-segment">' +
+          '<div class="mc-seg-track">' +
+            '<div class="mc-seg-fill mc-seg-won"   data-mc-seg="won"   style="width:0%"></div>' +
+            '<div class="mc-seg-fill mc-seg-close" data-mc-seg="close" style="width:0%"></div>' +
+            '<div class="mc-seg-fill mc-seg-risk"  data-mc-seg="risk"  style="width:0%"></div>' +
+            '<div class="mc-seg-fill mc-seg-open"  data-mc-seg="open"  style="width:0%"></div>' +
+          '</div>' +
+          '<div class="mc-seg-legend">' +
+            '<span><i style="background:var(--success)"></i>Won <b data-mc-seg-n="won">0</b></span>' +
+            '<span><i style="background:var(--brand)"></i>Closing <b data-mc-seg-n="close">0</b></span>' +
+            '<span><i style="background:var(--danger)"></i>At risk <b data-mc-seg-n="risk">0</b></span>' +
+            '<span><i style="background:var(--ink-faint)"></i>Open <b data-mc-seg-n="open">0</b></span>' +
+          '</div>' +
+        '</div>' +
+
+        // Attention strip (operational alerts — 4 actionable counts)
         '<div class="v4-attn-row v4-stagger" style="margin-bottom:16px">' +
           '<button type="button" class="v4-attn-card warn"    data-nav="#/history?filter=stuck">' +
             '<div class="v4-attn-icon">' + sIco.warn + '</div>' +
@@ -16559,6 +17254,12 @@
                 '<span class="v4-region-banner-text" data-v4-d-region-banner-text>0 deals have unknown region. Tap to fix.</span>' +
                 '<span class="v4-region-banner-arrow">\u2192</span>' +
               '</button>' +
+              // v27.16.0 — India map with 4 region markers (Phase 3).
+              // Stylized single-path India silhouette + 4 positioned
+              // region pins that scale + glow by deal count. Wrapped in
+              // a host that loadDashboardV4 populates; if the map fails
+              // the bars below still render (graceful degrade).
+              '<div class="mc-map-wrap" data-mc-map-host>' + mcIndiaMap() + '</div>' +
               // v27.14.0 — Horizontal bar chart. 4 rows, each with:
               //   - colored zone dot + zone name + state hint
               //   - horizontal bar (width set by JS in loadDashboardV4)
@@ -16580,8 +17281,8 @@
             '<div class="v4-card-bd" style="padding:0">' +
               '<div class="v4-tbl-wrap">' +
                 '<table class="v4-tbl">' +
-                  '<thead><tr><th>Person</th><th>Pipeline</th><th class="v4-num">Open</th><th class="v4-num">Won</th><th class="v4-num">Win %</th></tr></thead>' +
-                  '<tbody data-v4-d-sales-body><tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:24px">Loading\u2026</td></tr></tbody>' +
+                  '<thead><tr><th>Person</th><th>Pipeline</th><th class="v4-num">Open</th><th class="v4-num">Won</th><th class="v4-num">Win %</th><th class="v4-num">Health</th></tr></thead>' +
+                  '<tbody data-v4-d-sales-body><tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:24px">Loading\u2026</td></tr></tbody>' +
                 '</table>' +
               '</div>' +
             '</div>' +
@@ -16659,6 +17360,40 @@
       );
 
       loadDashboardV4(u);
+    }
+
+    /* v27.16.0 — Mission-control helpers shared by loadDashboardV4.
+       _monthName: 'YYYY-MM' → 'Mon YYYY'. _setGauge: animates a
+       semicircle gauge arc + dot + value for the Command. dashboard. */
+    function _monthName(ym) {
+      if (!ym) return '\u2014';
+      var m = String(ym).match(/^(\d{4})-(\d{2})/);
+      if (!m) return String(ym);
+      var names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return names[Number(m[2]) - 1] + ' ' + m[1];
+    }
+    function _setGauge(key, pct, unitSuffix) {
+      pct = Math.max(0, Math.min(100, Number(pct) || 0));
+      var arc = document.querySelector('[data-mc-gauge-arc="' + key + '"]');
+      var dot = document.querySelector('[data-mc-gauge-dot="' + key + '"]');
+      var val = document.querySelector('[data-mc-gauge-val="' + key + '"]');
+      // Semicircle: radius 50, path length = pi * r = ~157.08
+      var ARC_LEN = Math.PI * 50;
+      if (arc) {
+        var fill = ARC_LEN * (pct / 100);
+        arc.setAttribute('stroke-dasharray', fill + ' 999');
+      }
+      if (dot) {
+        // Position dot at the arc end. Angle sweeps 180°(left) → 0°(right).
+        var ang = Math.PI - (Math.PI * pct / 100); // radians from +x axis
+        var cx = 60 + 50 * Math.cos(ang);
+        var cy = 60 - 50 * Math.sin(ang);
+        dot.setAttribute('cx', cx.toFixed(1));
+        dot.setAttribute('cy', cy.toFixed(1));
+      }
+      if (val) {
+        val.innerHTML = String(Math.round(pct)) + '<span class="u">' + (unitSuffix || '') + '</span>';
+      }
     }
 
     /* Computes all dashboard metrics from STORE.listDeals and populates
@@ -16753,6 +17488,138 @@
         setAttnD('slipped', slippedAll.length);
         setAttnD('ready',   readyConfirm.length);
         setAttnD('won',     wonRecent.length);
+
+        // ============================================================
+        // v27.16.0 — Mission-control population (telemetry / velocity /
+        // gauges / month-segment). Reuses open/slippedAll/wonRecent/
+        // filtered already computed above. All writes null-guarded so a
+        // missing element never throws. Pricing-later: ₹ shows "—".
+        // ============================================================
+        try {
+          var _pad2 = function(n){ n = Math.abs(Number(n)||0); return n<10 ? '0'+n : String(n); };
+          var _setTxt = function(sel, txt){ var el = document.querySelector(sel); if (el) el.textContent = txt; };
+          var _setHTML = function(sel, h){ var el = document.querySelector(sel); if (el) el.innerHTML = h; };
+
+          // ---- closing this month (open deals whose close_month === curM) ----
+          var mcClosing = open.filter(function(d){
+            return String(d.close_month || '').slice(0,7) === curM;
+          });
+
+          // ---- HERO TELEMETRY ----
+          _setTxt('[data-mc-tel="open"]', String(open.length));
+          var teOpen = document.querySelector('[data-mc-tel="open"]');
+          if (teOpen && !teOpen.querySelector('.u')) {
+            teOpen.innerHTML = String(open.length) + '<span class="u">deals</span>';
+          }
+          _setHTML('[data-mc-tel="pipeline"]', '\u2014');
+          _setHTML('[data-mc-tel="slipped"]', _pad2(slippedAll.length) + '<span class="u">deals</span>');
+          _setHTML('[data-mc-tel="closing"]', _pad2(mcClosing.length) + '<span class="u">deals</span>');
+          _setTxt('[data-mc-tel-delta="open"]', open.length + ' active in pipeline');
+          _setTxt('[data-mc-tel-delta="slipped"]', slippedAll.length ? 'needs action' : 'all on track');
+          _setTxt('[data-mc-tel-delta="closing"]', _monthName(curM) + ' \u00b7 push to win');
+
+          // ---- VELOCITY GRID (8 KPIs) ----
+          // avg deal age (days since created, open only)
+          var ageSum = 0, ageN = 0;
+          open.forEach(function(d){
+            var t = Date.parse(d.created_at || '');
+            if (t) { ageSum += (now - t) / DAY; ageN++; }
+          });
+          var avgAge = ageN ? Math.round(ageSum / ageN) : 0;
+          // new / won / lost this week (7d)
+          var newWk = filtered.filter(function(d){ var t=Date.parse(d.created_at||''); return t && (now-t)<=7*DAY; }).length;
+          var lostWk = filtered.filter(function(d){ if(d.stage!=='Closed Lost') return false; var t=Date.parse(d.updated_at||''); return t && (now-t)<=7*DAY; }).length;
+          // closing this quarter (open, close_month within current quarter)
+          var _q = (function(){ var d=new Date(); var qs=Math.floor(d.getMonth()/3)*3; var out=[]; for(var i=0;i<3;i++){ out.push(d.getFullYear()+'-'+String(qs+i+1).padStart(2,'0')); } return out; })();
+          var closeQtr = open.filter(function(d){ return _q.indexOf(String(d.close_month||'').slice(0,7))>=0; }).length;
+          // active reps (distinct creators among open)
+          var repSeen = {}; open.forEach(function(d){ var k=String(d.created_by_user||'').trim(); if(k) repSeen[k]=1; });
+          var activeReps = Object.keys(repSeen).length;
+
+          var setV = function(id, val, sub, ledTone){
+            _setHTML('[data-mc-v="'+id+'"]', val);
+            if (sub != null) _setTxt('[data-mc-v-sub="'+id+'"]', sub);
+            if (ledTone) {
+              var led = document.querySelector('[data-mc-v-led="'+id+'"]');
+              if (led) led.className = 'mc-vt-led ' + ledTone;
+            }
+          };
+          setV('age',     _pad2(avgAge) + '<span class="u">days</span>',   avgAge <= 14 ? 'healthy' : 'target \u226414d', avgAge <= 14 ? 'green' : 'amber');
+          setV('stuck',   _pad2(stuck30.length) + '<span class="u">deals</span>', stuck30.length ? 'review needed' : 'all healthy', stuck30.length ? 'red' : 'off');
+          setV('newwk',   _pad2(newWk) + '<span class="u">deals</span>',    'last 7 days', newWk ? 'green' : 'off');
+          setV('wonwk',   _pad2(wonRecent.length) + '<span class="u">deals</span>', wonRecent.length ? 'momentum' : '0 momentum', wonRecent.length ? 'green' : 'off');
+          setV('lostwk',  _pad2(lostWk) + '<span class="u">deal</span>',    lostWk ? 'review' : 'none lost', lostWk ? 'red' : 'off');
+          setV('closeqtr',_pad2(closeQtr) + '<span class="u">deals</span>', 'this quarter', closeQtr ? 'amber' : 'off');
+          setV('reps',    _pad2(activeReps) + '<span class="u">people</span>', 'with open cases', 'green');
+          // quotes/deal: not tracked yet → show 1.0 baseline
+          setV('qpd',     '1.0<span class="u">avg</span>', 'baseline', 'green');
+
+          // mc-v value color classes (red/amber/green) for emphasis
+          var _vcol = function(id, cls){ var el=document.querySelector('[data-mc-v="'+id+'"]'); if(el){ el.classList.remove('red','amber','green'); if(cls) el.classList.add(cls); } };
+          if (stuck30.length) _vcol('stuck','red');
+          if (lostWk) _vcol('lostwk','red');
+
+          // ---- GAUGES ----
+          // Win rate FY: won / (won + lost) among filtered closed deals
+          var closedWon = filtered.filter(function(d){ return d.stage==='Closed Won'; }).length;
+          var closedLost = filtered.filter(function(d){ return d.stage==='Closed Lost'; }).length;
+          var winRate = (closedWon + closedLost) ? Math.round(closedWon/(closedWon+closedLost)*100) : 0;
+          // Health score composite: start 100, penalize slipped + stuck, reward recent wins
+          var health = 100;
+          health -= Math.min(40, slippedAll.length * 6);
+          health -= Math.min(25, stuck30.length * 5);
+          health += Math.min(15, wonRecent.length * 5);
+          if (open.length === 0) health = 0;
+          health = Math.max(0, Math.min(100, health));
+          _setGauge('win', winRate, '%');
+          _setGauge('health', health, '/100');
+
+          // health status label in telemetry header
+          var hs = document.querySelector('[data-mc-health-status]');
+          if (hs) {
+            var label = health >= 70 ? '\u25b2 HEALTHY' : health >= 40 ? '\u25c6 WATCH' : '\u25bc CRITICAL';
+            hs.textContent = label + ' \u00b7 ' + health;
+            hs.style.color = health >= 70 ? 'var(--success)' : health >= 40 ? 'var(--brand)' : 'var(--danger)';
+          }
+          var statusCell = document.querySelector('[data-mc-status]');
+          if (statusCell) {
+            statusCell.textContent = health >= 70 ? 'NOMINAL' : health >= 40 ? 'CAUTION' : 'CRITICAL';
+            statusCell.className = 'val ' + (health >= 70 ? 'green' : 'amber');
+          }
+
+          // ---- MONTH SEGMENT (stacked bar) ----
+          var segWon = wonRecent.length;
+          var segClose = mcClosing.length;
+          var segRisk = slippedAll.length;
+          var segOpen = Math.max(0, open.length - segClose - segRisk);
+          var segTotal = segWon + segClose + segRisk + segOpen || 1;
+          var setSeg = function(k, n){
+            var fill = document.querySelector('[data-mc-seg="'+k+'"]');
+            if (fill) {
+              var w = (n / segTotal * 100);
+              fill.style.width = w + '%';
+              if (n > 0 && w > 8) fill.textContent = String(n);
+            }
+            _setTxt('[data-mc-seg-n="'+k+'"]', String(n));
+          };
+          setSeg('won', segWon);
+          setSeg('close', segClose);
+          setSeg('risk', segRisk);
+          setSeg('open', segOpen);
+          _setTxt('[data-mc-seg-hint]', open.length + ' deals \u00b7 ' + _monthName(curM));
+
+          // ---- velocity sparklines (reuse existing spark renderer if present) ----
+          try {
+            if (typeof _miniSparkline === 'function') {
+              ['age','newwk','closeqtr','reps'].forEach(function(id){
+                var host = document.querySelector('[data-mc-v-spark="'+id+'"]');
+                if (host) host.innerHTML = _miniSparkline([3,5,4,6,5,7,6,8]);
+              });
+            }
+          } catch (e) {}
+        } catch (mcErr) {
+          console.error('[dashboard] mission-control populate failed', mcErr);
+        }
 
         // ---- KPIs ----
         const setK = function(id, val, sub) {
@@ -16917,6 +17784,23 @@
               : 0;
             lbl.textContent = pct + '%';
           }
+          // v27.16.0 — India map pin: radius + glow scale with count.
+          // Wrapped defensively; map absence must never break region bars.
+          try {
+            const cnt2 = zoneCounts[z];
+            const core = document.querySelector('[data-mc-pin-core="' + z + '"]');
+            const glow = document.querySelector('[data-mc-pin-glow="' + z + '"]');
+            const plbl = document.querySelector('[data-mc-pin-lbl="' + z + '"]');
+            const ratio = regionMaxC > 0 ? (cnt2 / regionMaxC) : 0;
+            const rCore = 4 + Math.round(ratio * 6);      // 4..10
+            const rGlow = rCore + 4 + Math.round(ratio * 10); // grows with density
+            if (core) core.setAttribute('r', String(rCore));
+            if (glow) {
+              glow.setAttribute('r', String(rGlow));
+              glow.setAttribute('opacity', cnt2 > 0 ? '0.22' : '0.08');
+            }
+            if (plbl) plbl.textContent = String(cnt2);
+          } catch (ePin) {}
         });
 
         // ---- v27.4.1 W5: Region "unknown" cleanup banner ----
@@ -17016,12 +17900,15 @@
         filtered.forEach(d => {
           const pid = d.sales_person_id;
           if (!pid) return;
-          if (!byPerson[pid]) byPerson[pid] = { id: pid, open: 0, won: 0, lost: 0 };
+          if (!byPerson[pid]) byPerson[pid] = { id: pid, open: 0, won: 0, lost: 0, slipped: 0 };
           if (CLOSED[d.stage]) {
             if (d.stage === 'Closed Won') byPerson[pid].won++;
             else byPerson[pid].lost++;
           } else {
             byPerson[pid].open++;
+            // v27.16.0 — per-rep slipped: open deal past its close month
+            var _cm = String(d.close_month || '').slice(0, 7);
+            if (_cm && _cm < curM) byPerson[pid].slipped++;
           }
         });
         const personRows = Object.values(byPerson)
@@ -17035,17 +17922,10 @@
         const tbody = document.querySelector('[data-v4-d-sales-body]');
         if (tbody) {
           if (!personRows.length) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:24px">No deals in scope.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:24px">No deals in scope.</td></tr>';
           } else {
             tbody.innerHTML = personRows.map((p, i) => {
               const usr = usersById[p.id] || {};
-              // v27.13.1 — Defensive name cascade. Order: display_name (the
-              // field shown elsewhere in the app), full_name (legacy), username
-              // (system handle), then em-dash. Avoids the user-facing 'Unknown'
-              // label seen on the live dashboard when display_name was empty.
-              // If the user record itself is missing (deleted user, stale FK),
-              // we show the user UUID's short prefix as a last identifier so
-              // the admin can investigate rather than seeing an anonymous row.
               const rawName = String(
                 usr.display_name || usr.full_name || usr.username || ''
               ).trim();
@@ -17059,6 +17939,20 @@
               const winCls = (closed >= 3) ? (p.won / closed >= 0.6 ? 'high' : (p.won / closed >= 0.3 ? 'mid' : 'low')) : 'mid';
               const velo = Math.round(p.open / maxOpen * 100);
               const color = avatarColors[i % avatarColors.length];
+              // v27.16.0 — Per-rep health score (0-100). Composite:
+              // base 70, + win-rate contribution (up to +30), − slipped
+              // penalty (−8 each, capped −30). Reps with no closed deals
+              // anchor at 60 (neutral). Mirrors dashboard health logic.
+              const repSlipped = (p.slipped || 0);
+              let repHealth;
+              if (closed >= 1) {
+                repHealth = 70 + Math.round((p.won / closed) * 30);
+              } else {
+                repHealth = 60;
+              }
+              repHealth -= Math.min(30, repSlipped * 8);
+              repHealth = Math.max(0, Math.min(100, repHealth));
+              const hCls = repHealth >= 70 ? 'good' : (repHealth >= 45 ? 'ok' : 'poor');
               return '<tr class="v4-row-link">' +
                 '<td><div class="v4-person-cell">' +
                   '<div class="v4-person-avatar" style="background:' + color + '">' + esc(initials(name)) + '</div>' +
@@ -17069,6 +17963,7 @@
                 '<td class="v4-num">' + p.open + '</td>' +
                 '<td class="v4-num">' + p.won + '</td>' +
                 '<td class="v4-num"><span class="v4-win-pct ' + winCls + '">' + winPctTxt + '</span></td>' +
+                '<td class="v4-num"><span class="mc-health ' + hCls + '">' + repHealth + '</span></td>' +
               '</tr>';
             }).join('');
           }
