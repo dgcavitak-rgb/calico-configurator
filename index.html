@@ -1525,7 +1525,7 @@
       --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px;
       --s-5: 20px; --s-6: 24px; --s-7: 32px; --s-8: 40px;
       --s-9: 48px; --s-10: 64px; --s-11: 80px; --s-12: 96px;
-      --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-pill: 999px;
+      --r-xs: 8px; --r-sm: 12px; --r-md: 16px; --r-lg: 24px; --r-pill: 999px;
       --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
       --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
       --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
@@ -1594,6 +1594,20 @@
       --shadow-sheet: 0 -12px 48px rgba(15,14,12,0.18);
       --orb-1: radial-gradient(circle, rgba(247,148,29,0.07) 0%, transparent 70%);
       --orb-2: radial-gradient(circle, rgba(232,115,28,0.05) 0%, transparent 70%);
+      /* v27.21.0 — glass aesthetic tokens (light) */
+      --mesh-bg:
+        radial-gradient(42% 50% at 10% 6%, rgba(247,148,29,0.16), transparent 60%),
+        radial-gradient(46% 56% at 90% 10%, rgba(124,58,237,0.14), transparent 60%),
+        radial-gradient(52% 60% at 78% 96%, rgba(6,182,212,0.12), transparent 62%),
+        radial-gradient(46% 56% at 16% 94%, rgba(236,72,153,0.10), transparent 60%);
+      --mesh-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      --mesh-noise-op: 0.02;
+      --glass-bg: rgba(255,255,255,0.55);
+      --glass-brd: rgba(255,255,255,0.85);
+      --glass-hi: rgba(255,255,255,0.95);
+      --glass-bg-solid: rgba(255,255,255,0.88);
+      --glass-shadow: 0 20px 50px -24px rgba(40,50,110,0.30);
+      --glass-blur: 24px;
       --success: #15803D; --warning: #B45309; --danger: #B91C1C; --info: #1E40AF;
       --success-soft: rgba(21,128,61,0.10); --warning-soft: rgba(180,83,9,0.10);
       --danger-soft: rgba(185,28,28,0.10); --info-soft: rgba(30,64,175,0.08);
@@ -1611,9 +1625,9 @@
       --sh-card: var(--shadow-card); --sh-pop: var(--shadow-card); --sh-nav: var(--shadow-topbar);
     }
     html[data-app="tvone"][data-theme="dark"] {
-      --bg-page: #0E0D0B; --bg-topbar: rgba(20,18,15,0.85); --bg-card: #1A1815; --bg-card-hover: #211F1B;
-      --bg-input: #161413; --bg-input-focus: #1F1D1A; --bg-elevated: #1A1815; --bg-subtle: #181613;
-      --border-soft: rgba(255,255,255,0.05); --border-mid: rgba(255,255,255,0.10); --border-strong: rgba(255,255,255,0.18);
+      --bg-page: #15140F; --bg-topbar: rgba(28,26,22,0.85); --bg-card: #201E19; --bg-card-hover: #27241F;
+      --bg-input: #1C1A16; --bg-input-focus: #24221D; --bg-elevated: #201E19; --bg-subtle: #1B1915;
+      --border-soft: rgba(255,255,255,0.05); --border-mid: rgba(255,255,255,0.09); --border-strong: rgba(255,255,255,0.16);
       --border-brand: rgba(247,169,61,0.45);
       --ink-strong: #F5F4F1; --ink-mid: #C2C0B7; --ink-soft: #8A887E; --ink-faint: #5A584F;
       --ink-on-brand: #0E0D0B; --ink-brand: #F7A93D;
@@ -1626,6 +1640,20 @@
       --shadow-sheet: 0 -12px 48px rgba(0,0,0,0.50);
       --orb-1: radial-gradient(circle, rgba(247,148,29,0.06) 0%, transparent 70%);
       --orb-2: radial-gradient(circle, rgba(232,115,28,0.04) 0%, transparent 70%);
+      /* v27.21.0 — glass aesthetic tokens (dark) */
+      --mesh-bg:
+        radial-gradient(42% 50% at 10% 6%, rgba(247,148,29,0.20), transparent 60%),
+        radial-gradient(46% 56% at 90% 10%, rgba(124,58,237,0.22), transparent 60%),
+        radial-gradient(52% 60% at 78% 96%, rgba(6,182,212,0.16), transparent 62%),
+        radial-gradient(46% 56% at 16% 94%, rgba(236,72,153,0.14), transparent 60%);
+      --mesh-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      --mesh-noise-op: 0.03;
+      --glass-bg: rgba(255,255,255,0.055);
+      --glass-brd: rgba(255,255,255,0.10);
+      --glass-hi: rgba(255,255,255,0.16);
+      --glass-bg-solid: rgba(32,30,25,0.82);
+      --glass-shadow: 0 20px 50px -22px rgba(0,0,0,0.65);
+      --glass-blur: 26px;
       --success: #4ADE80; --warning: #FBBF24; --danger: #FB7185; --info: #7DD3FC;
       --success-soft: rgba(74,222,128,0.15); --warning-soft: rgba(251,191,36,0.15);
       --danger-soft: rgba(251,113,133,0.15); --info-soft: rgba(125,211,252,0.15);
@@ -1648,28 +1676,27 @@
       font-family: var(--font-system); font-size: var(--t-body); line-height: var(--lh-body);
       color: var(--ink-strong); background: var(--bg-page);
       transition: background var(--dur-slow) var(--ease-out), color var(--dur-slow) var(--ease-out); }
+    /* v27.21.0 — Glass aesthetic: vivid gradient-mesh backdrop. Replaces the
+       2-orb ambient with a richer multi-stop mesh (amber/violet/cyan/pink)
+       that the frosted-glass cards blur over. Fixed + GPU-composited; the
+       blur cost lives on the cards, not here. */
     body { margin: 0; min-height: 100vh; min-height: 100dvh;
       background: var(--bg-page); color: var(--ink-strong);
       letter-spacing: var(--ls-body);
       position: relative; overflow-x: hidden;
       overscroll-behavior-y: contain; }
 
-    /* Ambient orbs — calm, subtle */
-    body::before, body::after {
-      content: ''; position: fixed; pointer-events: none; z-index: 0;
-      border-radius: 50%; filter: blur(60px);
-    }
     body::before {
-      top: -15vh; left: -15vw; width: 50vw; height: 50vw; max-width: 500px; max-height: 500px;
-      background: var(--orb-1); animation: orb1 var(--dur-ambient) ease-in-out infinite;
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: var(--mesh-bg);
     }
     body::after {
-      bottom: -25vh; right: -20vw; width: 60vw; height: 60vw; max-width: 600px; max-height: 600px;
-      background: var(--orb-2); animation: orb2 calc(var(--dur-ambient) * 1.4) ease-in-out infinite;
-      animation-delay: -5s;
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: var(--mesh-noise);
+      opacity: var(--mesh-noise-op, 0.025);
     }
-    @keyframes orb1 { 0%,100% { transform: translate(0,0); opacity: 0.7; } 50% { transform: translate(4vw,3vh); opacity: 1; } }
-    @keyframes orb2 { 0%,100% { transform: translate(0,0); opacity: 0.7; } 50% { transform: translate(-3vw,-2vh); opacity: 1; } }
+    @keyframes orb1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(4vw,3vh); } }
+    @keyframes orb2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-3vw,-2vh); } }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
@@ -4486,19 +4513,50 @@
     /* Section label (mono, code-comment style) */
     .v15-section {
       display: flex; align-items: center; justify-content: space-between;
-      margin: var(--s-5) 0 var(--s-3);
+      margin: var(--s-6) 0 var(--s-3);
     }
     .v15-section h2 {
-      margin: 0; font-family: var(--font-mono);
-      font-size: 10px; font-weight: 700; letter-spacing: 0.16em;
-      text-transform: uppercase; color: var(--ink-soft);
+      margin: 0; font-family: var(--font-display);
+      font-size: 13px; font-weight: 600; letter-spacing: -0.005em;
+      text-transform: none; color: var(--ink-mid);
     }
     .v15-section .v15-badge {
-      font-family: var(--font-mono); font-size: 10px;
-      background: var(--brand); color: #FFFFFF;
-      padding: 3px 8px; border-radius: 4px; font-weight: 700;
-      letter-spacing: 0.04em;
+      font-family: var(--font-display); font-size: 11px;
+      background: var(--accent-soft); color: var(--ink-brand);
+      padding: 3px 10px; border-radius: var(--r-pill); font-weight: 700;
+      letter-spacing: 0;
     }
+    /* v27.20.1 — Calmer report group dividers. Softer than the old hard amber
+       rule: display-font heading, gentle fading underline, generous space. */
+    .v15-section.v15-group {
+      margin: var(--s-8, 40px) 0 var(--s-4);
+      border-bottom: 1px solid var(--border-soft);
+      padding-bottom: var(--s-3);
+    }
+    .v15-section.v15-group h2 {
+      font-size: 17px; font-weight: 700; letter-spacing: -0.015em;
+      color: var(--ink-strong); font-family: var(--font-display);
+    }
+    .v15-section.v15-group:first-of-type { margin-top: var(--s-5); }
+    /* In-grid group divider (spans full grid width) — softened */
+    .v4-group-div {
+      display: flex; align-items: baseline; gap: 12px;
+      border-bottom: 1px solid var(--border-soft);
+      padding: 28px 0 10px; margin-top: 4px;
+    }
+    .v4-group-div span {
+      font-family: var(--font-display); font-size: 17px; font-weight: 700;
+      letter-spacing: -0.015em; text-transform: none; color: var(--ink-strong);
+    }
+    .v4-group-div small {
+      font-family: var(--font-display); font-size: 12px; color: var(--ink-soft);
+      letter-spacing: 0; font-weight: 500;
+    }
+    /* v27.20.0 — PEOPLE charts are now the interactive control (tap a bar to
+       filter the whole dashboard). The old per-section tables duplicated the
+       chart data, so they're hidden. Data still renders into them (harmless)
+       in case we want a toggle later. */
+    .v4-dup-table { display: none; }
 
     /* Focus block (slipped / closing) */
     .v15-focus {
@@ -4892,30 +4950,34 @@
     }
     .v4-kpi {
       position: relative;
-      border-radius: var(--r-md);
-      padding: var(--s-4);
-      color: #fff; overflow: hidden;
+      border-radius: var(--r-lg);
+      padding: var(--s-5);
+      color: var(--ink-strong); overflow: hidden;
       min-height: 138px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+      border: 1px solid var(--glass-brd);
+      border-left: 4px solid var(--ink-faint);
+      box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
       display: flex; flex-direction: column; justify-content: space-between;
       cursor: pointer;
       transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) ease;
     }
     .v4-kpi:hover {
       transform: translateY(-3px);
-      box-shadow: 0 8px 24px -8px rgba(15,14,12,0.18);
+      box-shadow: 0 14px 36px -12px rgba(0,0,0,0.4), inset 0 1px 0 var(--glass-hi);
     }
-    .v4-kpi.g1 { background: var(--kpi-grad-1); }
-    .v4-kpi.g2 { background: var(--kpi-grad-2); }
-    .v4-kpi.g3 { background: var(--kpi-grad-3); }
-    .v4-kpi.g4 { background: var(--kpi-grad-4); }
-    .v4-kpi.g5 { background: var(--kpi-grad-5); }
-    .v4-kpi.g6 { background: var(--kpi-grad-6); }
-    .v4-kpi::after {
-      content: ''; position: absolute;
-      top: 0; right: 0; width: 100px; height: 100px;
-      background: radial-gradient(circle at top right, rgba(255,255,255,0.18), transparent 70%);
-      pointer-events: none;
-    }
+    /* v27.17.2 — Uniform white cards. Gradient fills replaced with a colored
+       left-accent + colored icon; text is theme ink. Matches the rest of the
+       dashboard (no dark/colored islands). */
+    .v4-kpi.g1 { border-left-color: #F7941D; }
+    .v4-kpi.g2 { border-left-color: #4F46E5; }
+    .v4-kpi.g3 { border-left-color: #15803D; }
+    .v4-kpi.g4 { border-left-color: #475569; }
+    .v4-kpi.g5 { border-left-color: #DB2777; }
+    .v4-kpi.g6 { border-left-color: #0891B2; }
+    .v4-kpi::after { content: none; }
     .v4-kpi-top {
       display: flex; justify-content: space-between; align-items: flex-start;
       gap: var(--s-2); position: relative;
@@ -4923,15 +4985,25 @@
     .v4-kpi .v4-kpi-label {
       font-size: 10.5px; font-weight: 700;
       text-transform: uppercase; letter-spacing: 0.07em;
-      opacity: 0.88;
+      color: var(--ink-soft);
     }
     .v4-kpi .v4-kpi-ico {
       width: 22px; height: 22px;
       border-radius: var(--r-xs);
-      background: rgba(255,255,255,0.16);
+      background: var(--bg-subtle);
+      color: var(--ink-strong);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
+    .v4-kpi.g1 .v4-kpi-ico { background: rgba(247,148,29,0.14); color: #B45309; }
+    .v4-kpi.g2 .v4-kpi-ico { background: rgba(79,70,229,0.14); color: #4F46E5; }
+    .v4-kpi.g3 .v4-kpi-ico { background: rgba(21,128,61,0.14); color: #15803D; }
+    .v4-kpi.g4 .v4-kpi-ico { background: rgba(71,85,105,0.16); color: #475569; }
+    .v4-kpi.g5 .v4-kpi-ico { background: rgba(219,39,119,0.14); color: #DB2777; }
+    .v4-kpi.g6 .v4-kpi-ico { background: rgba(8,145,178,0.14); color: #0891B2; }
+    html[data-theme="dark"] .v4-kpi.g2 .v4-kpi-ico { color: #A5B4FC; }
+    html[data-theme="dark"] .v4-kpi.g3 .v4-kpi-ico { color: #4ADE80; }
+    html[data-theme="dark"] .v4-kpi.g4 .v4-kpi-ico { color: #94A3B8; }
     .v4-kpi .v4-kpi-ico svg { width: 12px; height: 12px; }
     .v4-kpi .v4-kpi-value-row {
       display: flex; align-items: baseline; gap: var(--s-2);
@@ -4940,11 +5012,11 @@
     .v4-kpi .v4-kpi-value {
       font-family: var(--font-display);
       font-size: 30px; font-weight: 800;
-      letter-spacing: -0.035em;
+      letter-spacing: -0.035em; color: var(--ink-strong);
       font-variant-numeric: tabular-nums; line-height: 1.05;
     }
     .v4-kpi .v4-kpi-sub {
-      font-size: 10.5px; opacity: 0.78;
+      font-size: 10.5px; color: var(--ink-soft);
       font-weight: 500; margin-top: 4px;
     }
     .v4-kpi-spark { margin-top: var(--s-3); }
@@ -4960,36 +5032,37 @@
       border-radius: 999px;
       font-size: 11px; font-weight: 700;
       letter-spacing: 0.01em;
-      background: rgba(255,255,255,0.18);
-      color: rgba(255,255,255,0.96);
-      backdrop-filter: blur(4px);
+      background: var(--bg-subtle);
+      color: var(--ink-soft);
       max-width: 100%;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .v4-kpi-chip[data-tone="good"] {
-      background: rgba(34,197,94,0.32);
-      color: #ECFDF5;
+      background: rgba(34,197,94,0.16);
+      color: #15803D;
     }
+    html[data-theme="dark"] .v4-kpi-chip[data-tone="good"] { color: #4ADE80; }
     .v4-kpi-chip[data-tone="bad"] {
-      background: rgba(239,68,68,0.32);
-      color: #FEF2F2;
+      background: rgba(239,68,68,0.16);
+      color: #B91C1C;
     }
+    html[data-theme="dark"] .v4-kpi-chip[data-tone="bad"] { color: #FB7185; }
     .v4-kpi-chip[data-tone="neutral"] {
-      background: rgba(255,255,255,0.18);
-      color: rgba(255,255,255,0.92);
+      background: var(--bg-subtle);
+      color: var(--ink-soft);
     }
     .v4-kpi-chip[data-tone="unknown"] {
-      background: rgba(255,255,255,0.10);
-      color: rgba(255,255,255,0.65);
+      background: var(--bg-subtle);
+      color: var(--ink-faint);
       font-weight: 600;
     }
     .v4-kpi .v4-split-bar {
       display: flex; height: 6px;
       border-radius: var(--r-pill);
       overflow: hidden; margin-top: var(--s-3);
-      background: rgba(255, 255, 255, 0.15);
+      background: var(--bg-track, var(--bg-subtle));
     }
     .v4-kpi .v4-split-bar > span {
       display: block; height: 100%;
@@ -4999,27 +5072,38 @@
     .v4-kpi .v4-split-legend {
       display: flex; justify-content: space-between;
       font-size: 10px; font-weight: 700;
-      margin-top: var(--s-2); opacity: 0.92;
+      margin-top: var(--s-2); color: var(--ink-soft);
       letter-spacing: 0.02em;
     }
 
     /* Card wrapper (for funnel) */
     .v4-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-soft);
-      border-radius: var(--r-md);
-      box-shadow: var(--shadow-card);
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+      border: 1px solid var(--glass-brd);
+      border-radius: var(--r-lg);
+      box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
       overflow: hidden;
+      position: relative;
+    }
+    .v4-card::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--glass-hi), transparent);
+      pointer-events: none;
+    }
+    /* Chart cards get a more opaque backing so ECharts stays crisp on glass */
+    .v4-card:has(.dash-chart-canvas), .v4-card:has([id^="chart-"]) {
+      background: var(--glass-bg-solid);
     }
     .v4-card-hd {
-      padding: var(--s-4) var(--s-5);
-      border-bottom: 1px solid var(--border-soft);
+      padding: var(--s-5) var(--s-5) var(--s-3);
       display: flex; align-items: center; justify-content: space-between;
       gap: var(--s-3); flex-wrap: wrap;
     }
     .v4-card-hd h3 {
       font-family: var(--font-display);
-      font-size: 14px; font-weight: 700;
+      font-size: 15px; font-weight: 700;
       letter-spacing: -0.01em;
       margin: 0;
     }
@@ -5027,7 +5111,7 @@
       font-size: 11px; color: var(--ink-soft);
       font-weight: 500;
     }
-    .v4-card-bd { padding: var(--s-5); }
+    .v4-card-bd { padding: var(--s-3) var(--s-5) var(--s-5); }
 
     /* Stage funnel */
     .v4-funnel { display: flex; flex-direction: column; gap: var(--s-2); }
@@ -5294,10 +5378,10 @@
     .v4-dash-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: var(--s-4);
+      gap: var(--s-5);
     }
     @media (min-width: 1024px) {
-      .v4-dash-grid { grid-template-columns: repeat(12, 1fr); gap: var(--s-5); }
+      .v4-dash-grid { grid-template-columns: repeat(12, 1fr); gap: var(--s-6); }
       .v4-col-4  { grid-column: span 4; }
       .v4-col-6  { grid-column: span 6; }
       .v4-col-12 { grid-column: span 12; }
@@ -5758,12 +5842,15 @@
 
     /* Mission-control telemetry strip */
     .mc-strip {
-      background: var(--bg-sunk, var(--bg-subtle));
-      border: 1px solid var(--border-soft);
-      border-radius: var(--r-md);
-      padding: 8px 12px; margin-bottom: var(--s-3);
-      display: flex; align-items: center; gap: 10px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+      border: 1px solid var(--glass-brd);
+      border-radius: var(--r-lg);
+      padding: 12px 16px; margin-bottom: var(--s-4);
+      display: flex; align-items: center; gap: 12px;
       overflow-x: auto; scrollbar-width: none;
+      box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
     }
     .mc-strip::-webkit-scrollbar { display: none; }
     .mc-cell {
@@ -5785,16 +5872,18 @@
 
     /* HERO TELEMETRY (4-up instrument grid) */
     .mc-telemetry {
-      background: var(--mc-instrument);
-      border: 1px solid var(--border-mid);
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+      border: 1px solid var(--glass-brd);
       border-radius: var(--r-lg);
       overflow: hidden; position: relative;
-      margin-bottom: var(--s-3);
-      box-shadow: var(--mc-glow);
+      margin-bottom: var(--s-4);
+      box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
     }
     .mc-telemetry::after {
-      content: ''; position: absolute; inset: 0; pointer-events: none;
-      background-image: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, var(--mc-scanline) 2px, var(--mc-scanline) 3px);
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; pointer-events: none;
+      background: linear-gradient(90deg, transparent, var(--glass-hi), transparent);
     }
     .mc-tel-hd {
       padding: 9px 12px; display: flex; align-items: center; justify-content: space-between;
@@ -5823,28 +5912,32 @@
     .mc-tel-delta.down { color: var(--danger); }
 
     /* VELOCITY GRID (8 KPI tiles w/ sparkline) */
-    .mc-velocity { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-2); margin-bottom: var(--s-3); }
+    .mc-velocity { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); margin-bottom: var(--s-4); }
     .mc-vt {
-      background: var(--bg-card); border: 1px solid var(--border-mid);
-      border-radius: var(--r-md); padding: 11px; position: relative; overflow: hidden; min-height: 88px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+      border: 1px solid var(--glass-brd);
+      border-radius: var(--r-lg); padding: 16px; position: relative; overflow: hidden; min-height: 96px;
+      box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
     }
-    .mc-vt-hd { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-    .mc-vt-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); font-weight: 800; }
+    .mc-vt-hd { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .mc-vt-label { font-family: var(--font-display); font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--ink-soft); font-weight: 600; }
     .mc-vt-led { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
     .mc-vt-led.amber { background: var(--brand); }
     .mc-vt-led.red { background: var(--danger); }
     .mc-vt-led.off { background: var(--border-strong); }
-    .mc-vt-val { font-family: var(--font-mono); font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; margin-bottom: 4px; color: var(--ink-strong); }
-    .mc-vt-val .u { font-size: 10px; color: var(--ink-faint); font-weight: 500; margin-left: 3px; }
+    .mc-vt-val { font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin-bottom: 5px; color: var(--ink-strong); }
+    .mc-vt-val .u { font-size: 11px; color: var(--ink-faint); font-weight: 500; margin-left: 3px; }
     .mc-vt-val.red { color: var(--danger); }
     .mc-vt-val.amber { color: var(--brand); }
     .mc-vt-val.green { color: var(--success); }
-    .mc-vt-sub { font-family: var(--font-mono); font-size: 9px; color: var(--ink-faint); letter-spacing: 0.04em; }
-    .mc-vt-spark { position: absolute; bottom: 6px; left: 11px; right: 11px; height: 16px; pointer-events: none; opacity: 0.5; }
+    .mc-vt-sub { font-family: var(--font-display); font-size: 11px; color: var(--ink-soft); letter-spacing: 0; font-weight: 500; }
+    .mc-vt-spark { position: absolute; bottom: 8px; left: 16px; right: 16px; height: 16px; pointer-events: none; opacity: 0.45; }
     .mc-vt-spark svg { width: 100%; height: 100%; display: block; }
 
     /* GAUGES (2 semicircle instruments) */
-    .mc-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-2); margin-bottom: var(--s-3); }
+    .mc-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); margin-bottom: var(--s-4); }
 
     /* v27.16.1 — Desktop breakpoints. The mission-control sections are
        mobile-first (2-up). On wider screens the velocity grid goes 4-up and
@@ -5864,11 +5957,14 @@
       .mc-gauge-wrap { height: 88px; }
     }
     .mc-gauge {
-      background: var(--mc-instrument); border: 1px solid var(--border-mid);
-      border-radius: var(--r-md); padding: 14px 12px 10px; position: relative; overflow: hidden;
-      box-shadow: var(--mc-glow);
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+      border: 1px solid var(--glass-brd);
+      border-radius: var(--r-lg); padding: 16px 14px 12px; position: relative; overflow: hidden;
+      box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
     }
-    .mc-gauge::after { content: ''; position: absolute; inset: 0; pointer-events: none; background-image: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, var(--mc-scanline) 2px, var(--mc-scanline) 3px); }
+    .mc-gauge::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; pointer-events: none; background: linear-gradient(90deg, transparent, var(--glass-hi), transparent); }
     .mc-gauge-hd { font-family: var(--font-mono); font-size: 9px; color: var(--ink-soft); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; position: relative; z-index: 1; }
     .mc-gauge-wrap { position: relative; height: 72px; margin-top: 4px; z-index: 1; }
     .mc-gauge-wrap svg { width: 100%; height: 100%; display: block; }
@@ -5879,8 +5975,12 @@
 
     /* MONTH SEGMENT (stacked bar) */
     .mc-segment {
-      background: var(--bg-card); border: 1px solid var(--border-mid);
-      border-radius: var(--r-md); padding: 13px; margin-bottom: var(--s-3);
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+      border: 1px solid var(--glass-brd);
+      border-radius: var(--r-lg); padding: 16px; margin-bottom: var(--s-4);
+      box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
     }
     .mc-seg-hd { display: flex; justify-content: space-between; margin-bottom: 10px; font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; }
     .mc-seg-hd-l { font-weight: 700; color: var(--ink-strong); letter-spacing: 0.06em; }
@@ -7151,7 +7251,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.17.1',
+      version: 'v27.21.0',
       constants,
       calico,
       mv,
@@ -7720,40 +7820,46 @@
     // ceil(requested ports / that card's port capacity). Uses the actual
     // CATALOG card port counts (CM ecosystem for the fit check, since the
     // canvas rule starts at a CM chassis). Returns {input, output, total}.
-    function _corioSlotsNeeded(inputCounts, outputCounts) {
+    function _corioSlotsNeeded(inputCounts, outputCounts, ecosystem) {
+      // v27.19.0 — Ecosystem-aware slot math. Each signal type maps to its
+      // matching card in the GIVEN ecosystem (CM for Micro/Mini, CM2 for CM2)
+      // and cards-needed = ceil(ports requested / that card's port capacity).
+      // "Diff card may have diff port available" (handwritten spec p.1): the
+      // port-per-card lookup is built from the actual card list, not assumed.
+      // Returns {input, output, total} CARD (= slot) counts.
       function slotsFor(counts, cards) {
-        // Build key → ports lookup from the card list
         var portByKey = {};
         cards.forEach(function (c) { portByKey[c.key] = c.ports; });
         var slots = 0;
         Object.keys(counts).forEach(function (k) {
           var qty = Number(counts[k] || 0);
           if (qty <= 0) return;
-          var perCard = portByKey[k] || 2;   // default 2 if unknown signal
+          var perCard = portByKey[k] || 2;   // default 2 if signal not in this ecosystem
           slots += Math.ceil(qty / perCard);
         });
         return slots;
       }
-      var cm = (CATALOG && CATALOG.corio && CATALOG.corio.cm) ? CATALOG.corio.cm : { inputs: [], outputs: [] };
-      var inSlots  = slotsFor(inputCounts,  cm.inputs);
-      var outSlots = slotsFor(outputCounts, cm.outputs);
+      var corio = (CATALOG && CATALOG.corio) ? CATALOG.corio : {};
+      var set = (ecosystem === 'CM2' && corio.cm2) ? corio.cm2
+              : (corio.cm || { inputs: [], outputs: [] });
+      var inSlots  = slotsFor(inputCounts,  set.inputs);
+      var outSlots = slotsFor(outputCounts, set.outputs);
       return { input: inSlots, output: outSlots, total: inSlots + outSlots };
     }
 
     function _corioAutoSelectChassis(inputCounts, outputCounts, canvasCount) {
-      // v27.16.1 — Selection order (Dipenkumar 2026-05-29):
+      // v27.19.0 — Corrected per handwritten CORIO logic (2 pages):
       //   STEP 1: Canvas count picks the chassis tier:
-      //           ≤5 → C3-503 Micro (3 flex slots, CM, 1080p)
-      //            6 → C3-510 Mini  (5 flex slots, CM, 1080p)
-      //           >6 → CM2-547-MK2  (13 slots, CM2, 4K)
-      //   STEP 2: Check the input+output cards FIT the canvas-picked chassis
-      //           slots (real port-count math). Only if they DON'T fit do we
-      //           upgrade to the next chassis with enough slots.
-      //   4K is NOT a chassis trigger — CM Micro/Mini accept 4K inputs.
-      //
-      //   SAFETY: a CM2-ONLY card (true-4K input cards / 12G-SDI) can't fit a
-      //   CM chassis at all, so it forces CM2 regardless of canvas count, with
-      //   a concern line surfaced by the caller.
+      //           Canvas ≤5 → C3-503 Micro · =6 → C3-510 Mini · >6 → CM2-547-MK2
+      //   STEP 2: Check the input+output cards FIT the canvas-picked chassis.
+      //           Micro/Mini are ALL-FLEX → total cards vs total slots (3 / 5).
+      //           If they don't fit: upgrade Micro→Mini→CM2 "likewise".
+      //           CM2 has fixed input/output slots → checked separately in the
+      //           post-selection validation (recommendCorio tail); CM2 is the
+      //           top tier so it can't upgrade further.
+      //   4K is NOT a chassis trigger on its own — CM Micro/Mini accept 4K
+      //   inputs (downscaled). BUT a CM2-ONLY card (true-4K input cards /
+      //   12G-SDI) cannot physically host on a CM chassis, so it forces CM2.
       const needsCM2Card = (Number(inputCounts['HDMI 4K 2-in'] || 0) > 0)
                         || (Number(inputCounts['HDMI 4K 4-in'] || 0) > 0)
                         || (Number(inputCounts['SDI 12G'] || 0) > 0)
@@ -7769,13 +7875,14 @@
       else {
         // No canvas count entered → pick the smallest CM chassis that fits the
         // cards (never CM2 from absence of canvas data).
-        const n0 = _corioSlotsNeeded(inputCounts, outputCounts).total;
+        const n0 = _corioSlotsNeeded(inputCounts, outputCounts, 'CM').total;
         chassis = (n0 <= 3) ? 'C3-503' : 'C3-510';
       }
 
-      // STEP 2 — slot fit-check. Upgrade only if the cards overflow the slots
-      // of the canvas-picked chassis. Micro=3, Mini=5, CM2=13 (CM2 always fits).
-      const need = _corioSlotsNeeded(inputCounts, outputCounts).total;
+      // STEP 2 — slot fit-check (all-flex model for Micro/Mini). Upgrade only
+      // if the CM cards overflow the flex slots of the canvas-picked chassis.
+      // Uses CM ecosystem port-counts (Micro/Mini host CM cards).
+      const need = _corioSlotsNeeded(inputCounts, outputCounts, 'CM').total;
       const SLOTS = { 'C3-503': 3, 'C3-510': 5, 'CM2-547-MK2': 13 };
       if (chassis === 'C3-503' && need > SLOTS['C3-503']) {
         chassis = (need <= SLOTS['C3-510']) ? 'C3-510' : 'CM2-547-MK2';
@@ -7784,6 +7891,64 @@
       }
 
       return chassis;
+    }
+
+    // v27.19.0 — CORIO signal→card translator. The input FORM collects GENERIC
+    // signal types (per Dipenkumar's handwritten spec p.1): 4K HDMI / FHD HDMI /
+    // HDBaseT / 3G SDI / 12G SDI / DVI-U. The engine maps each generic signal to
+    // the matching CARD KEY in the chosen ecosystem (CM for Micro/Mini, CM2 for
+    // CM2). "Diff card may have diff port available" — the per-ecosystem card may
+    // differ (e.g. 4K HDMI in → CM 'HDMI 4K' 2-port card vs CM2 'HDMI 4K 4-in'
+    // 4-port card). 12G-SDI has no CM card → it lives only in the CM2 map, so
+    // selecting it forces CM2 (handled by _corioAutoSelectChassis needsCM2Card).
+    var CORIO_SIGNAL_MAP = {
+      input: {
+        '4K HDMI':  { CM: 'HDMI 4K',    CM2: 'HDMI 4K 4-in' },
+        'FHD HDMI': { CM: 'HDMI 1080p', CM2: 'HDMI 1080p' },
+        'HDBaseT':  { CM: 'HDBaseT',    CM2: 'HDBaseT' },
+        '3G SDI':   { CM: 'SDI 3G',     CM2: 'SDI 3G' },
+        '12G SDI':  { CM: null,         CM2: 'SDI 12G' },   // CM2-only → forces CM2
+        'DVI-U':    { CM: 'DVI-U',      CM2: 'DVI-U' }
+      },
+      output: {
+        '4K HDMI':  { CM: 'HDMI 4K 2-out',    CM2: 'HDMI 4K' },
+        'FHD HDMI': { CM: 'HDMI 1080p 4-out', CM2: 'HDMI 1080p' },
+        'HDBaseT':  { CM: 'HDBaseT scaled',   CM2: null },   // no CM2 HDBT out card
+        '3G SDI':   { CM: 'SDI 3G scaled',    CM2: null },   // CM2 uses 12G SDI out
+        '12G SDI':  { CM: null,               CM2: 'SDI 12G' }
+      }
+    };
+
+    // Translate generic signal counts → ecosystem card-key counts.
+    // signalCounts: { '4K HDMI': n, 'HDBaseT': n, ... }; dir: 'input'|'output'.
+    // Returns { cardKeyCounts, unmapped: [signals with no card in this ecosystem] }.
+    function _corioTranslateSignals(signalCounts, dir, ecosystem) {
+      var map = CORIO_SIGNAL_MAP[dir] || {};
+      var eco = (ecosystem === 'CM2') ? 'CM2' : 'CM';
+      var out = {};
+      var unmapped = [];
+      Object.keys(signalCounts || {}).forEach(function (sig) {
+        var qty = Number(signalCounts[sig] || 0);
+        if (qty <= 0) return;
+        var entry = map[sig];
+        var cardKey = entry ? entry[eco] : null;
+        if (!cardKey) { unmapped.push(sig); return; }
+        out[cardKey] = (out[cardKey] || 0) + qty;
+      });
+      return { cardKeyCounts: out, unmapped: unmapped };
+    }
+
+    // Does this generic signal set contain a CM2-only signal (forces CM2)?
+    function _corioSignalsForceCM2(inputSignals, outputSignals) {
+      function has(sigs) {
+        sigs = sigs || {};
+        return Object.keys(sigs).some(function (s) {
+          if (Number(sigs[s] || 0) <= 0) return false;
+          var inMap = CORIO_SIGNAL_MAP.input[s] || CORIO_SIGNAL_MAP.output[s];
+          return inMap && inMap.CM === null && inMap.CM2;   // CM2-only signal
+        });
+      }
+      return has(inputSignals) || has(outputSignals);
     }
 
     // Pure-function port of v26 recommendCORIO (L11463) + auto-select combined.
@@ -7804,6 +7969,51 @@
       const CHASSIS = CATALOG.corio.chassis;
       const ACC = CATALOG.corio.accessories;
       const PSUS = CATALOG.corio.psu;
+
+      // v27.19.0 — GENERIC SIGNAL PATH. If the new form supplied generic signal
+      // counts (signalInputs / signalOutputs), resolve the chassis tier first,
+      // then translate signals → ecosystem card keys, and feed them into
+      // input.inputs / input.outputs so the existing card-selection runs as-is.
+      var _signalTranslation = null;
+      const sigIn  = (rawInput && rawInput.signalInputs)  || null;
+      const sigOut = (rawInput && rawInput.signalOutputs) || null;
+      if (sigIn || sigOut) {
+        // Chassis from canvas + CM2-forcing signals (12G-SDI etc.)
+        var forcedCM2 = _corioSignalsForceCM2(sigIn, sigOut);
+        var tierSku = input.chassisSku;
+        if (!tierSku) {
+          var canv = input.canvases;
+          if (forcedCM2) tierSku = 'CM2-547-MK2';
+          else if (canv > 6) tierSku = 'CM2-547-MK2';
+          else if (canv > 5) tierSku = 'C3-510';
+          else if (canv >= 1) tierSku = 'C3-503';
+          else tierSku = 'C3-503';   // refined by overflow below
+        }
+        var tierEco = (CHASSIS[tierSku] && CHASSIS[tierSku].cardEcosystem === 'CM2') ? 'CM2' : 'CM';
+        // Translate using the tier's ecosystem, then slot-overflow upgrade for CM.
+        var tIn  = _corioTranslateSignals(sigIn,  'input',  tierEco);
+        var tOut = _corioTranslateSignals(sigOut, 'output', tierEco);
+        // Overflow check for CM tiers (Micro/Mini all-flex) → upgrade likewise.
+        if (tierSku === 'C3-503' || tierSku === 'C3-510') {
+          var needCards = _corioSlotsNeeded(tIn.cardKeyCounts, tOut.cardKeyCounts, 'CM').total;
+          var FLEX = { 'C3-503': 3, 'C3-510': 5 };
+          if (tierSku === 'C3-503' && needCards > FLEX['C3-503']) {
+            tierSku = (needCards <= FLEX['C3-510']) ? 'C3-510' : 'CM2-547-MK2';
+          } else if (tierSku === 'C3-510' && needCards > FLEX['C3-510']) {
+            tierSku = 'CM2-547-MK2';
+          }
+          // If upgraded to CM2, re-translate against CM2 ecosystem.
+          if (tierSku === 'CM2-547-MK2') {
+            tierEco = 'CM2';
+            tIn  = _corioTranslateSignals(sigIn,  'input',  'CM2');
+            tOut = _corioTranslateSignals(sigOut, 'output', 'CM2');
+          }
+        }
+        input.inputs = tIn.cardKeyCounts;
+        input.outputs = tOut.cardKeyCounts;
+        input.chassisSku = tierSku;
+        _signalTranslation = { tierEco: tierEco, unmappedIn: tIn.unmapped, unmappedOut: tOut.unmapped, forcedCM2: forcedCM2 };
+      }
 
       // Resolve chassis: explicit override or auto-select (canvas-first per v27.3.1).
       const chassisSku = input.chassisSku || _corioAutoSelectChassis(input.inputs, input.outputs, input.canvases);
@@ -7835,6 +8045,17 @@
       }
 
       reasons.push('Auto-selected ' + chassis.label + ' (' + chassis.sku + ') based on signal mix');
+      // v27.19.0 — Surface any generic signals that have no card in the chosen
+      // ecosystem (e.g. 3G-SDI output requested but chassis resolved to CM2,
+      // which has no 3G-SDI output card — CM2 uses 12G-SDI out).
+      if (_signalTranslation) {
+        (_signalTranslation.unmappedIn || []).forEach(function (s) {
+          concerns.push('Input signal "' + s + '" has no card in the ' + _signalTranslation.tierEco + ' ecosystem — not added. Review the chassis/signal choice.');
+        });
+        (_signalTranslation.unmappedOut || []).forEach(function (s) {
+          concerns.push('Output signal "' + s + '" has no card in the ' + _signalTranslation.tierEco + ' ecosystem — not added. Review the chassis/signal choice.');
+        });
+      }
       // v27.16.1 — Canvas count is the sole chassis driver. Emit the rule line
       // when a canvas count was supplied, so the user sees the tier reasoning.
       if (input.canvases > 0 && !input.chassisSku) {
@@ -11748,11 +11969,25 @@
        which overflows Mini's 5 modular slots. The canvas-first rule with
        slot-override correctly upgrades to CM2 here. Keeping the test as a
        regression guard against the old wrong behavior. */
-    check('CORIO medium: HDMI 1080p high-count → CM2 (slot overflow over Mini)',
+    // v27.19.0 — Corrected slot math: 8 HDMI(÷4=2) + 4 SDI-3G(÷2=2) + 4 out(÷4=1)
+    // = 5 cards, which FITS Mini (5 slots). No canvas → smallest CM that fits =
+    // Mini. (Old test expected CM2 from the pre-correction slot bug.)
+    check('CORIO: 5 cards, no canvas → Mini (fits 5 slots)',
       () => {
         const r = RECOMMEND.corio({
           inputs: { 'HDMI 1080p': 8, 'SDI 3G': 4 },
           outputs: { 'HDMI 1080p 4-out': 4 }
+        });
+        return r.chassis === 'C3-510' || ('chassis: ' + r.chassis);
+      });
+
+    // Genuine overflow: 12 HDMI(÷4=3) + 8 SDI-3G(÷2=4) in + 8 out(÷4=2) = 9 cards
+    // → overflows Mini (5) → upgrades to CM2.
+    check('CORIO: 9 cards (no canvas) → CM2 (overflow over Mini)',
+      () => {
+        const r = RECOMMEND.corio({
+          inputs: { 'HDMI 1080p': 12, 'SDI 3G': 8 },
+          outputs: { 'HDMI 1080p 4-out': 8 }
         });
         if (r.chassis !== 'CM2-547-MK2') return 'chassis: ' + r.chassis;
         if (r.meta.ecosystem !== 'CM2') return 'ecosystem: ' + r.meta.ecosystem;
@@ -12804,6 +13039,7 @@
       'calico_inputs', 'calico_outputs', 'calico_audio',
       'mv_inputs', 'mv_outputSignal',
       'corio_inputs', 'corio_outputs', 'corio_audio', 'corio_fanFilter',
+      'corio_sig_inputs', 'corio_sig_outputs',
       // v27.1.2 #7 — corio_canvases persisted via raw_submission. UI-only this
       // release; algorithm consumer lands in v27.1.3.
       'corio_canvases',
@@ -13366,6 +13602,10 @@
         mv_outputSignal: '',
         corio_inputs:  {},
         corio_outputs: {},
+        // v27.19.0 — Generic signal counts (new CORIO form). The engine
+        // translates these to CM/CM2 card keys per resolved chassis ecosystem.
+        corio_sig_inputs:  {},
+        corio_sig_outputs: {},
         corio_audio: '',
         corio_fanFilter: false,
         // v27.1.2 #7 — Canvas count for CORIO solutions. UI-only this release
@@ -16052,6 +16292,34 @@
     function _setDashFilters(f) {
       try { sessionStorage.setItem('v4.dashFilters', JSON.stringify(f)); } catch (e) {}
     }
+    // v27.20.0 — Interactive chart cross-filtering. A chart bar/slice click
+    // calls this with a one-key patch (e.g. {stage:'Proposal'} or
+    // {person:'<id>', personField:'sales_person_id', personLabel:'Aditya'}).
+    // ONE filter at a time: clicking a new chart REPLACES the prior chart-filter
+    // (we reset the chart-set keys, keep period/region/stage/product base only
+    // when they ARE the patch). Then reload the dashboard.
+    function _dashChartClickFilter(patch) {
+      try {
+        var cur = _getDashFilters() || {};
+        // Start from current period (keep the time window), reset everything
+        // else so one chart-click = one active dimension (replace, not stack).
+        var next = {
+          period: cur.period || 'all',
+          region: 'all', stage: 'all', product: 'all',
+          person: null, personField: null, personLabel: null
+        };
+        Object.keys(patch || {}).forEach(function (k) { next[k] = patch[k]; });
+        // Toggle off: if the same filter is clicked again, clear it.
+        var same = patch && Object.keys(patch).every(function (k) {
+          return String(cur[k] == null ? '' : cur[k]) === String(patch[k] == null ? '' : patch[k]);
+        });
+        if (same) {
+          next = { period: cur.period || 'all', region: 'all', stage: 'all', product: 'all', person: null, personField: null, personLabel: null };
+        }
+        _setDashFilters(next);
+        if (UI && UI._loadDashboardV4) UI._loadDashboardV4(STORE.currentUser() || {});
+      } catch (e) { console.warn('chart click filter', e); }
+    }
     function _cycleDashFilter(key, current) {
       const c = _DASH_FILTER_CYCLES[key];
       if (!c) return 'all';
@@ -16063,7 +16331,7 @@
       return (labels && labels[val]) || val;
     }
     function _dashFilterAnyActive(f) {
-      return f.period !== 'all' || f.region !== 'all' || f.stage !== 'all' || f.product !== 'all';
+      return f.period !== 'all' || f.region !== 'all' || f.stage !== 'all' || f.product !== 'all' || !!f.person;
     }
     function applyDashFilters(deals, filters) {
       if (!Array.isArray(deals)) return [];
@@ -16088,14 +16356,33 @@
       }
       if (f.stage && f.stage !== 'all') {
         const CLOSED = { 'Closed Won': true, 'Closed Lost': true };
-        if (f.stage === 'open')   out = out.filter(function(d) { return !CLOSED[d.stage]; });
-        if (f.stage === 'closed') out = out.filter(function(d) { return  CLOSED[d.stage]; });
+        if (f.stage === 'open')        out = out.filter(function(d) { return !CLOSED[d.stage]; });
+        else if (f.stage === 'closed') out = out.filter(function(d) { return  CLOSED[d.stage]; });
+        // v27.20.0 — specific stage name (funnel bar click)
+        else out = out.filter(function(d) { return String(d.stage || '') === String(f.stage); });
+      }
+      // v27.20.0 — Origin filter (origin donut click): Cavitak vs OEM by creator role.
+      if (f.origin && f.origin !== 'all') {
+        out = out.filter(function(d) {
+          const role = String((d.raw_submission && d.raw_submission.leadOrigin) || d.lead_origin || '').toLowerCase();
+          if (f.origin === 'cavitak') return role !== 'oem';
+          if (f.origin === 'oem')     return role === 'oem';
+          return true;
+        });
       }
       if (f.product && f.product !== 'all') {
         out = out.filter(function(d) {
           const raw = (d && d.raw_submission) || {};
           if (f.product === 'sx') return raw.hasSx === true;
           return String(raw.solutionType || '').toLowerCase() === f.product;
+        });
+      }
+      // v27.19.0 — Person filter: set when a PEOPLE chart bar is tapped.
+      // f.personField is one of sales_person_id / presales_person_id /
+      // partner_name / consultant_name; f.person is the id or name to match.
+      if (f.person && f.personField) {
+        out = out.filter(function(d) {
+          return String(d[f.personField] || '') === String(f.person);
         });
       }
       return out;
@@ -16120,6 +16407,8 @@
           if (f.region  !== 'all') parts.push(_dashFilterLabel('region', f.region));
           if (f.stage   !== 'all') parts.push(_dashFilterLabel('stage', f.stage));
           if (f.product !== 'all') parts.push(_dashFilterLabel('product', f.product));
+          if (f.origin && f.origin !== 'all') parts.push(f.origin === 'oem' ? 'OEM' : 'Cavitak');
+          if (f.person) parts.push(f.personLabel || 'Person');
           sumDetail.textContent = parts.join(' \u00b7 ');
         }
       }
@@ -16484,7 +16773,7 @@
 
         // Focus today
         '<div class="v15-section">' +
-          '<h2>// Focus Today</h2>' +
+          '<h2>Focus today</h2>' +
           '<span class="v15-badge" data-v15-focus-total>\u2014 items</span>' +
         '</div>' +
 
@@ -16529,7 +16818,7 @@
 
         // Team updates ticker
         '<div class="v15-section">' +
-          '<h2>// Team Updates</h2>' +
+          '<h2>Team updates</h2>' +
           '<span class="v4-hint" style="font-family:var(--font-mono);font-size:10px;color:var(--ink-faint)">live</span>' +
         '</div>' +
         '<div class="v15-ticker">' +
@@ -16932,7 +17221,8 @@
         '</button>';
       }
       function funnelRow(klass, name) {
-        return '<div class="v4-funnel-row">' +
+        // v27.20.0 — clickable: filters dashboard to this stage.
+        return '<div class="v4-funnel-row" data-action="v4-funnel-filter" data-stage="' + esc(name) + '" role="button" tabindex="0" style="cursor:pointer">' +
           '<span class="v4-chip ' + klass + '">' + esc(name) + '</span>' +
           '<div class="v4-funnel-bar-wrap"><div class="v4-funnel-bar ' + klass + '" data-v4-d-funnel="' + esc(name) + '" style="width:0%">0</div></div>' +
           '<span class="v4-funnel-meta" data-v4-d-funnel-pct="' + esc(name) + '">0%</span>' +
@@ -17095,7 +17385,7 @@
         // HERO TELEMETRY (4 hero KPIs — instrument panel)
         '<div class="mc-telemetry">' +
           '<div class="mc-tel-hd">' +
-            '<div class="mc-tel-hd-l">// SIGNAL \u00b7 PIPELINE-HERO</div>' +
+            '<div class="mc-tel-hd-l">Signal</div>' +
             '<div class="mc-tel-hd-r" data-mc-health-status>\u2014</div>' +
           '</div>' +
           '<div class="mc-tel-grid">' +
@@ -17122,8 +17412,9 @@
           '</div>' +
         '</div>' +
 
-        // VELOCITY GRID (8 secondary KPIs with sparklines)
-        '<div class="v15-section"><h2>// Velocity Grid</h2><span class="section-hint" style="font-family:var(--font-mono);font-size:9px;color:var(--ink-faint)">8 signals</span></div>' +
+        // Velocity grid (8 secondary KPIs with sparklines)
+        '<div class="v15-section v15-group"><h2>Pulse</h2><span class="section-hint" style="font-family:var(--font-mono);font-size:9px;color:var(--ink-faint)">are we healthy?</span></div>' +
+        '<div class="v15-section"><h2>Velocity grid</h2><span class="section-hint" style="font-family:var(--font-mono);font-size:9px;color:var(--ink-faint)">8 signals</span></div>' +
         '<div class="mc-velocity">' +
           mcVTile('age',    'AVG DEAL AGE',  'days',  'amber') +
           mcVTile('stuck',  'STUCK > 30D',   'deals', 'off') +
@@ -17136,7 +17427,7 @@
         '</div>' +
 
         // GAUGES (win rate + health score instruments)
-        '<div class="v15-section"><h2>// Instruments</h2><span class="section-hint" style="font-family:var(--font-mono);font-size:9px;color:var(--ink-faint)">analog</span></div>' +
+        '<div class="v15-section"><h2>Instruments</h2><span class="section-hint" style="font-family:var(--font-mono);font-size:9px;color:var(--ink-faint)">analog</span></div>' +
         '<div class="mc-gauges">' +
           '<div class="mc-gauge">' +
             '<div class="mc-gauge-hd"><span class="mc-led amber"></span>WIN RATE \u00b7 FY</div>' +
@@ -17164,8 +17455,8 @@
           '</div>' +
         '</div>' +
 
-        // MONTH SEGMENT (stacked bar)
-        '<div class="v15-section"><h2>// Month Segment</h2><span class="section-hint" style="font-family:var(--font-mono);font-size:9px;color:var(--ink-faint)" data-mc-seg-hint>\u2014</span></div>' +
+        // Month segment (stacked bar)
+        '<div class="v15-section"><h2>Month segment</h2><span class="section-hint" style="font-family:var(--font-mono);font-size:9px;color:var(--ink-faint)" data-mc-seg-hint>\u2014</span></div>' +
         '<div class="mc-segment">' +
           '<div class="mc-seg-track">' +
             '<div class="mc-seg-fill mc-seg-won"   data-mc-seg="won"   style="width:0%"></div>' +
@@ -17228,7 +17519,7 @@
         // Open + Pipeline removed (de-duped); the other 4 kept as a compact
         // strip so the data survives. data-v4-kpi-d writes for open/pipeline
         // become harmless no-ops.
-        '<div class="v15-section"><h2>// Relationships</h2><span class="section-hint" style="font-family:var(--font-mono);font-size:9px;color:var(--ink-faint)">active · open cases</span></div>' +
+        '<div class="v15-section"><h2>Relationships</h2><span class="section-hint" style="font-family:var(--font-mono);font-size:9px;color:var(--ink-faint)">active · open cases</span></div>' +
         '<div class="v4-kpi-grid v4-stagger">' +
           kpiTile('g4', 'endusers',    'Active end-users',   sIco.kEnd,  false) +
           kpiTile('g4', 'partners',    'Active partners',    sIco.kPart, false) +
@@ -17245,6 +17536,8 @@
 
         // Two-column dash grid
         '<div class="v4-dash-grid">' +
+
+          '<div class="v4-col-12 v4-group-div"><span>Pipeline</span><small>where are the deals</small></div>' +
 
           // v27.14.0 — Stage funnel promoted to full-width top position.
           // Per owner-perspective feedback: pipeline funnel is the most
@@ -17270,10 +17563,12 @@
           // v27.14.0 — Original funnel position (v4-col-4) retired; the new
           // full-width promotion above replaces it. Other cards shift up.
 
+          '<div class="v4-col-12 v4-group-div"><span>Distribution</span><small>how it splits</small></div>' +
+
           // v27.4.1 W2 — Product Mix tile (CALICO / MV / CORIO / SX overlay)
           // v27.14.0 — Promoted from col-4 to col-6 since funnel moved to col-12 above
           '<div class="v4-card v4-col-6">' +
-            '<div class="v4-card-hd"><h3>Product mentions</h3><span class="v4-hint">families across open deals \u00b7 SX overlays</span></div>' +
+            '<div class="v4-card-hd"><h3>Product mix</h3><span class="v4-hint">chassis families \u00b7 CALICO / CORIO / MV</span></div>' +
             '<div class="v4-card-bd">' +
               '<div id="chart-prodmix" class="dash-chart-canvas"></div>' +
             '</div>' +
@@ -17326,12 +17621,14 @@
             '</div>' +
           '</div>' +
 
+          '<div class="v4-col-12 v4-group-div"><span>People</span><small>who is driving it</small></div>' +
+
           // Sales table
           '<div class="v4-card v4-col-6">' +
             '<div class="v4-card-hd"><h3>Sales performance</h3><span class="v4-hint">FY26-27 \u00b7 tap to drill</span></div>' +
             '<div class="v4-card-bd" style="padding:0">' +
               '<div id="chart-sales" class="dash-chart-canvas short" style="margin:8px 8px 0"></div>' +
-              '<div class="v4-tbl-wrap">' +
+              '<div class="v4-tbl-wrap v4-dup-table">' +
                 '<table class="v4-tbl">' +
                   '<thead><tr><th>Person</th><th>Pipeline</th><th class="v4-num">Open</th><th class="v4-num">Won</th><th class="v4-num">Win %</th><th class="v4-num">Health</th></tr></thead>' +
                   '<tbody data-v4-d-sales-body><tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:24px">Loading\u2026</td></tr></tbody>' +
@@ -17372,9 +17669,10 @@
           // v27.4.1 W4 — Partner + Consultant leaderboards (channel performance).
           // Hidden for OEM users via [data-v4-d-channel-row][data-show="false"].
           '<div class="v4-card v4-col-6" data-v4-d-channel-card="partner" style="display:none">' +
-            '<div class="v4-card-hd"><h3>Partner performance</h3><span class="v4-hint">FY26-27 \u00b7 open value desc</span></div>' +
+            '<div class="v4-card-hd"><h3>Partner performance</h3><span class="v4-hint">FY26-27 \u00b7 top by open</span></div>' +
             '<div class="v4-card-bd" style="padding:0">' +
-              '<div class="v4-tbl-wrap">' +
+              '<div id="chart-partner" class="dash-chart-canvas short" style="margin:8px 8px 0"></div>' +
+              '<div class="v4-tbl-wrap v4-dup-table">' +
                 '<table class="v4-tbl">' +
                   '<thead><tr><th>Partner</th><th class="v4-num">Open</th><th class="v4-num">Open ₹</th><th class="v4-num">Won FY</th></tr></thead>' +
                   '<tbody data-v4-d-partner-body><tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:24px">Loading\u2026</td></tr></tbody>' +
@@ -17383,9 +17681,10 @@
             '</div>' +
           '</div>' +
           '<div class="v4-card v4-col-6" data-v4-d-channel-card="consultant" style="display:none">' +
-            '<div class="v4-card-hd"><h3>Consultant performance</h3><span class="v4-hint">FY26-27 \u00b7 open value desc</span></div>' +
+            '<div class="v4-card-hd"><h3>Consultant performance</h3><span class="v4-hint">FY26-27 \u00b7 top by open</span></div>' +
             '<div class="v4-card-bd" style="padding:0">' +
-              '<div class="v4-tbl-wrap">' +
+              '<div id="chart-consultant" class="dash-chart-canvas short" style="margin:8px 8px 0"></div>' +
+              '<div class="v4-tbl-wrap v4-dup-table">' +
                 '<table class="v4-tbl">' +
                   '<thead><tr><th>Consultant</th><th class="v4-num">Open</th><th class="v4-num">Open ₹</th><th class="v4-num">Won FY</th></tr></thead>' +
                   '<tbody data-v4-d-consultant-body><tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:24px">Loading\u2026</td></tr></tbody>' +
@@ -17400,7 +17699,7 @@
             '<div class="v4-card-hd"><h3>Presales performance</h3><span class="v4-hint">FY26-27 \u00b7 by presales owner</span></div>' +
             '<div class="v4-card-bd" style="padding:0">' +
               '<div id="chart-presales" class="dash-chart-canvas short" style="margin:8px 8px 0"></div>' +
-              '<div class="v4-tbl-wrap">' +
+              '<div class="v4-tbl-wrap v4-dup-table">' +
                 '<table class="v4-tbl">' +
                   '<thead><tr><th>Presales</th><th class="v4-num">Open</th><th class="v4-num">Won</th><th class="v4-num">Win %</th></tr></thead>' +
                   '<tbody data-v4-d-presales-body><tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:24px">Loading\u2026</td></tr></tbody>' +
@@ -17409,18 +17708,20 @@
             '</div>' +
           '</div>' +
 
+          '<div class="v4-col-12 v4-group-div"><span>Analysis</span><small>what needs attention</small></div>' +
+
           // v27.16.2 — Won rate by region + by sales-person (spec item 6).
           // Two horizontal-bar blocks; each bar = win % with won/closed count.
           '<div class="v4-card v4-col-12">' +
             '<div class="v4-card-hd"><h3>Win rate</h3><span class="v4-hint">by region & sales-person \u00b7 FY26-27</span></div>' +
             '<div class="v4-card-bd">' +
               '<div class="v4-winrate-block">' +
-                '<div class="v4-winrate-sub">// BY REGION</div>' +
-                '<div data-v4-d-winrate-region><div class="v4-winrate-empty">No closed deals yet</div></div>' +
+                '<div class="v4-winrate-sub">By region</div>' +
+                '<div data-v4-d-winrate-region><div class="v4-winrate-empty">Win rate forms after first closes</div></div>' +
               '</div>' +
               '<div class="v4-winrate-block" style="margin-top:16px">' +
-                '<div class="v4-winrate-sub">// BY SALES PERSON</div>' +
-                '<div data-v4-d-winrate-person><div class="v4-winrate-empty">No closed deals yet</div></div>' +
+                '<div class="v4-winrate-sub">By sales person</div>' +
+                '<div data-v4-d-winrate-person><div class="v4-winrate-empty">Win rate forms after first closes</div></div>' +
               '</div>' +
             '</div>' +
           '</div>' +
@@ -17435,6 +17736,8 @@
               '<div class="v4-dwell-stuck" data-v4-d-dwell-stuck></div>' +
             '</div>' +
           '</div>' +
+
+          '<div class="v4-col-12 v4-group-div"><span>Trend</span><small>momentum over time</small></div>' +
 
           // Newly added line chart (full width)
           '<div class="v4-card v4-col-12">' +
@@ -18019,6 +18322,15 @@
               '<td class="v4-num">' + r.wonFy + '</td>' +
               '</tr>';
           }).join('');
+          // v27.18.0 — Partner/Consultant top-performers bar chart (heavy
+          // graphics). Maps channel rows to the {name, open, won} shape the
+          // bar renderer expects. Accent: partner amber, consultant purple.
+          try {
+            const chartRows = rows.map(function (r) { return { name: r.name, open: r.openCount, won: r.wonFy, filterKey: r.name }; });
+            const accent = (role === 'partner') ? '#F59E0B' : '#A855F7';
+            const field = (role === 'partner') ? 'partner_name' : 'consultant_name';
+            _renderPersonBarChart('chart-' + role, chartRows, accent, field);
+          } catch (e) { console.warn(role + ' chart', e); }
         });
 
         // ---- Sales perf table ----
@@ -18137,9 +18449,9 @@
           const preChartRows = preRows.map(function (p) {
             const usr = usersById[p.id] || {};
             const nm = String(usr.display_name || usr.full_name || usr.username || '').trim() || ('User ' + String(p.id).slice(0, 6));
-            return { name: nm, open: p.open, won: p.won };
+            return { name: nm, open: p.open, won: p.won, filterKey: p.id };
           });
-          try { _renderPersonBarChart('chart-presales', preChartRows, '#A855F7'); } catch (e) { console.warn('presales chart', e); }
+          try { _renderPersonBarChart('chart-presales', preChartRows, '#A855F7', 'presales_person_id'); } catch (e) { console.warn('presales chart', e); }
 
           // v27.17.0 — Sales bar chart (heavy graphics). Rebuild rows from the
           // sales byPerson aggregation computed earlier in the loader.
@@ -18149,9 +18461,9 @@
               .map(function (p) {
                 const usr = usersById[p.id] || {};
                 const nm = String(usr.display_name || usr.full_name || usr.username || '').trim() || ('User ' + String(p.id).slice(0, 6));
-                return { name: nm, open: p.open, won: p.won };
+                return { name: nm, open: p.open, won: p.won, filterKey: p.id };
               });
-            _renderPersonBarChart('chart-sales', salesChartRows, '#F7941D');
+            _renderPersonBarChart('chart-sales', salesChartRows, '#F7941D', 'sales_person_id');
           } catch (e) { console.warn('sales chart', e); }
 
           // ---- (6) WIN RATE by region + by sales-person ----
@@ -18173,7 +18485,7 @@
             }).sort(function (a, b) { return b.pct - a.pct; });
           }
           function renderWinRows(rows) {
-            if (!rows.length) return '<div class="v4-winrate-empty">No closed deals yet</div>';
+            if (!rows.length) return '<div class="v4-winrate-empty">Win rate forms after first closes</div>';
             return rows.map(function (r) {
               const cls = r.pct >= 60 ? 'high' : (r.pct < 30 ? 'low' : '');
               return '<div class="v4-wr-row">' +
@@ -18882,7 +19194,7 @@
     //                 the literal { __empty: true, ... } sentinel
     //                 to render an empty state instead.
     // Returns the ECharts instance (or null on graceful fallback).
-    function _initChart(id, optionFn) {
+    function _initChart(id, optionFn, onClick) {
       const host = document.getElementById(id);
       if (!host) return null;
       // Dispose any prior instance bound to this host
@@ -18913,6 +19225,10 @@
         const base = _chartTheme();
         // Merge base into provided option (caller overrides win)
         inst.setOption(Object.assign({}, base, opt));
+        // v27.19.0 — optional click handler (interactive filter charts)
+        if (typeof onClick === 'function') {
+          try { inst.on('click', onClick); } catch (_) {}
+        }
         _dashCharts[id] = inst;
       }).catch(function (e) {
         console.warn('Chart ' + id + ' could not init:', e && e.message);
@@ -19490,12 +19806,16 @@
 
     // Product mix donut — CALICO / MULTI VIEWER / CORIO / SX OVERLAY counts.
     function _renderProductMixChart(mix) {
+      // v27.17.3 — Donut shows only the three mutually-exclusive chassis
+      // families (CALICO / CORIO / MULTI VIEWER). SX is an OVERLAY (a deal can
+      // carry CALICO + SX both), so including it in a part-to-whole donut
+      // double-counts and distorts the percentages — deliberately excluded.
       const data = [
         { name: 'CALICO',       value: Number(mix.calico || 0), itemStyle: { color: '#6366F1' } },
-        { name: 'MULTI VIEWER', value: Number(mix.mv || 0),     itemStyle: { color: '#06B6D4' } },
         { name: 'CORIO',        value: Number(mix.corio || 0),  itemStyle: { color: '#10B981' } },
-        { name: 'SX OVERLAY',   value: Number(mix.sx || 0),     itemStyle: { color: '#EC4899' } }
+        { name: 'MULTI VIEWER', value: Number(mix.mv || 0),     itemStyle: { color: '#06B6D4' } }
       ].filter(function (d) { return d.value > 0; });
+      var _prodKey = { 'CALICO': 'calico', 'CORIO': 'corio', 'MULTI VIEWER': 'mv' };
       _initChart('chart-prodmix', function () {
         if (!data.length) return { __empty: true, title: 'No product data yet', sub: 'Create deals to see the family mix.', icon: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>' };
         const th = _chartTheme();
@@ -19504,13 +19824,16 @@
           legend: { type: 'scroll', bottom: 0, left: 'center', icon: 'circle', itemWidth: 8, itemHeight: 8, itemGap: 14, textStyle: { fontSize: 11, color: th.textStyle.color } },
           series: [{
             name: 'Product mix', type: 'pie', radius: ['46%', '72%'], center: ['50%', '44%'],
-            avoidLabelOverlap: true, padAngle: 2,
+            avoidLabelOverlap: true, padAngle: 2, cursor: 'pointer',
             itemStyle: { borderRadius: 5, borderColor: 'transparent' },
             label: { show: false }, labelLine: { show: false },
             emphasis: { scale: true, scaleSize: 7, label: { show: true, fontSize: 15, fontWeight: 700, formatter: '{c}', color: th.textStyle.color } },
             data: data
           }]
         };
+      }, function (params) {
+        var key = _prodKey[params.name];
+        if (key) _dashChartClickFilter({ product: key });
       });
     }
 
@@ -19531,12 +19854,15 @@
                     { type: 'text', left: 'center', top: '52%', style: { text: 'CASES', fontSize: 9, fontWeight: 700, fill: th.axisLabelColor, fontFamily: 'General Sans, sans-serif' } }],
           series: [{
             name: 'Origin', type: 'pie', radius: ['56%', '76%'], center: ['50%', '44%'],
-            padAngle: 2, itemStyle: { borderRadius: 5, borderColor: 'transparent' },
+            padAngle: 2, itemStyle: { borderRadius: 5, borderColor: 'transparent' }, cursor: 'pointer',
             label: { show: false }, labelLine: { show: false },
             emphasis: { scale: true, scaleSize: 6 },
             data: data
           }]
         };
+      }, function (params) {
+        var key = (params.name === 'Cavitak') ? 'cavitak' : (params.name === 'OEM' ? 'oem' : null);
+        if (key) _dashChartClickFilter({ origin: key });
       });
     }
 
@@ -19567,11 +19893,23 @@
 
     // Horizontal bar — open deals per person (sales or presales).
     // rows: [{name, open, won}], hostId, accent color.
-    function _renderPersonBarChart(hostId, rows, accent) {
+    function _renderPersonBarChart(hostId, rows, accent, filterField) {
+      // v27.20.0 — clickable: tapping a bar filters the dashboard to that person.
+      // rows: [{name, open, won, filterKey}]; filterField = the deal field to match
+      // (sales_person_id / presales_person_id / partner_name / consultant_name).
+      const top = (rows && rows.length) ? rows.slice(0, 8).reverse() : [];
+      const onClick = filterField ? function (params) {
+        const row = top[params.dataIndex];
+        if (!row) return;
+        _dashChartClickFilter({
+          person: (row.filterKey != null ? row.filterKey : row.name),
+          personField: filterField,
+          personLabel: row.name
+        });
+      } : null;
       _initChart(hostId, function () {
         if (!rows || !rows.length) return { __empty: true, title: 'No deals in scope', sub: 'Assignments appear here as deals are created.', icon: '<path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="7"/><rect x="12" y="6" width="3" height="11"/>' };
         const th = _chartTheme();
-        const top = rows.slice(0, 8).reverse();   // ECharts y-axis is bottom-up
         return {
           grid: { left: 8, right: 40, top: 10, bottom: 8, containLabel: true },
           tooltip: Object.assign({}, th.tooltip, { trigger: 'axis', axisPointer: { type: 'shadow' } }),
@@ -19580,16 +19918,18 @@
           series: [{
             type: 'bar', data: top.map(function (r) { return r.open; }),
             barWidth: '56%', itemStyle: { color: accent || '#F7941D', borderRadius: [0, 5, 5, 0] },
+            cursor: filterField ? 'pointer' : 'default',
             label: { show: true, position: 'right', color: th.textStyle.color, fontSize: 11, fontWeight: 700, fontFamily: 'General Sans, sans-serif' }
           }]
         };
-      });
+      }, onClick);
     }
 
     // Region bar — open cases per zone (W/N/S/E), colored per zone.
     function _renderRegionChart(zoneCounts) {
       const order = [['west','West','#F7941D'],['north','North','#3B82F6'],['south','South','#10B981'],['east','East','#8B5CF6']];
-      const rows = order.map(function (z) { return { name: z[1], value: Number(zoneCounts[z[0]] || 0), color: z[2] }; });
+      const rows = order.map(function (z) { return { name: z[1], value: Number(zoneCounts[z[0]] || 0), color: z[2], key: z[0] }; });
+      const _regionReversed = rows.slice().reverse();   // display order (matches yAxis + series)
       _initChart('chart-region', function () {
         const total = rows.reduce(function (s, r) { return s + r.value; }, 0);
         if (!total) return { __empty: true, title: 'No regional data yet', sub: 'Set deal states to see the zone split.', icon: '<path d="M12 2 2 7l10 5 10-5z"/><path d="M2 17l10 5 10-5"/>' };
@@ -19598,13 +19938,16 @@
           grid: { left: 8, right: 36, top: 10, bottom: 8, containLabel: true },
           tooltip: Object.assign({}, th.tooltip, { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: function (p) { var d = p[0]; return d.name + ': <strong>' + d.value + '</strong> (' + Math.round(d.value / total * 100) + '%)'; } }),
           xAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: th.axisLabelColor, fontSize: 10 }, splitLine: { lineStyle: { color: th.splitLineColor } } },
-          yAxis: { type: 'category', data: rows.map(function (r) { return r.name; }).reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: th.textStyle.color, fontSize: 11, fontWeight: 600 } },
+          yAxis: { type: 'category', data: _regionReversed.map(function (r) { return r.name; }), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: th.textStyle.color, fontSize: 11, fontWeight: 600 } },
           series: [{
-            type: 'bar', barWidth: '52%',
-            data: rows.slice().reverse().map(function (r) { return { value: r.value, itemStyle: { color: r.color, borderRadius: [0, 5, 5, 0] } }; }),
+            type: 'bar', barWidth: '52%', cursor: 'pointer',
+            data: _regionReversed.map(function (r) { return { value: r.value, itemStyle: { color: r.color, borderRadius: [0, 5, 5, 0] } }; }),
             label: { show: true, position: 'right', color: th.textStyle.color, fontSize: 11, fontWeight: 700, formatter: function (p) { return p.value + ' · ' + Math.round(p.value / total * 100) + '%'; } }
           }]
         };
+      }, function (params) {
+        var r = _regionReversed[params.dataIndex];
+        if (r) _dashChartClickFilter({ region: r.key });
       });
     }
 
@@ -22497,45 +22840,60 @@
     }
 
     function renderStep3Corio(d) {
-      const cm2In  = CATALOG.corio.cm2.inputs;
-      const cm2Out = CATALOG.corio.cm2.outputs;
+      // v27.19.0 — Generic signal form per handwritten CORIO spec (p.1).
+      // Inputs: 4K HDMI / FHD HDMI / HDBaseT / 3G SDI / 12G SDI / DVI-U.
+      // Outputs: 4K HDMI / FHD HDMI / HDBaseT / 3G SDI / 12G SDI.
+      // The engine (recommendCorio) translates these generic signals to the
+      // matching CM or CM2 card per the resolved chassis ecosystem.
       const inErr = d.errors.corio_io
         ? '<div class="banner err">' + esc(d.errors.corio_io) + '</div>' : '';
 
+      const inputSignals = [
+        { key:'4K HDMI',  desc:'4K HDMI sources \u00b7 CM: HDMI 4K 2-IN \u00b7 CM2: HDMI 4K 4-IN' },
+        { key:'FHD HDMI', desc:'1080p HDMI sources \u00b7 HDMI 4-IN card' },
+        { key:'HDBaseT',  desc:'HDBaseT sources \u00b7 2-IN card (+ Ethernet)' },
+        { key:'3G SDI',   desc:'3G-SDI sources \u00b7 CM: 2-IN \u00b7 CM2: 4-IN' },
+        { key:'12G SDI',  desc:'12G-SDI 4K sources \u00b7 CM2 only (forces CORIOmaster2)' },
+        { key:'DVI-U',    desc:'DVI-U sources \u00b7 2-IN card (Mini has 2 built-in)' }
+      ];
+      const outputSignals = [
+        { key:'4K HDMI',  desc:'4K HDMI outputs \u00b7 CM: 4K 2-OUT \u00b7 CM2: 4K 4-OUT' },
+        { key:'FHD HDMI', desc:'1080p HDMI outputs \u00b7 scaled' },
+        { key:'HDBaseT',  desc:'HDBaseT outputs \u00b7 CM only (scaled + Ethernet)' },
+        { key:'3G SDI',   desc:'3G-SDI outputs \u00b7 CM only (scaled)' },
+        { key:'12G SDI',  desc:'12G-SDI outputs \u00b7 CM2 only' }
+      ];
+
       return inErr +
         '<div class="banner info">' +
-          'Configures CM2 (CORIOmaster2 4K) modules. ' +
-          'For CM ecosystem (C3-503 / C3-510 \u00b7 1080p), RECOMMEND will downgrade ' +
-          'automatically when only CM-compatible signals are selected.' +
+          'Enter the number of <strong>signal ports</strong> needed. RECOMMEND picks the chassis ' +
+          '(Micro / Mini / CORIOmaster2) from your canvas count, then auto-fits the right cards. ' +
+          '12G-SDI or &gt;6 canvases require CORIOmaster2 (4K).' +
         '</div>' +
-        // v27.1.2 #7 — Canvas configuration above Outputs (OQ 7A). Single
-        // count field. Captured + displayed in Review/Excel/PDF; chassis
-        // auto-select unaffected this release (algorithm update deferred to
-        // v27.1.3 per OQ 7B).
         '<h3 class="h3">Canvas configuration</h3>' +
         '<div class="card">' +
-          stepperRow('corio_canvases', 'Canvas count', 'Independent canvases at 4K30Hz \u00b7 \u22645 \u2192 Micro, \u22646 \u2192 Mini, >6 \u2192 CM2', d.corio_canvases || 0, { namespace:'__corio_canvas' }) +
+          stepperRow('corio_canvases', 'Canvas count', 'Independent canvases \u00b7 \u22645 \u2192 Micro, 6 \u2192 Mini, &gt;6 \u2192 CM2', d.corio_canvases || 0, { namespace:'__corio_canvas' }) +
         '</div>' +
-        '<h3 class="h3">Inputs</h3>' +
+        '<h3 class="h3">Input signals</h3>' +
         '<div class="card">' +
-          cm2In.map(c =>
-            stepperRow(c.key, c.key, c.desc, d.corio_inputs[c.key] || 0, { namespace:'corio_inputs' })
-          ).join('') +
+          inputSignals.map(function (s) {
+            return stepperRow(s.key, s.key, s.desc, (d.corio_sig_inputs && d.corio_sig_inputs[s.key]) || 0, { namespace:'corio_sig_inputs' });
+          }).join('') +
         '</div>' +
-        '<h3 class="h3">Outputs</h3>' +
+        '<h3 class="h3">Output signals</h3>' +
         '<div class="card">' +
-          cm2Out.map(c =>
-            stepperRow(c.key, c.key, c.desc, d.corio_outputs[c.key] || 0, { namespace:'corio_outputs' })
-          ).join('') +
+          outputSignals.map(function (s) {
+            return stepperRow(s.key, s.key, s.desc, (d.corio_sig_outputs && d.corio_sig_outputs[s.key]) || 0, { namespace:'corio_sig_outputs' });
+          }).join('') +
         '</div>' +
         '<h3 class="h3">Audio</h3>' +
         '<div class="card">' +
           '<div class="field" style="margin:0">' +
-            '<label>Audio module</label>' +
+            '<label>Audio required?</label>' +
             '<select data-bind="corio_audio">' +
-              '<option value=""'    + (d.corio_audio === ''    ? ' selected' : '') + '>None</option>' +
-              '<option value="2-4"' + (d.corio_audio === '2-4' ? ' selected' : '') + '>2-4 (analog + SPDIF)</option>' +
-              '<option value="8-8"' + (d.corio_audio === '8-8' ? ' selected' : '') + '>8-8 (CM only \u00b7 8-IN / 8-OUT HD-44)</option>' +
+              '<option value=""'    + (d.corio_audio === ''    ? ' selected' : '') + '>No</option>' +
+              '<option value="2-4"' + (d.corio_audio === '2-4' ? ' selected' : '') + '>Yes \u00b7 2-4 (analog + SPDIF)</option>' +
+              '<option value="8-8"' + (d.corio_audio === '8-8' ? ' selected' : '') + '>Yes \u00b7 8-8 (CM only \u00b7 8-IN / 8-OUT HD-44)</option>' +
             '</select>' +
             (d.corio_audio === '8-8'
               ? '<div class="help danger-text">8-8 module is CM-only \u2014 incompatible with CM2 / 4K chassis.</div>'
@@ -22545,7 +22903,6 @@
         '<h3 class="h3">Add-ons</h3>' +
         '<div class="col">' +
           toggleRow('corio_fanFilter', 'Add CM2 fan filter (CM2-Filter)', '', d.corio_fanFilter, { namespace:'' }) +
-          // v27.3.12 — hasSx toggle removed; SX always visible inline at bottom of Step 3.
         '</div>';
     }
 
@@ -23116,11 +23473,22 @@
         add('Inputs', inSum, 3);
         add('Output signal', d.mv_outputSignal || '\u2014', 3);
       } else if (d.solutionType === 'corio') {
-        // CORIO catalog keys already human-readable; humanize style only.
-        const inSum = Object.entries(d.corio_inputs).filter(([_,v]) => v > 0)
-          .map(([k,v]) => k + ' \u00d7 ' + v).join(', ') || 'none';
-        const outSum = Object.entries(d.corio_outputs).filter(([_,v]) => v > 0)
-          .map(([k,v]) => k + ' \u00d7 ' + v).join(', ') || 'none';
+        // v27.19.0 — Show generic signal counts (new form) with legacy fallback.
+        const sigIn  = d.corio_sig_inputs  || {};
+        const sigOut = d.corio_sig_outputs || {};
+        const hasSig = Object.values(sigIn).some(v => v > 0) || Object.values(sigOut).some(v => v > 0);
+        let inSum, outSum;
+        if (hasSig) {
+          inSum = Object.entries(sigIn).filter(([_,v]) => v > 0)
+            .map(([k,v]) => k + ' \u00d7 ' + v).join(', ') || 'none';
+          outSum = Object.entries(sigOut).filter(([_,v]) => v > 0)
+            .map(([k,v]) => k + ' \u00d7 ' + v).join(', ') || 'none';
+        } else {
+          inSum = Object.entries(d.corio_inputs || {}).filter(([_,v]) => v > 0)
+            .map(([k,v]) => k + ' \u00d7 ' + v).join(', ') || 'none';
+          outSum = Object.entries(d.corio_outputs || {}).filter(([_,v]) => v > 0)
+            .map(([k,v]) => k + ' \u00d7 ' + v).join(', ') || 'none';
+        }
         add('Inputs',  inSum, 3);
         add('Outputs', outSum, 3);
         // v27.1.2 #7 — canvas count line, only shown when > 0.
@@ -23354,9 +23722,13 @@
           if (validInputs.length === 0) errors.mv_io = 'Add at least one input row with signal + qty.';
           else if (!d.mv_outputSignal)  errors.mv_io = 'Pick an output signal.';
         } else if (d.solutionType === 'corio') {
-          const inSum = Object.values(d.corio_inputs).reduce((a,b) => a + (Number(b)||0), 0);
-          const outSum = Object.values(d.corio_outputs).reduce((a,b) => a + (Number(b)||0), 0);
-          if (inSum === 0 && outSum === 0) {
+          // v27.19.0 — Check generic signal counts (new form) OR legacy card-key
+          // counts (old saved deals). At least one input or output required.
+          const sigInSum  = Object.values(d.corio_sig_inputs  || {}).reduce((a,b) => a + (Number(b)||0), 0);
+          const sigOutSum = Object.values(d.corio_sig_outputs || {}).reduce((a,b) => a + (Number(b)||0), 0);
+          const inSum  = Object.values(d.corio_inputs  || {}).reduce((a,b) => a + (Number(b)||0), 0);
+          const outSum = Object.values(d.corio_outputs || {}).reduce((a,b) => a + (Number(b)||0), 0);
+          if (sigInSum === 0 && sigOutSum === 0 && inSum === 0 && outSum === 0) {
             errors.corio_io = 'At least one input or output is required.';
           }
         }
@@ -23927,9 +24299,18 @@
           }
           return;
         }
+        if (action === 'v4-funnel-filter') {
+          // v27.20.0 — funnel stage bar → filter dashboard to that stage.
+          const stage = actEl.getAttribute('data-stage') || '';
+          if (stage && UI._dashChartClickFilter) {
+            UI._dashChartClickFilter({ stage: stage });
+          }
+          return;
+        }
+
         if (action === 'v4-filter-clear') {
           if (UI._setDashFilters) {
-            UI._setDashFilters({ period: 'all', region: 'all', stage: 'all', product: 'all' });
+            UI._setDashFilters({ period: 'all', region: 'all', stage: 'all', product: 'all', origin: 'all', person: null, personField: null, personLabel: null });
           }
           if (UI._loadDashboardV4) {
             UI._loadDashboardV4(STORE.currentUser() || {});
@@ -24359,10 +24740,15 @@
           return;
         }
 
-        // v27.3.0 — Confirm deal (visual placeholder; full flow lands in v27.4)
+        // v27.18.1 — Confirm closes the saved-deal view and returns Home.
+        // (No DB write: there is no confirmed-status RPC in the backend, so
+        // Confirm intentionally does not mark anything — it's a "done viewing,
+        // take me home" action. The router clears body[data-saved-deal-open]
+        // automatically on the #/home route.)
         if (action === 'sd-confirm') {
           if (!_savedDealData) return;
-          toast('Deal confirmation flow lands in v27.4', 'default');
+          toast('Done \u2014 back to Home', 'success');
+          location.hash = '#/home';
           return;
         }
 
@@ -25389,6 +25775,7 @@
       // + _cycleDashFilter, then trigger _loadDashboardV4 for re-populate.
       _getDashFilters:    _getDashFilters,
       _setDashFilters:    _setDashFilters,
+      _dashChartClickFilter: _dashChartClickFilter,
       _cycleDashFilter:   _cycleDashFilter,
       _applyDashFilters:  applyDashFilters,
       _loadDashboardV4:   loadDashboardV4,
@@ -26139,16 +26526,30 @@
           outputSignal: d.mv_outputSignal
         });
       } else if (d.solutionType === 'corio') {
-        // Strip zero-qty entries to keep the input clean for RECOMMEND.
-        const inputs = {};
-        Object.entries(d.corio_inputs).forEach(([k,v]) => { if (Number(v) > 0) inputs[k] = Number(v); });
-        const outputs = {};
-        Object.entries(d.corio_outputs).forEach(([k,v]) => { if (Number(v) > 0) outputs[k] = Number(v); });
-        const args = { inputs, outputs };
+        const args = {};
+        // v27.19.0 — Prefer generic signal counts from the new form. The engine
+        // translates them to CM/CM2 card keys per resolved ecosystem. Fall back
+        // to legacy corio_inputs/outputs (card-key counts) for old saved deals.
+        const sigIn = {};
+        Object.entries(d.corio_sig_inputs || {}).forEach(function([k,v]){ if (Number(v) > 0) sigIn[k] = Number(v); });
+        const sigOut = {};
+        Object.entries(d.corio_sig_outputs || {}).forEach(function([k,v]){ if (Number(v) > 0) sigOut[k] = Number(v); });
+        if (Object.keys(sigIn).length || Object.keys(sigOut).length) {
+          args.signalInputs = sigIn;
+          args.signalOutputs = sigOut;
+        } else {
+          // Legacy path — card-key counts directly.
+          const inputs = {};
+          Object.entries(d.corio_inputs || {}).forEach(([k,v]) => { if (Number(v) > 0) inputs[k] = Number(v); });
+          const outputs = {};
+          Object.entries(d.corio_outputs || {}).forEach(([k,v]) => { if (Number(v) > 0) outputs[k] = Number(v); });
+          args.inputs = inputs;
+          args.outputs = outputs;
+        }
         if (d.corio_audio)     args.audio = d.corio_audio;
         if (d.corio_fanFilter) args.fanFilter = true;
         // v27.3.1 — canvas-first chassis selection per Dipenkumar's CORIO design rule.
-        // ≤5 → Micro, ≤6 → Mini, >6 → CM2; with card-slot override if signals overflow.
+        // ≤5 → Micro, =6 → Mini, >6 → CM2; with card-slot override if signals overflow.
         if (Number(d.corio_canvases) > 0) args.canvases = Number(d.corio_canvases);
         reco = RECOMMEND.corio(args);
       } else {
