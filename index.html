@@ -7251,7 +7251,7 @@
     };
 
     return deepFreeze({
-      version: 'v27.21.0',
+      version: 'v27.22.0',
       constants,
       calico,
       mv,
@@ -17364,23 +17364,11 @@
           '</div>' +
         '</div>' +
 
-        // Attention strip (operational alerts — 4 actionable counts)
-        // Reuses .v4-attn-* CSS from Phase 4 Home view. Each card taps
-        // through to History filtered to the matching deal set.
-        // v27.16.0 — Mission-control telemetry strip + hero KPIs + velocity
-        // grid + gauges + month-segment inserted ABOVE this. The existing
-        // attention strip is kept (it powers data-v4-d-attn selectors that
-        // loadDashboardV4 writes), but visually it now sits below the new
-        // mission-control hero. Additive: no existing selector removed.
-        '<div class="mc-strip">' +
-          '<div class="mc-cell"><span class="mc-led green"></span><span class="lbl">MISSION</span><span class="val">PIPELINE-OVERSIGHT</span></div>' +
-          '<span class="mc-sep">/</span>' +
-          '<div class="mc-cell"><span class="lbl">STATUS</span><span class="val green" data-mc-status>NOMINAL</span></div>' +
-          '<span class="mc-sep">/</span>' +
-          '<div class="mc-cell"><span class="lbl">CHANNEL</span><span class="val" data-mc-channel>PAN-INDIA</span></div>' +
-          '<span class="mc-sep">/</span>' +
-          '<div class="mc-cell"><span class="lbl">FY</span><span class="val amber">26-27</span></div>' +
-        '</div>' +
+        // v27.22.0 — Decorative mission-control strip removed (MISSION/STATUS/
+        // CHANNEL/FY). It was eye-candy: MISSION + CHANNEL + FY were hardcoded
+        // labels, and the only live value (STATUS via data-mc-status) is already
+        // shown by the Signal panel's health indicator below. The loader's
+        // data-mc-status write is null-guarded → harmless no-op.
 
         // HERO TELEMETRY (4 hero KPIs — instrument panel)
         '<div class="mc-telemetry">' +
@@ -17593,31 +17581,18 @@
           '<div class="v4-card v4-col-12">' +
             '<div class="v4-card-hd"><h3>Regional distribution</h3><span class="v4-hint">open cases by zone</span></div>' +
             '<div class="v4-card-bd">' +
-              // v27.4.1 W5 — Region "unknown" cleanup banner. Shown only when N > 0.
+              // v27.22.0 — Region consolidated to ONE visual. The interactive
+              // ECharts bar (chart-region) is the single source; the decorative
+              // India pin map + duplicate SVG bars were removed (they re-showed
+              // the same 4 zone counts three ways). The loader's data-v4-zcount /
+              // data-v4-zone-lbl / data-mc-pin writes are null-guarded, so they
+              // become harmless no-ops; the chart renders from its data argument.
               '<button type="button" class="v4-region-banner" data-action="v4-region-unknown" data-v4-d-region-banner>' +
                 '<span class="v4-region-banner-ico">\u26a0</span>' +
                 '<span class="v4-region-banner-text" data-v4-d-region-banner-text>0 deals have unknown region. Tap to fix.</span>' +
                 '<span class="v4-region-banner-arrow">\u2192</span>' +
               '</button>' +
-              // v27.16.0 — India map with 4 region markers (Phase 3).
-              // Stylized single-path India silhouette + 4 positioned
-              // region pins that scale + glow by deal count. Wrapped in
-              // a host that loadDashboardV4 populates; if the map fails
-              // the bars below still render (graceful degrade).
               '<div id="chart-region" class="dash-chart-canvas short"></div>' +
-              '<div class="mc-map-wrap" data-mc-map-host>' + mcIndiaMap() + '</div>' +
-              // v27.14.0 — Horizontal bar chart. 4 rows, each with:
-              //   - colored zone dot + zone name + state hint
-              //   - horizontal bar (width set by JS in loadDashboardV4)
-              //   - count + pct on the right
-              // Order: West first (Cavitak HQ + densest typically), then North,
-              // South, East. Keep stable to avoid jumpy bars on data updates.
-              '<div class="v4-region-bars">' +
-                regionBarRow('west',  'West',  '#F7941D', 'Maharashtra, Gujarat, Goa, MP +3') +
-                regionBarRow('north', 'North', '#3B82F6', 'Delhi, Haryana, UP, Punjab +6') +
-                regionBarRow('south', 'South', '#10B981', 'Karnataka, TN, AP, TG +3') +
-                regionBarRow('east',  'East',  '#8B5CF6', 'WB, Bihar, Odisha, NE +8') +
-              '</div>' +
             '</div>' +
           '</div>' +
 
@@ -17625,15 +17600,9 @@
 
           // Sales table
           '<div class="v4-card v4-col-6">' +
-            '<div class="v4-card-hd"><h3>Sales performance</h3><span class="v4-hint">FY26-27 \u00b7 tap to drill</span></div>' +
+            '<div class="v4-card-hd"><h3>Sales performance</h3><span class="v4-hint">FY26-27 \u00b7 tap to filter</span></div>' +
             '<div class="v4-card-bd" style="padding:0">' +
-              '<div id="chart-sales" class="dash-chart-canvas short" style="margin:8px 8px 0"></div>' +
-              '<div class="v4-tbl-wrap v4-dup-table">' +
-                '<table class="v4-tbl">' +
-                  '<thead><tr><th>Person</th><th>Pipeline</th><th class="v4-num">Open</th><th class="v4-num">Won</th><th class="v4-num">Win %</th><th class="v4-num">Health</th></tr></thead>' +
-                  '<tbody data-v4-d-sales-body><tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:24px">Loading\u2026</td></tr></tbody>' +
-                '</table>' +
-              '</div>' +
+              '<div id="chart-sales" class="dash-chart-canvas short" style="margin:8px 8px 12px"></div>' +
             '</div>' +
           '</div>' +
 
@@ -17671,25 +17640,13 @@
           '<div class="v4-card v4-col-6" data-v4-d-channel-card="partner" style="display:none">' +
             '<div class="v4-card-hd"><h3>Partner performance</h3><span class="v4-hint">FY26-27 \u00b7 top by open</span></div>' +
             '<div class="v4-card-bd" style="padding:0">' +
-              '<div id="chart-partner" class="dash-chart-canvas short" style="margin:8px 8px 0"></div>' +
-              '<div class="v4-tbl-wrap v4-dup-table">' +
-                '<table class="v4-tbl">' +
-                  '<thead><tr><th>Partner</th><th class="v4-num">Open</th><th class="v4-num">Open ₹</th><th class="v4-num">Won FY</th></tr></thead>' +
-                  '<tbody data-v4-d-partner-body><tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:24px">Loading\u2026</td></tr></tbody>' +
-                '</table>' +
-              '</div>' +
+              '<div id="chart-partner" class="dash-chart-canvas short" style="margin:8px 8px 12px"></div>' +
             '</div>' +
           '</div>' +
           '<div class="v4-card v4-col-6" data-v4-d-channel-card="consultant" style="display:none">' +
             '<div class="v4-card-hd"><h3>Consultant performance</h3><span class="v4-hint">FY26-27 \u00b7 top by open</span></div>' +
             '<div class="v4-card-bd" style="padding:0">' +
-              '<div id="chart-consultant" class="dash-chart-canvas short" style="margin:8px 8px 0"></div>' +
-              '<div class="v4-tbl-wrap v4-dup-table">' +
-                '<table class="v4-tbl">' +
-                  '<thead><tr><th>Consultant</th><th class="v4-num">Open</th><th class="v4-num">Open ₹</th><th class="v4-num">Won FY</th></tr></thead>' +
-                  '<tbody data-v4-d-consultant-body><tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:24px">Loading\u2026</td></tr></tbody>' +
-                '</table>' +
-              '</div>' +
+              '<div id="chart-consultant" class="dash-chart-canvas short" style="margin:8px 8px 12px"></div>' +
             '</div>' +
           '</div>' +
 
@@ -17698,13 +17655,7 @@
           '<div class="v4-card v4-col-12">' +
             '<div class="v4-card-hd"><h3>Presales performance</h3><span class="v4-hint">FY26-27 \u00b7 by presales owner</span></div>' +
             '<div class="v4-card-bd" style="padding:0">' +
-              '<div id="chart-presales" class="dash-chart-canvas short" style="margin:8px 8px 0"></div>' +
-              '<div class="v4-tbl-wrap v4-dup-table">' +
-                '<table class="v4-tbl">' +
-                  '<thead><tr><th>Presales</th><th class="v4-num">Open</th><th class="v4-num">Won</th><th class="v4-num">Win %</th></tr></thead>' +
-                  '<tbody data-v4-d-presales-body><tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:24px">Loading\u2026</td></tr></tbody>' +
-                '</table>' +
-              '</div>' +
+              '<div id="chart-presales" class="dash-chart-canvas short" style="margin:8px 8px 12px"></div>' +
             '</div>' +
           '</div>' +
 
