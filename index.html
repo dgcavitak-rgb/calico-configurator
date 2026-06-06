@@ -7286,6 +7286,12 @@
       }
     };
 
+    // v27.25.1 patch: (a) tightened the Add-ons -> Signal Extension gap (dropped
+    //   the redundant SX border-top + padding-top; single divider now). (b) CM2-Filter
+    //   add guarded to CM2 chassis only (a manual tick can't add it to a Micro/Mini);
+    //   the CM2 auto-include is unchanged. (c) Fan-filter checkbox sub-label clarifies
+    //   it's auto-included for CM2. NOTE: CM2-Filter auto-add for CM2 already worked
+    //   (v27.3.14b) but was masked by the pre-v27.25.0 CORIO crash; now functional.
     // v27.25.0 changelog:
     //  (1) P0 FIX: CORIO_SIGNAL_MAP relocated above the RECOMMEND IIFE return.
     //      It was dead code (assignment after `return`) -> stayed undefined ->
@@ -7301,7 +7307,7 @@
     //  Fitment: #1 (round-up + low-canvas->CM2) and #3 (Mini fixed DVI-U = no card)
     //  verified ALREADY CORRECT in the engine - no change. #2 (audio-on-Micro) open.
     return deepFreeze({
-      version: 'v27.25.0',
+      version: 'v27.25.1',
       constants,
       calico,
       mv,
@@ -8246,8 +8252,10 @@
         }
       }
 
-      // Fan filter (optional, customer-requested)
-      if (input.fanFilter) {
+      // Fan filter. v27.25.1 — guard to CM2 only: it's auto-included for CM2
+      // (above), and a manually-ticked box must never put a CM2-only filter on
+      // a Micro/Mini chassis.
+      if (input.fanFilter && chassis.cardEcosystem === 'CM2') {
         const filter = ACC['CM2-Filter'];
         cards.push({
           sku: filter.sku, qty: 1,
@@ -22879,7 +22887,7 @@
         '</div>' +
         '<h3 class="h3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:6px;opacity:.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add-ons</h3>' +
         '<div class="col">' +
-          toggleRow('corio_fanFilter', 'Add CM2 fan filter (CM2-Filter)', '', d.corio_fanFilter, { namespace:'' }) +
+          toggleRow('corio_fanFilter', 'Add CM2 fan filter (CM2-Filter)', 'Auto-included when a CM2 chassis is recommended', d.corio_fanFilter, { namespace:'' }) +
         '</div>';
     }
 
@@ -23247,7 +23255,7 @@
       // ===== Header + assembly =====
       var _anySxContent = hcHdbt || hcDa || hcAp || hcAoc;
       var _sxOn = (d.sx_required === true) || _anySxContent;   // v27.25.0 SX gate
-      return '<div class="sx-block-header" style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border-soft, #e5e7eb)">' +
+      return '<div class="sx-block-header" style="margin-top:12px">' +
           '<h3 style="margin:0 0 4px;font-size:16px;font-weight:700"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;vertical-align:-2px;margin-right:7px;opacity:.55"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.71 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Signal Extension</h3>' +
           '<div style="margin:0 0 12px;color:var(--ink-mid, #6b7280);font-size:13px">Turn on if this deal needs HDMI / SDI extension or distribution.</div>' +
           '<div class="sx-pill-group" style="margin-bottom:4px">' +
