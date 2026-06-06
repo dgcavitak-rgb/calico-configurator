@@ -7286,8 +7286,22 @@
       }
     };
 
+    // v27.25.0 changelog:
+    //  (1) P0 FIX: CORIO_SIGNAL_MAP relocated above the RECOMMEND IIFE return.
+    //      It was dead code (assignment after `return`) -> stayed undefined ->
+    //      "reading 'input'" crash on every CORIO quote. CALICO/MV unaffected.
+    //  (2) Audio control = Yes/No pills (Yes maps to 2-4 analog+SPDIF). The 8-8
+    //      option is gone from the form; engine still honors 8-8 on saved deals.
+    //  (3) SX card/picker hints stripped of model-family names (HD-One DX / LX).
+    //  (4) SX gated behind a "Signal extension required? No/Yes" pill (default No;
+    //      cards reveal on Yes, or when a deal already carries SX content).
+    //  (5) Section-header icons: Input/Output signals, Audio, Add-ons, Signal Extension.
+    //  (6) Dashboard filters moved to a top toolbar (was mid-report); 5 dead
+    //      placeholder pills removed (At risk, High value, Person, Search, Export CSV).
+    //  Fitment: #1 (round-up + low-canvas->CM2) and #3 (Mini fixed DVI-U = no card)
+    //  verified ALREADY CORRECT in the engine - no change. #2 (audio-on-Micro) open.
     return deepFreeze({
-      version: 'v27.24.0',
+      version: 'v27.25.0',
       constants,
       calico,
       mv,
@@ -7620,6 +7634,33 @@
       };
     }
 
+    // v27.25.0 — moved here (was after the return; see breadcrumb below).
+    // v27.19.0 — CORIO signal→card translator. The input FORM collects GENERIC
+    // signal types (per Dipenkumar's handwritten spec p.1): 4K HDMI / FHD HDMI /
+    // HDBaseT / 3G SDI / 12G SDI / DVI-U. The engine maps each generic signal to
+    // the matching CARD KEY in the chosen ecosystem (CM for Micro/Mini, CM2 for
+    // CM2). "Diff card may have diff port available" — the per-ecosystem card may
+    // differ (e.g. 4K HDMI in → CM 'HDMI 4K' 2-port card vs CM2 'HDMI 4K 4-in'
+    // 4-port card). 12G-SDI has no CM card → it lives only in the CM2 map, so
+    // selecting it forces CM2 (handled by _corioAutoSelectChassis needsCM2Card).
+    var CORIO_SIGNAL_MAP = {
+      input: {
+        '4K HDMI':  { CM: 'HDMI 4K',    CM2: 'HDMI 4K 4-in' },
+        'FHD HDMI': { CM: 'HDMI 1080p', CM2: 'HDMI 1080p' },
+        'HDBaseT':  { CM: 'HDBaseT',    CM2: 'HDBaseT' },
+        '3G SDI':   { CM: 'SDI 3G',     CM2: 'SDI 3G' },
+        '12G SDI':  { CM: null,         CM2: 'SDI 12G' },   // CM2-only → forces CM2
+        'DVI-U':    { CM: 'DVI-U',      CM2: 'DVI-U' }
+      },
+      output: {
+        '4K HDMI':  { CM: 'HDMI 4K 2-out',    CM2: 'HDMI 4K' },
+        'FHD HDMI': { CM: 'HDMI 1080p 4-out', CM2: 'HDMI 1080p' },
+        'HDBaseT':  { CM: 'HDBaseT scaled',   CM2: null },   // no CM2 HDBT out card
+        '3G SDI':   { CM: 'SDI 3G scaled',    CM2: null },   // CM2 uses 12G SDI out
+        '12G SDI':  { CM: null,               CM2: 'SDI 12G' }
+      }
+    };
+
     return Object.freeze({
       calico: recommendCalico,
       mv: recommendMv,
@@ -7929,31 +7970,10 @@
       return chassis;
     }
 
-    // v27.19.0 — CORIO signal→card translator. The input FORM collects GENERIC
-    // signal types (per Dipenkumar's handwritten spec p.1): 4K HDMI / FHD HDMI /
-    // HDBaseT / 3G SDI / 12G SDI / DVI-U. The engine maps each generic signal to
-    // the matching CARD KEY in the chosen ecosystem (CM for Micro/Mini, CM2 for
-    // CM2). "Diff card may have diff port available" — the per-ecosystem card may
-    // differ (e.g. 4K HDMI in → CM 'HDMI 4K' 2-port card vs CM2 'HDMI 4K 4-in'
-    // 4-port card). 12G-SDI has no CM card → it lives only in the CM2 map, so
-    // selecting it forces CM2 (handled by _corioAutoSelectChassis needsCM2Card).
-    var CORIO_SIGNAL_MAP = {
-      input: {
-        '4K HDMI':  { CM: 'HDMI 4K',    CM2: 'HDMI 4K 4-in' },
-        'FHD HDMI': { CM: 'HDMI 1080p', CM2: 'HDMI 1080p' },
-        'HDBaseT':  { CM: 'HDBaseT',    CM2: 'HDBaseT' },
-        '3G SDI':   { CM: 'SDI 3G',     CM2: 'SDI 3G' },
-        '12G SDI':  { CM: null,         CM2: 'SDI 12G' },   // CM2-only → forces CM2
-        'DVI-U':    { CM: 'DVI-U',      CM2: 'DVI-U' }
-      },
-      output: {
-        '4K HDMI':  { CM: 'HDMI 4K 2-out',    CM2: 'HDMI 4K' },
-        'FHD HDMI': { CM: 'HDMI 1080p 4-out', CM2: 'HDMI 1080p' },
-        'HDBaseT':  { CM: 'HDBaseT scaled',   CM2: null },   // no CM2 HDBT out card
-        '3G SDI':   { CM: 'SDI 3G scaled',    CM2: null },   // CM2 uses 12G SDI out
-        '12G SDI':  { CM: null,               CM2: 'SDI 12G' }
-      }
-    };
+    // v27.25.0 — CORIO_SIGNAL_MAP definition RELOCATED above the IIFE return.
+    // It sat here (past `return Object.freeze`), so its assignment never ran →
+    // CORIO_SIGNAL_MAP was undefined → "Cannot read properties of undefined
+    // (reading 'input')" on every CORIO quote. Now defined before the return.
 
     // Translate generic signal counts → ecosystem card-key counts.
     // signalCounts: { '4K HDMI': n, 'HDBaseT': n, ... }; dir: 'input'|'output'.
@@ -13033,7 +13053,7 @@
     //   id='ap536' → CATALOG.sx.ap    (AP-536 audio extractor)
     //   id='avip'  → CATALOG.sx.aoc   (8 codes: HDMI/DP × Std/Plenum/LSZH/Armored)
     const SX_EDITORIAL = [
-      { id:'hdmi',   label:'HDBaseT Extender',     hint:'HDBaseT TX/RX kits for HDMI over Cat6 (HD-One DX / LX)' },
+      { id:'hdmi',   label:'HDBaseT Extender',     hint:'HDBaseT TX/RX kits for HDMI over Cat6' },
       { id:'sdi',    label:'HDMI Splitter',        hint:'Distribution amplifier (1\u00d72 / 1\u00d74 / 1\u00d78)' },
       { id:'ap536',  label:'Audio Extractor (AP-536)', hint:'HDMI audio de-embedder to analog L/R + S/PDIF' },
       { id:'avip',   label:'AOC Cables',           hint:'Active Optical Cable (HDMI / DisplayPort, multiple jackets and lengths)' }
@@ -13086,7 +13106,8 @@
       'sx_hdbt_lines', 'sx_da_counts', 'sx_ap_qty', 'sx_aoc_lines',
       // v27.3.14a — SX accordion: per-card manual-expand flags. Persisted
       // so a user's "open these cards" choice survives re-edit of a saved deal.
-      '_sxExpanded'
+      '_sxExpanded',
+      'sx_required'
     ];
 
     // Module-level autosave state (one saved-deal is viewed at a time).
@@ -13643,6 +13664,7 @@
         corio_sig_inputs:  {},
         corio_sig_outputs: {},
         corio_audio: '',
+        sx_required: false,   // v27.25.0 SX gate - cards reveal on Yes
         corio_fanFilter: false,
         // v27.1.2 #7 — Canvas count for CORIO solutions. UI-only this release
         // (OQ 7B): captured + displayed + persisted, but does NOT drive chassis
@@ -17410,6 +17432,30 @@
         // data-mc-status write is null-guarded → harmless no-op.
 
         // HERO TELEMETRY (4 hero KPIs — instrument panel)
+        // v27.25.0 — FILTERS: relocated here as a top toolbar (was mid-report).
+        '<div class="v4-saved-views">' +
+          '<button type="button" class="v4-saved-pill" data-action="v4-saved-apply" data-saved-key="mine">' + sIco.starF + 'My pipeline</button>' +
+          '<button type="button" class="v4-saved-pill" data-action="v4-saved-apply" data-saved-key="west">' + sIco.pin + 'West region</button>' +
+          '<button type="button" class="v4-saved-pill" data-action="v4-saved-apply" data-saved-key="qclose">' + sIco.warn + 'This quarter close</button>' +
+          '<span data-v4-d-saved-custom></span>' +
+          '<button type="button" class="v4-saved-pill add" data-action="v4-saved-new">' + sIco.plus + 'Save view</button>' +
+        '</div>' +
+
+        // Filter bar — v27.4.2: chips cycle through filter values on tap
+        '<div class="v4-filter-bar">' +
+          '<button type="button" class="v4-filter-chip" data-action="v4-filter-cycle" data-v4-filter-chip="period" data-filter-key="period">' + sIco.cal + '<span data-v4-filter-label>This quarter</span>' + sIco.chev + '</button>' +
+          '<button type="button" class="v4-filter-chip" data-action="v4-filter-cycle" data-v4-filter-chip="region" data-filter-key="region">' + sIco.pin + '<span data-v4-filter-label>Region</span></button>' +
+          '<button type="button" class="v4-filter-chip" data-action="v4-filter-cycle" data-v4-filter-chip="stage"  data-filter-key="stage">' + sIco.stack + '<span data-v4-filter-label>Stage</span></button>' +
+          '<button type="button" class="v4-filter-chip" data-action="v4-filter-cycle" data-v4-filter-chip="product" data-filter-key="product">' + sIco.box + '<span data-v4-filter-label>Product</span></button>' +
+          '<button type="button" class="v4-filter-clear" data-action="v4-filter-clear" data-v4-filter-clear style="display:none">Clear all</button>' +
+        '</div>' +
+
+        // Filter summary line
+        '<div class="v4-filter-summary">' +
+          '<div>Showing <span class="v4-sum-n" data-v4-d-shown>\u2014</span> of <span class="v4-sum-n" data-v4-d-total>\u2014</span> deals \u00b7 <span data-v4-d-sumdetail>No filters</span></div>' +
+          '<div style="display:flex;gap:8px"><button type="button" class="v4-sum-act" data-action="v4-share-view">Share view</button></div>' +
+        '</div>' +
+
         '<div class="mc-telemetry">' +
           '<div class="mc-tel-hd">' +
             '<div class="mc-tel-hd-l">Signal</div>' +
@@ -17471,32 +17517,9 @@
         // Saved views — v27.4.2-rc1: 3 pre-defined wired, 2 disabled (need v27.6
         // richer primitives), custom views from localStorage render in
         // data-v4-d-saved-custom slot.
-        '<div class="v4-saved-views">' +
-          '<button type="button" class="v4-saved-pill" data-action="v4-saved-apply" data-saved-key="mine">' + sIco.starF + 'My pipeline</button>' +
-          '<button type="button" class="v4-saved-pill" disabled title="At-risk filter ships in v27.6 (needs stuck-dwell primitive)">' + sIco.warn + 'At risk</button>' +
-          '<button type="button" class="v4-saved-pill" disabled title="High-value filter ships when pricing lands">' + sIco.bolt + 'High value</button>' +
-          '<button type="button" class="v4-saved-pill" data-action="v4-saved-apply" data-saved-key="west">' + sIco.pin + 'West region</button>' +
-          '<button type="button" class="v4-saved-pill" data-action="v4-saved-apply" data-saved-key="qclose">' + sIco.warn + 'This quarter close</button>' +
-          '<span data-v4-d-saved-custom></span>' +
-          '<button type="button" class="v4-saved-pill add" data-action="v4-saved-new">' + sIco.plus + 'Save view</button>' +
-        '</div>' +
-
-        // Filter bar — v27.4.2: chips cycle through filter values on tap
-        '<div class="v4-filter-bar">' +
-          '<button type="button" class="v4-filter-chip" data-action="v4-filter-cycle" data-v4-filter-chip="period" data-filter-key="period">' + sIco.cal + '<span data-v4-filter-label>This quarter</span>' + sIco.chev + '</button>' +
-          '<button type="button" class="v4-filter-chip" data-action="v4-filter-cycle" data-v4-filter-chip="region" data-filter-key="region">' + sIco.pin + '<span data-v4-filter-label>Region</span></button>' +
-          '<button type="button" class="v4-filter-chip" data-action="v4-filter-cycle" data-v4-filter-chip="stage"  data-filter-key="stage">' + sIco.stack + '<span data-v4-filter-label>Stage</span></button>' +
-          '<button type="button" class="v4-filter-chip" data-action="v4-filter-cycle" data-v4-filter-chip="product" data-filter-key="product">' + sIco.box + '<span data-v4-filter-label>Product</span></button>' +
-          '<button type="button" class="v4-filter-chip" disabled title="Person + search filters arrive in v27.4.3">' + sIco.user + 'Person</button>' +
-          '<button type="button" class="v4-filter-chip" disabled title="Person + search filters arrive in v27.4.3">' + sIco.search + 'Search</button>' +
-          '<button type="button" class="v4-filter-clear" data-action="v4-filter-clear" data-v4-filter-clear style="display:none">Clear all</button>' +
-        '</div>' +
-
-        // Filter summary line
-        '<div class="v4-filter-summary">' +
-          '<div>Showing <span class="v4-sum-n" data-v4-d-shown>\u2014</span> of <span class="v4-sum-n" data-v4-d-total>\u2014</span> deals \u00b7 <span data-v4-d-sumdetail>No filters</span></div>' +
-          '<div style="display:flex;gap:8px"><button type="button" class="v4-sum-act" disabled title="CSV export ships in v27.5">Export CSV</button><button type="button" class="v4-sum-act" data-action="v4-share-view">Share view</button></div>' +
-        '</div>' +
+        // v27.25.0 — filter toolbar (saved views + chips + summary) MOVED up
+        // to just under the hero, so the report sections below read as one story.
+        '' +
 
         // v27.16.1 — Old dashboard activity ticker REMOVED. It rendered
         // hardcoded "Someone moved a deal" placeholder text (never wired to
@@ -22835,33 +22858,26 @@
         '<div class="card">' +
           stepperRow('corio_canvases', 'Canvas count', 'Independent canvases \u00b7 \u22645 \u2192 Micro, 6 \u2192 Mini, &gt;6 \u2192 CM2', d.corio_canvases || 0, { namespace:'__corio_canvas' }) +
         '</div>' +
-        '<h3 class="h3">Input signals</h3>' +
+        '<h3 class="h3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:6px;opacity:.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Input signals</h3>' +
         '<div class="card">' +
           inputSignals.map(function (s) {
             return stepperRow(s.key, s.key, s.desc, (d.corio_sig_inputs && d.corio_sig_inputs[s.key]) || 0, { namespace:'corio_sig_inputs' });
           }).join('') +
         '</div>' +
-        '<h3 class="h3">Output signals</h3>' +
+        '<h3 class="h3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:6px;opacity:.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Output signals</h3>' +
         '<div class="card">' +
           outputSignals.map(function (s) {
             return stepperRow(s.key, s.key, s.desc, (d.corio_sig_outputs && d.corio_sig_outputs[s.key]) || 0, { namespace:'corio_sig_outputs' });
           }).join('') +
         '</div>' +
-        '<h3 class="h3">Audio</h3>' +
+        '<h3 class="h3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:6px;opacity:.5"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>Audio</h3>' +
         '<div class="card">' +
           '<div class="field" style="margin:0">' +
             '<label>Audio required?</label>' +
-            '<select data-bind="corio_audio">' +
-              '<option value=""'    + (d.corio_audio === ''    ? ' selected' : '') + '>No</option>' +
-              '<option value="2-4"' + (d.corio_audio === '2-4' ? ' selected' : '') + '>Yes \u00b7 2-4 (analog + SPDIF)</option>' +
-              '<option value="8-8"' + (d.corio_audio === '8-8' ? ' selected' : '') + '>Yes \u00b7 8-8 (CM only \u00b7 8-IN / 8-OUT HD-44)</option>' +
-            '</select>' +
-            (d.corio_audio === '8-8'
-              ? '<div class="help danger-text">8-8 module is CM-only \u2014 incompatible with CM2 / 4K chassis.</div>'
-              : '') +
+            '<div class="sx-pill-group">' + '<button type="button" class="sx-pill' + (d.corio_audio === '' ? ' active' : '') + '" data-action="corio-audio-set" data-value="">No</button>' + '<button type="button" class="sx-pill' + (d.corio_audio === '2-4' || d.corio_audio === '8-8' ? ' active' : '') + '" data-action="corio-audio-set" data-value="2-4">Yes</button>' + '</div>' +
           '</div>' +
         '</div>' +
-        '<h3 class="h3">Add-ons</h3>' +
+        '<h3 class="h3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:6px;opacity:.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add-ons</h3>' +
         '<div class="col">' +
           toggleRow('corio_fanFilter', 'Add CM2 fan filter (CM2-Filter)', '', d.corio_fanFilter, { namespace:'' }) +
         '</div>';
@@ -23145,7 +23161,7 @@
       ) : '';
 
       const hdbtCard = '<div class="sx-card sx-card-wide" data-key="hdbt" data-expanded="' + (exHdbt ? 'true' : 'false') + '" data-has-content="' + (hcHdbt ? 'true' : 'false') + '">' +
-        _sxCardHead('hdbt', exHdbt, hcHdbt, hdbtIconSvg, 'HDBaseT Extender', 'TX/RX over Cat6 \u00b7 HD-One DX (Video / Video+Audio) or LX (with IR/RS232)') +
+        _sxCardHead('hdbt', exHdbt, hcHdbt, hdbtIconSvg, 'HDBaseT Extender', 'HDMI over Cat6 \u00b7 video / +audio / +IR\u00b7RS232') +
         hdbtBody +
       '</div>';
 
@@ -23229,17 +23245,25 @@
       '</div>';
 
       // ===== Header + assembly =====
+      var _anySxContent = hcHdbt || hcDa || hcAp || hcAoc;
+      var _sxOn = (d.sx_required === true) || _anySxContent;   // v27.25.0 SX gate
       return '<div class="sx-block-header" style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border-soft, #e5e7eb)">' +
-          '<h3 style="margin:0 0 4px;font-size:16px;font-weight:700">Signal Extension</h3>' +
-          '<div style="margin:0 0 12px;color:var(--ink-mid, #6b7280);font-size:13px">Optional. Leave zero counts to skip SX for this deal.</div>' +
+          '<h3 style="margin:0 0 4px;font-size:16px;font-weight:700"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;vertical-align:-2px;margin-right:7px;opacity:.55"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.71 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Signal Extension</h3>' +
+          '<div style="margin:0 0 12px;color:var(--ink-mid, #6b7280);font-size:13px">Turn on if this deal needs HDMI / SDI extension or distribution.</div>' +
+          '<div class="sx-pill-group" style="margin-bottom:4px">' +
+            '<button type="button" class="sx-pill' + (!_sxOn ? ' active' : '') + '" data-action="sx-required-set" data-value="no">No</button>' +
+            '<button type="button" class="sx-pill' + (_sxOn ? ' active' : '') + '" data-action="sx-required-set" data-value="yes">Yes</button>' +
+          '</div>' +
         '</div>' +
-        errHtml +
-        '<div class="sx-grid">' +
-          hdbtCard +
-          daCard +
-          '<div class="sx-grid-half">' + apCard + '</div>' +
-          aocCard +
-        '</div>';
+        (_sxOn
+          ? (errHtml +
+             '<div class="sx-grid">' +
+               hdbtCard +
+               daCard +
+               '<div class="sx-grid-half">' + apCard + '</div>' +
+               aocCard +
+             '</div>')
+          : '');
     }
 
     /* v27.3.12 — Back-compat alias. Any case-5 callers (none should remain
@@ -24984,6 +25008,14 @@
            (v27.3.14a accordion), sx-ap-qty, 3 AOC handlers.
            All read `actEl.getAttribute(...)` and use closure-scoped helpers
            (_applySxHdbtView, _syncSxSums, _sxCardHasContent, etc). */
+        if (action === 'corio-audio-set') {
+          wizardData.corio_audio = actEl.getAttribute('data-value') || '';
+          saveDraft(); rerenderPreservingScroll(); return;
+        }
+        if (action === 'sx-required-set') {
+          wizardData.sx_required = (actEl.getAttribute('data-value') === 'yes');
+          saveDraft(); rerenderPreservingScroll(); return;
+        }
         if (action === 'sx-hdbt-view-signal') {
           _applySxHdbtView(wizardData, 'signal', actEl.getAttribute('data-value') || '');
           _syncSxSums();
