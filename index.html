@@ -2293,6 +2293,9 @@
     .step-row .step-label { flex: 1; }
     .step-row .step-label .name { font-weight: 600; font-size: 14px; }
     .step-row .step-label .sub { font-size: 12px; color: var(--c-fg-mute); margin-top: 2px; }
+    .step-row .step-ico { flex: 0 0 auto; width: 30px; height: 30px; display: inline-flex;
+      align-items: center; justify-content: center; color: var(--c-fg-mute); opacity: .6; }
+    .step-row .step-ico svg { width: 21px; height: 21px; }
 
     /* Scale to wider screens */
     @media (min-width: 768px) {
@@ -7286,6 +7289,16 @@
       }
     };
 
+    // v27.26.0 UX pass:
+    //   - CORIO I/O rows: stripped card-name hints (e.g. "CM: HDMI 4K 2-IN") down to
+    //     plain source descriptions; canvas hint reduced to "Independent canvases"
+    //     (also fixes a literal "&gt;6" double-escape in the old hint).
+    //   - Connector icons (HDMI / BNC / RJ45 / DVI) added to every CORIO input &
+    //     output signal row via a new backward-compatible stepperRow opts.icon.
+    //   - Removed the manual "Add CM2 fan filter" checkbox + the whole Add-ons
+    //     section from the CORIO form: CM2-Filter is auto-included by the engine for
+    //     any CM2 chassis (v27.3.14b + the v27.25.1 CM2-only guard), so the control
+    //     was redundant. The filter still ships on every CM2 quote.
     // v27.25.1 patch: (a) tightened the Add-ons -> Signal Extension gap (dropped
     //   the redundant SX border-top + padding-top; single divider now). (b) CM2-Filter
     //   add guarded to CM2 chassis only (a manual tick can't add it to a Micro/Mini);
@@ -7307,7 +7320,7 @@
     //  Fitment: #1 (round-up + low-canvas->CM2) and #3 (Mini fixed DVI-U = no card)
     //  verified ALREADY CORRECT in the engine - no change. #2 (audio-on-Micro) open.
     return deepFreeze({
-      version: 'v27.25.1',
+      version: 'v27.26.0',
       constants,
       calico,
       mv,
@@ -22633,6 +22646,7 @@
       const max = opts.max != null ? opts.max : 32;
       const ns = opts.namespace || '';
       return '<div class="step-row">' +
+        (opts.icon ? '<span class="step-ico" aria-hidden="true">' + opts.icon + '</span>' : '') +
         '<div class="step-label">' +
           '<div class="name">' + esc(name) + '</div>' +
           (sub ? '<div class="sub">' + esc(sub) + '</div>' : '') +
@@ -22840,20 +22854,26 @@
       const inErr = d.errors.corio_io
         ? '<div class="banner err">' + esc(d.errors.corio_io) + '</div>' : '';
 
+      const CIO = {
+        hdmi:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M5 8.5h14v4.5l-2.5 2.5h-9L5 13z"/><path d="M8 8.5V7h8v1.5"/></svg>',
+        bnc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="currentColor" stroke="none"/></svg>',
+        rj45:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M6 8h12v8H6z"/><path d="M10 8V6h4v2"/><path d="M9 16v1.6M12 16v1.6M15 16v1.6"/></svg>',
+        dvi:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="4.5" y="8" width="15" height="8" rx="1"/><path d="M8 11h.01M11 11h.01M14 11h.01M8 13.5h.01M11 13.5h.01M14 13.5h.01" stroke-linecap="round" stroke-width="2"/></svg>'
+      };
       const inputSignals = [
-        { key:'4K HDMI',  desc:'4K HDMI sources \u00b7 CM: HDMI 4K 2-IN \u00b7 CM2: HDMI 4K 4-IN' },
-        { key:'FHD HDMI', desc:'1080p HDMI sources \u00b7 HDMI 4-IN card' },
-        { key:'HDBaseT',  desc:'HDBaseT sources \u00b7 2-IN card (+ Ethernet)' },
-        { key:'3G SDI',   desc:'3G-SDI sources \u00b7 CM: 2-IN \u00b7 CM2: 4-IN' },
-        { key:'12G SDI',  desc:'12G-SDI 4K sources \u00b7 CM2 only (forces CORIOmaster2)' },
-        { key:'DVI-U',    desc:'DVI-U sources \u00b7 2-IN card (Mini has 2 built-in)' }
+        { key:'4K HDMI',  icon:CIO.hdmi, desc:'4K HDMI sources' },
+        { key:'FHD HDMI', icon:CIO.hdmi, desc:'1080p HDMI sources' },
+        { key:'HDBaseT',  icon:CIO.rj45, desc:'HDBaseT sources' },
+        { key:'3G SDI',   icon:CIO.bnc,  desc:'3G-SDI sources' },
+        { key:'12G SDI',  icon:CIO.bnc,  desc:'12G-SDI 4K sources' },
+        { key:'DVI-U',    icon:CIO.dvi,  desc:'DVI-U sources' }
       ];
       const outputSignals = [
-        { key:'4K HDMI',  desc:'4K HDMI outputs \u00b7 CM: 4K 2-OUT \u00b7 CM2: 4K 4-OUT' },
-        { key:'FHD HDMI', desc:'1080p HDMI outputs \u00b7 scaled' },
-        { key:'HDBaseT',  desc:'HDBaseT outputs \u00b7 CM only (scaled + Ethernet)' },
-        { key:'3G SDI',   desc:'3G-SDI outputs \u00b7 CM only (scaled)' },
-        { key:'12G SDI',  desc:'12G-SDI outputs \u00b7 CM2 only' }
+        { key:'4K HDMI',  icon:CIO.hdmi, desc:'4K HDMI outputs' },
+        { key:'FHD HDMI', icon:CIO.hdmi, desc:'1080p HDMI outputs' },
+        { key:'HDBaseT',  icon:CIO.rj45, desc:'HDBaseT outputs' },
+        { key:'3G SDI',   icon:CIO.bnc,  desc:'3G-SDI outputs' },
+        { key:'12G SDI',  icon:CIO.bnc,  desc:'12G-SDI outputs' }
       ];
 
       return inErr +
@@ -22864,18 +22884,18 @@
         '</div>' +
         '<h3 class="h3">Canvas configuration</h3>' +
         '<div class="card">' +
-          stepperRow('corio_canvases', 'Canvas count', 'Independent canvases \u00b7 \u22645 \u2192 Micro, 6 \u2192 Mini, &gt;6 \u2192 CM2', d.corio_canvases || 0, { namespace:'__corio_canvas' }) +
+          stepperRow('corio_canvases', 'Canvas count', 'Independent canvases', d.corio_canvases || 0, { namespace:'__corio_canvas' }) +
         '</div>' +
         '<h3 class="h3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:6px;opacity:.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Input signals</h3>' +
         '<div class="card">' +
           inputSignals.map(function (s) {
-            return stepperRow(s.key, s.key, s.desc, (d.corio_sig_inputs && d.corio_sig_inputs[s.key]) || 0, { namespace:'corio_sig_inputs' });
+            return stepperRow(s.key, s.key, s.desc, (d.corio_sig_inputs && d.corio_sig_inputs[s.key]) || 0, { namespace:'corio_sig_inputs', icon:s.icon });
           }).join('') +
         '</div>' +
         '<h3 class="h3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:6px;opacity:.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Output signals</h3>' +
         '<div class="card">' +
           outputSignals.map(function (s) {
-            return stepperRow(s.key, s.key, s.desc, (d.corio_sig_outputs && d.corio_sig_outputs[s.key]) || 0, { namespace:'corio_sig_outputs' });
+            return stepperRow(s.key, s.key, s.desc, (d.corio_sig_outputs && d.corio_sig_outputs[s.key]) || 0, { namespace:'corio_sig_outputs', icon:s.icon });
           }).join('') +
         '</div>' +
         '<h3 class="h3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:6px;opacity:.5"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>Audio</h3>' +
@@ -22884,10 +22904,6 @@
             '<label>Audio required?</label>' +
             '<div class="sx-pill-group">' + '<button type="button" class="sx-pill' + (d.corio_audio === '' ? ' active' : '') + '" data-action="corio-audio-set" data-value="">No</button>' + '<button type="button" class="sx-pill' + (d.corio_audio === '2-4' || d.corio_audio === '8-8' ? ' active' : '') + '" data-action="corio-audio-set" data-value="2-4">Yes</button>' + '</div>' +
           '</div>' +
-        '</div>' +
-        '<h3 class="h3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px;margin-right:6px;opacity:.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add-ons</h3>' +
-        '<div class="col">' +
-          toggleRow('corio_fanFilter', 'Add CM2 fan filter (CM2-Filter)', 'Auto-included when a CM2 chassis is recommended', d.corio_fanFilter, { namespace:'' }) +
         '</div>';
     }
 
