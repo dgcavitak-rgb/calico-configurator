@@ -7303,6 +7303,54 @@
       }
     };
 
+    // v27.35.0 — Completed the concurrency backend + added session expiry.
+    //   - deal_save now ENFORCES expected_row_version (DB guard applied + tested:
+    //     stale write -> {ok:false,conflict:true}, no overwrite; row_version bumps
+    //     each update); deal_get returns row_version; deals.row_version column added.
+    //     The frontend already sent expected_row_version — the backend now honors it
+    //     instead of silently accepting a stale save.
+    //   - Sliding 30-day session expiry: a cached localStorage session unused for
+    //     30 days is cleared on boot (forces re-login); refreshed on each use so
+    //     active users aren't interrupted. (Deferred: Supabase Auth for
+    //     server-verified identity + a real password KDF.)
+    //   - CI added at repo root: scripts/validate-build.mjs + scripts/smoke-test.mjs
+    //     + .github/workflows/ci.yml gate every push to main.
+    // v27.34.0 — Phase 3: offline hardening (closes the offline-edit data-loss
+    //   gap the v27.32 lock surfaced). Offline edit drafts now carry
+    //   expected_row_version; _enqueueOfflineDraft dedupes per deal (offline
+    //   last-write-wins, no self-conflict); _flushOfflineQueue checks the result
+    //   and on conflict PARKS the draft (flag + keep — no silent drop, no
+    //   overwrite, no auto-retry) and toasts the user; parked drafts show a
+    //   "changed elsewhere" flag + Discard in the pending-sync sheet. SW shell
+    //   precache + offline navigation fallback were already correct (unchanged).
+    // v27.33.0 — Phase 2 auth hardening (backend live + DB-tested; frontend works
+    //   unchanged — this bump documents it + aligns the salt-fetch comment):
+    //   - Login rate-limiting: 5 failed attempts -> 15-min lockout per username
+    //     (login_lockout table + gate in user_login). Tested: locks at attempt 5;
+    //     a correct login still succeeds and clears the lock.
+    //   - Username enumeration closed: user_login_salt returns a deterministic
+    //     32-hex decoy salt for unknown users (previously '' -> revealed absence).
+    //   - Confirmed already-solid: RLS ON for every table (deny-by-default, all
+    //     access via SECURITY DEFINER RPCs); must_change enforced by the
+    //     non-dismissible route gate. No hardcoded bootstrap creds in this app.
+    // v27.33.0 — Phase 2 (auth) outcome: the layer audited as already hardened
+    //   (login lockout 5 fails/15 min, decoy-salt enumeration block, is_active
+    //   gate, must_change enforced both ends, no client bootstrap creds, RPC-only
+    //   with deny-all RLS). One real gap closed: sliding 30-day session expiry — a
+    //   cached localStorage session unused for 30 days is cleared on boot (forces
+    //   re-login); refreshed on each use so active users aren't interrupted.
+    //   Deferred (deliberate, higher-risk): Supabase Auth migration for
+    //   server-verified identity (auth.uid() vs client-passed actor_user_id) + a
+    //   real password KDF.
+    // v27.32.0 — Concurrency safety (optimistic locking) on deals. Stops two
+    //   users silently overwriting each other's edits (last-write-wins data loss).
+    //   Backend (migrations applied + DB-tested): deals.row_version column; deal_save
+    //   rejects a stale write (expected_row_version mismatch -> {ok:false,conflict:true},
+    //   no write) and bumps row_version on each update; deal_get returns row_version.
+    //   Frontend: STORE caches the loaded row_version (loadDeal + successful saves) and
+    //   sends it as expected_row_version; on conflict saveDeal throws a clear, actionable
+    //   error the save toast surfaces ("changed by someone else - reload"). Offline draft
+    //   flush intentionally skips the check (handled in the Phase 3 offline work).
     // v27.31.0 — UI polish: icons + copy relevance.
     //   Icons: rounded stroke-linejoin added across the sIco set (21 glyphs) so
     //     polygon/rect corners (funnel, bolt, grid, box, trend) render smooth and
@@ -7396,7 +7444,7 @@
     //  Fitment: #1 (round-up + low-canvas->CM2) and #3 (Mini fixed DVI-U = no card)
     //  verified ALREADY CORRECT in the engine - no change. #2 (audio-on-Micro) open.
     return deepFreeze({
-      version: 'v27.31.0',
+      version: 'v27.35.0',
       constants,
       calico,
       mv,
@@ -8439,11 +8487,21 @@
     // Independently rotatable; not the service_role key.
     const SUPABASE_KEY = 'sb_publishable_Rex8QiypJkVmJz2r7UPGtg_3-l1yy1u';
     const STORAGE_KEY  = 'v27.session';
+    // v27.33.0 — sliding session expiry. A cached localStorage session not used
+    // within this window is treated as stale on boot and cleared, forcing a fresh
+    // login. Refreshed on every boot so active users are never interrupted; only
+    // forgotten/abandoned sessions lapse. Adjust the constant to taste.
+    const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days inactivity
     const REF_PREFIX   = 'TV-';
     const REF_DIGITS   = 8;
     const APP_TAG      = 'tvone';
 
     let _user = null;
+    // v27.32.0 — optimistic-lock cache: deal id -> last row_version this client
+    // saw (from deal_get or a successful deal_save). saveDeal sends it as
+    // expected_row_version so the server rejects a stale overwrite instead of
+    // silently clobbering another user's edit.
+    const _loadedVersions = {};
     const _listeners = new Set();
 
     /* ---------- crypto ---------- */
@@ -8594,6 +8652,20 @@
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
           _user = JSON.parse(raw);
+          // Session expiry: drop a cached session not used within
+          // SESSION_MAX_AGE_MS (forgotten/abandoned device). Sessions cached
+          // before this landed have no _authTs — grandfather them by stamping
+          // "now" so the window starts here rather than logging everyone out.
+          if (_user) {
+            const ts = Number(_user._authTs) || 0;
+            if (ts && (Date.now() - ts) > SESSION_MAX_AGE_MS) {
+              _user = null;
+              try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+            } else {
+              _user._authTs = Date.now();   // slide the window on each use
+              try { localStorage.setItem(STORAGE_KEY, JSON.stringify(_user)); } catch (_) {}
+            }
+          }
           // Stale-phone self-heal: if the cached phone has any non-digit
           // characters, strip them and keep the last 10. Only re-write
           // localStorage when we actually changed something.
@@ -8683,12 +8755,16 @@
         throw new Error('username and password required');
       }
       const saltResp = await rpc('user_login_salt', { p_username: username });
-      // Server returns {salt: ''} on miss to prevent username enumeration —
-      // we treat empty salt same as a wrong password (generic failure).
-      if (!saltResp || !saltResp.salt) {
+      // v27.33.0 — the server now always returns a 32-hex salt: a real one for a
+      // valid account, or a deterministic decoy for an unknown one, so neither the
+      // response nor its timing reveals whether the account exists. A non-user just
+      // fails the hash comparison inside user_login below.
+      const salt = (saltResp && saltResp.salt) || '';
+      if (!salt) {
+        // Shouldn't occur with the decoy-salt server; defensive guard only.
         throw new Error('Incorrect username or password');
       }
-      const hash = await sha256Hex(password + saltResp.salt);
+      const hash = await sha256Hex(password + salt);
       const r = await rpc('user_login', {
         p_username:      username,
         p_password_hash: hash
@@ -8697,6 +8773,7 @@
         throw new Error((r && r.error) || 'Incorrect username or password');
       }
       _user = r.user;
+      _user._authTs = Date.now();   // session-expiry stamp (sliding window)
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(_user)); } catch (_) {}
       // v27.2.0 — Refresh team roster on every login. Non-throwing; failure
       // just leaves cached roster in place (or null on first-ever login).
@@ -8845,6 +8922,19 @@
         captured_at: new Date().toISOString(),
         payload:     payload
       };
+      // v27.34.0 — for an edit, collapse any earlier queued draft of the same
+      // deal so the queue holds only the latest (offline last-write-wins) and a
+      // flush won't self-conflict against its own earlier version.
+      if (payload && payload.id) {
+        try {
+          const existing = await _listOfflineDrafts();
+          for (const ex of existing) {
+            if (ex && ex.payload && ex.payload.id === payload.id) {
+              await _removeOfflineDraft(ex.local_id);
+            }
+          }
+        } catch (_) { /* best-effort dedupe */ }
+      }
       try {
         const db = await _openOfflineDb();
         await new Promise(function (resolve, reject) {
@@ -8911,6 +9001,28 @@
       }
     }
 
+    // v27.34.0 — persist an updated draft in place (used to park a draft that
+    // hit an optimistic-lock conflict on flush, so it isn't lost or auto-retried).
+    async function _putOfflineDraft(draft) {
+      try {
+        const db = await _openOfflineDb();
+        return await new Promise(function (resolve, reject) {
+          const tx = db.transaction(_OFFLINE_STORE_NAME, 'readwrite');
+          tx.objectStore(_OFFLINE_STORE_NAME).put(draft);
+          tx.oncomplete = resolve;
+          tx.onerror = function () { reject(tx.error); };
+        });
+      } catch (_) {
+        try {
+          const key = 'tvone_offline_queue_v1';
+          const arr = JSON.parse(localStorage.getItem(key) || '[]');
+          const i = arr.findIndex(function (x) { return x.local_id === draft.local_id; });
+          if (i >= 0) arr[i] = draft; else arr.push(draft);
+          localStorage.setItem(key, JSON.stringify(arr));
+        } catch (_) {}
+      }
+    }
+
     function _isNetworkError(err) {
       // Match Supabase JS network errors. They surface as:
       //   - TypeError 'Failed to fetch' (most browsers)
@@ -8928,11 +9040,14 @@
     }
 
     async function _flushOfflineQueue() {
-      if (typeof navigator !== 'undefined' && !navigator.onLine) return { flushed: 0, remaining: 0 };
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return { flushed: 0, remaining: 0, conflicts: 0 };
       const drafts = await _listOfflineDrafts();
-      if (!drafts.length) return { flushed: 0, remaining: 0 };
-      let flushed = 0;
+      if (!drafts.length) return { flushed: 0, remaining: 0, conflicts: 0 };
+      let flushed = 0, conflicts = 0;
       for (const d of drafts) {
+        // Skip drafts already parked as conflicts — they need manual resolution
+        // (discard, or reload + re-apply) and must not auto-retry forever.
+        if (d.conflict) continue;
         try {
           // Restore actor_user_id + app from current session in case the
           // user logged out & in between queue and flush.
@@ -8940,28 +9055,39 @@
             actor_user_id: (_user && _user.id) || d.payload.actor_user_id,
             app:           APP_TAG
           });
+          let res;
           if (enriched.id) {
-            await rpc('deal_save', { p_payload: enriched });
+            res = await rpc('deal_save', { p_payload: enriched });
           } else {
             // Regenerate display_ref since we never reserved one server-side
-            await rpc('deal_save', {
+            res = await rpc('deal_save', {
               p_payload: Object.assign({}, enriched, { display_ref: genDisplayRef() })
             });
           }
+          // v27.34.0 — optimistic-lock conflict: the deal changed server-side
+          // since this edit was captured offline. Do NOT drop it (that loses the
+          // user's work) and do NOT overwrite. Park it for manual resolution.
+          if (res && res.conflict) {
+            d.conflict = true;
+            d.conflict_at = new Date().toISOString();
+            await _putOfflineDraft(d);
+            conflicts++;
+            continue;
+          }
+          if (res && res.id && res.row_version != null) _loadedVersions[res.id] = res.row_version;
           await _removeOfflineDraft(d.local_id);
           flushed++;
         } catch (e) {
           // Network still flaky — stop early, retry later.
           if (_isNetworkError(e)) break;
-          // Non-network error: log and drop the bad draft so it doesn't
-          // permanently block the queue. User loses one draft; cleaner
-          // than infinite retry of a malformed payload.
+          // Non-network, non-conflict error (malformed/rejected): log and drop
+          // so the queue doesn't jam. One draft lost; cleaner than infinite retry.
           console.warn('flush failed for', d.local_id, e && e.message);
           await _removeOfflineDraft(d.local_id);
         }
       }
       const remaining = (await _listOfflineDrafts()).length;
-      return { flushed: flushed, remaining: remaining };
+      return { flushed: flushed, remaining: remaining, conflicts: conflicts };
     }
 
     /* ---------- deals ---------- */
@@ -8985,6 +9111,12 @@
         app:           APP_TAG
       });
 
+      // v27.34.0 — optimistic-lock: stamp the version we loaded NOW, before the
+      // offline branch, so a queued draft can be version-checked on flush too.
+      if (base.id && base.expected_row_version == null && _loadedVersions[base.id] != null) {
+        base.expected_row_version = _loadedVersions[base.id];
+      }
+
       // v27.12.0 — Offline mode: if navigator.onLine reports false at the
       // call site, skip the network attempt entirely and queue. This avoids
       // a 5-10s timeout on metered connections.
@@ -9004,9 +9136,23 @@
 
       // Edit path — id present, use existing display_ref on server
       if (base.id) {
+        // optimistic-lock: tell the server which version we loaded so it can
+        // reject (not silently clobber) if someone else saved in the meantime.
+        if (base.expected_row_version == null && _loadedVersions[base.id] != null) {
+          base.expected_row_version = _loadedVersions[base.id];
+        }
         try {
-          return await rpc('deal_save', { p_payload: base });
+          const res = await rpc('deal_save', { p_payload: base });
+          if (res && res.conflict) {
+            const err = new Error(res.message || 'This deal was changed by someone else since you opened it. Reload to get the latest, then re-apply your changes.');
+            err.isConflict = true;
+            err.currentRowVersion = res.current_row_version;
+            throw err;
+          }
+          if (res && res.id && res.row_version != null) _loadedVersions[res.id] = res.row_version;
+          return res;
         } catch (e) {
+          if (e && e.isConflict) throw e;          // surface conflicts; never queue them
           if (_isNetworkError(e)) {
             const draft = await _enqueueOfflineDraft(base);
             return { ok: true, queued_offline: true, local_id: draft.local_id, display_ref: base.display_ref };
@@ -9020,7 +9166,9 @@
       for (let attempt = 0; attempt < 3; attempt++) {
         const enriched = Object.assign({}, base, { display_ref: genDisplayRef() });
         try {
-          return await rpc('deal_save', { p_payload: enriched });
+          const res = await rpc('deal_save', { p_payload: enriched });
+          if (res && res.id && res.row_version != null) _loadedVersions[res.id] = res.row_version;
+          return res;
         } catch (e) {
           lastErr = e;
           if (_isNetworkError(e)) {
@@ -9037,7 +9185,10 @@
 
     async function loadDeal(displayRef) {
       if (!displayRef) throw new Error('displayRef required');
-      return rpc('deal_get', { p_deal_id: null, p_display_ref: String(displayRef) });
+      const d = await rpc('deal_get', { p_deal_id: null, p_display_ref: String(displayRef) });
+      // remember the version we loaded, for the optimistic-lock check on save
+      if (d && d.id && d.row_version != null) _loadedVersions[d.id] = d.row_version;
+      return d;
     }
 
     async function listDeals(opts) {
@@ -25771,6 +25922,13 @@
             window.dispatchEvent(new HashChangeEvent('hashchange'));
           }
         }
+        if (r && r.conflicts > 0) {
+          // v27.34.0 — parked offline edits that changed elsewhere. Tell the user;
+          // the pending-sync sheet shows them flagged, with a Discard option.
+          toast(r.conflicts + ' offline draft' + (r.conflicts === 1 ? '' : 's') +
+                ' couldn\u2019t sync \u2014 changed by someone else. Open pending sync to review.', 'err');
+          _refreshSyncBadge();
+        }
       } catch (e) {
         // Network/RPC failures already handled inside _flushOfflineQueue.
         // This catch protects against unexpected throw (IDB corruption etc).
@@ -25825,6 +25983,7 @@
             '<div style="font-size:13px;color:var(--ink-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
               esc(proj) + '</div>' +
             '<div class="small soft">Captured ' + esc(when) + '</div>' +
+            (d.conflict ? '<div class="small" style="color:var(--danger);font-weight:600;margin-top:2px">Conflict \u2014 changed elsewhere. Discard, then reload &amp; re-apply.</div>' : '') +
           '</div>' +
           '<button type="button" class="btn-v3 btn-ghost btn-sm" ' +
             'data-action="sync-discard" data-local-id="' + esc(d.local_id) + '">Discard</button>' +
