@@ -7303,6 +7303,30 @@
       }
     };
 
+    // v27.31.0 — UI polish: icons + copy relevance.
+    //   Icons: rounded stroke-linejoin added across the sIco set (21 glyphs) so
+    //     polygon/rect corners (funnel, bolt, grid, box, trend) render smooth and
+    //     consistent. All icons are inline SVG — no emoji/font dependency.
+    //   Copy: dashboard subtitles reworked for relevance — removed cutesy/cryptic
+    //     captions ("are we healthy?", "8 signals", redundant "live", dev-speak
+    //     "start wizard"); plained stylized headings (Pulse->Pipeline health,
+    //     Velocity grid->Key metrics, Where deals stick->Stalled deals); de-jargoned
+    //     subtitles (top by open->ranked by open deals, avg dwell->average days in
+    //     stage, dropped "by creator role").
+    // v27.30.2 — Honest-UI cleanup + shortcut fix:
+    //   - Customer directory: removed the non-functional Partners/Consultants/
+    //     End-users filter pills and locked the Add-customer Type to 'customer'
+    //     (customer_list + upsert are customer-only at the DB; full party-type
+    //     browsing/creation would need a parties_list RPC — a deliberate future build).
+    //   - Cmd+S now targets the real save actions (wiz-save / sd-confirm / cust-save)
+    //     instead of stale names, so the shortcut actually saves.
+    // v27.30.1 — Backend wiring for audit-log + notification prefs (migrations
+    //   applied to Supabase + verified live):
+    //   - New DB fn audit_log_list(p_app, p_ref_id, p_limit) over the deal-field
+    //     audit_log; auditLogList now sends p_app and drops the unbacked
+    //     actionType/targetUsername filters. Audit viewer now functional.
+    //   - New table notification_prefs + notification_prefs_get/update (upsert+merge);
+    //     frontend wrappers already matched. Prefs UI stays gated behind VAPID/push.
     // v27.30.0 — FIX: re-wired 4 broken RPC calls to their real DB functions
     //   (frontend-only; the functions existed under different names/shapes):
     //   - revisionsList -> revision_list(p_ref_id); reads r.revisions, normalizes
@@ -7372,7 +7396,7 @@
     //  Fitment: #1 (round-up + low-canvas->CM2) and #3 (Mini fixed DVI-U = no card)
     //  verified ALREADY CORRECT in the engine - no change. #2 (audio-on-Micro) open.
     return deepFreeze({
-      version: 'v27.30.0',
+      version: 'v27.31.0',
       constants,
       calico,
       mv,
@@ -9079,9 +9103,11 @@
     /* v27.3.0 — Audit log viewer (D4 silent-drop restore) */
     async function auditLogList(filters) {
       filters = filters || {};
+      // v27.30.1 — DB fn is audit_log_list(p_app, p_ref_id, p_limit) over the
+      // deal-field audit_log. actionType/targetUsername have no backing data, so
+      // they're dropped; the rows already carry the keys the viewer renders.
       const r = await rpc('audit_log_list', {
-        p_action_type: filters.actionType || null,
-        p_target_username: filters.targetUsername || null,
+        p_app: APP_TAG,
         p_ref_id: filters.refId || null,
         p_limit: filters.limit || 100
       });
@@ -17036,7 +17062,6 @@
         // Team updates ticker
         '<div class="v15-section">' +
           '<h2>Team updates</h2>' +
-          '<span class="v4-hint" style="font-family:var(--font-body);font-size:12px;color:var(--ink-soft);font-weight:500;letter-spacing:0">live</span>' +
         '</div>' +
         '<div class="v15-ticker">' +
           '<div class="v15-ticker-badge"><span>LIVE</span></div>' +
@@ -17047,7 +17072,7 @@
         '<div class="v15-quick">' +
           '<button type="button" class="v15-qbtn primary" data-nav="#/quote/new">' +
             '<div class="v15-qbtn-ico">' + svgPlus + '</div>' +
-            '<div><div class="v15-qbtn-label">New deal</div><div class="v15-qbtn-hint">start wizard</div></div>' +
+            '<div><div class="v15-qbtn-label">New deal</div><div class="v15-qbtn-hint">Start configuring</div></div>' +
           '</button>' +
           '<button type="button" class="v15-qbtn" data-nav="#/history">' +
             '<div class="v15-qbtn-ico">' + svgList + '</div>' +
@@ -17393,29 +17418,29 @@
       })();
 
       const sIco = {
-        funnel:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>',
-        pie:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="2" x2="12" y2="12"/><line x1="12" y1="12" x2="20" y2="12"/></svg>',
-        map:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
-        users:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>',
-        grid:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
-        trend:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>',
-        cal:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-        pin:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
-        user:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-        stack:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
-        box:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
-        search:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+        funnel:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>',
+        pie:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="2" x2="12" y2="12"/><line x1="12" y1="12" x2="20" y2="12"/></svg>',
+        map:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+        users:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>',
+        grid:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+        trend:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>',
+        cal:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+        pin:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+        user:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+        stack:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+        box:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
+        search:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
         starF:    '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
         warn:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-        bolt:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
-        plus:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
-        chev:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>',
-        kOpen:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/></svg>',
-        kCurr:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
-        kEnd:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>',
-        kPart:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 7V5a3 3 0 0 0-3-3H11a3 3 0 0 0-3 3v2"/></svg>',
-        kCon:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-        kPie:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>'
+        bolt:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+        plus:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+        chev:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
+        kOpen:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/></svg>',
+        kCurr:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+        kEnd:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>',
+        kPart:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M16 7V5a3 3 0 0 0-3-3H11a3 3 0 0 0-3 3v2"/></svg>',
+        kCon:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+        kPie:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>'
       };
 
       function kpiTile(grad, id, label, ico, isSplit) {
@@ -17644,8 +17669,8 @@
         '</div>' +
 
         // Velocity grid (8 secondary KPIs with sparklines)
-        '<div class="v15-section v15-group"><i class="sec-ico">' + sIco.bolt + '</i><h2>Pulse</h2><span class="section-hint" style="font-family:var(--font-body);font-size:12px;color:var(--ink-soft);font-weight:500;letter-spacing:0">are we healthy?</span></div>' +
-        '<div class="v15-section"><i class="sec-ico">' + sIco.grid + '</i><h2>Velocity grid</h2><span class="section-hint" style="font-family:var(--font-body);font-size:12px;color:var(--ink-soft);font-weight:500;letter-spacing:0">8 signals</span></div>' +
+        '<div class="v15-section v15-group"><i class="sec-ico">' + sIco.bolt + '</i><h2>Pipeline health</h2></div>' +
+        '<div class="v15-section"><i class="sec-ico">' + sIco.grid + '</i><h2>Key metrics</h2></div>' +
         '<div class="mc-velocity">' +
           mcVTile('age',    'AVG DEAL AGE',  'days',  'amber') +
           mcVTile('stuck',  'STUCK > 30D',   'deals', 'off') +
@@ -17749,7 +17774,7 @@
           // Donut
           // v27.14.0 — Promoted from col-4 to col-6 since funnel moved to col-12 above
           '<div class="v4-card v4-col-6">' +
-            '<div class="v4-card-hd"><h3>Origin split</h3><span class="v4-hint">Cavitak vs OEM \u00b7 by creator role</span></div>' +
+            '<div class="v4-card-hd"><h3>Origin split</h3><span class="v4-hint">Cavitak vs OEM</span></div>' +
             '<div class="v4-card-bd">' +
               '<div id="chart-origin" class="dash-chart-canvas"></div>' +
             '</div>' +
@@ -17792,7 +17817,7 @@
 
           // Heatmap
           '<div class="v4-card v4-col-6">' +
-            '<div class="v4-card-hd"><h3>Where deals stick</h3><span class="v4-hint">&gt; 30 days in stage \u00b7 by region</span></div>' +
+            '<div class="v4-card-hd"><h3>Stalled deals</h3><span class="v4-hint">&gt; 30 days in stage \u00b7 by region</span></div>' +
             '<div class="v4-card-bd">' +
               '<div class="v4-heatmap">' +
                 '<div></div>' +
@@ -17822,13 +17847,13 @@
           // v27.4.1 W4 — Partner + Consultant leaderboards (channel performance).
           // Hidden for OEM users via [data-v4-d-channel-row][data-show="false"].
           '<div class="v4-card v4-col-6" data-v4-d-channel-card="partner" style="display:none">' +
-            '<div class="v4-card-hd"><h3>Partner performance</h3><span class="v4-hint">FY26-27 \u00b7 top by open</span></div>' +
+            '<div class="v4-card-hd"><h3>Partner performance</h3><span class="v4-hint">FY26-27 \u00b7 ranked by open deals</span></div>' +
             '<div class="v4-card-bd" style="padding:0">' +
               '<div id="chart-partner" class="dash-chart-canvas short" style="margin:8px 8px 12px"></div>' +
             '</div>' +
           '</div>' +
           '<div class="v4-card v4-col-6" data-v4-d-channel-card="consultant" style="display:none">' +
-            '<div class="v4-card-hd"><h3>Consultant performance</h3><span class="v4-hint">FY26-27 \u00b7 top by open</span></div>' +
+            '<div class="v4-card-hd"><h3>Consultant performance</h3><span class="v4-hint">FY26-27 \u00b7 ranked by open deals</span></div>' +
             '<div class="v4-card-bd" style="padding:0">' +
               '<div id="chart-consultant" class="dash-chart-canvas short" style="margin:8px 8px 12px"></div>' +
             '</div>' +
@@ -17865,7 +17890,7 @@
           // dwell time (days a deal currently sits in each stage), longest
           // stage flagged. Plus a "longest-stuck cases" mini-list.
           '<div class="v4-card v4-col-12">' +
-            '<div class="v4-card-hd"><h3>Days in stage</h3><span class="v4-hint">avg dwell per stage \u00b7 longest first</span></div>' +
+            '<div class="v4-card-hd"><h3>Days in stage</h3><span class="v4-hint">average days in stage \u00b7 longest first</span></div>' +
             '<div class="v4-card-bd">' +
               '<div data-v4-d-dwell-bars><div class="v4-winrate-empty">Computing stage dwell\u2026</div></div>' +
               '<div class="v4-dwell-stuck" data-v4-d-dwell-stuck></div>' +
@@ -20893,7 +20918,7 @@
               '<input type="search" id="cust-search-input" placeholder="Search by name, city, industry\u2026" autocomplete="off">' +
             '</div>' +
             '<div class="cust-filter-chips">' +
-              ['all', 'customer', 'partner', 'consultant', 'end_user'].map(function (t) {
+              ['all', 'customer'].map(function (t) {
                 const lbl = t === 'all' ? 'All' :
                             t === 'customer' ? 'Customers' :
                             t === 'partner' ? 'Partners' :
@@ -21092,7 +21117,7 @@
           '</div>' +
           '<div class="field-v3"><label>Type</label>' +
             '<select class="input-v3" id="ce-type">' +
-              ['customer','partner','consultant','end_user'].map(t =>
+              ['customer'].map(t =>
                 '<option value="' + t + '"' + ((cust && cust.party_type) === t ? ' selected' : (!cust && t === 'customer' ? ' selected' : '')) + '>' +
                   (t === 'end_user' ? 'End user' : t.charAt(0).toUpperCase() + t.slice(1)) +
                 '</option>'
@@ -23975,8 +24000,8 @@
         // Cmd+S / Ctrl+S → Save current draft (if a wizard or quote is open)
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
           const saveBtn = document.querySelector(
-            '[data-action="save-quote"], [data-action="wiz-save-draft"], ' +
-            '[data-action="confirm-quote"]'
+            '[data-action="wiz-save"], [data-action="sd-confirm"], ' +
+            '[data-action="cust-save"]'
           );
           if (saveBtn && !saveBtn.disabled) {
             e.preventDefault();
