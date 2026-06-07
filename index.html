@@ -7303,6 +7303,18 @@
       }
     };
 
+    // v27.36.0 — Roster self-heal + tentative schematic in the PDF export.
+    //   - start() now refreshes the user roster on a session-restore boot (login()
+    //     already did this on explicit login). Fixes the dashboard showing
+    //     "User <id6>" for anyone added since this browser's last fresh login —
+    //     e.g. an active presales user whose id wasn't in the cached roster.
+    //     Non-throwing: a failed/offline fetch falls back to the cached roster.
+    //   - PDF export gains a landscape "Tentative Signal Schematic" page derived
+    //     from reco.meta.io (Sources -> Processor -> Outputs with signal counts).
+    //     SX items remain OUT of the BOM (they live in their own deal fields and
+    //     were never BOM rows) and appear here only as a dashed annotation + a
+    //     summary line. Per-page footer now uses per-page dimensions so it lands
+    //     correctly on both portrait and landscape pages.
     // v27.35.0 — Completed the concurrency backend + added session expiry.
     //   - deal_save now ENFORCES expected_row_version (DB guard applied + tested:
     //     stale write -> {ok:false,conflict:true}, no overwrite; row_version bumps
@@ -7444,7 +7456,7 @@
     //  Fitment: #1 (round-up + low-canvas->CM2) and #3 (Mini fixed DVI-U = no card)
     //  verified ALREADY CORRECT in the engine - no change. #2 (audio-on-Micro) open.
     return deepFreeze({
-      version: 'v27.35.0',
+      version: 'v27.36.0',
       constants,
       calico,
       mv,
@@ -10893,21 +10905,117 @@
         ink(INK_STRONG);
       }
 
+      // ---- Tentative signal schematic (v27.36.0) — own landscape page ----
+      // Drawn from reco.meta.io. SX items are NOT BOM rows (they live in their
+      // own deal fields); here they appear only as a dashed annotation + a
+      // summary line, so the BOM stays SX-free while the drawing shows the path.
+      if (reco && reco.meta && reco.meta.io) {
+        const _BLUE = [37, 99, 235];
+        const _PURPLE = [147, 51, 234];
+        const _LBL = {
+          hdmi4k: 'HDMI 4K', hdmiFhd: 'HDMI FHD', sdi12g: 'SDI 12G', sdi3g: 'SDI 3G',
+          hdbt: 'HDBaseT', ip: 'AV-over-IP', dviu: 'DVI-U',
+          display: 'Display', projector: 'Projector', sdi: 'SDI', led: 'LED'
+        };
+        const _lbl = function (k) { return _LBL[k] || k; };
+        const _listOf = function (obj) {
+          const out = [];
+          Object.keys(obj || {}).forEach(function (k) {
+            const n = Number(obj[k]);
+            if (n > 0) out.push(n + '\u00d7 ' + _lbl(k));
+          });
+          return out;
+        };
+        const _inLines = _listOf(reco.meta.io.inputs);
+        const _outLines = _listOf(reco.meta.io.outputs);
+        const _sxParts = [];
+        const _hb = (deal.sx_hdbt_lines || []).reduce(function (a, l) { return a + (Number(l && l.qty) || 0); }, 0);
+        if (_hb > 0) _sxParts.push(_hb + '\u00d7 HDBaseT extender');
+        const _da = deal.sx_da_counts || {};
+        const _daN = (Number(_da['612']) || 0) + (Number(_da['614']) || 0) + (Number(_da['618']) || 0);
+        if (_daN > 0) _sxParts.push(_daN + '\u00d7 HDMI splitter');
+        const _ap = Number(deal.sx_ap_qty) || 0;
+        if (_ap > 0) _sxParts.push(_ap + '\u00d7 AP-536 audio extractor');
+        const _aoc = (deal.sx_aoc_lines || []).reduce(function (a, l) { return a + (Number(l && l.qty) || 0); }, 0);
+        if (_aoc > 0) _sxParts.push(_aoc + '\u00d7 active optical cable');
+        const _hasSx = _sxParts.length > 0;
+
+        doc.addPage('a4', 'landscape');
+        const PW = doc.internal.pageSize.getWidth();
+        const PH = doc.internal.pageSize.getHeight();
+
+        ink(AMBER_DEEP); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+        doc.text('Tentative Signal Schematic', M, 46);
+        fill(AMBER_LIGHT); stroke(AMBER); doc.setLineWidth(0.7);
+        doc.roundedRect(M, 56, PW - 2 * M, 22, 3, 3, 'FD');
+        ink(AMBER_DEEP); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+        doc.text('TENTATIVE \u2014 for layout reference only. Auto-derived from the configuration; the presales engineer finalises the drawing.', M + 8, 70);
+
+        const _box = function (x, yTop, w, h, title, lines, tcol, ecol) {
+          stroke(ecol); fill(WHITE); doc.setLineWidth(1.2);
+          doc.roundedRect(x, yTop, w, h, 5, 5, 'FD');
+          ink(tcol); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+          doc.text(title, x + w / 2, yTop + 18, { align: 'center' });
+          ink(INK_STRONG); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+          let ly = yTop + 36;
+          (lines.length ? lines : ['\u2014']).forEach(function (ln) { doc.text(ln, x + 12, ly); ly += 14; });
+        };
+        const _arrow = function (x1, x2, yy, col, label, dashed) {
+          stroke(col); doc.setLineWidth(1.3);
+          if (dashed && doc.setLineDashPattern) doc.setLineDashPattern([3, 3], 0);
+          doc.line(x1, yy, x2 - 2, yy);
+          if (doc.setLineDashPattern) doc.setLineDashPattern([], 0);
+          fill(col); doc.triangle(x2, yy, x2 - 8, yy - 4.5, x2 - 8, yy + 4.5, 'F');
+          if (label) { ink(col); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.text(label, (x1 + x2) / 2, yy - 6, { align: 'center' }); }
+        };
+
+        const _bw = 210, _px0 = M + 8, _ox0 = PW - M - 8 - _bw;
+        const _pcw = 176, _pcx = PW / 2 - _pcw / 2;
+        const _maxRows = Math.max(_inLines.length, _outLines.length, 3);
+        const _bh = Math.max(96, 36 + _maxRows * 14 + 12);
+        const _topY = 150;
+        const _cy = _topY + _bh / 2;
+        _box(_px0, _topY, _bw, _bh, 'SOURCES', _inLines, INK_SOFT, INK_STRONG);
+        _box(_ox0, _topY, _bw, _bh, 'OUTPUTS', _outLines, INK_SOFT, INK_STRONG);
+        _box(_pcx, _topY, _pcw, _bh, 'PROCESSOR',
+          [(reco.meta.chassisLabel || ''), (reco.chassis || ''), (reco.meta.ecosystem ? reco.meta.ecosystem + ' cards' : '')].filter(Boolean),
+          AMBER_DEEP, AMBER_DEEP);
+        const _inTot = _inLines.reduce(function (a, s) { return a + (parseInt(s, 10) || 0); }, 0);
+        const _outTot = _outLines.reduce(function (a, s) { return a + (parseInt(s, 10) || 0); }, 0);
+        _arrow(_px0 + _bw, _pcx, _cy, _BLUE, _inTot + ' input' + (_inTot === 1 ? '' : 's'), false);
+        _arrow(_pcx + _pcw, _ox0, _cy, _BLUE, _outTot + ' output' + (_outTot === 1 ? '' : 's'), false);
+        if (_hasSx) {
+          _arrow(_px0 + _bw, _pcx, _cy + 22, _PURPLE, '', true);
+          ink(_PURPLE); doc.setFont('helvetica', 'italic'); doc.setFontSize(7.6);
+          doc.text('via extender (SX)', (_px0 + _bw + _pcx) / 2, _cy + 34, { align: 'center' });
+        }
+        let _fy = _topY + _bh + 34;
+        if (_hasSx) {
+          ink(_PURPLE); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+          doc.text('Signal extension (excluded from BOM): ' + _sxParts.join('  \u00b7  '), M, _fy);
+          _fy += 18;
+        }
+        ink(INK_SOFT); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.2);
+        doc.text('Direct signal path shown solid' + (_hasSx ? '; signal-extension path shown dashed (these items are quoted separately and are not in the BOM).' : '.'), M, _fy);
+      }
+
       // ---- Per-page footer: amber strip + attribution + Page N of M ----
       const pageCount = doc.internal.getNumberOfPages();
       for (let p = 1; p <= pageCount; p++) {
         doc.setPage(p);
+        const pw = doc.internal.pageSize.getWidth();
+        const ph = doc.internal.pageSize.getHeight();
         // Bottom amber band (28pt)
         fill(AMBER_DEEP);
-        doc.rect(0, H - 26, W, 26, 'F');
+        doc.rect(0, ph - 26, pw, 26, 'F');
         ink(WHITE);
         doc.setFont('helvetica', 'italic');
         doc.setFontSize(9);
         doc.text('Cavitak Marketing Pvt Ltd  \u00b7  tvONE India Distributor  \u00b7  www.cavitak.com',
-          W / 2, H - 10, { align: 'center' });
+          pw / 2, ph - 10, { align: 'center' });
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8.5);
-        doc.text('Page ' + p + ' of ' + pageCount, W - M, H - 10, { align: 'right' });
+        doc.text('Page ' + p + ' of ' + pageCount, pw - M, ph - 10, { align: 'right' });
       }
 
       return doc.output('blob');
@@ -26187,7 +26295,7 @@
 
     /* ---------- Router ---------- */
 
-    function start() {
+    async function start() {
       // Guarded routing: if no current user and not at #/login, force to login.
       window.addEventListener('hashchange', onRouteChange);
       // Auth state cleanup: clear wizard draft on explicit logout via STORE event.
@@ -26211,6 +26319,13 @@
         }
         return;
       }
+      // v27.36.0 — Refresh the user roster on a session-restore boot. login()
+      // already refreshes on an explicit login, but a plain page reload only
+      // restores the *cached* roster, so anyone added since this browser's last
+      // fresh login can't be resolved by id and the dashboard falls back to
+      // "User <id6>". Non-throwing: fetchRoster returns the cached roster on
+      // failure, so an offline boot still proceeds.
+      try { await STORE.fetchRoster(); } catch (_) {}
       // v27.2.2 — Order swap: Profile gate fires BEFORE force-PW gate.
       // We want title/phone/email collected on the very first login while
       // the default-password session is still alive. PW change happens
