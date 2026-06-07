@@ -2353,6 +2353,15 @@
       flex-shrink: 0;
     }
     .mark-tvone img { height: 28px; width: auto; display: block; }
+    /* v27.26.1 — the official tvONE PNG has a black wordmark + light "O" that wash
+       out on the dark header. Sit the logo on a white chip in dark mode so it stays
+       legible; the brand asset itself is untouched. */
+    html[data-theme="dark"] .mark-tvone {
+      background: #fff;
+      height: auto;
+      padding: 4px 9px;
+      border-radius: 9px;
+    }
     .mark-cavitak {
       display: inline-flex; align-items: center;
       padding-left: var(--s-3);
@@ -7289,6 +7298,9 @@
       }
     };
 
+    // v27.26.1 patch: (a) removed the "Tech" row from the About card. (b) dark-mode
+    //   logo fix — the tvONE PNG's black wordmark washed out on the dark header, so
+    //   it now sits on a white chip in dark mode (brand asset unchanged).
     // v27.26.0 UX pass:
     //   - CORIO I/O rows: stripped card-name hints (e.g. "CM: HDMI 4K 2-IN") down to
     //     plain source descriptions; canvas hint reduced to "Independent canvases"
@@ -7320,7 +7332,7 @@
     //  Fitment: #1 (round-up + low-canvas->CM2) and #3 (Mini fixed DVI-U = no card)
     //  verified ALREADY CORRECT in the engine - no change. #2 (audio-on-Micro) open.
     return deepFreeze({
-      version: 'v27.26.0',
+      version: 'v27.26.1',
       constants,
       calico,
       mv,
@@ -15065,10 +15077,6 @@
             '<div class="about-row">' +
               '<div class="about-key">Supports</div>' +
               '<div class="about-val">CORIO  \u00b7  CALICO  \u00b7  Multi Viewer  \u00b7  Signal Extension</div>' +
-            '</div>' +
-            '<div class="about-row">' +
-              '<div class="about-key">Tech</div>' +
-              '<div class="about-val">Supabase  \u00b7  ECharts  \u00b7  ExcelJS  \u00b7  jsPDF</div>' +
             '</div>' +
           '</div>' +
           '<div class="about-footer">' +
