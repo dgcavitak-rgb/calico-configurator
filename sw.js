@@ -78,7 +78,7 @@
 // the activate handler. Promotes hard-refresh semantics for users with the
 // PWA installed.
 
-const CACHE_NAME = 'tvone-v27.26.1';
+const CACHE_NAME = 'tvone-v27.30.0';
 const SHELL_URLS = [
   './',
   './index.html'

@@ -2294,8 +2294,8 @@
     .step-row .step-label .name { font-weight: 600; font-size: 14px; }
     .step-row .step-label .sub { font-size: 12px; color: var(--c-fg-mute); margin-top: 2px; }
     .step-row .step-ico { flex: 0 0 auto; width: 30px; height: 30px; display: inline-flex;
-      align-items: center; justify-content: center; color: var(--c-fg-mute); opacity: .6; }
-    .step-row .step-ico svg { width: 21px; height: 21px; }
+      align-items: center; justify-content: center; }
+    .step-row .step-ico svg { width: 28px; height: 28px; }
 
     /* Scale to wider screens */
     @media (min-width: 768px) {
@@ -7088,6 +7088,11 @@
         'AUDIO_2IN_4OUT':{ sku: 'C7-PRO-AUDIO',        desc: 'Audio 2-IN 4-OUT',                   ports: 2, resolution: 'N/A', signal: 'Audio',   slots: ['LB'] }
       },
 
+      accessories: {
+        // v27.27.0 — official tvONE fan-filter kit for the 2U chassis (max 1 per C7-PRO-2200).
+        FAN_FILTER_2U: { sku: 'C7-PRO-2U-FILTER', desc: 'Fan filter kit \u2014 CALICO PRO 2U', maxQty: 1 }
+      },
+
       slotRules: {
         // Given the card occupying slot 12 (HighBW), this lists the cards
         // permitted in slot 11 (LowBW). 'empty' = nothing in slot 12.
@@ -7298,6 +7303,41 @@
       }
     };
 
+    // v27.30.0 — FIX: re-wired 4 broken RPC calls to their real DB functions
+    //   (frontend-only; the functions existed under different names/shapes):
+    //   - revisionsList -> revision_list(p_ref_id); reads r.revisions, normalizes
+    //     archivedAt/dealValueINR/archivedBy -> created_at/deal_value_inr/updated_by,
+    //     orders newest-first.
+    //   - resetPasswordRequest -> reset_request_create (params already matched).
+    //   - resetPasswordListPending -> reset_request_list(p_actor) (Super-gated);
+    //     reads r.requests, filters pending, normalizes requestId/requestedAt.
+    //   - resetPasswordApprove -> reset_request_resolve(approve): generates salt+hash
+    //     (same scheme as change-password), throws on {ok:false}.
+    //   Verified read-only fns live (revision_list, reset_request_list): shapes +
+    //   Super gate confirmed. Audit-log + push + prefs still need DB work (separate).
+    // v27.29.1 — Enhanced the CORIO I/O connector icons: flat monochrome glyphs
+    //   replaced with color-coded rounded badges (HDMI indigo, SDI/BNC violet,
+    //   HDBaseT/RJ45 emerald, DVI amber) so each signal row is instantly
+    //   distinguishable. Verified in light + dark mode.
+    // v27.29.0 — FIX: Customers page "Couldn't load" (rpc customer_list not found).
+    //   The deployed DB function is customer_list(p_app) returning { ok, customers }
+    //   with `customerId` keys and no party_type; the frontend was calling it with
+    //   p_app+p_search+p_limit and reading r.rows. Aligned customerList to the real
+    //   signature/shape (p_app only; normalize id + party_type; search/limit client-
+    //   side) and fixed customerUpsert to send p_actor (audit) instead of p_app.
+    //   NOTE: customer_list is customer-only at the DB, so the Partners/Consultants/
+    //   End-users pills return nothing until a parties_list RPC is added (DB work).
+    // v27.28.0 — FIX: saved-deal edit view showed empty I/O steppers for every
+    //   wizard-created CORIO deal. The editor read the legacy per-card fields
+    //   (corio_inputs/outputs) while the current wizard writes signal-level
+    //   corio_sig_inputs/outputs. Re-pointed the editor (+ the I/O section count
+    //   badge) at the signal-level model so values round-trip wizard <-> edit, and
+    //   dropped the now-redundant CM2 fan-filter toggle here too (engine auto-adds).
+    // v27.27.0 — CALICO PRO 2U fan-filter auto-include. Added C7-PRO-2U-FILTER to the
+    //   CALICO catalog (accessories) and the engine now auto-adds it (qty 1, role
+    //   'accessory') whenever the recommendation resolves to the C7-PRO-2200 (2U)
+    //   chassis. No UI control — mirrors the CORIO CM2-Filter pattern. Two 2U self-
+    //   tests updated to count non-accessory cards + a dedicated regression test added.
     // v27.26.1 patch: (a) removed the "Tech" row from the About card. (b) dark-mode
     //   logo fix — the tvONE PNG's black wordmark washed out on the dark header, so
     //   it now sits on a white chip in dark mode (brand asset unchanged).
@@ -7332,7 +7372,7 @@
     //  Fitment: #1 (round-up + low-canvas->CM2) and #3 (Mini fixed DVI-U = no card)
     //  verified ALREADY CORRECT in the engine - no change. #2 (audio-on-Micro) open.
     return deepFreeze({
-      version: 'v27.26.1',
+      version: 'v27.30.0',
       constants,
       calico,
       mv,
@@ -7620,6 +7660,21 @@
         const inCardCount = cards.filter(c => c.role === 'input_card').length;
         if (nonHdmiIn > 0 && inCardCount === 0) {
           concerns.push('⚠ INPUT CARD MISSING — the configuration includes ' + nonHdmiIn + ' non-HDMI input(s) (SDI / HDBaseT / IP) but no input-expansion card is in the BoM. The C7-PRO-2200 native inputs are HDMI-only — these sources cannot connect without the matching input card. Re-check the input configuration.');
+        }
+
+        // v27.27.0 — CALICO PRO 2U fan-filter auto-include. The official
+        // C7-PRO-2U-FILTER kit (max 1 per C7-PRO-2200) ships automatically
+        // whenever the 2U chassis is recommended. No UI control — mirrors the
+        // CORIO CM2-Filter behaviour.
+        const fanFilter2U = CATALOG.calico.accessories && CATALOG.calico.accessories.FAN_FILTER_2U;
+        if (fanFilter2U) {
+          cards.push({
+            sku: fanFilter2U.sku,
+            description: fanFilter2U.desc,
+            qty: 1,
+            role: 'accessory'
+          });
+          reasons.push('Fan filter auto-included — recommended for every 2U (C7-PRO-2200) deployment');
         }
       }
 
@@ -9036,26 +9091,58 @@
     /* v27.3.0 — Revisions viewer (D5 silent-drop restore) */
     async function revisionsList(refId) {
       if (!refId) return [];
-      const r = await rpc('deal_revisions_list', { p_display_ref: String(refId) });
-      return (r && r.rows) || (Array.isArray(r) ? r : []);
+      // v27.30.0 — DB fn is revision_list(p_ref_id) where p_ref_id is the display_ref;
+      // it returns { ok, revisions:[...] } in camelCase. Normalize to the snake_case
+      // the modal renders (created_at / deal_value_inr / updated_by) and order newest-first.
+      const r = await rpc('revision_list', { p_ref_id: String(refId) });
+      const revs = (r && r.revisions) || (Array.isArray(r) ? r : []);
+      return revs.map(function (x) {
+        return Object.assign({}, x, {
+          created_at:     x.archivedAt,
+          deal_value_inr: x.dealValueINR,
+          updated_by:     x.archivedBy,
+          stage:          x.stage
+        });
+      }).sort(function (a, b) { return (b.revNum || 0) - (a.revNum || 0); });
     }
 
     /* v27.3.0 — Reset password user-side request (D10) + super-side approve (D11) */
     async function resetPasswordRequest(username, reason) {
-      return rpc('reset_password_request', {
+      // v27.30.0 — DB fn is reset_request_create (same params); returns {ok, message}.
+      return rpc('reset_request_create', {
         p_username: String(username || '').trim(),
         p_reason: String(reason || '').slice(0, 500)
       });
     }
     async function resetPasswordListPending() {
-      const r = await rpc('reset_password_list_pending', {});
-      return (r && r.rows) || (Array.isArray(r) ? r : []);
+      // v27.30.0 — DB fn is reset_request_list(p_actor) (Super-gated); returns
+      // { ok, requests:[...] } in camelCase and includes resolved rows. Pass the
+      // actor, keep only pending, and normalize id/requested_at for the render.
+      const u = currentUser();
+      const r = await rpc('reset_request_list', { p_actor: (u && u.id) || null });
+      const reqs = (r && r.requests) || (Array.isArray(r) ? r : []);
+      return reqs.filter(function (x) { return x.status === 'pending'; })
+                 .map(function (x) {
+                   return Object.assign({}, x, { id: x.requestId, requested_at: x.requestedAt });
+                 });
     }
     async function resetPasswordApprove(requestId, newTempPassword) {
-      return rpc('reset_password_approve', {
-        p_request_id: requestId,
-        p_new_temp_password: String(newTempPassword)
+      // v27.30.0 — DB fn is reset_request_resolve(p_request_id, p_actor, p_action,
+      // p_new_salt, p_new_password_hash). Approval sets the user's new password, so
+      // we generate salt+hash with the same scheme as change-password and mark the
+      // request approved (the DB also flags the account must_change).
+      const u = currentUser();
+      const salt = randomHex(16);
+      const hash = await sha256Hex(String(newTempPassword) + salt);
+      const r = await rpc('reset_request_resolve', {
+        p_request_id:        requestId,
+        p_actor:             (u && u.id) || null,
+        p_action:            'approve',
+        p_new_salt:          salt,
+        p_new_password_hash: hash
       });
+      if (!r || r.ok !== true) throw new Error((r && r.error) || 'approve failed');
+      return r;
     }
 
     /* v27.3.0 — Duplicate a deal (v27.7-alpha3: backend RPC landed).
@@ -9309,15 +9396,36 @@
        backend. */
     async function customerList(opts) {
       opts = opts || {};
-      const r = await rpc('customer_list', {
-        p_app: APP_TAG,
-        p_search: String(opts.search || '').trim() || null,
-        p_limit: opts.limit || 200
+      // v27.29.0 — match the deployed DB function: customer_list(p_app) returns
+      // { ok, customers:[...] } where each row uses `customerId` and omits
+      // party_type. It has no p_search / p_limit, so we normalize the shape the
+      // directory UI expects (id, party_type) and filter/limit client-side.
+      const r = await rpc('customer_list', { p_app: APP_TAG });
+      let rows = (r && (r.customers || r.rows)) || (Array.isArray(r) ? r : []);
+      rows = rows.map(function (c) {
+        return Object.assign({}, c, {
+          id: c.id || c.customerId,
+          party_type: c.party_type || 'customer'
+        });
       });
-      return (r && r.rows) || (Array.isArray(r) ? r : []);
+      const q = String(opts.search || '').trim().toLowerCase();
+      if (q) {
+        rows = rows.filter(function (c) {
+          return [c.name, c.city, c.industry, c.state].some(function (v) {
+            return String(v || '').toLowerCase().indexOf(q) !== -1;
+          });
+        });
+      }
+      const lim = Number(opts.limit) || 0;
+      return lim > 0 ? rows.slice(0, lim) : rows;
     }
     async function customerUpsert(payload) {
-      return rpc('customer_upsert', { p_payload: payload, p_app: APP_TAG });
+      // DB signature is customer_upsert(p_payload, p_actor) — p_actor is the
+      // audit actor (created_by / updated_by), not the app tag.
+      return rpc('customer_upsert', {
+        p_payload: payload,
+        p_actor: (_user && (_user.loginName || _user.name)) || ''
+      });
     }
     async function customerDelete(customerId) {
       return rpc('customer_delete', { p_customer_id: String(customerId) });
@@ -11856,8 +11964,12 @@
         });
         if (r.chassis !== 'C7-PRO-2200') return 'chassis: ' + r.chassis;
         const skus = r.cards.map(c => c.sku);
-        if (skus.length !== 1) return 'expected 1 card (input only), got ' + skus.length + ': ' + skus.join(',');
-        if (skus[0] !== 'C7-PRO-HDMI-4K2IN') return 'expected HDMI_4K_2IN, got ' + skus[0];
+        // v27.27.0 — 2U BoM now also carries the auto-included fan filter; assert on
+        // the non-accessory cards (input/output) and confirm the filter is present.
+        const nonAcc = r.cards.filter(c => c.role !== 'accessory').map(c => c.sku);
+        if (nonAcc.length !== 1) return 'expected 1 card (input only), got ' + nonAcc.length + ': ' + nonAcc.join(',');
+        if (nonAcc[0] !== 'C7-PRO-HDMI-4K2IN') return 'expected HDMI_4K_2IN, got ' + nonAcc[0];
+        if (!skus.includes('C7-PRO-2U-FILTER')) return '2U fan filter not auto-added; got: ' + skus.join(',');
         if (r.meta.hdmiPortsNeeded !== 2) return 'hdmiPortsNeeded: ' + r.meta.hdmiPortsNeeded;
         return true;
       });
@@ -11869,7 +11981,10 @@
           outputs: { display: 2 }
         });
         if (r.chassis !== 'C7-PRO-2200') return 'chassis: ' + r.chassis;
-        if (r.cards.length !== 0) return 'expected 0 cards, got ' + r.cards.length;
+        // v27.27.0 — only the auto-included 2U fan filter is expected (no I/O cards).
+        const nonAcc = r.cards.filter(c => c.role !== 'accessory');
+        if (nonAcc.length !== 0) return 'expected 0 non-accessory cards, got ' + nonAcc.length;
+        if (!r.cards.some(c => c.sku === 'C7-PRO-2U-FILTER')) return '2U fan filter not auto-added';
         if (r.valueAdds.length !== 1) return 'expected 1 valueAdd, got ' + r.valueAdds.length;
         if (!/Free upgrade/.test(r.valueAdds[0].title)) return 'valueAdd title: ' + r.valueAdds[0].title;
         return true;
@@ -11911,6 +12026,20 @@
         const r = RECOMMEND.calico({});  // empty input
         if (r.chassis !== 'C7-PRO-1200') return 'chassis: ' + r.chassis;
         if (r.cards.length !== 0) return 'cards: ' + r.cards.length;
+        return true;
+      });
+
+    check('v27.27.0: CALICO 2U auto-includes C7-PRO-2U-FILTER (1U does not)',
+      () => {
+        const r2u = RECOMMEND.calico({ inputs: { hdmi4k: 2, sdi12g: 1 }, outputs: { display: 2, sdi: 1 } });
+        if (r2u.chassis !== 'C7-PRO-2200') return '2U test chassis: ' + r2u.chassis;
+        const filter = r2u.cards.find(c => c.sku === 'C7-PRO-2U-FILTER');
+        if (!filter) return '2U filter not added; got: ' + r2u.cards.map(c => c.sku).join(',');
+        if (filter.role !== 'accessory') return 'filter role: ' + filter.role;
+        if (filter.qty !== 1) return 'filter qty: ' + filter.qty;
+        const r1u = RECOMMEND.calico({ inputs: { hdmi4k: 3 }, outputs: { display: 2 } });
+        if (r1u.chassis !== 'C7-PRO-1200') return '1U test chassis: ' + r1u.chassis;
+        if (r1u.cards.some(c => c.sku === 'C7-PRO-2U-FILTER')) return '1U should NOT carry the 2U filter';
         return true;
       });
 
@@ -21845,8 +21974,8 @@
                  (deal.mv_outputSignal ? 1 : 0);
         }
         if (deal.solutionType === 'corio') {
-          return countNonZero(deal.corio_inputs) + countNonZero(deal.corio_outputs) +
-                 (deal.corio_audio ? 1 : 0) + (deal.corio_fanFilter ? 1 : 0);
+          return countNonZero(deal.corio_sig_inputs) + countNonZero(deal.corio_sig_outputs) +
+                 (deal.corio_audio ? 1 : 0);
         }
         return 0;
       })();
@@ -22301,11 +22430,28 @@
           // v27.3.10 — removed redundant "Edits set the Rebuild banner above..." note
       }
       if (deal.solutionType === 'corio') {
-        // Defensive: ensure objects exist so steppers don't NaN.
-        if (!deal.corio_inputs)  deal.corio_inputs  = {};
-        if (!deal.corio_outputs) deal.corio_outputs = {};
-        const cm2In  = CATALOG.corio.cm2.inputs;
-        const cm2Out = CATALOG.corio.cm2.outputs;
+        // v27.28.0 — the saved-deal I/O editor now mirrors the wizard's SIGNAL-level
+        // model (corio_sig_inputs/outputs). It previously read the legacy per-card
+        // fields (corio_inputs/outputs) that the current wizard never writes, so the
+        // steppers always showed 0 for wizard-created deals. These lists MUST stay in
+        // sync with the wizard's inputSignals / outputSignals keys.
+        if (!deal.corio_sig_inputs)  deal.corio_sig_inputs  = {};
+        if (!deal.corio_sig_outputs) deal.corio_sig_outputs = {};
+        const sigIn = [
+          { key:'4K HDMI',  desc:'4K HDMI sources' },
+          { key:'FHD HDMI', desc:'1080p HDMI sources' },
+          { key:'HDBaseT',  desc:'HDBaseT sources' },
+          { key:'3G SDI',   desc:'3G-SDI sources' },
+          { key:'12G SDI',  desc:'12G-SDI 4K sources' },
+          { key:'DVI-U',    desc:'DVI-U sources' }
+        ];
+        const sigOut = [
+          { key:'4K HDMI',  desc:'4K HDMI outputs' },
+          { key:'FHD HDMI', desc:'1080p HDMI outputs' },
+          { key:'HDBaseT',  desc:'HDBaseT outputs' },
+          { key:'3G SDI',   desc:'3G-SDI outputs' },
+          { key:'12G SDI',  desc:'12G-SDI outputs' }
+        ];
         // Use sdSelectField for corio_audio — it lands at top level (not in
         // SOFT_FIELDS), so the routing in the data-sd-bind handler calls
         // markStructuralDirty (no autosave).
@@ -22315,20 +22461,18 @@
           { value: '8-8', label: '8-8 (CM only \u00b7 8-IN / 8-OUT HD-44)' }
         ];
         return '<div class="sd-subhead">Inputs</div>' +
-          cm2In.map(c =>
-            sdStepperRow(c.key, c.key, c.desc, deal.corio_inputs[c.key] || 0, { namespace:'corio_inputs' })
+          sigIn.map(c =>
+            sdStepperRow(c.key, c.key, c.desc, deal.corio_sig_inputs[c.key] || 0, { namespace:'corio_sig_inputs' })
           ).join('') +
           '<div class="sd-subhead">Outputs</div>' +
-          cm2Out.map(c =>
-            sdStepperRow(c.key, c.key, c.desc, deal.corio_outputs[c.key] || 0, { namespace:'corio_outputs' })
+          sigOut.map(c =>
+            sdStepperRow(c.key, c.key, c.desc, deal.corio_sig_outputs[c.key] || 0, { namespace:'corio_sig_outputs' })
           ).join('') +
           '<div class="sd-subhead">Audio</div>' +
           sdSelectField('corio_audio', 'Audio module', deal.corio_audio || '', audioOptions) +
           (deal.corio_audio === '8-8'
             ? '<div class="help danger-text">8-8 module is CM-only \u2014 incompatible with CM2 / 4K chassis.</div>'
-            : '') +
-          '<div class="sd-subhead">Add-ons</div>' +
-          sdToggleRow('corio_fanFilter', 'CM2 fan filter', 'Adds CM2-Filter line item', !!deal.corio_fanFilter);
+            : '');
       }
       return '<div class="sd-row sd-row-muted">Unknown solution type.</div>';
     }
@@ -22863,10 +23007,10 @@
         ? '<div class="banner err">' + esc(d.errors.corio_io) + '</div>' : '';
 
       const CIO = {
-        hdmi:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M5 8.5h14v4.5l-2.5 2.5h-9L5 13z"/><path d="M8 8.5V7h8v1.5"/></svg>',
-        bnc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.3" fill="currentColor" stroke="none"/></svg>',
-        rj45:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M6 8h12v8H6z"/><path d="M10 8V6h4v2"/><path d="M9 16v1.6M12 16v1.6M15 16v1.6"/></svg>',
-        dvi:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="4.5" y="8" width="15" height="8" rx="1"/><path d="M8 11h.01M11 11h.01M14 11h.01M8 13.5h.01M11 13.5h.01M14 13.5h.01" stroke-linecap="round" stroke-width="2"/></svg>'
+        hdmi:'<svg viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="#E0E7FF"/><path d="M8.5 11.2h11v3.4l-1.8 1.8h-7.4l-1.8-1.8z" stroke="#4F46E5" stroke-width="1.6" stroke-linejoin="round"/><path d="M11 11.2v-1.3h6v1.3" stroke="#4F46E5" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+        bnc:'<svg viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="#EDE9FE"/><circle cx="14" cy="14" r="5.6" stroke="#7C3AED" stroke-width="1.6"/><circle cx="14" cy="14" r="1.7" fill="#7C3AED"/></svg>',
+        rj45:'<svg viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="#D1FAE5"/><path d="M9 10.5h10v7.2H9z" stroke="#059669" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10.5V8.8h4v1.7" stroke="#059669" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.3 17.7v1.5M14 17.7v1.5M16.7 17.7v1.5" stroke="#059669" stroke-width="1.4" stroke-linecap="round"/></svg>',
+        dvi:'<svg viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="8" fill="#FEF3C7"/><rect x="8" y="10.6" width="12" height="6.8" rx="1.2" stroke="#D97706" stroke-width="1.6"/><path d="M11 13h.01M13.5 13h.01M16 13h.01M11 15h.01M13.5 15h.01M16 15h.01" stroke="#D97706" stroke-width="1.7" stroke-linecap="round"/></svg>'
       };
       const inputSignals = [
         { key:'4K HDMI',  icon:CIO.hdmi, desc:'4K HDMI sources' },
