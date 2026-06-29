@@ -1957,6 +1957,17 @@
     .bom-line .desc { color: var(--c-fg); flex: 1; }
     .bom-line .qty { font: 600 13px var(--f-mono); color: var(--c-fg-soft); white-space: nowrap; }
     .bom-line .sku { font: 11px var(--f-mono); color: var(--c-fg-mute); display: block; margin-top: 2px; }
+    /* v27.45.0 — gated BoM price display (screen-only; Super/OEM/BU Head) */
+    .bom-amt { font: 700 13px var(--f-mono); color: var(--c-fg); white-space: nowrap;
+      text-align: right; align-self: flex-start; }
+    .bom-amt small { display: block; font: 500 10px var(--f-mono); color: var(--c-fg-mute); margin-top: 2px; }
+    .bom-chassis-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .bom-amt-chassis { font: 700 13px var(--f-mono); color: var(--c-accent-dk); white-space: nowrap; }
+    .bom-total { display: flex; justify-content: space-between; align-items: baseline;
+      margin: 12px 0 0; padding: 12px 0 0; border-top: 2px solid var(--c-border);
+      font: 600 14px var(--f-mono); color: var(--c-fg); }
+    .bom-total b { font-weight: 800; }
+    .bom-total small { font-weight: 500; font-size: 11px; color: var(--c-fg-mute); }
     .bom-concerns, .bom-valueadds { margin: 12px 0 0;
       padding: 10px 12px; border-radius: var(--r-sm); }
     .bom-concerns { background: var(--c-warn-lt); border-left: 3px solid var(--c-warn); }
@@ -7578,7 +7589,7 @@
     //  Fitment: #1 (round-up + low-canvas->CM2) and #3 (Mini fixed DVI-U = no card)
     //  verified ALREADY CORRECT in the engine - no change. #2 (audio-on-Micro) open.
     return deepFreeze({
-      version: 'v27.43.0',
+      version: 'v27.45.0',
       constants,
       calico,
       mv,
@@ -8631,6 +8642,33 @@
     const APP_TAG      = 'tvone';
 
     let _user = null;
+    // v27.45.0 — tvONE pricebook cache (margin-native RPC tvone_pricebook_get).
+    // Mirrors the roster/stages pattern: fetched at login, cached in-module,
+    // read SYNCHRONOUSLY by renderBomCard via STORE.priceFor(). Display is gated
+    // downstream by settings.show_prices (currently false) AND viewer role.
+    let _pricebook = null;          // Map(pricelist.item -> quote_price_inr)
+    let _pricebookAt = 0;           // epoch ms of last successful fetch
+    let _pricebookSettings = {};    // { show_prices, cf, ... } from the RPC
+    const _PRICEBOOK_TTL_MS = 3 * 60 * 60 * 1000;
+    // Calico catalog-SKU -> pricelist-item alias. The pricebook stores Calico
+    // cards under a "-FF" (occasionally reordered) item code; the catalog emits
+    // the bare card SKU. Same physical card -> map so priceFor() resolves the row.
+    // (Chassis match 1:1, no alias. These -FF rows are unpriced until bp_usd is
+    //  filled, so an aliased card renders "-" until then.)
+    const _CALICO_ALIAS = {
+      'C7-PRO-HDMI-4K4OUT': 'C7-PRO-HDMI-4K4OUT-FF',
+      'C7-PRO-HDMI-4K4IN':  'C7-PRO-HDMI-4K4IN-FF',
+      'C7-PRO-HDMI-4K2IN':  'C7-PRO-HDMI-4K2IN-FF',
+      'C7-PRO-HDMI-2K4IN':  'C7-PRO-HDMI-2K4IN-FF',
+      'C7-PRO-HDMI-2K8OUT': 'C7-PRO-HDMI-2K8OUT-FF',
+      'C7-PRO-SDI-12G-4IN': 'C7-PRO-12GSDI-4IN-FF',
+      'C7-PRO-SDI-12G-4OUT':'C7-PRO-12GSDI-4OUT-FF',
+      'C7-PRO-SDI-3G-4IN':  'C7-PRO-3GSDI-4IN-FF',
+      'C7-PRO-HDBT-2IN':    'C7-PRO-HDBT-4K2IN-FF',
+      'C7-PRO-AUDIO':       'C7-PRO-AUD-2IN-4OUT-FF',
+      'C7-PRO-MEDIA-4K-IN': 'C7-PRO-MEDIA',
+      'C7-PRO-2U-FILTER':   'C7-PRO-2U-FILTER-FF'
+    };
     // v27.32.0 — optimistic-lock cache: deal id -> last row_version this client
     // saw (from deal_get or a successful deal_save). saveDeal sends it as
     // expected_row_version so the server rejects a stale overwrite instead of
@@ -8815,6 +8853,10 @@
         }
       } catch (_) { _user = null; }
     })();
+    // v27.45.0 — on a restored session (no re-login) prime the pricebook in the
+    // background so a later quote view can price lines. Fire-and-forget; renderBomCard
+    // reads whatever is cached (null -> "-") and a re-render picks up the result.
+    if (_user) { try { pricebookEnsure(true); } catch (_) {} }
 
     /* ---------- v27.2.0 roster cache (for C2 contact footer + D16 gate) ----------
        _roster holds the live `public.users` snapshot fetched at login via the
@@ -8946,6 +8988,9 @@
       } catch (e) {
         console.warn('STORE.stageList failed; using hardcoded stage fallback:', e && e.message || e);
       }
+      // v27.45.0 — prime the tvONE pricebook so renderBomCard (synchronous) can
+      // price lines without a fetch. Non-throwing: failure leaves prices as "-".
+      try { await pricebookEnsure(true); } catch (e) { console.warn('pricebookEnsure (login) failed:', e && e.message || e); }
       fireAuthChange();
       return _user;
     }
@@ -8958,6 +9003,46 @@
     }
 
     function currentUser() { return _user; }
+
+    // v27.45.0 — Pricebook plumbing (margin-native). pricebookEnsure() fetches the
+    // active+priced item set from tvone_pricebook_get (server computes
+    // quote_price_inr = round(bp_usd*cf/(1-margin/100))) and caches it for 3h.
+    // priceFor() is a SYNCHRONOUS lookup (renderBomCard is sync) with Calico alias
+    // fallback. pricesShown() reflects the server show_prices flag (currently false).
+    async function pricebookEnsure(force) {
+      if (!force && _pricebook && (Date.now() - _pricebookAt) < _PRICEBOOK_TTL_MS) return _pricebook;
+      try {
+        const r = await rpc('tvone_pricebook_get', {});
+        const items = (r && r.items) || [];
+        const m = new Map();
+        for (let i = 0; i < items.length; i++) {
+          const it = items[i] || {};
+          const key = String(it.item || '').trim();
+          const price = Number(it.quote_price_inr);
+          if (key && !isNaN(price)) m.set(key, price);
+        }
+        _pricebook = m;
+        _pricebookAt = Date.now();
+        _pricebookSettings = (r && r.settings) ? r.settings : _pricebookSettings;
+        return _pricebook;
+      } catch (e) {
+        console.warn('pricebookEnsure failed; prices unavailable this session:', e && e.message || e);
+        return _pricebook;   // keep any prior cache; null -> priceFor returns null
+      }
+    }
+    function priceFor(sku) {
+      if (!_pricebook) return null;
+      const k = String(sku || '').trim();
+      if (!k) return null;
+      if (_pricebook.has(k)) return _pricebook.get(k);
+      const alias = _CALICO_ALIAS[k];
+      if (alias && _pricebook.has(alias)) return _pricebook.get(alias);
+      return null;
+    }
+    function pricesShown() {
+      const v = _pricebookSettings && _pricebookSettings.show_prices;
+      return v === true || v === 'true';
+    }
 
     function onAuthChange(cb) {
       if (typeof cb !== 'function') throw new Error('onAuthChange requires a function');
@@ -9903,6 +9988,8 @@
       // v27.40.0 — Per-person follow-ups (parity with BS v2.20; app-scoped RPCs)
       followupSet, followupDue, followupAdd, followupListMine, followupComplete,
       followupReopen, followupUpdate, followupDelete, followupListForDeal,
+      // v27.45.0 — tvONE pricebook (margin-native). Screen-only price display.
+      pricebookEnsure, priceFor, pricesShown,
       // v27.3.1 — Pipeline snapshots for dashboard weekly trend chart
       pipelineSnapshotList,
       // v27.7.2 — F7: explicit error-logger for callers that catch + log
@@ -24726,6 +24813,15 @@ function DSH_CSS(){ return '<style>'+[
 
     /* ---------- BoM card renderer ---------- */
 
+    // v27.45.0 — price visibility gate. Prices show only when the global
+    // show_prices flag is on AND the viewer is Super / OEM / BU Head. permission_tier
+    // is only standard|super; the role (OEM / BU Head) lives in org_function.
+    function _canSeePrices(u) {
+      if (!u) return false;
+      if (u.permission_tier === 'super') return true;
+      const fn = String(u.org_function || '').trim();
+      return fn === 'OEM' || fn === 'BU Head';
+    }
     function renderBomCard(reco, family) {
       if (!reco) return '';
       // Hard error path
@@ -24797,14 +24893,27 @@ function DSH_CSS(){ return '<style>'+[
         return parts.join(' \u00b7 ');
       })();
 
-      const linesHtml = (reco.cards || []).map(c =>
-        '<li class="bom-line">' +
+      // v27.45.0 — gated per-line pricing. When off, _amt is "" and each <li> is
+      // byte-identical to the pre-pricing output.
+      const _showPx = STORE.pricesShown() && _canSeePrices(STORE.currentUser());
+      const linesHtml = (reco.cards || []).map(function(c) {
+        const _q  = (c.qty != null ? c.qty : 1);
+        const _u  = _showPx ? STORE.priceFor(c.sku) : null;
+        const _lt = (_u != null) ? _u * _q : null;
+        const _amt = _showPx
+          ? '<div class="bom-amt">' +
+              (_q > 1 && _u != null ? '<small>' + fmtINR(_u) + ' ea</small>' : '') +
+              fmtINR(_lt) +
+            '</div>'
+          : '';
+        return '<li class="bom-line">' +
           '<div class="desc">' + esc(c.desc || c.label || c.sku) +
             '<span class="sku">' + esc(c.sku) + '</span>' +
           '</div>' +
           '<div class="qty">\u00d7' + (c.qty != null ? c.qty : 1) + '</div>' +
-        '</li>'
-      ).join('');
+        _amt +
+        '</li>';
+      }).join('');
 
       const concernsHtml = (reco.concerns && reco.concerns.length)
         ? '<div class="bom-concerns">' +
@@ -24820,8 +24929,27 @@ function DSH_CSS(){ return '<style>'+[
         : '';
 
       // v27.1.2 #4b — line order: SKU · label (deduped) · I/O spec · slots · lines
+      // v27.45.0 — gated totals: chassis (qty 1) + each card line. Sums priced
+      // items only; flags when any line is unpriced so the total is not misread.
+      let _bomTotal = 0, _anyUnpriced = false;
+      if (_showPx) {
+        const _cp = STORE.priceFor(reco.chassis);
+        if (_cp != null) _bomTotal += _cp; else _anyUnpriced = true;
+        (reco.cards || []).forEach(function(c) {
+          const _q = (c.qty != null ? c.qty : 1);
+          const _p = STORE.priceFor(c.sku);
+          if (_p != null) _bomTotal += _p * _q; else _anyUnpriced = true;
+        });
+      }
+      const _chassisAmt = _showPx ? '<div class="bom-amt-chassis">' + fmtINR(STORE.priceFor(reco.chassis)) + '</div>' : '';
+      const _totalTxt = (_bomTotal > 0) ? fmtINR(_bomTotal) : '\u2014';
+      const _totalRow = _showPx
+        ? '<div class="bom-total"><span>Total' + (_anyUnpriced ? ' <small>priced items only</small>' : '') + '</span><b>' + _totalTxt + '</b></div>'
+        : '';
       return '<div class="bom-card">' +
-        '<div class="bom-chassis-sku">' + esc(reco.chassis) + '</div>' +
+        (_showPx
+          ? '<div class="bom-chassis-row"><span class="bom-chassis-sku">' + esc(reco.chassis) + '</span>' + _chassisAmt + '</div>'
+          : '<div class="bom-chassis-sku">' + esc(reco.chassis) + '</div>') +
         (labelLine
           ? '<div class="bom-chassis-label">' + esc(labelLine) + '</div>'
           : '') +
@@ -24829,7 +24957,7 @@ function DSH_CSS(){ return '<style>'+[
           ? '<div class="bom-io">' + esc(ioSpecLine) + '</div>'
           : '') +
         '<div class="bom-meta">' + esc(slotsLine) + '</div>' +
-        '<ul class="bom-lines">' + linesHtml + '</ul>' +
+        '<ul class="bom-lines">' + linesHtml + '</ul>' + _totalRow +
         concernsHtml + valueAddsHtml +
       '</div>';
     }
@@ -27156,9 +27284,12 @@ function DSH_CSS(){ return '<style>'+[
       const btn = document.querySelector('[data-action="fu-save"]');
       if (btn) { btn.disabled = true; btn.textContent = existingId ? 'Saving\u2026' : 'Adding\u2026'; }
       try {
-        const r = existingId
-          ? await STORE.followupUpdate(existingId, title, { dueISO: dueISO, priority: prio, dealRef: dealRef })
-          : await STORE.followupAdd(title, { dueISO: dueISO, priority: prio, dealRef: dealRef });
+        const _dealRowRef = _fuDealRef(existingId);
+        const r = _dealRowRef
+          ? await STORE.followupSet(_dealRowRef, dueISO, title)
+          : existingId
+            ? await STORE.followupUpdate(existingId, title, { dueISO: dueISO, priority: prio, dealRef: dealRef })
+            : await STORE.followupAdd(title, { dueISO: dueISO, priority: prio, dealRef: dealRef });
         if (r && r.ok) {
           _fuPrefillDealRef = null;
           closeSheet();
@@ -27176,10 +27307,28 @@ function DSH_CSS(){ return '<style>'+[
       }
     }
 
+    // A synthetic My-Followups row for a per-deal reminder carries id
+    // 'deal:<display_ref>' (source='deal'). Such rows are not standalone
+    // followups; their actions route to the deal's next_followup_at via
+    // followup_set instead of the standalone followup_* RPCs.
+    function _fuDealRef(id) {
+      id = String(id || '');
+      return id.indexOf('deal:') === 0 ? id.slice(5) : null;
+    }
+
     async function followupSetDone(id, reopen) {
       if (!id) return;
+      const dealRef = _fuDealRef(id);
       try {
-        const r = reopen ? await STORE.followupReopen(id) : await STORE.followupComplete(id);
+        let r;
+        if (dealRef) {
+          // Per-deal reminder: "done" clears the deal's follow-up date.
+          // Deal rows have no done-state, so reopen is just a refresh.
+          if (reopen) { loadMyFollowups(); return; }
+          r = await STORE.followupSet(dealRef, null, null);
+        } else {
+          r = reopen ? await STORE.followupReopen(id) : await STORE.followupComplete(id);
+        }
         if (r && r.ok) { loadMyFollowups(); }
         else { toast((r && r.error) || 'Could not update.', 'err'); }
       } catch (e) {
@@ -27189,8 +27338,11 @@ function DSH_CSS(){ return '<style>'+[
 
     async function followupRemove(id) {
       if (!id) return;
+      const dealRef = _fuDealRef(id);
       try {
-        const r = await STORE.followupDelete(id);
+        // Per-deal reminder: "delete" clears the deal's follow-up date.
+        const r = dealRef ? await STORE.followupSet(dealRef, null, null)
+                          : await STORE.followupDelete(id);
         if (r && r.ok) { closeSheet(); loadMyFollowups(); }
         else { toast((r && r.error) || 'Could not delete.', 'err'); }
       } catch (e) {
