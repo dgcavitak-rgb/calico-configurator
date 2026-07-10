@@ -1523,6 +1523,7 @@
        for the existing 100+ CSS references; phased out in cleanup.
        ============================================================ */
     :root {
+      --border: var(--border-soft);  /* v27.51.0 fix — was undefined in both apps; BS-lineage inline styles reference it */
       --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px;
       --s-5: 20px; --s-6: 24px; --s-7: 32px; --s-8: 40px;
       --s-9: 48px; --s-10: 64px; --s-11: 80px; --s-12: 96px;
@@ -2220,6 +2221,153 @@
     .h3 { font-size: 13px; font-weight: 700; margin: 0 0 6px;
       text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-fg-soft); }
     .sp-12 { height: 12px; } .sp-24 { height: 24px; }
+    /* v27.47.0 — BrightSign structural-parity: section header, field caption, pills.
+       Uses tvONE --c-* aliases; .sec-title serif is explicit (tvONE --font-display is sans). */
+    .sec-head { display: flex; align-items: center; gap: 14px; margin: 0 0 20px; }
+    .sec-badge { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; background: var(--c-accent); color: var(--ink-on-brand, #fff); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; }
+    .sec-badge svg { width: 22px; height: 22px; }
+    .sec-head-text { min-width: 0; }
+    .sec-title { font-family: Georgia, 'Times New Roman', serif; font-size: 26px; font-weight: 700; color: var(--c-fg); line-height: 1.1; }
+    .sec-sub { font-size: 13px; color: var(--c-fg-mute); margin-top: 3px; }
+    .field-caption { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--c-fg-mute); margin: 0 0 10px; }
+    .field-caption.has-ico { display: flex; align-items: center; gap: 6px; }
+    .field-caption .fc-ico { width: 15px; height: 15px; flex: 0 0 auto; color: var(--c-accent); display: inline-flex; }
+    .field-caption .fc-ico svg { width: 100%; height: 100%; }
+    .field-caption .req { color: #e0245e; margin-left: 3px; }
+    .pill-field { margin: 0 0 16px; }
+    .pill-field > label { display: block; font-size: 13px; font-weight: 600; color: var(--c-fg-soft); margin: 0 0 6px; }
+    .pill-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill-btn { appearance: none; font-family: inherit; cursor: pointer; min-width: 56px; padding: 9px 16px; background: var(--c-elev); color: var(--c-fg); border: 1.5px solid var(--c-border); border-radius: var(--r-md); font-size: 14px; font-weight: 600; transition: border-color 120ms, background 120ms, color 120ms; -webkit-tap-highlight-color: transparent; }
+    .pill-btn:active { transform: scale(0.97); }
+    .pill-btn.is-selected { border-color: var(--c-accent); background: var(--c-accent); color: var(--ink-on-brand, #fff); }
+    .pill-sub { font-size: 12px; color: var(--c-fg-mute); margin: 6px 0 0; }
+    /* v27.47.0 — Party picker (End User directory link + Partner/Consultant name) */
+    .pp-opt { color: var(--ink-faint); font-weight: 500; font-size: 11px; }  /* v27.51.1 — value folded from the (removed) duplicate follow-up-sheet block, which won the cascade; rendering unchanged */
+    .pp-picker { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
+      background: var(--bg-input); border: 1px solid var(--border-mid); border-radius: var(--r-md);
+      padding: 13px 14px; cursor: pointer; font: inherit; color: var(--ink-faint); }
+    .pp-picker:hover { border-color: var(--border-strong); }
+    .pp-picker .pp-ph { flex: 1; font-size: 14px; }
+    .pp-picker svg { color: var(--ink-faint); flex: none; }
+    .pp-chip { display: flex; align-items: center; gap: 12px; background: var(--accent-soft);
+      border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); border-radius: var(--r-md); padding: 10px 11px; }
+    .pp-ava { width: 38px; height: 38px; flex: none; border-radius: 10px; display: flex; align-items: center;
+      justify-content: center; background: var(--accent); color: var(--ink-on-brand); font-weight: 700; font-size: 15px; }
+    .pp-cbody { flex: 1; min-width: 0; }
+    .pp-cname { font-size: 14.5px; font-weight: 700; color: var(--ink-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pp-cmeta { font-size: 11.5px; margin-top: 1px; }
+    .pp-linked { color: var(--success); font-weight: 600; }
+    .pp-cact { width: 30px; height: 30px; flex: none; border: none; background: transparent; color: var(--ink-soft);
+      border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .pp-cact:hover { background: rgba(127,127,127,0.12); color: var(--ink-strong); }
+    .pp-sheet { padding: 2px 2px 0; }
+    .pp-shead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .pp-stitle { font-size: 16px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+    .pp-x { border: none; background: var(--bg-subtle); color: var(--ink-mid); width: 30px; height: 30px;
+      border-radius: 999px; cursor: pointer; font-size: 14px; line-height: 1; flex: none; }
+    .pp-sbox { display: flex; align-items: center; gap: 9px; background: var(--bg-input);
+      border: 1px solid var(--border-mid); border-radius: var(--r-md); padding: 11px 13px; margin-bottom: 10px; }
+    .pp-sbox:focus-within { border-color: var(--accent); }
+    .pp-sbox svg { color: var(--ink-soft); flex: none; }
+    .pp-sbox input { flex: 1; border: none; background: transparent; font: inherit; font-size: 15px; color: var(--ink-strong); outline: none; }
+    .pp-results { max-height: 46vh; overflow-y: auto; margin: 0 -2px; }
+    .pp-res { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; background: transparent;
+      border: none; padding: 10px 8px; border-radius: 12px; cursor: pointer; font: inherit; }
+    .pp-res:hover { background: var(--bg-subtle); }
+    .pp-rava { width: 34px; height: 34px; flex: none; border-radius: 9px; display: flex; align-items: center;
+      justify-content: center; font-weight: 700; font-size: 13px; background: var(--accent-soft); color: var(--accent); }
+    .pp-rbody { flex: 1; min-width: 0; }
+    .pp-rname { font-size: 14px; font-weight: 600; color: var(--ink-strong); }
+    .pp-rmeta { font-size: 11.5px; color: var(--ink-soft); margin-top: 1px; }
+    .pp-empty, .pp-loading { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 22px 12px; }
+    .pp-foot { padding: 10px 0 4px; border-top: 1px solid var(--border-soft); margin-top: 8px; }
+    .pp-create { width: 100%; display: flex; align-items: center; justify-content: center; gap: 9px;
+      background: var(--accent); color: var(--ink-on-brand); border: none; border-radius: var(--r-md);
+      padding: 13px; font: 600 14.5px var(--font-display); cursor: pointer; }
+    .pp-back { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; color: var(--ink-soft);
+      font: 600 13px var(--font-display); cursor: pointer; padding: 0 0 12px; }
+    .pp-frow { margin-bottom: 12px; }
+    .pp-frow label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-mid); margin-bottom: 5px; }
+    .pp-frow input, .pp-frow select { width: 100%; background: var(--bg-input); border: 1px solid var(--border-mid);
+      border-radius: 12px; padding: 11px 13px; font: inherit; font-size: 14px; color: var(--ink-strong); outline: none; }
+    .pp-frow input:focus, .pp-frow select:focus { border-color: var(--accent); }
+    .pp-f2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .pp-formact { display: flex; gap: 10px; padding: 6px 0 4px; }
+    .pp-bghost { flex: 1; background: var(--bg-subtle); color: var(--ink-mid); border: 1px solid var(--border-mid);
+      border-radius: var(--r-md); padding: 12px; font: 600 14px var(--font-display); cursor: pointer; }
+    .pp-bprimary { flex: 1.4; background: var(--accent); color: var(--ink-on-brand); border: none;
+      border-radius: var(--r-md); padding: 12px; font: 600 14px var(--font-display); cursor: pointer; }
+    /* v27.51.0 — Global Search overlay (BS port) */
+    .gs-sheet { padding: 2px 2px 0; }
+    .gs-sbox { display: flex; align-items: center; gap: 9px; background: var(--bg-subtle);
+      border: 1px solid var(--border-soft); border-radius: var(--r-md); padding: 10px 12px; }
+    .gs-sbox svg { color: var(--ink-soft); flex: 0 0 auto; }
+    .gs-sbox input { flex: 1; min-width: 0; background: transparent; border: none; outline: none;
+      font: 15px var(--font-display); color: var(--ink-strong); }
+    .gs-sbox input::placeholder { color: var(--ink-faint); }
+    .gs-sbox input::-webkit-search-cancel-button { display: none; }
+    .gs-x { background: none; border: none; color: var(--ink-soft); font-size: 15px; cursor: pointer;
+      padding: 2px 4px; flex: 0 0 auto; line-height: 1; }
+    .gs-results { max-height: 62vh; overflow-y: auto; margin: 10px -2px 0; }
+    .gs-group { font: 600 10.5px var(--f-mono, monospace); letter-spacing: .08em; text-transform: uppercase;
+      color: var(--ink-faint); padding: 12px 6px 5px; }
+    .gs-group:first-child { padding-top: 4px; }
+    .gs-row { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
+      background: transparent; border: none; border-radius: var(--r-md); padding: 9px 8px; cursor: pointer; }
+    .gs-row:hover { background: var(--bg-subtle); }
+    .gs-ico { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 8px; display: flex;
+      align-items: center; justify-content: center; font: 600 11px var(--f-mono, monospace);
+      background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+    .gs-ico svg { color: var(--accent); }
+    .gs-rbody { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .gs-rname { font-size: 14px; font-weight: 600; color: var(--ink-strong); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; }
+    .gs-rsub { font-weight: 400; color: var(--ink-soft); }
+    .gs-rmeta { font-size: 11.5px; color: var(--ink-soft); margin-top: 1px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; }
+    .gs-rval { font: 600 12px var(--f-mono, monospace); color: var(--ink-strong); flex: 0 0 auto; margin-left: 4px; }
+    .gs-rtag { font: 600 10px var(--f-mono, monospace); text-transform: uppercase; letter-spacing: .05em;
+      color: var(--accent); flex: 0 0 auto; }
+    .gs-empty, .gs-hint { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 26px 14px; line-height: 1.5; }
+    /* v27.50.0 — Custom BOQ composer (advanced mode) */
+    .adv-search { display: flex; align-items: center; gap: 9px; background: var(--bg-input);
+      border: 1px solid var(--border-mid); border-radius: var(--r-md); padding: 11px 13px; margin: 4px 0 10px; }
+    .adv-search:focus-within { border-color: var(--accent); }
+    .adv-search svg { color: var(--ink-soft); flex: none; }
+    .adv-search input { flex: 1; border: none; background: transparent; font: inherit; font-size: 15px; color: var(--ink-strong); outline: none; }
+    .adv-fams { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .adv-fam { font-size: 12px; font-weight: 600; border: 1px solid var(--border-mid); background: transparent;
+      color: var(--ink-mid); padding: 5px 12px; border-radius: 999px; cursor: pointer; font-family: inherit; }
+    .adv-fam.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+    .adv-group { margin-bottom: 14px; }
+    .adv-group-h { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 6px 2px; }
+    .adv-row { display: flex; align-items: center; gap: 11px; padding: 9px 8px; border-radius: 12px; border: 1px solid transparent; }
+    .adv-row.added { background: var(--accent-soft); }
+    .adv-rbody { flex: 1; min-width: 0; }
+    .adv-rsku { font-size: 13.5px; font-weight: 700; color: var(--ink-strong); }
+    .adv-rdesc { font-size: 11.5px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+    .adv-rprice { font-size: 12.5px; color: var(--ink-mid); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .adv-addbtn { flex: none; border: 1px solid var(--accent); background: transparent; color: var(--accent);
+      width: 32px; height: 32px; border-radius: 9px; font-size: 19px; line-height: 1; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-family: inherit; }
+    .adv-addbtn.on { background: var(--accent); color: var(--ink-on-brand); }
+    .adv-empty { text-align: center; color: var(--ink-soft); font-size: 13px; padding: 18px 8px; }
+    .adv-boq-head { font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-mid);
+      margin: 18px 0 6px; padding-top: 14px; border-top: 1px solid var(--border-mid); }
+    .adv-line { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); }
+    .adv-lbody { flex: 1; min-width: 0; }
+    .adv-lsku { font-size: 13px; font-weight: 700; color: var(--ink-strong); }
+    .adv-lunit { font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+    .adv-stepper { display: flex; align-items: center; gap: 2px; background: var(--bg-subtle); border-radius: 9px; padding: 2px; }
+    .adv-stepper button { width: 28px; height: 28px; border: none; background: transparent; color: var(--ink-strong);
+      font-size: 16px; cursor: pointer; border-radius: 7px; font-family: inherit; }
+    .adv-stepper .q { min-width: 26px; text-align: center; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .adv-ltotal { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 84px; text-align: right; color: var(--ink-strong); }
+    .adv-x { border: none; background: transparent; color: var(--ink-faint); font-size: 17px; cursor: pointer; padding: 2px 4px; }
+    .adv-foot { display: flex; align-items: center; justify-content: space-between; padding: 11px 0 2px;
+      border-top: 2px solid var(--border-mid); margin-top: 6px; font-size: 12.5px; color: var(--ink-mid); }
+    .adv-foot b { font-size: 17px; letter-spacing: -0.01em; color: var(--ink-strong); font-variant-numeric: tabular-nums; }
+    .adv-note { font-size: 11px; color: var(--ink-faint); margin-top: 6px; }
 
     /* Login */
     .login-bg { min-height: 100vh; display: flex; align-items: center;
@@ -7029,24 +7177,11 @@
       background: transparent; border: none; cursor: pointer;
       color: var(--danger); font-size: 13px; font-weight: 600; text-align: center;
     }
-    /* follow-up sheet (shared pp-* form primitives) */
-    .pp-sheet { padding: 2px 2px 0; }
-    .pp-shead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .pp-stitle { font-size: 16px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
-    .pp-x { border: none; background: var(--bg-subtle); color: var(--ink-mid); width: 30px; height: 30px;
-      border-radius: 999px; cursor: pointer; font-size: 14px; line-height: 1; flex: none; }
-    .pp-opt { color: var(--ink-faint); font-weight: 500; font-size: 11px; }
-    .pp-frow { margin-bottom: 12px; }
-    .pp-frow label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-mid); margin-bottom: 5px; }
-    .pp-frow input, .pp-frow select { width: 100%; background: var(--bg-input); border: 1px solid var(--border-mid);
-      border-radius: 12px; padding: 11px 13px; font: inherit; font-size: 14px; color: var(--ink-strong); outline: none; }
-    .pp-frow input:focus, .pp-frow select:focus { border-color: var(--accent); }
-    .pp-f2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .pp-formact { display: flex; gap: 10px; padding: 6px 0 4px; }
-    .pp-bghost { flex: 1; background: var(--bg-subtle); color: var(--ink-mid); border: 1px solid var(--border-mid);
-      border-radius: var(--r-md); padding: 12px; font: 600 14px var(--font-display); cursor: pointer; }
-    .pp-bprimary { flex: 1.4; background: var(--accent); color: var(--ink-on-brand); border: none;
-      border-radius: var(--r-md); padding: 12px; font: 600 14px var(--font-display); cursor: pointer; }
+    /* v27.51.1 — the follow-up sheet reuses the shared .pp-* form primitives
+       defined above (party picker, v27.47.0). The duplicated re-declaration that
+       used to sit here was removed; its only non-identical rule (.pp-opt, which
+       won the cascade at weight 500 / 11px) was folded into the block above so
+       rendering is byte-for-byte unchanged. */
   </style>
 </head>
 <body>
@@ -7073,6 +7208,9 @@
             <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           </button>
         </div>
+        <button class="topbar-action" id="gs-btn" type="button" aria-label="Search" data-action="gs-open">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
         <button class="topbar-action" id="notif-btn" type="button" aria-label="Notifications">
           <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
           <span class="notif-badge" id="notif-badge" hidden>0</span>
@@ -7588,8 +7726,21 @@
     //      placeholder pills removed (At risk, High value, Person, Search, Export CSV).
     //  Fitment: #1 (round-up + low-canvas->CM2) and #3 (Mini fixed DVI-U = no card)
     //  verified ALREADY CORRECT in the engine - no change. #2 (audio-on-Micro) open.
+    // v27.51.1 — consistency + cleanup release (no new features, no backend change):
+    //   (1) FIX item 4a: loadHomeAll + loadHomeKpis region scoping. They used a
+    //       `region_owner || region` fallback that never matched (deals has no
+    //       such column), so a BU Head's Home KPIs showed only their own deals
+    //       instead of their whole region — while the V4 dashboard + pipeline
+    //       export were already correct. Both now use the shared
+    //       getRegionScope/getSalesScope/dealMatchesScope predicates, so Home,
+    //       Dashboard and Export agree. OEM (created_by) + Support (pan-India)
+    //       scoping now match the dashboard too.
+    //   (2) CLEANUP: removed the duplicated follow-up-sheet .pp-* CSS block. It
+    //       was NOT byte-identical to the party-picker block as assumed — its
+    //       .pp-opt (weight 500/11px) won the cascade — so that value was folded
+    //       into the canonical block first; rendering is unchanged.
     return deepFreeze({
-      version: 'v27.45.0',
+      version: 'v27.51.1',
       constants,
       calico,
       mv,
@@ -8647,6 +8798,7 @@
     // read SYNCHRONOUSLY by renderBomCard via STORE.priceFor(). Display is gated
     // downstream by settings.show_prices (currently false) AND viewer role.
     let _pricebook = null;          // Map(pricelist.item -> quote_price_inr)
+    let _skuCatalog = null;         // v27.50.0 — [{item,family,description,price}] for the Custom BOQ composer
     let _pricebookAt = 0;           // epoch ms of last successful fetch
     let _pricebookSettings = {};    // { show_prices, cf, ... } from the RPC
     const _PRICEBOOK_TTL_MS = 3 * 60 * 60 * 1000;
@@ -9022,6 +9174,16 @@
           if (key && !isNaN(price)) m.set(key, price);
         }
         _pricebook = m;
+        // v27.50.0 — parallel SKU catalog for the Custom BOQ composer.
+        _skuCatalog = items.map(function (it) {
+          it = it || {};
+          return {
+            item:        String(it.item || '').trim(),
+            family:      String(it.family || 'Other'),
+            description: String(it.description || ''),
+            price:       (isNaN(Number(it.quote_price_inr)) ? null : Number(it.quote_price_inr))
+          };
+        }).filter(function (c) { return c.item; });
         _pricebookAt = Date.now();
         _pricebookSettings = (r && r.settings) ? r.settings : _pricebookSettings;
         return _pricebook;
@@ -9042,6 +9204,55 @@
     function pricesShown() {
       const v = _pricebookSettings && _pricebookSettings.show_prices;
       return v === true || v === 'true';
+    }
+    function skuCatalog() { return _skuCatalog || []; }
+
+    /* v27.51.0 — User management wrappers (BS v2.6.0 port). RPCs exist
+       server-side (shared DB, Super-gated). Hash scheme identical to login:
+       randomHex(16) salt, sha256Hex(password + salt). */
+    async function usersListAll() {
+      const r = await rpc('user_list', { p_include_inactive: true });
+      return (r && r.users) || (Array.isArray(r) ? r : []);
+    }
+    async function userCreate(payload, password) {
+      const u = currentUser();
+      const salt = randomHex(16);
+      const hash = await sha256Hex(String(password || '') + salt);
+      const r = await rpc('user_create', {
+        p_payload:        payload,
+        p_actor:          (u && u.id) || null,
+        p_salt:           salt,
+        p_password_hash:  hash
+      });
+      if (!r || r.ok !== true) throw new Error((r && r.error) || 'create failed');
+      return r;
+    }
+    async function userUpdate(payload) {
+      const u = currentUser();
+      const r = await rpc('user_update', { p_payload: payload, p_actor: (u && u.id) || null });
+      if (!r || r.ok !== true) throw new Error((r && r.error) || 'update failed');
+      return r;
+    }
+    async function userSetActive(username, active) {
+      const u = currentUser();
+      const r = await rpc('user_set_active', {
+        p_target: username, p_active: !!active, p_actor: (u && u.id) || null
+      });
+      if (!r || r.ok !== true) throw new Error((r && r.error) || 'toggle failed');
+      return r;
+    }
+    async function userAdminReset(username, newPassword) {
+      const u = currentUser();
+      const salt = randomHex(16);
+      const hash = await sha256Hex(String(newPassword || '') + salt);
+      const r = await rpc('user_admin_reset', {
+        p_target:            username,
+        p_actor:             (u && u.id) || null,
+        p_new_salt:          salt,
+        p_new_password_hash: hash
+      });
+      if (!r || r.ok !== true) throw new Error((r && r.error) || 'reset failed');
+      return r;
     }
 
     function onAuthChange(cb) {
@@ -9965,6 +10176,7 @@
     return Object.freeze({
       // auth
       login, logout, currentUser, onAuthChange, changePassword,
+      usersListAll, userCreate, userUpdate, userSetActive, userAdminReset,
       // deals
       saveDeal, loadDeal, listDeals, deleteDeal, restoreDeal,
       // v27.2.0 — roster cache (for C2 footer + D16 gate)
@@ -9989,7 +10201,7 @@
       followupSet, followupDue, followupAdd, followupListMine, followupComplete,
       followupReopen, followupUpdate, followupDelete, followupListForDeal,
       // v27.45.0 — tvONE pricebook (margin-native). Screen-only price display.
-      pricebookEnsure, priceFor, pricesShown,
+      pricebookEnsure, priceFor, pricesShown, skuCatalog,
       // v27.3.1 — Pipeline snapshots for dashboard weekly trend chart
       pipelineSnapshotList,
       // v27.7.2 — F7: explicit error-logger for callers that catch + log
@@ -11347,9 +11559,140 @@
       return doc.output('blob');
     }
 
+    /* v27.51.0 — BS parity port 2/2: pipeline + per-customer Excel builders.
+       tvONE-branded (orange). Pipeline export drops BS's discount/approval
+       columns (different discount model); columns: Ref/Project/Customer/
+       Stage/Value/Close month/Owner + a By-stage summary sheet. Deal values
+       are user-entered commercials, NOT SKU pricing — the "exports never
+       carry prices" rule refers to the pricebook and still holds. */
+    async function pipelineExcel(rows, summary, opts) {
+      opts = opts || {};
+      const XL = await loadExcelJS();
+      const wb = new XL.Workbook();
+      wb.creator = 'tvONE Product Selector';
+      wb.created = new Date();
+      const BRAND = 'FFF7941D', WHITE = 'FFFFFFFF', DARK = 'FF1A1D24', SUNK = 'FFFDF3E7';
+
+      const ws = wb.addWorksheet('Pipeline', { views: [{ state: 'frozen', ySplit: 2 }] });
+      const title = ws.getCell('A1');
+      title.value = 'tvONE Pipeline' + (opts.scopeLabel ? '  \u2014  ' + opts.scopeLabel : '') +
+        '   (' + (new Date()).toISOString().slice(0, 10) + ')';
+      title.font = { name: 'Calibri', bold: true, size: 13, color: { argb: DARK } };
+      title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND } };
+      ws.mergeCells('A1:G1');
+      title.alignment = { vertical: 'middle' };
+      ws.getRow(1).height = 24;
+
+      const headers = ['Ref', 'Project', 'Customer', 'Stage', 'Value (\u20B9)', 'Close month', 'Owner'];
+      const hr = ws.getRow(2);
+      headers.forEach(function (h, i) {
+        const c = hr.getCell(i + 1);
+        c.value = h;
+        c.font = { name: 'Calibri', bold: true, size: 10, color: { argb: DARK } };
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND } };
+        c.alignment = { vertical: 'middle', horizontal: (i === 4) ? 'right' : 'left' };
+      });
+      hr.height = 18;
+      [16, 30, 24, 18, 16, 13, 22].forEach(function (w, i) { ws.getColumn(i + 1).width = w; });
+
+      (rows || []).forEach(function (r, idx) {
+        const row = ws.addRow([
+          r.ref || '', r.project || '', r.customer || '', r.stage || '',
+          (r.value != null ? r.value : ''), r.closeMonth || '', r.owner || ''
+        ]);
+        row.getCell(5).numFmt = '#,##0';
+        if (idx % 2 === 1) {
+          for (let i = 1; i <= 7; i++) row.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: SUNK } };
+        }
+      });
+
+      const ss = wb.addWorksheet('By stage');
+      ['Stage', 'Count', 'Total value (\u20B9)'].forEach(function (h, i) {
+        const c = ss.getRow(1).getCell(i + 1);
+        c.value = h;
+        c.font = { name: 'Calibri', bold: true, color: { argb: DARK } };
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND } };
+      });
+      ss.getColumn(1).width = 22; ss.getColumn(2).width = 10; ss.getColumn(3).width = 18;
+      (summary || []).forEach(function (s) {
+        const row = ss.addRow([s.stage, s.count, s.value]);
+        row.getCell(3).numFmt = '#,##0';
+      });
+
+      const buffer = await wb.xlsx.writeBuffer();
+      return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    }
+
+    async function partyExcel(party, deals) {
+      party = party || {}; deals = Array.isArray(deals) ? deals : [];
+      const XL = await loadExcelJS();
+      const wb = new XL.Workbook();
+      wb.creator = 'tvONE Product Selector';
+      wb.created = new Date();
+      const BRAND = 'FFF7941D', WHITE = 'FFFFFFFF', DARK = 'FF1A1D24', SUNK = 'FFFDF3E7';
+      const today = (new Date()).toISOString().slice(0, 10);
+
+      const live = deals.filter(function (d) { return !d.deleted_at; });
+      const wonCount  = live.filter(function (d) { return d.stage === 'Closed Won'; }).length;
+      const openCount = live.filter(function (d) { return d.stage && d.stage !== 'Closed Won' && d.stage !== 'Closed Lost'; }).length;
+      const wonValue  = live.filter(function (d) { return d.stage === 'Closed Won'; }).reduce(function (s, d) { return s + (Number(d.deal_value_inr) || 0); }, 0);
+      const openValue = live.filter(function (d) { return d.stage && d.stage !== 'Closed Won' && d.stage !== 'Closed Lost'; }).reduce(function (s, d) { return s + (Number(d.deal_value_inr) || 0); }, 0);
+
+      const ps = wb.addWorksheet('Customer');
+      const t = ps.getCell('A1');
+      t.value = String(party.name || 'Customer') + '   (' + today + ')';
+      t.font = { name: 'Calibri', bold: true, size: 13, color: { argb: DARK } };
+      t.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND } };
+      ps.mergeCells('A1:B1');
+      ps.getRow(1).height = 24;
+      ps.getColumn(1).width = 22; ps.getColumn(2).width = 40;
+      [
+        ['City',      party.city || ''],
+        ['State',     party.state || ''],
+        ['Industry',  party.industry || ''],
+        ['Website',   party.website || ''],
+        ['Notes',     party.notes || ''],
+        ['', ''],
+        ['Open deals',  openCount],
+        ['Open value (\u20B9)',  openValue],
+        ['Won deals',   wonCount],
+        ['Won value (\u20B9)',   wonValue]
+      ].forEach(function (pair) {
+        const r = ps.addRow(pair);
+        r.getCell(1).font = { name: 'Calibri', bold: true, size: 10 };
+        if (typeof pair[1] === 'number') r.getCell(2).numFmt = '#,##0';
+      });
+
+      const ds = wb.addWorksheet('Deals', { views: [{ state: 'frozen', ySplit: 1 }] });
+      const dHead = ['Ref', 'Project', 'Stage', 'Value (\u20B9)', 'Close month', 'Created'];
+      dHead.forEach(function (h, i) {
+        const c = ds.getRow(1).getCell(i + 1);
+        c.value = h;
+        c.font = { name: 'Calibri', bold: true, size: 10, color: { argb: DARK } };
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND } };
+      });
+      [16, 32, 18, 16, 13, 13].forEach(function (w, i) { ds.getColumn(i + 1).width = w; });
+      live.forEach(function (d, idx) {
+        const row = ds.addRow([
+          d.display_ref || '', d.project || '', d.stage || '',
+          (d.deal_value_inr != null ? Number(d.deal_value_inr) || 0 : ''),
+          d.close_month || '',
+          d.created_at ? String(d.created_at).slice(0, 10) : ''
+        ]);
+        row.getCell(4).numFmt = '#,##0';
+        if (idx % 2 === 1) {
+          for (let i = 1; i <= 6; i++) row.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: SUNK } };
+        }
+      });
+
+      const buffer = await wb.xlsx.writeBuffer();
+      return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    }
+
     return {
       // Public API
       excel, pdf, download, filename,
+      pipelineExcel, partyExcel,
       // Lazy-load helpers (exposed for direct CDN-reachability smoke testing)
       loadExcelJS, loadJsPDF, loadHtml2Canvas,
       // v27.3.14d — Expose embedded brand logos so the login page (UI module,
@@ -14076,7 +14419,7 @@
       if (deal.reco && Array.isArray(deal.reco.cards) && deal.reco.cards.length > 0) {
         payload.lines = deal.reco.cards.map(function(c) {
           return {
-            product_family:    fam,
+            product_family:    c.family || fam,
             sku:               c.sku,
             description:       c.desc || c.label || c.sku,
             model_no:          c.sku,
@@ -14430,6 +14773,7 @@
       })();
       return {
         step: 1,
+        mode: 'guided', advancedSelections: [],
         project: '', customer_name: '', partner_name: '', consultant_name: '',
         venue_type: '', city: '', state: '',
         stage: 'Qualified', lead_source: '',
@@ -15119,7 +15463,7 @@
               esc(previewTxt) +
             '</div>' +
             '<label style="display:block;font-size:12px;color:var(--ink-soft);margin-bottom:6px">View name (max 32 chars)</label>' +
-            '<input id="v4-sv-name" type="text" maxlength="32" placeholder="e.g. North Q1 CALICO" autocomplete="off" ' +
+            '<input id="v4-sv-name" type="text" maxlength="32" placeholder="e.g. North Q1 pipeline" autocomplete="off" ' +
               'style="width:100%;padding:10px 12px;border:1px solid var(--border-soft);border-radius:8px;font-size:14px;font-family:inherit;background:var(--bg-card);color:var(--ink-strong);box-sizing:border-box">' +
             '<div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">' +
               '<button class="btn-v3 btn-ghost btn-md" type="button" data-action="v4-saved-cancel">Cancel</button>' +
@@ -15363,6 +15707,364 @@
       }
     }
 
+    /* ============================================================
+       v27.51.0 — BS parity port 1/2: User Management (Super-only)
+       + Global Search + per-customer export. Ported from BrightSign
+       (v2.6.0 user mgmt, gs overlay, v2.10.0 party export), adapted:
+       usersById -> rosterById, pricebook catalog -> skuCatalog,
+       purple chip tints -> accent color-mix. RPCs user_create /
+       user_update / user_set_active / user_admin_reset already exist
+       server-side (shared DB, Super-gated); wrappers live in STORE.
+       ============================================================ */
+    const USER_ROLES = ['Sales', 'Presales', 'BU Head', 'Support', 'OEM'];
+    let _usersCache = [];
+
+    function _roleOf(u) {
+      return (u && u.permission_tier === 'super') ? 'super' : ((u && u.org_function) || '');
+    }
+    function _roleLabel(role) {
+      return role === 'super' ? 'Super' : (role || '\u2014');
+    }
+
+    async function showUsersSheet() {
+      openSheet(
+        '<div class="notif-sheet">' +
+          '<div class="notif-sheet-head"><h3>Users</h3><span class="chip-v3 chip-accent">SUPER</span></div>' +
+          '<div style="padding:8px 16px;color:var(--ink-soft);font-size:13px">Loading\u2026</div>' +
+        '</div>'
+      );
+      let users;
+      try { users = await STORE.usersListAll(); } catch (e) { users = []; }
+      _usersCache = Array.isArray(users) ? users : [];
+      const me = STORE.currentUser();
+      const myUn = (me && me.username) || '';
+      const inactiveCount = _usersCache.filter(function (x) { return x.is_active === false; }).length;
+
+      const rowHtml = _usersCache.length
+        ? _usersCache.map(function (x) {
+            const isActive = x.is_active !== false;
+            const isSelf = x.username === myUn;
+            const role = _roleOf(x);
+            const roleBadge = '<span class="chip-v3" style="background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--accent);font-size:11px;padding:2px 8px">' + esc(_roleLabel(role)) + '</span>';
+            const regionBadge = x.region
+              ? '<span class="chip-v3" style="background:rgba(148,163,184,0.15);color:var(--ink-soft);font-size:11px;padding:2px 8px;margin-left:4px">' + esc(x.region) + '</span>'
+              : '';
+            const inactiveBadge = !isActive
+              ? '<span class="chip-v3" style="background:rgba(239,68,68,0.15);color:#ef4444;font-size:11px;padding:2px 8px;margin-left:4px">DISABLED</span>'
+              : '';
+            const rowStyle = 'display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);' +
+                             (isActive ? '' : 'opacity:0.55;');
+            const unEsc = esc(x.username || '');
+            const editBtn = '<button type="button" class="v4-sum-act" data-action="um-users-edit" data-username="' + unEsc + '" title="Edit" style="padding:6px 10px">Edit</button>';
+            const resetBtn = '<button type="button" class="v4-sum-act" data-action="um-users-reset" data-username="' + unEsc + '" title="Reset password" style="padding:6px 10px">Reset PW</button>';
+            const toggleLabel = isActive ? 'Disable' : 'Enable';
+            const toggleBtn = isSelf
+              ? ''
+              : '<button type="button" class="v4-sum-act" data-action="um-users-toggle" data-username="' + unEsc + '" data-active="' + (isActive ? '1' : '0') + '" title="' + toggleLabel + '" style="padding:6px 10px">' + toggleLabel + '</button>';
+            const initials = (String(x.full_name || x.username || '?').trim().charAt(0) || '?').toUpperCase();
+            return '<div style="' + rowStyle + '">' +
+              '<div style="width:30px;height:30px;flex:0 0 30px;border-radius:50%;background:var(--accent);color:var(--ink-on-brand);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">' + esc(initials) + '</div>' +
+              '<div style="flex:1;min-width:0">' +
+                '<div style="font-weight:600;color:var(--ink-strong);font-size:14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
+                  esc(x.full_name || x.username || '(unnamed)') + roleBadge + regionBadge + inactiveBadge +
+                '</div>' +
+                '<div style="font-size:11px;color:var(--ink-soft);margin-top:2px">@' + unEsc + (x.email ? ' \u00b7 ' + esc(x.email) : '') + '</div>' +
+              '</div>' +
+              '<div style="display:flex;gap:4px;flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end">' +
+                editBtn + resetBtn + toggleBtn +
+              '</div>' +
+            '</div>';
+          }).join('')
+        : '<div style="padding:16px;text-align:center;color:var(--ink-soft);font-size:13px">No users found.</div>';
+
+      openSheet(
+        '<div class="notif-sheet" style="padding-bottom:0">' +
+          '<div class="notif-sheet-head"><h3>Users</h3><span class="chip-v3 chip-accent">SUPER</span></div>' +
+          '<div style="padding:6px 16px 10px;color:var(--ink-soft);font-size:12px;line-height:1.5">' +
+            _usersCache.length + ' user' + (_usersCache.length === 1 ? '' : 's') +
+            (inactiveCount ? ' \u00b7 ' + inactiveCount + ' disabled' : '') +
+            '. New users set their own password on first login.' +
+          '</div>' +
+          '<div style="border-top:1px solid var(--border);max-height:55vh;overflow-y:auto">' + rowHtml + '</div>' +
+          '<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">' +
+            '<button type="button" class="btn-v3 btn-primary btn-md" data-action="um-users-add">+ New user</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+
+    function showUserEditSheet(user) {
+      const isEdit = !!user;
+      const curUn     = isEdit ? (user.username || '') : '';
+      const curFull   = isEdit ? (user.full_name || '') : '';
+      const curRole   = isEdit ? _roleOf(user) : 'Sales';
+      const curEmail  = isEdit ? (user.email || '') : '';
+      const curPhone  = isEdit ? (user.phone || '') : '';
+      const curTitle  = isEdit ? (user.professional_title || '') : '';
+      const curRegion = isEdit ? (user.region || '') : '';
+      const curActive = isEdit ? (user.is_active !== false) : true;
+
+      const roleOpts = USER_ROLES.map(function (r) {
+        return '<option value="' + esc(r) + '"' + (curRole === r ? ' selected' : '') + '>' + esc(r) + '</option>';
+      }).join('') +
+        '<option value="super"' + (curRole === 'super' ? ' selected' : '') + '>Super \u2014 full admin</option>';
+
+      openSheet(
+        '<div class="notif-sheet" style="padding:0 16px 16px">' +
+          '<div class="notif-sheet-head" style="padding-left:0;padding-right:0">' +
+            '<h3>' + (isEdit ? 'Edit user' : 'New user') + '</h3><span class="chip-v3 chip-accent">SUPER</span>' +
+          '</div>' +
+          '<div class="field-v3"><label>Username *</label>' +
+            '<input class="input-v3" id="ue-username" type="text" maxlength="40" autocomplete="off" value="' + esc(curUn) + '"' + (isEdit ? ' disabled' : ' placeholder="username"') + '>' +
+            (isEdit ? '<div style="font-size:11px;color:var(--ink-soft);margin-top:4px">Username can\'t be changed.</div>' : '') +
+          '</div>' +
+          '<div class="field-v3"><label>Full name *</label>' +
+            '<input class="input-v3" id="ue-full" type="text" maxlength="80" value="' + esc(curFull) + '" placeholder="e.g. Arvind Kumar" autocomplete="off">' +
+          '</div>' +
+          '<div class="field-v3"><label>Role *</label><select class="input-v3" id="ue-role">' + roleOpts + '</select></div>' +
+          '<div class="field-v3"><label>Region' + (isEdit ? '' : ' (BU Head)') + '</label>' +
+            '<input class="input-v3" id="ue-region" type="text" maxlength="40" value="' + esc(curRegion) + '"' + (isEdit ? ' disabled' : ' placeholder="e.g. South or South,East"') + '>' +
+            (isEdit
+              ? '<div style="font-size:11px;color:var(--ink-soft);margin-top:4px">Region is set at creation (not editable here).</div>'
+              : '<div style="font-size:11px;color:var(--ink-soft);margin-top:4px">Only BU Head deals filter by region. Comma-separate for multi-region.</div>') +
+          '</div>' +
+          '<div class="field-v3"><label>Email</label>' +
+            '<input class="input-v3" id="ue-email" type="email" maxlength="120" value="' + esc(curEmail) + '" placeholder="name@cavitak.com" autocomplete="off">' +
+          '</div>' +
+          '<div class="field-v3"><label>Phone</label>' +
+            '<input class="input-v3" id="ue-phone" type="tel" inputmode="numeric" maxlength="10" value="' + esc(curPhone) + '" placeholder="10-digit mobile" autocomplete="off">' +
+          '</div>' +
+          (isEdit ? '' :
+            '<div class="field-v3"><label>Professional title</label>' +
+              '<input class="input-v3" id="ue-title" type="text" maxlength="60" value="' + esc(curTitle) + '" placeholder="optional" autocomplete="off"></div>') +
+          (isEdit
+            ? '<div class="field-v3"><label>Status</label><select class="input-v3" id="ue-active">' +
+                '<option value="true"' + (curActive ? ' selected' : '') + '>Active</option>' +
+                '<option value="false"' + (!curActive ? ' selected' : '') + '>Disabled</option>' +
+              '</select></div>'
+            : '<div class="field-v3"><label>Temporary password *</label>' +
+                '<input class="input-v3" id="ue-pw" type="text" maxlength="64" value="cavitak@123" autocomplete="off">' +
+                '<div style="font-size:11px;color:var(--ink-soft);margin-top:4px">User must change this on first login.</div></div>') +
+          '<div style="display:flex;gap:8px;margin-top:12px">' +
+            '<button class="btn-v3 btn-ghost btn-md" type="button" data-action="um-users-cancel" style="flex:1">Cancel</button>' +
+            '<button class="btn-v3 btn-primary btn-md" type="button" data-action="um-users-save"' + (isEdit ? ' data-username="' + esc(curUn) + '"' : '') + ' style="flex:2">' + (isEdit ? 'Update user' : 'Create user') + '</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+
+    function showUserResetSheet(username) {
+      openSheet(
+        '<div class="notif-sheet" style="padding:0 16px 16px">' +
+          '<div class="notif-sheet-head" style="padding-left:0;padding-right:0"><h3>Reset password</h3><span class="chip-v3 chip-accent">SUPER</span></div>' +
+          '<div style="padding:0 0 10px;color:var(--ink-soft);font-size:13px">Set a new temporary password for <b>@' + esc(username) + '</b>. They\'ll be asked to change it on next login.</div>' +
+          '<div class="field-v3"><label>New temporary password *</label>' +
+            '<input class="input-v3" id="ur-pw" type="text" maxlength="64" value="cavitak@123" autocomplete="off"></div>' +
+          '<div style="display:flex;gap:8px;margin-top:12px">' +
+            '<button class="btn-v3 btn-ghost btn-md" type="button" data-action="um-users-cancel" style="flex:1">Cancel</button>' +
+            '<button class="btn-v3 btn-primary btn-md" type="button" data-action="um-users-reset-submit" data-username="' + esc(username) + '" style="flex:2">Reset password</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+
+    async function _handleUserSave(username) {
+      const isEdit = !!username;
+      const un = isEdit ? username : (($('ue-username') && $('ue-username').value || '').trim().toLowerCase());
+      const full = ($('ue-full') && $('ue-full').value || '').trim();
+      const role = ($('ue-role') && $('ue-role').value || '').trim();
+      if (!un) { toast('Username is required', 'err'); return; }
+      if (!full) { toast('Full name is required', 'err'); return; }
+      const email = ($('ue-email') && $('ue-email').value || '').trim();
+      const phone = ($('ue-phone') && $('ue-phone').value || '').trim();
+      if (isEdit) {
+        const active = ($('ue-active') && $('ue-active').value) === 'true';
+        try {
+          await STORE.userUpdate({ username: un, full_name: full, role: role, email: email, phone: phone, active: active ? 'true' : 'false' });
+          toast('User updated', 'ok'); showUsersSheet();
+        } catch (e) { toast('Update failed: ' + (e && e.message || String(e)), 'err'); }
+      } else {
+        const region = ($('ue-region') && $('ue-region').value || '').trim();
+        const title  = ($('ue-title') && $('ue-title').value || '').trim();
+        const pw     = ($('ue-pw') && $('ue-pw').value || '');
+        if (!pw) { toast('Temporary password is required', 'err'); return; }
+        try {
+          await STORE.userCreate({ username: un, full_name: full, role: role, region: region, email: email, phone: phone, professional_title: title, active: 'true' }, pw);
+          toast('User created', 'ok'); showUsersSheet();
+        } catch (e) { toast('Create failed: ' + (e && e.message || String(e)), 'err'); }
+      }
+    }
+
+    async function _handleUserToggle(username, currentlyActive) {
+      try {
+        await STORE.userSetActive(username, !currentlyActive);
+        toast(currentlyActive ? 'User disabled' : 'User enabled', 'ok'); showUsersSheet();
+      } catch (e) { toast('Failed: ' + (e && e.message || String(e)), 'err'); }
+    }
+
+    async function _handleUserReset(username) {
+      const pw = ($('ur-pw') && $('ur-pw').value || '');
+      if (!pw) { toast('Password is required', 'err'); return; }
+      try {
+        await STORE.userAdminReset(username, pw);
+        toast('Password reset', 'ok'); showUsersSheet();
+      } catch (e) { toast('Reset failed: ' + (e && e.message || String(e)), 'err'); }
+    }
+
+    /* ---------- Global Search (BS gs-* port; catalog adapted to skuCatalog) ---------- */
+    let _gsDeals = null, _gsCustomers = null, _gsCatalog = null, _gsTimer = null;
+
+    function _gsRupee(n) {
+      const v = Number(n);
+      if (!v) return '';
+      if (v >= 1e7) return '\u20b9' + (v / 1e7).toFixed(1).replace(/\.0$/, '') + 'Cr';
+      if (v >= 1e5) return '\u20b9' + (v / 1e5).toFixed(1).replace(/\.0$/, '') + 'L';
+      return '\u20b9' + Math.round(v).toLocaleString('en-IN');
+    }
+    function _gsNorm(s) { return String(s == null ? '' : s).toLowerCase(); }
+
+    function openGlobalSearch() {
+      _gsDeals = null; _gsCustomers = null; _gsCatalog = null;   // fresh each open
+      openSheet(
+        '<div class="gs-sheet">' +
+          '<div class="gs-sbox">' +
+            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+            '<input id="gs-q" type="search" placeholder="Search deals, customers, products\u2026" autocomplete="off">' +
+            '<button type="button" class="gs-x" data-sheet-close aria-label="Close">\u2715</button>' +
+          '</div>' +
+          '<div class="gs-results" id="gs-results"><div class="gs-hint">Loading\u2026</div></div>' +
+        '</div>'
+      );
+      const q = $('gs-q');
+      if (q) q.addEventListener('input', function () { _gsDebounced(q.value); });
+      setTimeout(function () { var el = $('gs-q'); if (el) { try { el.focus(); } catch (_) {} } }, 60);
+      _gsEnsureData().then(function () { _runGlobalSearch($('gs-q') ? $('gs-q').value : ''); });
+    }
+
+    function _gsDebounced(v) {
+      if (_gsTimer) clearTimeout(_gsTimer);
+      _gsTimer = setTimeout(function () { _runGlobalSearch(v); }, 140);
+    }
+
+    async function _gsEnsureData() {
+      if (!_gsDeals) {
+        try {
+          const r = await STORE.listDeals({ limit: 500 });
+          _gsDeals = Array.isArray(r) ? r : (r && (r.rows || r.deals || r.data)) || [];
+        } catch (_) { _gsDeals = _gsDeals || []; }
+      }
+      if (!_gsCustomers) {
+        try {
+          const c = await STORE.customerList({});
+          _gsCustomers = Array.isArray(c) ? c : (c && (c.customers || c.rows)) || [];
+        } catch (_) { _gsCustomers = _gsCustomers || []; }
+      }
+      if (!_gsCatalog) {
+        try {
+          let cat = STORE.skuCatalog();
+          if (!cat || !cat.length) { try { await STORE.pricebookEnsure(true); cat = STORE.skuCatalog(); } catch (_) {} }
+          _gsCatalog = cat || [];
+        } catch (_) { _gsCatalog = _gsCatalog || []; }
+      }
+    }
+
+    function _runGlobalSearch(raw) {
+      const host = $('gs-results');
+      if (!host) return;
+      const q = String(raw || '').trim().toLowerCase();
+      if (!q) {
+        host.innerHTML = '<div class="gs-hint">Search across your deals, customers, and products.</div>';
+        return;
+      }
+      const nameOf = function (id) {
+        try { var u = id && STORE.rosterById(id); return u ? (u.full_name || u.name || '') : ''; }
+        catch (_) { return ''; }
+      };
+
+      const deals = (_gsDeals || []).filter(function (d) {
+        return [d.display_ref, d.project, d.customer_name, d.partner_name, d.consultant_name,
+                d.city, d.state, d.contact_name, nameOf(d.sales_person_id), nameOf(d.presales_person_id)]
+          .some(function (v) { return _gsNorm(v).indexOf(q) !== -1; });
+      }).slice(0, 8);
+
+      const custs = (_gsCustomers || []).filter(function (c) {
+        return [c.name, c.city, c.industry, c.state].some(function (v) { return _gsNorm(v).indexOf(q) !== -1; });
+      }).slice(0, 8);
+
+      const prods = (_gsCatalog || []).filter(function (p) {
+        return [p.item, p.description, p.family].some(function (v) { return _gsNorm(v).indexOf(q) !== -1; });
+      }).slice(0, 8);
+
+      if (!deals.length && !custs.length && !prods.length) {
+        host.innerHTML = '<div class="gs-empty">No matches for \u201c' + esc(q) + '\u201d.</div>';
+        return;
+      }
+
+      let html = '';
+      if (deals.length) {
+        html += '<div class="gs-group">Deals</div>';
+        html += deals.map(function (d) {
+          const ref = String(d.display_ref || '');
+          const meta = [d.customer_name, d.stage].filter(Boolean).join(' \u00b7 ');
+          const val = _gsRupee(d.deal_value_inr);
+          return '<button type="button" class="gs-row" data-action="gs-go-deal" data-ref="' + esc(ref) + '">' +
+              '<span class="gs-ico gs-ico-deal"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>' +
+              '<span class="gs-rbody"><span class="gs-rname">' + (ref ? esc(ref) : '\u2014') +
+                (d.project ? ' <span class="gs-rsub">' + esc(d.project) + '</span>' : '') + '</span>' +
+                (meta ? '<span class="gs-rmeta">' + esc(meta) + '</span>' : '') + '</span>' +
+              (val ? '<span class="gs-rval">' + esc(val) + '</span>' : '') +
+            '</button>';
+        }).join('');
+      }
+      if (custs.length) {
+        html += '<div class="gs-group">Customers</div>';
+        html += custs.map(function (c) {
+          const nm = String(c.name || '\u2014');
+          const init = nm.split(/\s+/).map(function (w) { return w[0]; }).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
+          const meta = [c.city, c.industry].filter(Boolean).join(' \u00b7 ');
+          return '<button type="button" class="gs-row" data-action="gs-go-cust" data-id="' + esc(String(c.id || '')) + '">' +
+              '<span class="gs-ico gs-ico-cust">' + esc(init) + '</span>' +
+              '<span class="gs-rbody"><span class="gs-rname">' + esc(nm) + '</span>' +
+                (meta ? '<span class="gs-rmeta">' + esc(meta) + '</span>' : '') + '</span>' +
+            '</button>';
+        }).join('');
+      }
+      if (prods.length) {
+        html += '<div class="gs-group">Products</div>';
+        html += prods.map(function (p) {
+          const m = String(p.item || '');
+          const meta = [p.family, String(p.description || '').slice(0, 46)].filter(Boolean).join(' \u00b7 ');
+          return '<button type="button" class="gs-row" data-action="gs-go-prod" data-model="' + esc(m) + '">' +
+              '<span class="gs-ico gs-ico-prod"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></span>' +
+              '<span class="gs-rbody"><span class="gs-rname">' + esc(m) + '</span>' +
+                (meta ? '<span class="gs-rmeta">' + esc(meta) + '</span>' : '') + '</span>' +
+              '<span class="gs-rtag">Build</span>' +
+            '</button>';
+        }).join('');
+      }
+      host.innerHTML = html;
+    }
+
+    /* ---------- Per-customer export (BS v2.10.0 exportParty, cache-free lookup) ---------- */
+    async function exportParty(customerId, btnEl) {
+      if (btnEl) btnEl.disabled = true;
+      try {
+        const list = await STORE.customerList({ limit: 1000 });
+        const rows = Array.isArray(list) ? list : (list && (list.customers || list.rows)) || [];
+        const cust = rows.filter(function (c) { return String(c.id) === String(customerId); })[0];
+        if (!cust) { toast('Customer not found', 'err'); return; }
+        const deals = await STORE.customer360(customerId);
+        const blob = await EXPORT.partyExcel(cust, Array.isArray(deals) ? deals : (deals && deals.deals) || []);
+        const safe = String(cust.name || 'party').replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').slice(0, 40) || 'party';
+        EXPORT.download(blob, 'tvONE_Customer_' + safe + '_' + (new Date()).toISOString().slice(0, 10) + '.xlsx');
+        toast('Export ready', 'ok');
+      } catch (e) {
+        toast('Export failed: ' + ((e && e.message) || String(e)), 'err');
+      } finally {
+        if (btnEl) btnEl.disabled = false;
+      }
+    }
+
     /* v27.3.0 — User menu sheet (avatar dropdown replacement, Super sees admin tools) */
     function showUserMenuSheet() {
       const u = STORE.currentUser();
@@ -15376,6 +16078,8 @@
           act: 'um-followups' }
       ];
       if (isSuper) {
+        items.push({ label: 'Users', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+          act: 'um-users' });
         items.push({ label: 'Audit log', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/></svg>',
           act: 'um-audit' });
         items.push({ label: 'Password resets', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="16" r="1"/><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
@@ -15907,7 +16611,7 @@
           '<p style="font-size:13px;color:var(--ink-soft);margin:0 0 12px">Your request goes to a Super user for review. You\'ll receive a temporary password by email once approved.</p>' +
           '<div class="field-v3">' +
             '<label>Username</label>' +
-            '<input type="text" class="input-v3" id="rp-username" autocomplete="username" placeholder="your.username">' +
+            '<input type="text" class="input-v3" id="rp-username" autocomplete="username" placeholder="username">' +
           '</div>' +
           '<div class="field-v3">' +
             '<label>Reason <span style="color:var(--ink-faint);font-weight:400">(optional)</span></label>' +
@@ -16300,7 +17004,7 @@
               '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="login-input-icon"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>' +
               '<input class="input-v3 input-v3-iconed" id="i-username" name="username" type="text" ' +
                    'autocomplete="username" autocapitalize="off" autocorrect="off" ' +
-                   'spellcheck="false" placeholder="your.username" required>' +
+                   'spellcheck="false" placeholder="username" required>' +
             '</div>' +
             '<div class="err" hidden></div>' +
           '</div>' +
@@ -16543,22 +17247,15 @@
         const r = await STORE.listDeals({ limit: 500, offset: 0 });
         const all = (r && r.rows) || [];
         const u = STORE.currentUser() || {};
-        const uid = u.id;
-        const isBuHead = u.org_function === 'BU Head';
-        // Scope
-        let scoped;
-        if (isSuper) {
-          scoped = all;
-        } else if (isBuHead && u.region) {
-          const myRegions = String(u.region || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-          scoped = all.filter(d => {
-            const r = String(d.region_owner || d.region || '').toLowerCase();
-            return d.sales_person_id === uid || d.presales_person_id === uid ||
-                   (r && myRegions.indexOf(r) >= 0);
-          });
-        } else {
-          scoped = uid ? all.filter(d => d.sales_person_id === uid || d.presales_person_id === uid) : all;
-        }
+        // v27.51.1 fix (item 4a) — scope with the tvONE-native predicates
+        // (getRegionScope/getSalesScope/dealMatchesScope) already used by the V4
+        // dashboard + pipeline export. The old `region_owner || region` fallback
+        // never matched (deals has no such column; region derives from state via
+        // regionForState) -> BU Head Home aggregated own-deals instead of region;
+        // OEM (created_by) + Support (pan-India) scoping now match the dashboard.
+        const regionScope = getRegionScope(u);
+        const salesScope = getSalesScope(u);
+        const scoped = all.filter(d => dealMatchesScope(d, regionScope, salesScope));
         const active = scoped.filter(d => !d.deleted_at);
         const open = active.filter(d => _isOpenStage(d.stage));
         const won  = active.filter(d => d.stage === 'Closed Won');
@@ -18713,7 +19410,7 @@ function DSH_CSS(){ return '<style>'+[
         // Filter summary line
         '<div class="v4-filter-summary">' +
           '<div>Showing <span class="v4-sum-n" data-v4-d-shown>\u2014</span> of <span class="v4-sum-n" data-v4-d-total>\u2014</span> deals \u00b7 <span data-v4-d-sumdetail>No filters</span></div>' +
-          '<div style="display:flex;gap:8px"><button type="button" class="v4-sum-act" data-action="v4-share-view">Share view</button></div>' +
+          '<div style="display:flex;gap:8px"><button type="button" class="v4-sum-act" data-action="export-pipeline">Export</button><button type="button" class="v4-sum-act" data-action="v4-share-view">Share view</button></div>' +
         '</div>' +
 
         '<div class="mc-telemetry">' +
@@ -20532,25 +21229,15 @@ function DSH_CSS(){ return '<style>'+[
         const r = await STORE.listDeals({ limit: 500, offset: 0 });
         const all = (r && r.rows) || [];
         const u = STORE.currentUser() || {};
-        const uid = u.id;
-        const isSuper = u.permission_tier === 'super';
-        const isBuHead = u.org_function === 'BU Head';
-        // Scope: Super sees all, BU Head sees regional, everyone else sees own
-        let scoped;
-        if (isSuper) {
-          scoped = all;
-        } else if (isBuHead && u.region) {
-          // BU Head — match by region (handle multi-region like 'South,East')
-          const myRegions = String(u.region || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-          scoped = all.filter(d => {
-            const ownerRegion = String(d.region_owner || d.region || '').toLowerCase();
-            // No region column on deals — fall back to mine + reports
-            return d.sales_person_id === uid || d.presales_person_id === uid ||
-                   (ownerRegion && myRegions.indexOf(ownerRegion) >= 0);
-          });
-        } else {
-          scoped = uid ? all.filter(d => d.sales_person_id === uid || d.presales_person_id === uid) : all;
-        }
+        // v27.51.1 fix (item 4a) — scope with the tvONE-native predicates
+        // (getRegionScope/getSalesScope/dealMatchesScope) already used by the V4
+        // dashboard + pipeline export. The old `region_owner || region` fallback
+        // never matched (deals has no such column; region derives from state via
+        // regionForState) -> BU Head KPIs aggregated own-deals instead of region;
+        // OEM (created_by) + Support (pan-India) scoping now match the dashboard.
+        const regionScope = getRegionScope(u);
+        const salesScope = getSalesScope(u);
+        const scoped = all.filter(d => dealMatchesScope(d, regionScope, salesScope));
         const active = scoped.filter(d => !d.deleted_at);
         const open  = active.filter(d => _isOpenStage(d.stage));
         const won   = active.filter(d => d.stage === 'Closed Won');
@@ -21713,7 +22400,7 @@ function DSH_CSS(){ return '<style>'+[
             '<span class="search-icon">' +
               '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
             '</span>' +
-            '<input id="hist-search" class="search-input" type="search" placeholder="Search by project, customer, or ref..." autocomplete="off">' +
+            '<input id="hist-search" class="search-input" type="search" placeholder="Search by project, customer, or ref\u2026" autocomplete="off">' +
             '<button class="search-clear" type="button" data-action="hist-clear-search" hidden>' +
               '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
             '</button>' +
@@ -22119,6 +22806,9 @@ function DSH_CSS(){ return '<style>'+[
           '<div class="cust-360-actions">' +
             '<button class="btn-v3 btn-ghost btn-sm" type="button" data-action="cust-edit" data-id="' + esc(customerId) + '">' +
               '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit' +
+            '</button>' +
+            '<button class="btn-v3 btn-ghost btn-sm" type="button" data-action="cust-export" data-id="' + esc(customerId) + '">' +
+              '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export' +
             '</button>' +
             (isSuper
               ? '<button class="btn-v3 btn-ghost btn-sm" type="button" data-action="cust-merge" data-id="' + esc(customerId) + '">' +
@@ -23179,13 +23869,13 @@ function DSH_CSS(){ return '<style>'+[
           sdSelectField('presales_person_id', 'Presales person', deal.presales_person_id, PRESALES_TEAM, { placeholder: '\u2014 select \u2014' }) +
           '<h3 class="h3">Partner contact</h3>' +
           sdField('contact_name',  'Contact name',  deal.contact_name,  { placeholder: 'Site / partner contact person' }) +
-          sdField('contact_phone', 'Contact phone', deal.contact_phone, { inputmode: 'numeric', maxlength: 10, help: '10-digit mobile (no country code, no spaces)' }) +
+          sdField('contact_phone', 'Contact phone', deal.contact_phone, { inputmode: 'numeric', maxlength: 10, help: '10-digit mobile (no country code or spaces)' }) +
           sdField('contact_email', 'Contact email', deal.contact_email, { type: 'email', placeholder: 'name@company.com' }) +
           '<h3 class="h3">Closure</h3>' +
           sdField('close_month', 'Expected closure', deal.close_month, { type: 'month', help: 'Year-month, e.g. 2026-09' }) +
           '<h3 class="h3">Notes</h3>' +
-          sdTextarea('internal_notes', 'Internal notes', deal.internal_notes, { rows: 3, placeholder: 'Visible only to Cavitak team \u2014 not exported to Excel/PDF' }) +
-          sdTextarea('external_notes', 'External notes', deal.external_notes, { rows: 3, placeholder: 'Shown in Excel/PDF exports to customer/partner' }) +
+          sdTextarea('internal_notes', 'Internal notes', deal.internal_notes, { rows: 3, placeholder: 'Team-only \u2014 never in customer exports' }) +
+          sdTextarea('external_notes', 'External notes', deal.external_notes, { rows: 3, placeholder: 'Customer-facing \u2014 shown in exports' }) +
         '</form>';
 
       // ---- Read-only sections (structural — see below for I/O which IS editable in CALICO mode) ----
@@ -23725,6 +24415,285 @@ function DSH_CSS(){ return '<style>'+[
 
     /* ---------- Step 1: Project context ---------- */
 
+    // v27.47.0 — BrightSign structural-parity helpers (section header,
+    // field caption, segmented pills). Named wizSectionHeader to avoid the
+    // existing saved-deal sectionHeader() (<summary> renderer, other scope).
+    var _WIZ_ICO = {
+      project: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
+      location: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+      users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      partner: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+      calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+      note: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>'
+    };
+    var _WIZ_STEP_ICO    = { 1: _WIZ_ICO.project };
+    var _WIZ_CAPTION_ICO = { 'Project': _WIZ_ICO.project, 'Location': _WIZ_ICO.location, 'Stage & owners': _WIZ_ICO.users, 'Partner contact': _WIZ_ICO.partner, 'Closure': _WIZ_ICO.calendar, 'Notes': _WIZ_ICO.note };
+
+    function wizSectionHeader(num, title, sub) {
+      return '<div class="sec-head">' +
+        '<span class="sec-badge">' + (_WIZ_STEP_ICO[num] || esc(String(num))) + '</span>' +
+        '<div class="sec-head-text">' +
+          '<div class="sec-title">' + esc(title) + '</div>' +
+          (sub ? '<div class="sec-sub">' + esc(sub) + '</div>' : '') +
+        '</div>' +
+      '</div>';
+    }
+
+    function fieldCaption(text, required) {
+      const ico = _WIZ_CAPTION_ICO[text];
+      return '<div class="field-caption' + (ico ? ' has-ico' : '') + '">' +
+        (ico ? '<span class="fc-ico" aria-hidden="true">' + ico + '</span>' : '') +
+        esc(text) +
+        (required ? '<span class="req">*</span>' : '') + '</div>';
+    }
+
+    function pillGroup(key, label, value, options, opts) {
+      opts = opts || {};
+      const pills = options.map(function (o) {
+        const v = typeof o === 'string' ? o : o.value;
+        const l = typeof o === 'string' ? o : o.label;
+        const sel = String(value) === String(v);
+        return '<button type="button" class="pill-btn' + (sel ? ' is-selected' : '') + '" ' +
+          'data-action="pill-set" data-key="' + esc(key) + '" data-val="' + esc(v) + '">' +
+          esc(l) + '</button>';
+      }).join('');
+      return '<div class="field pill-field' + (opts.error ? ' has-error' : '') + '" id="f-' + esc(key) + '">' +
+        '<label>' + esc(label) + (opts.required ? ' *' : '') + '</label>' +
+        '<div class="pill-group">' + pills + '</div>' +
+        (opts.sub ? '<div class="pill-sub">' + esc(opts.sub) + '</div>' : '') +
+        (opts.error ? '<div class="err">' + esc(opts.error) + '</div>' : '') +
+      '</div>';
+    }
+
+    /* ============================================================
+       v27.47.0 — Party pickers (BrightSign structural parity).
+       End User is directory-linked via customer_list/customer_upsert
+       (End users ARE customers in this DB). Partner & Consultant use the
+       same chip UI but NAME-ENTRY ONLY — there is no parties_list RPC
+       (customer_list is customer-only). The customer link persists for
+       free: wizardData.customer_party_id → raw_submission (buildSavePayload,
+       not a STRUCTURED_COL) → lifted back to top-level on load → hydrate.
+       ============================================================ */
+    var _partyActiveRole  = null;
+    var _partySearchTimer = null;
+
+    function _partyInitials(n) {
+      var w = String(n || '').trim().split(/\s+/).filter(Boolean);
+      var out = (w[0] ? w[0][0] : '') + (w[1] ? w[1][0] : '');
+      return out.toUpperCase() || '?';
+    }
+
+    function renderPartyControl(role) {
+      var isCust = (role === 'customer');
+      var id     = wizardData[role + '_party_id'];
+      var name   = wizardData[role + '_name'];
+      var showChip = isCust ? (id && name) : !!name;
+      if (showChip) {
+        var metaHtml = isCust
+          ? '<div class="pp-cmeta"><span class="pp-linked">\u2713 Linked</span></div>'
+          : '';
+        return '<div class="pp-chip">' +
+            '<div class="pp-ava">' + esc(_partyInitials(name)) + '</div>' +
+            '<div class="pp-cbody"><div class="pp-cname">' + esc(name) + '</div>' + metaHtml + '</div>' +
+            '<button type="button" class="pp-cact" data-action="party-open" data-role="' + role + '" aria-label="Change">' +
+              '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>' +
+            '</button>' +
+            '<button type="button" class="pp-cact" data-action="party-clear" data-role="' + role + '" aria-label="Clear">' +
+              '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+            '</button>' +
+          '</div>';
+      }
+      var ph  = isCust ? 'Search or add a company\u2026' : 'Add ' + esc(role) + ' name\u2026';
+      var ico = isCust
+        ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+        : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+      return '<button type="button" class="pp-picker" data-action="party-open" data-role="' + role + '">' +
+          '<span class="pp-ph">' + ph + '</span>' + ico +
+        '</button>';
+    }
+
+    function partyField(role, label, required) {
+      var errKey  = role + '_name';
+      var hasErr  = wizardData.errors && wizardData.errors[errKey];
+      var errHtml = hasErr ? '<div class="err">' + esc(wizardData.errors[errKey]) + '</div>'
+                           : '<div class="err" hidden></div>';
+      return '<div class="field' + (hasErr ? ' has-error' : '') + '" id="pf-' + role + '">' +
+          '<label>' + esc(label) + (required ? ' *' : ' <span class="pp-opt">optional</span>') + '</label>' +
+          '<div id="ppc-' + role + '">' + renderPartyControl(role) + '</div>' +
+          errHtml +
+        '</div>';
+    }
+
+    function _partySwap(role) {
+      var c = $('ppc-' + role);
+      if (c) c.innerHTML = renderPartyControl(role);
+      var f = $('pf-' + role);
+      if (f) f.classList.remove('has-error');
+    }
+
+    function partyOpen(role) {
+      _partyActiveRole = role;
+      if (role === 'customer') openCustomerPicker();
+      else openPartyNameSheet(role);
+    }
+
+    function partyClear(role) {
+      wizardData[role + '_party_id'] = '';
+      wizardData[role + '_name']     = '';
+      _partySwap(role);
+      saveDraft();
+    }
+
+    function openCustomerPicker() {
+      _partyActiveRole = 'customer';
+      openSheet(
+        '<div class="pp-sheet">' +
+          '<div class="pp-shead"><h3 class="pp-stitle">Select end user</h3>' +
+            '<button type="button" class="pp-x" data-sheet-close aria-label="Close">\u2715</button></div>' +
+          '<div class="pp-sbox">' +
+            '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+            '<input id="pp-q" type="search" placeholder="Search companies\u2026" autocomplete="off">' +
+          '</div>' +
+          '<div class="pp-results" id="pp-results"><div class="pp-loading">Loading\u2026</div></div>' +
+          '<div class="pp-foot"><button type="button" class="pp-create" data-action="party-create-form">' +
+            '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+            '<span id="pp-clabel">Add new company</span></button></div>' +
+        '</div>'
+      );
+      var q = $('pp-q');
+      if (q) q.addEventListener('input', function () { _customerDebounced(q.value); });
+      _runCustomerSearch('');
+    }
+
+    function _customerDebounced(val) {
+      var lbl = $('pp-clabel');
+      if (lbl) lbl.textContent = (val && val.trim()) ? 'Create \u201c' + val.trim() + '\u201d' : 'Add new company';
+      if (_partySearchTimer) clearTimeout(_partySearchTimer);
+      _partySearchTimer = setTimeout(function () { _runCustomerSearch(val); }, 220);
+    }
+
+    function _runCustomerSearch(q) {
+      var host = $('pp-results');
+      if (!host) return;
+      STORE.customerList({ search: q, limit: 300 }).then(function (rows) {
+        if (!$('pp-results')) return;
+        var list = Array.isArray(rows) ? rows : [];
+        if (!list.length) {
+          host.innerHTML = '<div class="pp-empty">' +
+            ((q && q.trim()) ? 'No company matches \u201c' + esc(q.trim()) + '\u201d.' : 'No companies yet.') +
+            '<br>Add one below.</div>';
+          return;
+        }
+        host.innerHTML = list.map(function (p) {
+          var meta = [p.city, p.state].filter(Boolean).join(', ');
+          return '<button type="button" class="pp-res" data-action="party-pick" ' +
+              'data-id="' + esc(p.id) + '" data-name="' + esc(p.name) + '"' +
+              ' data-city="' + esc(p.city || '') + '" data-state="' + esc(p.state || '') + '">' +
+              '<div class="pp-rava">' + esc(_partyInitials(p.name)) + '</div>' +
+              '<div class="pp-rbody"><div class="pp-rname">' + esc(p.name) + '</div>' +
+                (meta ? '<div class="pp-rmeta">' + esc(meta) + '</div>' : '') + '</div>' +
+            '</button>';
+        }).join('');
+      }).catch(function () {
+        if (host) host.innerHTML = '<div class="pp-empty">Couldn\u2019t search \u2014 check your connection.</div>';
+      });
+    }
+
+    function partyPick(el) {
+      var role = _partyActiveRole || 'customer';
+      wizardData[role + '_party_id'] = el.getAttribute('data-id')   || '';
+      wizardData[role + '_name']     = el.getAttribute('data-name') || '';
+      if (wizardData.errors) delete wizardData.errors[role + '_name'];
+      if (role === 'customer') {
+        var pcity  = el.getAttribute('data-city')  || '';
+        var pstate = el.getAttribute('data-state') || '';
+        var ci = $('i-city'), si = $('i-state');
+        if (pcity  && ci && !ci.value) { ci.value = pcity;  wizardData.city  = pcity;  }
+        if (pstate && si && !si.value) { si.value = pstate; wizardData.state = pstate; }
+      }
+      _partySwap(role);
+      saveDraft();
+      closeSheet();
+    }
+
+    function partyCreateForm() {
+      var q = ($('pp-q') && $('pp-q').value.trim()) || '';
+      openSheet(
+        '<div class="pp-sheet">' +
+          '<div class="pp-shead"><h3 class="pp-stitle">New end user</h3>' +
+            '<button type="button" class="pp-x" data-sheet-close aria-label="Close">\u2715</button></div>' +
+          '<button type="button" class="pp-back" data-action="party-back">\u2039 Back to search</button>' +
+          '<div class="pp-frow"><label for="pp-cn">Company name</label>' +
+            '<input id="pp-cn" type="text" value="' + esc(q) + '" placeholder="Company name"></div>' +
+          '<div class="pp-f2">' +
+            '<div class="pp-frow"><label for="pp-cc">City</label><input id="pp-cc" type="text" placeholder="City"></div>' +
+            '<div class="pp-frow"><label for="pp-cs">State</label><input id="pp-cs" type="text" placeholder="State"></div>' +
+          '</div>' +
+          '<div class="pp-frow"><label for="pp-ci">Industry <span class="pp-opt">optional</span></label>' +
+            '<input id="pp-ci" type="text" placeholder="Retail, IT/ITES, Hospitality\u2026"></div>' +
+          '<div class="pp-formact"><button type="button" class="pp-bghost" data-action="party-back">Cancel</button>' +
+            '<button type="button" class="pp-bprimary" data-action="party-create-save">Add &amp; select</button></div>' +
+        '</div>'
+      );
+      setTimeout(function () { var f = $('pp-cn'); if (f) f.focus(); }, 60);
+    }
+
+    function partyCreateSave() {
+      var name = ($('pp-cn') && $('pp-cn').value.trim()) || '';
+      if (!name) { var f0 = $('pp-cn'); if (f0) f0.focus(); return; }
+      var payload = {
+        name:     name,
+        city:     ($('pp-cc') && $('pp-cc').value.trim()) || '',
+        state:    ($('pp-cs') && $('pp-cs').value.trim()) || '',
+        industry: ($('pp-ci') && $('pp-ci').value.trim()) || ''
+      };
+      var btn = document.querySelector('[data-action="party-create-save"]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Adding\u2026'; }
+      STORE.customerUpsert(payload).then(function () {
+        return STORE.customerList({ search: name, limit: 50 });
+      }).then(function (rows) {
+        var lc = name.toLowerCase();
+        var match = (Array.isArray(rows) ? rows : []).filter(function (c) {
+          return String(c.name || '').trim().toLowerCase() === lc;
+        })[0] || (Array.isArray(rows) && rows[0]) || null;
+        wizardData.customer_party_id = match ? String(match.id) : '';
+        wizardData.customer_name     = (match && match.name) || name;
+        if (wizardData.errors) delete wizardData.errors.customer_name;
+        _partySwap('customer');
+        saveDraft();
+        closeSheet();
+      }).catch(function () {
+        if (btn) { btn.disabled = false; btn.textContent = 'Add & select'; }
+        toast('Could not add company \u2014 check your connection.', 'err');
+      });
+    }
+
+    function openPartyNameSheet(role) {
+      var label = role === 'partner' ? 'Partner' : 'Consultant';
+      var cur   = wizardData[role + '_name'] || '';
+      openSheet(
+        '<div class="pp-sheet">' +
+          '<div class="pp-shead"><h3 class="pp-stitle">' + esc(label) + ' name</h3>' +
+            '<button type="button" class="pp-x" data-sheet-close aria-label="Close">\u2715</button></div>' +
+          '<div class="pp-frow"><label for="pp-nm">Name</label>' +
+            '<input id="pp-nm" type="text" value="' + esc(cur) + '" placeholder="' + esc(label) + ' contact / company"></div>' +
+          '<div class="pp-formact"><button type="button" class="pp-bghost" data-sheet-close>Cancel</button>' +
+            '<button type="button" class="pp-bprimary" data-action="party-name-save" data-role="' + role + '">Save</button></div>' +
+        '</div>'
+      );
+      setTimeout(function () { var f = $('pp-nm'); if (f) { f.focus(); f.select(); } }, 60);
+    }
+
+    function partyNameSave(role) {
+      var v = ($('pp-nm') && $('pp-nm').value.trim()) || '';
+      wizardData[role + '_name']     = v;
+      wizardData[role + '_party_id'] = '';
+      if (v && wizardData.errors) delete wizardData.errors[role + '_name'];
+      _partySwap(role);
+      saveDraft();
+      closeSheet();
+    }
+
     function renderStep1(d) {
       function field(id, label, value, opts) {
         opts = opts || {};
@@ -23801,34 +24770,35 @@ function DSH_CSS(){ return '<style>'+[
       return '' +
         '<form id="step1-form" autocomplete="off" novalidate>' +
           citiesDatalist +
-          '<h3 class="h3">Project</h3>' +
+          wizSectionHeader(1, 'Project context', 'Who, where, and when for this deal.') +
+          fieldCaption('Project') +
           field('project',         'Project name', d.project,         { required: true, placeholder: 'e.g. Auditorium upgrade' }) +
-          field('customer_name',   'End User',     d.customer_name,   { required: true }) +
-          field('partner_name',    'Partner',      d.partner_name,    { required: true }) +
-          field('consultant_name', 'Consultant',   d.consultant_name, { required: true }) +
+          partyField('customer',   'End User',   true) +
+          partyField('partner',    'Partner',    true) +
+          partyField('consultant', 'Consultant', true) +
           '<div class="sp-12"></div>' +
-          '<h3 class="h3">Location</h3>' +
+          fieldCaption('Location') +
           selectField('venue_type', 'Venue type', d.venue_type, VENUE_TYPES, { placeholder: '\u2014 select \u2014', required: true }) +
           field('city',  'City',  d.city,  { required: true, list: 'cities-list', placeholder: 'Start typing\u2026' }) +
           field('state', 'State', d.state, { required: true, placeholder: 'Auto-fills from city; type if City = Other' }) +
           '<div class="sp-12"></div>' +
-          '<h3 class="h3">Stage &amp; owners</h3>' +
+          fieldCaption('Stage & owners') +
           selectField('stage', 'Stage', d.stage, STAGES, { required: true }) +
-          selectField('lead_source', 'Lead Origin', d.lead_source, LEAD_SOURCES, { placeholder: '\u2014 select \u2014', required: true }) +
+          pillGroup('lead_source', 'Lead origin', d.lead_source, LEAD_SOURCES, { required: true, error: d.errors.lead_source }) +
           selectField('sales_person_id',    'Sales person',    d.sales_person_id,    SALES_TEAM,    { placeholder: '\u2014 select \u2014', required: true }) +
           selectField('presales_person_id', 'Presales person', d.presales_person_id, PRESALES_TEAM, { placeholder: '\u2014 select \u2014', required: true }) +
           '<div class="sp-12"></div>' +
-          '<h3 class="h3">Partner contact</h3>' +
+          fieldCaption('Partner contact') +
           field('contact_name',  'Contact name',  d.contact_name,  { required: true, placeholder: 'Site / partner contact person' }) +
-          field('contact_phone', 'Contact phone', d.contact_phone, { required: true, inputmode: 'numeric', maxlength: 10, help: '10-digit mobile (no country code, no spaces)' }) +
+          field('contact_phone', 'Contact phone', d.contact_phone, { required: true, inputmode: 'numeric', maxlength: 10, help: '10-digit mobile (no country code or spaces)' }) +
           field('contact_email', 'Contact email', d.contact_email, { required: true, type: 'email', placeholder: 'name@company.com' }) +
           '<div class="sp-12"></div>' +
-          '<h3 class="h3">Closure</h3>' +
+          fieldCaption('Closure') +
           field('close_month', 'Expected closure', d.close_month, { required: true, type: 'month', help: 'Year-month, e.g. 2026-09' }) +
           '<div class="sp-12"></div>' +
-          '<h3 class="h3">Notes</h3>' +
-          textareaField('internal_notes', 'Internal notes', d.internal_notes, { rows: 3, placeholder: 'Visible only to Cavitak team \u2014 not exported to Excel/PDF' }) +
-          textareaField('external_notes', 'External notes', d.external_notes, { rows: 3, placeholder: 'Shown in Excel/PDF exports to customer/partner' }) +
+          fieldCaption('Notes') +
+          textareaField('internal_notes', 'Internal notes', d.internal_notes, { rows: 3, placeholder: 'Team-only \u2014 never in customer exports' }) +
+          textareaField('external_notes', 'External notes', d.external_notes, { rows: 3, placeholder: 'Customer-facing \u2014 shown in exports' }) +
         '</form>';
     }
 
@@ -23889,6 +24859,14 @@ function DSH_CSS(){ return '<style>'+[
                 '</button>' +
               '</div>'
             : '') +
+          '<button type="button" class="tile" data-checked="' + (d.solutionType === 'custom' ? 'true' : 'false') + '"' +
+            ' data-action="solution-custom">' +
+            '<span class="tile-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>' +
+            '<div class="tile-text">' +
+              '<div class="tile-title">CUSTOM BOQ</div>' +
+              '<div class="tile-sub">Advanced \u00b7 Pick any SKUs &amp; quantities yourself</div>' +
+            '</div>' +
+          '</button>' +
         '</div>';
     }
 
@@ -23945,6 +24923,8 @@ function DSH_CSS(){ return '<style>'+[
       if (!d.solutionType) {
         return '<div class="banner warn">Pick a solution type in Step 2 first.</div>';
       }
+      // v27.50.0 — Custom BOQ (advanced) replaces the whole guided I/O step.
+      if (d.mode === 'advanced') return renderStep3Advanced(d);
       // v27.3.12 — Render the family-specific I/O section, then ALWAYS append
       // the SX block (was Step 5, now inline at bottom). hasSx toggle removed.
       let body = '';
@@ -23952,6 +24932,157 @@ function DSH_CSS(){ return '<style>'+[
       else if (d.solutionType === 'mv') body = renderStep3Mv(d);
       else if (d.solutionType === 'corio') body = renderStep3Corio(d);
       return body + renderSxBlock(d);
+    }
+
+    /* ============================================================
+       v27.50.0 — Custom BOQ composer (advanced mode, option a).
+       Free-form: pick any active priced SKU + qty. No compatibility
+       validation (AV-professional responsibility, per Dipenkumar).
+       Data: STORE.skuCatalog() from tvone_pricebook_get (already returns
+       item/family/description; serves priced items only, so the 31
+       unpriced SKUs auto-appear once bp_usd is filled — no code change).
+       advancedSelections=[{sku,qty}] rides raw_submission and round-trips
+       on edit exactly like the party link (v27.48.0 pattern). Prices show
+       ONLY under the v27.45.0 gate (show_prices && Super/OEM/BU Head);
+       exports never carry prices regardless of mode.
+       ============================================================ */
+    let _advFetchTried = false;
+
+    function _advGate() {
+      try { return STORE.pricesShown() && _canSeePrices(STORE.currentUser()); }
+      catch (_) { return false; }
+    }
+
+    function _advSels(d) {
+      if (!Array.isArray(d.advancedSelections)) d.advancedSelections = [];
+      return d.advancedSelections;
+    }
+
+    function renderStep3Advanced(d) {
+      const cat = STORE.skuCatalog();
+      if ((!cat || cat.length === 0) && !_advFetchTried) {
+        _advFetchTried = true;
+        STORE.pricebookEnsure(true).then(function () { _advRerender(); }).catch(function () {});
+      }
+      const errHtml = (d.errors && d.errors.adv_lines)
+        ? '<div class="banner err">' + esc(d.errors.adv_lines) + '</div>' : '';
+      return errHtml +
+        wizSectionHeader(3, 'Custom BOQ', 'Pick SKUs and quantities \u2014 full control, no compatibility checks.') +
+        '<div class="adv-search">' +
+          '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+          '<input id="adv-q" type="search" placeholder="Search SKU or description\u2026" autocomplete="off" value="' + esc(d._adv_q || '') + '">' +
+        '</div>' +
+        '<div class="adv-fams" id="adv-fams">' + _advFamPills(d) + '</div>' +
+        '<div id="adv-cat">' + _advCatalogHtml(d) + '</div>' +
+        '<div class="adv-boq-head">Your BOQ</div>' +
+        '<div id="adv-boq">' + _advBoqHtml(d) + '</div>';
+    }
+
+    function _advFamPills(d) {
+      const cat = STORE.skuCatalog();
+      const fams = ['All'];
+      cat.forEach(function (c) { if (fams.indexOf(c.family) < 0) fams.push(c.family); });
+      const cur = d._adv_fam || 'All';
+      return fams.map(function (f) {
+        return '<button type="button" class="adv-fam' + (f === cur ? ' on' : '') + '"' +
+          ' data-action="adv-fam" data-fam="' + esc(f) + '">' + esc(f) + '</button>';
+      }).join('');
+    }
+
+    function _advCatalogHtml(d) {
+      const cat = STORE.skuCatalog();
+      if (!cat || cat.length === 0) {
+        return '<div class="banner warn">Catalog unavailable \u2014 check your connection, then reopen this step.</div>';
+      }
+      const q = String(d._adv_q || '').toLowerCase().trim();
+      const fam = d._adv_fam || 'All';
+      const gate = _advGate();
+      const sel = {};
+      _advSels(d).forEach(function (s) { if (s && s.sku) sel[s.sku] = s.qty; });
+      const rows = cat.filter(function (c) {
+        if (fam !== 'All' && c.family !== fam) return false;
+        if (q && (c.item + ' ' + c.description).toLowerCase().indexOf(q) < 0) return false;
+        return true;
+      });
+      if (!rows.length) {
+        return '<div class="adv-empty">No SKU matches' + (q ? ' \u201c' + esc(q) + '\u201d' : '') + '.</div>';
+      }
+      const groups = {};
+      rows.forEach(function (c) { (groups[c.family] = groups[c.family] || []).push(c); });
+      return Object.keys(groups).map(function (f) {
+        return '<div class="adv-group"><div class="adv-group-h">' + esc(f) + '</div>' +
+          groups[f].map(function (c) {
+            const added = sel[c.item] > 0;
+            return '<div class="adv-row' + (added ? ' added' : '') + '">' +
+              '<div class="adv-rbody"><div class="adv-rsku">' + esc(c.item) + '</div>' +
+                (c.description ? '<div class="adv-rdesc">' + esc(c.description) + '</div>' : '') + '</div>' +
+              (gate ? '<div class="adv-rprice">' + fmtINR(c.price) + '</div>' : '') +
+              '<button type="button" class="adv-addbtn' + (added ? ' on' : '') + '"' +
+                ' data-action="adv-add" data-sku="' + esc(c.item) + '" aria-label="Add">' + (added ? '\u2713' : '+') + '</button>' +
+            '</div>';
+          }).join('') +
+        '</div>';
+      }).join('');
+    }
+
+    function _advBoqHtml(d) {
+      const sels = _advSels(d).filter(function (s) { return s && s.sku && Number(s.qty) > 0; });
+      if (!sels.length) {
+        return '<div class="adv-empty">No lines yet \u2014 tap + on any SKU above to build your BOQ.</div>';
+      }
+      const gate = _advGate();
+      let grand = 0, anyNa = false;
+      const rows = sels.map(function (s) {
+        const u = gate ? STORE.priceFor(s.sku) : null;
+        const lt = (u != null) ? u * Number(s.qty) : null;
+        if (gate) { if (lt == null) anyNa = true; else grand += lt; }
+        return '<div class="adv-line">' +
+          '<div class="adv-lbody"><div class="adv-lsku">' + esc(s.sku) + '</div>' +
+            (gate ? '<div class="adv-lunit">' + (u == null ? 'price TBD' : fmtINR(u) + ' / unit') + '</div>' : '') + '</div>' +
+          '<div class="adv-stepper">' +
+            '<button type="button" data-action="adv-dec" data-sku="' + esc(s.sku) + '">\u2212</button>' +
+            '<span class="q">' + s.qty + '</span>' +
+            '<button type="button" data-action="adv-inc" data-sku="' + esc(s.sku) + '">+</button>' +
+          '</div>' +
+          (gate ? '<div class="adv-ltotal">' + (lt == null ? '\u2014' : fmtINR(lt)) + '</div>' : '') +
+          '<button type="button" class="adv-x" data-action="adv-rm" data-sku="' + esc(s.sku) + '" aria-label="Remove">\u00d7</button>' +
+        '</div>';
+      }).join('');
+      const totQty = sels.reduce(function (a, s) { return a + Number(s.qty); }, 0);
+      const foot = '<div class="adv-foot"><span>' + sels.length + ' line' + (sels.length === 1 ? '' : 's') +
+        ' \u00b7 ' + totQty + ' unit' + (totQty === 1 ? '' : 's') + '</span>' +
+        (gate ? '<b>' + fmtINR(grand) + (anyNa ? '+' : '') + '</b>' : '') + '</div>' +
+        (gate && anyNa ? '<div class="adv-note">Some lines have no price yet \u2014 total covers priced lines only.</div>' : '');
+      return rows + foot;
+    }
+
+    function _advChangeQty(sku, delta) {
+      if (!sku) return;
+      const sels = _advSels(wizardData);
+      let row = null;
+      for (let i = 0; i < sels.length; i++) { if (sels[i] && sels[i].sku === sku) { row = sels[i]; break; } }
+      if (!row) {
+        if (delta > 0) sels.push({ sku: sku, qty: 1 });
+      } else {
+        row.qty = (delta === -Infinity) ? 0 : (Number(row.qty) || 0) + delta;
+        if (row.qty <= 0) {
+          const idx = sels.indexOf(row);
+          if (idx > -1) sels.splice(idx, 1);
+        }
+      }
+      if (wizardData.errors) delete wizardData.errors.adv_lines;
+      wizardData.reco = null;   // any stale reco must rebuild from the new lines
+      saveDraft();
+      _advRerender();
+    }
+
+    function _advRerender() {
+      const c = document.getElementById('adv-cat');
+      const b = document.getElementById('adv-boq');
+      const f = document.getElementById('adv-fams');
+      if (c) c.innerHTML = _advCatalogHtml(wizardData);
+      if (b) b.innerHTML = _advBoqHtml(wizardData);
+      if (f) f.innerHTML = _advFamPills(wizardData);
     }
 
     function renderStep3Calico(d) {
@@ -24832,6 +25963,32 @@ function DSH_CSS(){ return '<style>'+[
           '<div class="bom-meta">' + esc(reco.error) + '</div>' +
         '</div>';
       }
+      // v27.50.0 — Custom BOQ: lines-only card (no chassis row, no I/O spec).
+      if (reco.custom) {
+        const _px = STORE.pricesShown() && _canSeePrices(STORE.currentUser());
+        let _g = 0, _na = false;
+        const _rows = (reco.cards || []).map(function (c) {
+          const _q = (c.qty != null ? c.qty : 1);
+          const _u = _px ? STORE.priceFor(c.sku) : null;
+          const _lt = (_u != null) ? _u * _q : null;
+          if (_px) { if (_lt == null) _na = true; else _g += _lt; }
+          const _amt = _px
+            ? '<div class="bom-amt">' + (_q > 1 && _u != null ? '<small>' + fmtINR(_u) + ' ea</small>' : '') + fmtINR(_lt) + '</div>'
+            : '';
+          return '<li class="bom-line">' +
+            '<div class="desc">' + esc(c.desc || c.sku) + '<span class="sku">' + esc(c.sku) + '</span></div>' +
+            '<div class="qty">\u00d7' + _q + '</div>' + _amt + '</li>';
+        }).join('');
+        const _tot = _px
+          ? '<div class="bom-total"><span>Total' + (_na ? ' <small>priced items only</small>' : '') + '</span><b>' + (_g > 0 ? fmtINR(_g) : '\u2014') + '</b></div>'
+          : '';
+        return '<div class="bom-card">' +
+          '<div class="bom-chassis-sku">CUSTOM BOQ</div>' +
+          '<div class="bom-chassis-label">Composed manually \u00b7 ' + (reco.cards || []).length + ' line' + ((reco.cards || []).length === 1 ? '' : 's') + '</div>' +
+          '<ul class="bom-lines" style="list-style:none;margin:10px 0 0;padding:0">' + _rows + '</ul>' + _tot +
+        '</div>';
+      }
+
       // Empty / no-chassis (MV with no inputs etc)
       if (!reco.chassis) {
         return '<div class="bom-card empty-bom">' +
@@ -24994,7 +26151,11 @@ function DSH_CSS(){ return '<style>'+[
       } else if (d.step === 2) {
         if (!d.solutionType) errors.solutionType = 'Pick a solution type to continue.';
       } else if (d.step === 3) {
-        if (d.solutionType === 'calico') {
+        if (d.mode === 'advanced') {
+          const _n = (Array.isArray(d.advancedSelections) ? d.advancedSelections : [])
+            .filter(function (s) { return s && s.sku && Number(s.qty) > 0; }).length;
+          if (_n === 0) errors.adv_lines = 'Add at least one SKU to your BOQ.';
+        } else if (d.solutionType === 'calico') {
           const inSum = Object.values(d.calico_inputs).reduce((a,b) => a + (Number(b)||0), 0);
           const outSum = ['display','projector','sdi'].reduce((a,k) => a + (Number(d.calico_outputs[k])||0), 0);
           if (inSum === 0 && outSum === 0) {
@@ -25196,6 +26357,22 @@ function DSH_CSS(){ return '<style>'+[
         if (!actEl) return;
         const action = actEl.getAttribute('data-action');
 
+        // v27.47.0 - Party pickers (End User directory + Partner/Consultant name)
+        if (action === 'party-open')        { partyOpen(actEl.getAttribute('data-role')); return; }
+        if (action === 'party-clear')       { partyClear(actEl.getAttribute('data-role')); return; }
+        if (action === 'party-pick')        { partyPick(actEl); return; }
+        if (action === 'party-create-form') { partyCreateForm(); return; }
+        if (action === 'party-create-save') { partyCreateSave(); return; }
+        if (action === 'party-back')        { openCustomerPicker(); return; }
+        if (action === 'party-name-save')   { partyNameSave(actEl.getAttribute('data-role')); return; }
+
+        // v27.50.0 — Custom BOQ composer actions
+        if (action === 'adv-add')  { _advChangeQty(actEl.getAttribute('data-sku'), +1); return; }
+        if (action === 'adv-inc')  { _advChangeQty(actEl.getAttribute('data-sku'), +1); return; }
+        if (action === 'adv-dec')  { _advChangeQty(actEl.getAttribute('data-sku'), -1); return; }
+        if (action === 'adv-rm')   { _advChangeQty(actEl.getAttribute('data-sku'), -Infinity); return; }
+        if (action === 'adv-fam')  { wizardData._adv_fam = actEl.getAttribute('data-fam') || 'All'; _advRerender(); return; }
+
         // v27.40.0 — Per-person follow-ups
         if (action === 'fu-add')       { _fuPrefillDealRef = null; followupSheet(null); return; }
         if (action === 'fu-save')      { followupSheetSave(actEl.getAttribute('data-id') || null); return; }
@@ -25281,12 +26458,40 @@ function DSH_CSS(){ return '<style>'+[
           return;
         }
 
+        // v27.47.0 — Segmented pill group (lead origin). Mirrors solution-pick:
+        // write the chosen value to wizardData[key], clear its error, repaint.
+        if (action === 'pill-set') {
+          const _pk = actEl.getAttribute('data-key');
+          const _pv = actEl.getAttribute('data-val');
+          if (_pk) {
+            wizardData[_pk] = _pv;
+            if (wizardData.errors) delete wizardData.errors[_pk];
+            saveDraft();
+            rerenderPreservingScroll();
+          }
+          return;
+        }
+
         // Solution-type tile
         if (action === 'solution-pick') {
           const v = actEl.getAttribute('data-value');
           wizardData.solutionType = v;
+          wizardData.mode = 'guided';
           // Keep VP sub-step revealed when CALICO/CORIO is picked
           wizardData._step2_videoProcessorOpen = (v === 'calico' || v === 'corio');
+          saveDraft();
+          rerenderPreservingScroll();
+          return;
+        }
+
+        // v27.50.0 — Custom BOQ (advanced mode) tile
+        if (action === 'solution-custom') {
+          wizardData.solutionType = 'custom';
+          wizardData.mode = 'advanced';
+          if (!Array.isArray(wizardData.advancedSelections)) wizardData.advancedSelections = [];
+          wizardData._step2_videoProcessorOpen = false;
+          wizardData.reco = null;
+          if (wizardData.errors) delete wizardData.errors.solutionType;
           saveDraft();
           rerenderPreservingScroll();
           return;
@@ -25848,6 +27053,115 @@ function DSH_CSS(){ return '<style>'+[
         }
 
         // v27.3.0 — User menu actions (avatar dropdown sheet)
+        // v27.51.0 — User management (Super-only; BS v2.6.0 port)
+        if (action === 'um-users') { showUsersSheet(); return; }
+        if (action === 'um-users-add') { showUserEditSheet(null); return; }
+        if (action === 'um-users-edit') {
+          const un = actEl.getAttribute('data-username');
+          if (!un) return;
+          const user = _usersCache.find(function (x) { return x.username === un; });
+          if (!user) { toast('User not in cache \u2014 refreshing', 'warn'); showUsersSheet(); return; }
+          showUserEditSheet(user);
+          return;
+        }
+        if (action === 'um-users-toggle') {
+          const un = actEl.getAttribute('data-username');
+          const activeStr = actEl.getAttribute('data-active');
+          if (un) _handleUserToggle(un, activeStr === '1');
+          return;
+        }
+        if (action === 'um-users-reset') {
+          const un = actEl.getAttribute('data-username');
+          if (un) showUserResetSheet(un);
+          return;
+        }
+        if (action === 'um-users-reset-submit') {
+          const un = actEl.getAttribute('data-username');
+          if (un) _handleUserReset(un);
+          return;
+        }
+        if (action === 'um-users-save') {
+          const un = actEl.getAttribute('data-username');  // null for create
+          _handleUserSave(un || null);
+          return;
+        }
+        if (action === 'um-users-cancel') { showUsersSheet(); return; }
+
+        // v27.51.0 — Global Search (BS gs-* port)
+        if (action === 'gs-open') { openGlobalSearch(); return; }
+        if (action === 'gs-go-deal') {
+          var _gref = actEl.getAttribute('data-ref') || '';
+          closeSheet();
+          if (_gref) location.hash = '#/quote/' + _gref;
+          return;
+        }
+        if (action === 'gs-go-cust') {
+          var _gid = actEl.getAttribute('data-id') || '';
+          if (_gid) showCustomer360(_gid); else closeSheet();
+          return;
+        }
+        if (action === 'gs-go-prod') { closeSheet(); location.hash = '#/quote/new'; return; }
+
+        // v27.51.0 — Per-customer export (BS v2.10.0 port)
+        if (action === 'cust-export') {
+          const _ceid = actEl.getAttribute('data-id');
+          if (_ceid) exportParty(_ceid, actEl);
+          return;
+        }
+
+        // v27.51.0 — Pipeline Excel export (BS port; discount columns dropped
+        // — tvONE's discount model differs. Deal values are user-entered
+        // commercials, not pricebook prices; on-screen-only pricing rule holds.)
+        if (action === 'export-pipeline') {
+          const _epBtn = actEl;
+          if (_epBtn) _epBtn.disabled = true;
+          (async function () {
+            try {
+              const r = await STORE.listDeals({ limit: 500, offset: 0 });
+              let rows = Array.isArray(r) ? r : (r && (r.rows || r.deals || r.data)) || [];
+              const u = STORE.currentUser() || {};
+              const isSuper = (u.permission_tier === 'super');
+              const isBuHead = (u.org_function === 'BU Head');
+              // v27.51.0 fix — scope with tvONE's own predicates (tvONE deals
+              // carry no region column; BU Head zones derive from deal.state via
+              // regionForState, and Sales/Presales/OEM/Support each scope per
+              // getSalesScope). Identical rule to the V4 dashboard (loadHomeV4).
+              const _epRegion = getRegionScope(u);
+              const _epSales  = getSalesScope(u);
+              rows = rows.filter(function (d) { return !d.deleted_at && dealMatchesScope(d, _epRegion, _epSales); });
+              const expRows = rows.map(function (d) {
+                let owner = '';
+                if (d.sales_person_id && STORE.rosterById) {
+                  const o = STORE.rosterById(d.sales_person_id);
+                  owner = (o && (o.full_name || o.fullName)) || '';
+                }
+                return {
+                  ref: d.display_ref, project: d.project, customer: d.customer_name,
+                  stage: d.stage, value: Number(d.deal_value_inr) || 0,
+                  closeMonth: d.close_month ? _formatCloseMonth(d.close_month) : '',
+                  owner: owner
+                };
+              });
+              const byStage = {};
+              expRows.forEach(function (x) {
+                const k = x.stage || '\u2014';
+                if (!byStage[k]) byStage[k] = { stage: k, count: 0, value: 0 };
+                byStage[k].count++; byStage[k].value += (x.value || 0);
+              });
+              const summary = Object.keys(byStage).map(function (k) { return byStage[k]; });
+              const scopeLabel = isSuper ? 'All deals' : (isBuHead ? (u.region || 'Region') : (u.org_function === 'Support' ? 'All deals' : (u.full_name || 'My deals')));
+              const blob = await EXPORT.pipelineExcel(expRows, summary, { scopeLabel: scopeLabel });
+              EXPORT.download(blob, 'tvONE_Pipeline_' + (new Date()).toISOString().slice(0, 10) + '.xlsx');
+              try { toast('Pipeline exported (' + expRows.length + ' deals)', 'ok'); } catch (e) {}
+            } catch (e) {
+              try { toast('Export failed: ' + (e && e.message || e), 'err'); } catch (_e) {}
+            } finally {
+              if (_epBtn) _epBtn.disabled = false;
+            }
+          })();
+          return;
+        }
+
         if (action === 'um-profile') {
           closeSheet();
           if (location.hash !== '#/profile') location.hash = '#/profile';
@@ -26593,6 +27907,14 @@ function DSH_CSS(){ return '<style>'+[
         // every keystroke would steal focus mid-typing. Instead: register a
         // blur listener once that triggers rerender when an LED field is
         // unfocused. The blur listener is added below in capture phase.
+
+        // v27.50.0 — Custom BOQ live search (surgical re-render keeps input focus)
+        if (t.id === 'adv-q') {
+          wizardData._adv_q = t.value;
+          const _ac = document.getElementById('adv-cat');
+          if (_ac) _ac.innerHTML = _advCatalogHtml(wizardData);
+          return;
+        }
 
         // Generic data-bind ("namespace.key" or "key" for top-level)
         const bind = t.getAttribute('data-bind');
@@ -27985,7 +29307,7 @@ function DSH_CSS(){ return '<style>'+[
       // case routes directly to Step 6 regardless of hasSx (which is now
       // permanently true and structurally irrelevant).
       let next = d.step + 1;
-      const skipStep4 = !d.hasLed || d.solutionType === 'calico';
+      const skipStep4 = !d.hasLed || d.solutionType === 'calico' || d.mode === 'advanced';
       if (next === 4 && skipStep4) next = 6;
       if (next === 5)              next = 6;
       d.step = clamp(next, 1, 6);
@@ -27999,7 +29321,7 @@ function DSH_CSS(){ return '<style>'+[
       d.errors = {};
       // v27.3.12 — Step 5 skipped in both directions (SX inline in Step 3).
       let prev = d.step - 1;
-      const skipStep4 = !d.hasLed || d.solutionType === 'calico';
+      const skipStep4 = !d.hasLed || d.solutionType === 'calico' || d.mode === 'advanced';
       if (prev === 5)              prev = skipStep4 ? 3 : 4;
       if (prev === 4 && skipStep4) prev = 3;
       d.step = clamp(prev, 1, 6);
@@ -28043,7 +29365,7 @@ function DSH_CSS(){ return '<style>'+[
         UI.toast(d.reco.error, 'err');
         return;
       }
-      if (d.reco && !d.reco.chassis) {
+      if (d.reco && !d.reco.chassis && !d.reco.custom) {
         UI.saveDraft();
         UI.renderWizard();
         UI.toast('No chassis recommended for current inputs. Revise and rebuild.', 'warn');
@@ -28204,6 +29526,23 @@ function DSH_CSS(){ return '<style>'+[
     }
 
     function computeReco(d) {
+      // v27.50.0 — Custom BOQ: lines come straight from advancedSelections; no
+      // RECOMMEND call, no SX append (SX SKUs are directly pickable). Synthetic
+      // shape keeps every downstream consumer working: chassis:null + custom:true
+      // routes renderBomCard to the lines-only card, and buildSavePayload's
+      // cards branch maps lines exactly as it does for guided recommendations.
+      if (d.mode === 'advanced') {
+        const _cat = STORE.skuCatalog();
+        const _by = {};
+        _cat.forEach(function (c) { _by[c.item] = c; });
+        const _cards = (Array.isArray(d.advancedSelections) ? d.advancedSelections : [])
+          .filter(function (s) { return s && s.sku && Number(s.qty) > 0; })
+          .map(function (s) {
+            const m = _by[s.sku] || {};
+            return { sku: s.sku, desc: m.description || s.sku, qty: Number(s.qty), family: m.family || 'CUSTOM' };
+          });
+        return { custom: true, chassis: null, cards: _cards };
+      }
       let reco;
       if (d.solutionType === 'calico') {
         reco = RECOMMEND.calico({

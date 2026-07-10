@@ -2,6 +2,9 @@
 // v27.16.0 (2026-05-28)
 //
 // Changelog:
+//   v27.51.1 — Consistency + cleanup (no SW behavior change; CACHE_NAME bump).
+//             App-side: BU Head Home KPIs now scope by region to match the
+//             dashboard + pipeline export; removed a duplicated .pp-* CSS block.
 //   v27.16.0 — Home + Dashboard major rebuild ("Command."). Home:
 //             operational focus-list (slipped + closing this month) with
 //             per-deal days-overdue / days-left, this-week strip, scrolling
@@ -78,7 +81,7 @@
 // the activate handler. Promotes hard-refresh semantics for users with the
 // PWA installed.
 
-const CACHE_NAME = 'tvone-v27.45.0';
+const CACHE_NAME = 'tvone-v27.51.1';
 const SHELL_URLS = [
   './',
   './index.html'
