@@ -7739,8 +7739,28 @@
     //       was NOT byte-identical to the party-picker block as assumed — its
     //       .pp-opt (weight 500/11px) won the cascade — so that value was folded
     //       into the canonical block first; rendering is unchanged.
+    // v27.52.0 — Partner & Consultant directory pickers (decision 4b "option b"):
+    //   Partner and Consultant were name-entry-only because the DB directory RPCs
+    //   (customer_list/customer_upsert) are hard-wired to party_type='customer'.
+    //   Added generalized party_list(p_type,p_app) + party_upsert(p_payload,p_actor)
+    //   RPCs (party_type honored/validated server-side); customer_* left intact for
+    //   the End User path. STORE gains partyList/partyUpsert wrappers (shape mirrors
+    //   customerList). The party-picker block is now role-agnostic: all three roles
+    //   get the directory search + "Add new" + "✓ Linked" chip. customer keeps the
+    //   customer_* path; partner/consultant use party_*. Persistence is unchanged and
+    //   already generic — <role>_party_id rides raw_submission and is lifted on load,
+    //   <role>_name is a structured column — so a linked partner/consultant survives
+    //   reload for free. Seeded 103 Zoho channel partners into the shared parties
+    //   directory (party_type='partner'). Removed dead openPartyNameSheet/partyNameSave.
+    // v27.53.0 — S1 slow-KDF: passwords migrate from client-side sha256(pw+salt)
+    //   to server-side bcrypt (pgcrypto, cost 12). Five auth flows now send the
+    //   RAW password over TLS to *_v2 RPCs (user_login_v2, user_change_password_v2,
+    //   user_create_v2, user_admin_reset_v2, reset_request_resolve_v2); the server
+    //   hashes/verifies. Legacy users transparently rehash to bcrypt on their next
+    //   login (no forced resets). A new users.pw_scheme column tracks sha256|bcrypt.
+    //   v1 RPCs + client sha256Hex/randomHex retained one release for rollback.
     return deepFreeze({
-      version: 'v27.51.1',
+      version: 'v27.53.0',
       constants,
       calico,
       mv,
@@ -8758,12 +8778,12 @@
      in public schema, RLS enabled with zero policies — direct table
      access denied; all CRUD via security-definer RPCs).
 
-     Auth recipe (mirrors BS frontend, confirmed 2026-05-22):
-       1. salt = await rpc('user_login_salt', {p_username})
-       2. hash = sha256Hex(password.trim() + salt)        ← pw-then-salt
-       3. { ok, user } = await rpc('user_login', {p_username, p_password_hash: hash})
-     Server-side is algorithm-agnostic — it just string-compares stored
-     password_hash to the client-computed value (after trim()).
+     Auth recipe (v27.53.0 — S1 slow-KDF):
+       1. { ok, user } = await rpc('user_login_v2', {p_username, p_password})
+     Password goes raw over TLS; the server bcrypt-verifies, or verifies a
+     legacy sha256 hash and transparently rehashes it to bcrypt on success.
+     The old salt-fetch + client sha256 (user_login_salt/user_login) remain
+     server-side for one release as a rollback path only.
 
      Session model: user object cached in localStorage under 'v27.session'.
      No server-side tokens. Every protected RPC takes actor_user_id as
@@ -9082,20 +9102,15 @@
       if (!username || !password) {
         throw new Error('username and password required');
       }
-      const saltResp = await rpc('user_login_salt', { p_username: username });
-      // v27.33.0 — the server now always returns a 32-hex salt: a real one for a
-      // valid account, or a deterministic decoy for an unknown one, so neither the
-      // response nor its timing reveals whether the account exists. A non-user just
-      // fails the hash comparison inside user_login below.
-      const salt = (saltResp && saltResp.salt) || '';
-      if (!salt) {
-        // Shouldn't occur with the decoy-salt server; defensive guard only.
-        throw new Error('Incorrect username or password');
-      }
-      const hash = await sha256Hex(password + salt);
-      const r = await rpc('user_login', {
-        p_username:      username,
-        p_password_hash: hash
+      // v27.53.0 — S1 slow-KDF: send the raw password over TLS. user_login_v2
+      // verifies server-side (bcrypt, or legacy sha256 for a not-yet-upgraded
+      // account) and transparently rehashes a legacy user to bcrypt on success.
+      // The salt round-trip and client-side hashing are gone. Enumeration stays
+      // closed: v2 returns the same generic error for an unknown user as for a
+      // wrong password.
+      const r = await rpc('user_login_v2', {
+        p_username: username,
+        p_password: password
       });
       if (!r || r.ok !== true) {
         throw new Error((r && r.error) || 'Incorrect username or password');
@@ -9208,21 +9223,20 @@
     function skuCatalog() { return _skuCatalog || []; }
 
     /* v27.51.0 — User management wrappers (BS v2.6.0 port). RPCs exist
-       server-side (shared DB, Super-gated). Hash scheme identical to login:
-       randomHex(16) salt, sha256Hex(password + salt). */
+       server-side (shared DB, Super-gated). v27.53.0 (S1): create/reset send the
+       raw password to the *_v2 RPCs, which bcrypt it server-side. */
     async function usersListAll() {
       const r = await rpc('user_list', { p_include_inactive: true });
       return (r && r.users) || (Array.isArray(r) ? r : []);
     }
     async function userCreate(payload, password) {
+      // v27.53.0 — S1: server-side bcrypt. Send the raw password; user_create_v2
+      // hashes it. must_change is still forced on the new account server-side.
       const u = currentUser();
-      const salt = randomHex(16);
-      const hash = await sha256Hex(String(password || '') + salt);
-      const r = await rpc('user_create', {
-        p_payload:        payload,
-        p_actor:          (u && u.id) || null,
-        p_salt:           salt,
-        p_password_hash:  hash
+      const r = await rpc('user_create_v2', {
+        p_payload:  payload,
+        p_actor:    (u && u.id) || null,
+        p_password: String(password || '')
       });
       if (!r || r.ok !== true) throw new Error((r && r.error) || 'create failed');
       return r;
@@ -9242,14 +9256,12 @@
       return r;
     }
     async function userAdminReset(username, newPassword) {
+      // v27.53.0 — S1: server-side bcrypt. Send the raw password; forces must_change.
       const u = currentUser();
-      const salt = randomHex(16);
-      const hash = await sha256Hex(String(newPassword || '') + salt);
-      const r = await rpc('user_admin_reset', {
-        p_target:            username,
-        p_actor:             (u && u.id) || null,
-        p_new_salt:          salt,
-        p_new_password_hash: hash
+      const r = await rpc('user_admin_reset_v2', {
+        p_target:       username,
+        p_actor:        (u && u.id) || null,
+        p_new_password: String(newPassword || '')
       });
       if (!r || r.ok !== true) throw new Error((r && r.error) || 'reset failed');
       return r;
@@ -9268,18 +9280,12 @@
       const newPw = String(o.newPassword || '').trim();
       if (!oldPw || !newPw) throw new Error('oldPassword and newPassword required');
 
-      const saltResp = await rpc('user_login_salt', { p_username: _user.username });
-      if (!saltResp || !saltResp.salt) throw new Error('account state error — re-login');
-
-      const oldHash = await sha256Hex(oldPw + saltResp.salt);
-      const newSalt = randomHex(16);                       // 32-char hex, parity with prod
-      const newHash = await sha256Hex(newPw + newSalt);
-
-      const r = await rpc('user_change_password', {
-        p_username:          _user.username,
-        p_old_password_hash: oldHash,
-        p_new_salt:          newSalt,
-        p_new_password_hash: newHash
+      // v27.53.0 — S1: send raw old/new passwords. user_change_password_v2
+      // verifies old by scheme (bcrypt or legacy sha256) and stores new as bcrypt.
+      const r = await rpc('user_change_password_v2', {
+        p_username:     _user.username,
+        p_old_password: oldPw,
+        p_new_password: newPw
       });
       if (!r || r.ok !== true) {
         throw new Error((r && r.error) || 'change password failed');
@@ -9738,15 +9744,14 @@
       // p_new_salt, p_new_password_hash). Approval sets the user's new password, so
       // we generate salt+hash with the same scheme as change-password and mark the
       // request approved (the DB also flags the account must_change).
+      // v27.53.0 — S1: server-side bcrypt. Send the raw temp password; the DB
+      // still flags must_change so the user must reset it on next login.
       const u = currentUser();
-      const salt = randomHex(16);
-      const hash = await sha256Hex(String(newTempPassword) + salt);
-      const r = await rpc('reset_request_resolve', {
-        p_request_id:        requestId,
-        p_actor:             (u && u.id) || null,
-        p_action:            'approve',
-        p_new_salt:          salt,
-        p_new_password_hash: hash
+      const r = await rpc('reset_request_resolve_v2', {
+        p_request_id: requestId,
+        p_actor:      (u && u.id) || null,
+        p_action:     'approve',
+        p_new_password: String(newTempPassword)
       });
       if (!r || r.ok !== true) throw new Error((r && r.error) || 'approve failed');
       return r;
@@ -10034,6 +10039,40 @@
         p_actor: (_user && (_user.loginName || _user.name)) || ''
       });
     }
+    // v27.52.0 — Generalized directory wrappers. party_list/party_upsert honor
+    // party_type at the DB (customer_* were customer-only), so Partner and
+    // Consultant can be directory-backed like End User. Normalization mirrors
+    // customerList exactly (partyId->id, client-side search + limit) so the
+    // picker renders any role identically. customer_* stay for the End User path.
+    async function partyList(type, opts) {
+      opts = opts || {};
+      const r = await rpc('party_list', { p_type: type || 'customer', p_app: APP_TAG });
+      let rows = (r && (r.parties || r.rows)) || (Array.isArray(r) ? r : []);
+      rows = rows.map(function (p) {
+        return Object.assign({}, p, {
+          id: p.id || p.partyId,
+          party_type: p.party_type || p.partyType || type
+        });
+      });
+      const q = String(opts.search || '').trim().toLowerCase();
+      if (q) {
+        rows = rows.filter(function (p) {
+          return [p.name, p.city, p.industry, p.state].some(function (v) {
+            return String(v || '').toLowerCase().indexOf(q) !== -1;
+          });
+        });
+      }
+      const lim = Number(opts.limit) || 0;
+      return lim > 0 ? rows.slice(0, lim) : rows;
+    }
+    async function partyUpsert(payload) {
+      // DB signature is party_upsert(p_payload, p_actor); payload.partyType
+      // selects the party_type (validated server-side).
+      return rpc('party_upsert', {
+        p_payload: payload,
+        p_actor: (_user && (_user.loginName || _user.name)) || ''
+      });
+    }
     async function customerDelete(customerId) {
       return rpc('customer_delete', { p_customer_id: String(customerId) });
     }
@@ -10195,6 +10234,7 @@
       stageTransitionsList, stageTransitionsListMany, stageTransitionWrite,
       // v27.3.0 — Customer directory + 360 + merge (D1-D3 silent-drop restores)
       customerList, customerUpsert, customerDelete, customerMerge, customer360,
+      partyList, partyUpsert,
       // v27.37.0 — Closed Lost reason capture (parity with BS v2.12; app-scoped RPC)
       bsDealSetLossReason,
       // v27.40.0 — Per-person follow-ups (parity with BS v2.20; app-scoped RPCs)
@@ -24467,15 +24507,24 @@ function DSH_CSS(){ return '<style>'+[
 
     /* ============================================================
        v27.47.0 — Party pickers (BrightSign structural parity).
-       End User is directory-linked via customer_list/customer_upsert
-       (End users ARE customers in this DB). Partner & Consultant use the
-       same chip UI but NAME-ENTRY ONLY — there is no parties_list RPC
-       (customer_list is customer-only). The customer link persists for
-       free: wizardData.customer_party_id → raw_submission (buildSavePayload,
-       not a STRUCTURED_COL) → lifted back to top-level on load → hydrate.
+       v27.52.0 — Partner & Consultant upgraded from name-entry to full
+       directory pickers (decision 4b "option b"), matching End User. End
+       User uses customer_list/customer_upsert; Partner/Consultant use the
+       generalized party_list/party_upsert (party_type honored at the DB).
+       Persistence is generic + unchanged: wizardData.<role>_party_id rides
+       raw_submission (buildSavePayload, not a STRUCTURED_COL) and is lifted
+       back to top-level on load; <role>_name is a structured column. So a
+       linked partner/consultant survives reload and shows "\u2713 Linked" free.
        ============================================================ */
     var _partyActiveRole  = null;
     var _partySearchTimer = null;
+
+    // Per-role labels/behaviour for the (now shared) directory picker.
+    function _partyCfg(role) {
+      if (role === 'partner')    return { title: 'partner',    noun: 'partner',    plural: 'partners',    seedLoc: false };
+      if (role === 'consultant') return { title: 'consultant', noun: 'consultant', plural: 'consultants', seedLoc: false };
+      return                            { title: 'end user',   noun: 'company',    plural: 'companies',   seedLoc: true  };
+    }
 
     function _partyInitials(n) {
       var w = String(n || '').trim().split(/\s+/).filter(Boolean);
@@ -24484,12 +24533,12 @@ function DSH_CSS(){ return '<style>'+[
     }
 
     function renderPartyControl(role) {
-      var isCust = (role === 'customer');
-      var id     = wizardData[role + '_party_id'];
-      var name   = wizardData[role + '_name'];
-      var showChip = isCust ? (id && name) : !!name;
-      if (showChip) {
-        var metaHtml = isCust
+      var id   = wizardData[role + '_party_id'];
+      var name = wizardData[role + '_name'];
+      if (name) {
+        // "\u2713 Linked" badge when directory-linked; a bare name (legacy deal
+        // saved before the directory, or mid-edit) still shows the chip.
+        var metaHtml = id
           ? '<div class="pp-cmeta"><span class="pp-linked">\u2713 Linked</span></div>'
           : '';
         return '<div class="pp-chip">' +
@@ -24503,10 +24552,8 @@ function DSH_CSS(){ return '<style>'+[
             '</button>' +
           '</div>';
       }
-      var ph  = isCust ? 'Search or add a company\u2026' : 'Add ' + esc(role) + ' name\u2026';
-      var ico = isCust
-        ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
-        : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+      var ph  = 'Search or add a ' + esc(_partyCfg(role).noun) + '\u2026';
+      var ico = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
       return '<button type="button" class="pp-picker" data-action="party-open" data-role="' + role + '">' +
           '<span class="pp-ph">' + ph + '</span>' + ico +
         '</button>';
@@ -24533,8 +24580,7 @@ function DSH_CSS(){ return '<style>'+[
 
     function partyOpen(role) {
       _partyActiveRole = role;
-      if (role === 'customer') openCustomerPicker();
-      else openPartyNameSheet(role);
+      openPartyPicker();
     }
 
     function partyClear(role) {
@@ -24544,43 +24590,50 @@ function DSH_CSS(){ return '<style>'+[
       saveDraft();
     }
 
-    function openCustomerPicker() {
-      _partyActiveRole = 'customer';
+    function openPartyPicker() {
+      var role = _partyActiveRole || 'customer';
+      var cfg  = _partyCfg(role);
       openSheet(
         '<div class="pp-sheet">' +
-          '<div class="pp-shead"><h3 class="pp-stitle">Select end user</h3>' +
+          '<div class="pp-shead"><h3 class="pp-stitle">Select ' + esc(cfg.title) + '</h3>' +
             '<button type="button" class="pp-x" data-sheet-close aria-label="Close">\u2715</button></div>' +
           '<div class="pp-sbox">' +
             '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
-            '<input id="pp-q" type="search" placeholder="Search companies\u2026" autocomplete="off">' +
+            '<input id="pp-q" type="search" placeholder="Search ' + esc(cfg.plural) + '\u2026" autocomplete="off">' +
           '</div>' +
           '<div class="pp-results" id="pp-results"><div class="pp-loading">Loading\u2026</div></div>' +
           '<div class="pp-foot"><button type="button" class="pp-create" data-action="party-create-form">' +
             '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
-            '<span id="pp-clabel">Add new company</span></button></div>' +
+            '<span id="pp-clabel">Add new ' + esc(cfg.noun) + '</span></button></div>' +
         '</div>'
       );
       var q = $('pp-q');
-      if (q) q.addEventListener('input', function () { _customerDebounced(q.value); });
-      _runCustomerSearch('');
+      if (q) q.addEventListener('input', function () { _partyDebounced(q.value); });
+      _runPartySearch('');
     }
 
-    function _customerDebounced(val) {
+    function _partyDebounced(val) {
+      var cfg = _partyCfg(_partyActiveRole || 'customer');
       var lbl = $('pp-clabel');
-      if (lbl) lbl.textContent = (val && val.trim()) ? 'Create \u201c' + val.trim() + '\u201d' : 'Add new company';
+      if (lbl) lbl.textContent = (val && val.trim()) ? 'Create \u201c' + val.trim() + '\u201d' : 'Add new ' + cfg.noun;
       if (_partySearchTimer) clearTimeout(_partySearchTimer);
-      _partySearchTimer = setTimeout(function () { _runCustomerSearch(val); }, 220);
+      _partySearchTimer = setTimeout(function () { _runPartySearch(val); }, 220);
     }
 
-    function _runCustomerSearch(q) {
+    function _runPartySearch(q) {
       var host = $('pp-results');
       if (!host) return;
-      STORE.customerList({ search: q, limit: 300 }).then(function (rows) {
+      var role   = _partyActiveRole || 'customer';
+      var lister = (role === 'customer')
+        ? STORE.customerList({ search: q, limit: 300 })
+        : STORE.partyList(role, { search: q, limit: 300 });
+      lister.then(function (rows) {
         if (!$('pp-results')) return;
         var list = Array.isArray(rows) ? rows : [];
         if (!list.length) {
+          var cfg = _partyCfg(role);
           host.innerHTML = '<div class="pp-empty">' +
-            ((q && q.trim()) ? 'No company matches \u201c' + esc(q.trim()) + '\u201d.' : 'No companies yet.') +
+            ((q && q.trim()) ? 'No ' + esc(cfg.noun) + ' matches \u201c' + esc(q.trim()) + '\u201d.' : 'No ' + esc(cfg.plural) + ' yet.') +
             '<br>Add one below.</div>';
           return;
         }
@@ -24604,7 +24657,7 @@ function DSH_CSS(){ return '<style>'+[
       wizardData[role + '_party_id'] = el.getAttribute('data-id')   || '';
       wizardData[role + '_name']     = el.getAttribute('data-name') || '';
       if (wizardData.errors) delete wizardData.errors[role + '_name'];
-      if (role === 'customer') {
+      if (_partyCfg(role).seedLoc) {
         var pcity  = el.getAttribute('data-city')  || '';
         var pstate = el.getAttribute('data-state') || '';
         var ci = $('i-city'), si = $('i-state');
@@ -24617,14 +24670,17 @@ function DSH_CSS(){ return '<style>'+[
     }
 
     function partyCreateForm() {
+      var role  = _partyActiveRole || 'customer';
+      var cfg   = _partyCfg(role);
+      var nounC = cfg.noun.charAt(0).toUpperCase() + cfg.noun.slice(1);
       var q = ($('pp-q') && $('pp-q').value.trim()) || '';
       openSheet(
         '<div class="pp-sheet">' +
-          '<div class="pp-shead"><h3 class="pp-stitle">New end user</h3>' +
+          '<div class="pp-shead"><h3 class="pp-stitle">New ' + esc(cfg.title) + '</h3>' +
             '<button type="button" class="pp-x" data-sheet-close aria-label="Close">\u2715</button></div>' +
           '<button type="button" class="pp-back" data-action="party-back">\u2039 Back to search</button>' +
-          '<div class="pp-frow"><label for="pp-cn">Company name</label>' +
-            '<input id="pp-cn" type="text" value="' + esc(q) + '" placeholder="Company name"></div>' +
+          '<div class="pp-frow"><label for="pp-cn">' + esc(nounC) + ' name</label>' +
+            '<input id="pp-cn" type="text" value="' + esc(q) + '" placeholder="' + esc(nounC) + ' name"></div>' +
           '<div class="pp-f2">' +
             '<div class="pp-frow"><label for="pp-cc">City</label><input id="pp-cc" type="text" placeholder="City"></div>' +
             '<div class="pp-frow"><label for="pp-cs">State</label><input id="pp-cs" type="text" placeholder="State"></div>' +
@@ -24639,6 +24695,7 @@ function DSH_CSS(){ return '<style>'+[
     }
 
     function partyCreateSave() {
+      var role = _partyActiveRole || 'customer';
       var name = ($('pp-cn') && $('pp-cn').value.trim()) || '';
       if (!name) { var f0 = $('pp-cn'); if (f0) f0.focus(); return; }
       var payload = {
@@ -24649,49 +24706,30 @@ function DSH_CSS(){ return '<style>'+[
       };
       var btn = document.querySelector('[data-action="party-create-save"]');
       if (btn) { btn.disabled = true; btn.textContent = 'Adding\u2026'; }
-      STORE.customerUpsert(payload).then(function () {
-        return STORE.customerList({ search: name, limit: 50 });
-      }).then(function (rows) {
+      var saver, relist;
+      if (role === 'customer') {
+        saver  = STORE.customerUpsert(payload);
+        relist = function () { return STORE.customerList({ search: name, limit: 50 }); };
+      } else {
+        payload.partyType = role;
+        saver  = STORE.partyUpsert(payload);
+        relist = function () { return STORE.partyList(role, { search: name, limit: 50 }); };
+      }
+      saver.then(relist).then(function (rows) {
         var lc = name.toLowerCase();
         var match = (Array.isArray(rows) ? rows : []).filter(function (c) {
           return String(c.name || '').trim().toLowerCase() === lc;
         })[0] || (Array.isArray(rows) && rows[0]) || null;
-        wizardData.customer_party_id = match ? String(match.id) : '';
-        wizardData.customer_name     = (match && match.name) || name;
-        if (wizardData.errors) delete wizardData.errors.customer_name;
-        _partySwap('customer');
+        wizardData[role + '_party_id'] = match ? String(match.id) : '';
+        wizardData[role + '_name']     = (match && match.name) || name;
+        if (wizardData.errors) delete wizardData.errors[role + '_name'];
+        _partySwap(role);
         saveDraft();
         closeSheet();
       }).catch(function () {
         if (btn) { btn.disabled = false; btn.textContent = 'Add & select'; }
-        toast('Could not add company \u2014 check your connection.', 'err');
+        toast('Could not add ' + _partyCfg(role).noun + ' \u2014 check your connection.', 'err');
       });
-    }
-
-    function openPartyNameSheet(role) {
-      var label = role === 'partner' ? 'Partner' : 'Consultant';
-      var cur   = wizardData[role + '_name'] || '';
-      openSheet(
-        '<div class="pp-sheet">' +
-          '<div class="pp-shead"><h3 class="pp-stitle">' + esc(label) + ' name</h3>' +
-            '<button type="button" class="pp-x" data-sheet-close aria-label="Close">\u2715</button></div>' +
-          '<div class="pp-frow"><label for="pp-nm">Name</label>' +
-            '<input id="pp-nm" type="text" value="' + esc(cur) + '" placeholder="' + esc(label) + ' contact / company"></div>' +
-          '<div class="pp-formact"><button type="button" class="pp-bghost" data-sheet-close>Cancel</button>' +
-            '<button type="button" class="pp-bprimary" data-action="party-name-save" data-role="' + role + '">Save</button></div>' +
-        '</div>'
-      );
-      setTimeout(function () { var f = $('pp-nm'); if (f) { f.focus(); f.select(); } }, 60);
-    }
-
-    function partyNameSave(role) {
-      var v = ($('pp-nm') && $('pp-nm').value.trim()) || '';
-      wizardData[role + '_name']     = v;
-      wizardData[role + '_party_id'] = '';
-      if (v && wizardData.errors) delete wizardData.errors[role + '_name'];
-      _partySwap(role);
-      saveDraft();
-      closeSheet();
     }
 
     function renderStep1(d) {
@@ -26363,8 +26401,7 @@ function DSH_CSS(){ return '<style>'+[
         if (action === 'party-pick')        { partyPick(actEl); return; }
         if (action === 'party-create-form') { partyCreateForm(); return; }
         if (action === 'party-create-save') { partyCreateSave(); return; }
-        if (action === 'party-back')        { openCustomerPicker(); return; }
-        if (action === 'party-name-save')   { partyNameSave(actEl.getAttribute('data-role')); return; }
+        if (action === 'party-back')        { openPartyPicker(); return; }
 
         // v27.50.0 — Custom BOQ composer actions
         if (action === 'adv-add')  { _advChangeQty(actEl.getAttribute('data-sku'), +1); return; }
